@@ -1,0 +1,55 @@
+/**
+ * 生态健康度(Phase 25)—— 把散落各处的平衡指标汇成一个可跨版本比较的仪表盘
+ * 不替代红线断言;红线管「不许坏」,健康度管「趋势如何」
+ */
+
+export interface HealthInput {
+  /** 各终局世界可行流派数(0~6) */
+  viablePerWorld: number[]
+  /** 各世界 次优/最优 通率比(0~1,越高越不塌缩) */
+  secondOverBest: number[]
+  /** 随机构筑万金油率(破墙) */
+  universalRate: number
+  /** 随机构筑陷阱率 */
+  trapRate: number
+  /** 跨界通吃构筑数(红线 ≤2) */
+  crossWorldCount: number
+  /** 二阶协同榜首(logit) */
+  maxPairSynergy: number
+}
+
+export interface HealthPart {
+  name: string
+  /** 0~100 */
+  score: number
+  detail: string
+}
+
+export interface HealthReport {
+  /** 0~100 加权总分 */
+  score: number
+  parts: HealthPart[]
+}
+
+const avg = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0)
+const clamp01 = (x: number): number => Math.max(0, Math.min(1, x))
+
+export function computeEcosystemHealth(input: HealthInput): HealthReport {
+  const diversity = clamp01(avg(input.viablePerWorld) / 6)
+  const spread = clamp01(avg(input.secondOverBest))
+  const universal = clamp01(1 - input.universalRate / 0.015)
+  const trap = clamp01(1 - input.trapRate / 0.3)
+  const cross = clamp01(1 - input.crossWorldCount / 3)
+  const synergy = clamp01(1 - Math.max(0, input.maxPairSynergy - 1) / 1.5)
+
+  const parts: HealthPart[] = [
+    { name: 'Build 多样性', score: Math.round(diversity * 100), detail: `平均可行 ${avg(input.viablePerWorld).toFixed(1)}/6` },
+    { name: '最优不独走', score: Math.round(spread * 100), detail: `次优/最优 ${Math.round(avg(input.secondOverBest) * 100)}%` },
+    { name: '万金油抑制', score: Math.round(universal * 100), detail: `破墙率 ${(input.universalRate * 100).toFixed(1)}%(红线 1.5%)` },
+    { name: '陷阱可控', score: Math.round(trap * 100), detail: `陷阱率 ${(input.trapRate * 100).toFixed(1)}%` },
+    { name: '跨界受限', score: Math.round(cross * 100), detail: `跨界通吃 ${input.crossWorldCount} 个(红线 2)` },
+    { name: '协同温和', score: Math.round(synergy * 100), detail: `二阶榜首 ${input.maxPairSynergy.toFixed(2)}(红线 2.0)` }
+  ]
+  const score = Math.round(diversity * 25 + spread * 20 + universal * 20 + trap * 10 + cross * 15 + synergy * 10)
+  return { score, parts }
+}

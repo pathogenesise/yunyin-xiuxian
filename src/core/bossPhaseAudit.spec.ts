@@ -1,0 +1,175 @@
+/* eslint-disable no-console -- Phase 30.8 Boss 阶段有效性审计报告 */
+import { describe, expect, it } from 'vitest'
+import { ENEMIES } from '@/data/enemies'
+import { REGIONS, regionDef } from '@/data/regions'
+import { enemyTraits, regionEcology } from './buildAdvisor'
+
+/**
+ * Phase 30.8: Boss 阶段与机制有效性审计
+ *
+ * 核心问题: Boss 的阶段与机制系统是否真正有效?
+ *
+ * 审计方法(机制配置验证):
+ * ① Boss 阶段覆盖 - 大多数 Boss 应有战斗阶段
+ * ② 阶段机制多样性 - 阶段变化的类型应多样化
+ * ③ 阶段变化强度 - 阶段改变的机制参数应有显著差异
+ * ④ Boss 生态一致性 - archetype 与技能/mod 机制匹配
+ * ⑤ Boss 机制指纹 - 20 个 Boss 的机制组合应独特
+ *
+ * 注: 战斗胜率模拟依赖玩家属性与 Boss 的数值对齐(游戏内随境界同步增长),
+ * 测试无法模拟装备/功法成长,故审计聚焦机制配置本身。
+ */
+
+const ALL_BOSSES = ENEMIES.filter(x => x.isBoss)
+
+/** 提取 Boss 的机制指纹(技能效果 + mods + archetype) */
+function bossFingerprint(boss: (typeof ALL_BOSSES)[number]): string {
+  const effects = [...new Set(boss.skills.map(s => s.effect ?? 'plain'))].sort()
+  const modKeys = Object.keys(boss.mods ?? {}).sort()
+  const phaseCount = boss.phases?.length ?? 0
+  return `${boss.archetype ?? 'none'}|${effects.join(',')}|${modKeys.join(',')}|p${phaseCount}`
+}
+
+describe('Phase 30.8: Boss 阶段与机制有效性审计', () => {
+  it('① Boss 阶段覆盖: 至少 80% 的 Boss 应有战斗阶段', () => {
+    const withPhases = ALL_BOSSES.filter(b => (b.phases?.length ?? 0) > 0)
+    console.log(`\n—— Phase 30.8 Boss 阶段有效性审计 ——`)
+    console.log(`  有阶段的 Boss: ${withPhases.length}/${ALL_BOSSES.length} (${Math.round((withPhases.length / ALL_BOSSES.length) * 100)}%)`)
+
+    expect(withPhases.length / ALL_BOSSES.length).toBeGreaterThanOrEqual(0.8)
+  })
+
+  it('② 阶段机制多样性: 阶段触发的 mod/技能变化应多样化', () => {
+    const changes = new Set<string>()
+    for (const b of ALL_BOSSES) {
+      for (const p of b.phases ?? []) {
+        if (p.modChanges) {
+          for (const k of Object.keys(p.modChanges)) changes.add(`mod:${k}`)
+        }
+        if (p.skillChanges && p.skillChanges.length > 0) {
+          for (const sk of p.skillChanges) changes.add(`skill:${sk.effect ?? 'plain'}:${sk.mult}`)
+        }
+        if (p.label) changes.add(`label:${p.label}`)
+      }
+    }
+
+    console.log(`\n  阶段变化类型: ${changes.size} 种`)
+    for (const c of changes) console.log(`    - ${c}`)
+
+    // 至少 4 种不同的阶段变化机制
+    expect(changes.size, '阶段变化应多样化').toBeGreaterThanOrEqual(4)
+  })
+
+  it('③ 阶段变化强度: 每个阶段的机制参数变化应显著(mods 增量为原始值的 50%+)', () => {
+    const weakChanges: string[] = []
+
+    for (const boss of ALL_BOSSES) {
+      for (const p of boss.phases ?? []) {
+        if (!p.modChanges) continue
+        // 每个变化的 mod 值应至少为 0.1 的显著量
+        for (const [k, v] of Object.entries(p.modChanges)) {
+          const base = boss.mods?.[k as keyof typeof boss.mods] ?? 0
+          const delta = (v as number) - (base as number)
+          if (Math.abs(delta) < 0.1) {
+            weakChanges.push(`${boss.name}: ${k} 变化仅 ${delta.toFixed(2)}`)
+          }
+        }
+      }
+    }
+
+    console.log(`\n  弱变化警告:`)
+    if (weakChanges.length > 0) {
+      for (const w of weakChanges) console.log(`    ⚠ ${w}`)
+    } else {
+      console.log('    ✅ 所有阶段变化均 ≥0.1')
+    }
+
+    expect(weakChanges.length, '不应有显著的弱变化').toBeLessThanOrEqual(3)
+  })
+
+  it('④ Boss 生态一致性: archetype 应与技能/mod 机制匹配', () => {
+    const mismatches: string[] = []
+
+    for (const boss of ALL_BOSSES) {
+      const allSkills = [
+        ...boss.skills,
+        ...(boss.phases ?? []).flatMap(p => p.skillChanges ?? [])
+      ]
+      const allMods = { ...(boss.mods ?? {}) }
+      for (const p of boss.phases ?? []) {
+        if (p.modChanges) Object.assign(allMods, p.modChanges)
+      }
+
+      const hasBurst = allSkills.some(sk => (sk.mult ?? 0) >= 2.0)
+      const hasMulti = allSkills.some(sk => sk.effect === 'multi')
+      const hasPierce = allSkills.some(sk => sk.effect === 'pierce')
+      const hasDodge = (allMods.dodgeRate ?? 0) >= 0.1
+      const counter = (allMods.counterRate ?? 0) >= 0.1
+      const shield = (allMods.shieldOnStart ?? 0) >= 0.1
+      const regen = (allMods.regenPerRound ?? 0) >= 0.01
+      const lifesteal = (allMods.lifesteal ?? 0) >= 0.1
+
+      const arch = boss.archetype
+      if (arch === 'berserk' && !hasBurst) mismatches.push(`${boss.name}: 狂暴但无高爆发`)
+      if (arch === 'counter' && !hasMulti && !counter) mismatches.push(`${boss.name}: 反制但无多段/反击`)
+      if (arch === 'truedmg' && !hasPierce) mismatches.push(`${boss.name}: 真伤但无 pierce`)
+      if (arch === 'antiheal' && !lifesteal && !hasPierce) mismatches.push(`${boss.name}: 禁疗但无回收机制`)
+      if (arch === 'evasive' && !hasDodge) mismatches.push(`${boss.name}: 闪避但无闪避词条`)
+      if (arch === 'attrition' && !regen && !lifesteal) mismatches.push(`${boss.name}: 消耗但无回复/吸血`)
+      if (arch === 'threshold' && !shield && !hasPierce) mismatches.push(`${boss.name}: 门槛但无护盾/真伤词条`)
+    }
+
+    if (mismatches.length > 0) {
+      console.log(`\n  ⚠ 生态不一致:`)
+      for (const m of mismatches) console.log(`    - ${m}`)
+    } else {
+      console.log('\n  所有 Boss 的 archetype 与机制一致 ✅')
+    }
+
+    expect(mismatches.length, 'Boss archetype 应与机制一致').toBe(0)
+  })
+
+  it('⑤ Boss 机制指纹: 20 个 Boss 的机制组合至少有 60% 独特', () => {
+    const fingerprints = new Map<string, number>()
+    for (const boss of ALL_BOSSES) {
+      const fp = bossFingerprint(boss)
+      fingerprints.set(fp, (fingerprints.get(fp) ?? 0) + 1)
+    }
+
+    const uniqueCount = fingerprints.size
+    console.log(`\n  独特机制指纹: ${uniqueCount}/${ALL_BOSSES.length}`)
+    for (const boss of ALL_BOSSES) {
+      console.log(`    ${boss.name}: ${bossFingerprint(boss)}`)
+    }
+
+    // 至少 60% 的 Boss 应有独特机制组合
+    expect(uniqueCount / ALL_BOSSES.length).toBeGreaterThanOrEqual(0.6)
+  })
+
+  it('⑥ Boss 与区域生态一致: Boss 机制应是区域生态的极端表达', () => {
+    const inconsistencies: string[] = []
+
+    for (const boss of ALL_BOSSES) {
+      const region = REGIONS.find(r => r.boss === boss.id)
+      if (!region) continue
+
+      const eco = regionEcology(regionDef(region.id)!)
+      const bossTraits = enemyTraits(boss)
+
+      // Boss 的 trait 应至少与区域生态的一个 trait 对应
+      const hasOverlap = bossTraits.some(t => (eco[t as keyof typeof eco] ?? 0) > 0)
+      if (!hasOverlap) {
+        inconsistencies.push(`${boss.name}(区域 ${region.id} 生态 ${JSON.stringify(eco)})的机制 ${bossTraits.join(',') || '无'} 与生态无重叠`)
+      }
+    }
+
+    if (inconsistencies.length > 0) {
+      console.log(`\n  ⚠ 区域生态不一致:`)
+      for (const i of inconsistencies) console.log(`    - ${i}`)
+    } else {
+      console.log('\n  所有 Boss 机制与区域生态一致 ✅')
+    }
+
+    expect(inconsistencies.length, 'Boss 机制应与区域生态相关').toBeLessThanOrEqual(5)
+  })
+})

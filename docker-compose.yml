@@ -1,0 +1,33 @@
+services:
+  yunyin-xiuxian:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: yunyin-xiuxian:latest
+    container_name: yunyin-xiuxian
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - yunyin-net
+    environment:
+      - TZ=Asia/Shanghai
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    # 日志滚动
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  yunyin-net:
+    driver: bridge
