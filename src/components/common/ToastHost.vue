@@ -1,7 +1,7 @@
 <template>
   <!-- 稀有天降:全屏金光一闪 -->
   <div v-if="flashId !== null" :key="flashId" class="rare-flash" />
-  <div class="pointer-events-none fixed inset-x-0 top-3 z-70 flex flex-col items-center gap-1.5 px-6">
+  <div class="pointer-events-none fixed inset-x-0 top-12 z-70 flex flex-col items-center gap-1.5 px-6">
     <TransitionGroup name="toast-slide">
       <div
         v-for="t in ui.toasts"
