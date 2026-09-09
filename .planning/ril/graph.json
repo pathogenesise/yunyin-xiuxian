@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 2,
+  "round": 4,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T12:39:47+00:00",
+  "updated_at": "2026-09-09T12:53:18+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -144,10 +144,10 @@
     "ISS-006": {
       "id": "ISS-006",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:39:46+00:00",
-      "updated_at": "2026-09-09T12:39:46+00:00",
+      "updated_at": "2026-09-09T12:41:22+00:00",
       "touched_round": 2,
       "summary": "dongfu store 是唯一无 sanitize 的持久化收益来源,levels.mansion 损坏会把 offlineCapHours 算成 NaN,离线收益全线 NaN",
       "severity": 0.6,
@@ -157,10 +157,10 @@
     "ISS-007": {
       "id": "ISS-007",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:39:46+00:00",
-      "updated_at": "2026-09-09T12:39:46+00:00",
+      "updated_at": "2026-09-09T12:41:22+00:00",
       "touched_round": 2,
       "summary": "formatPercent/formatDuration 未防 NaN/Infinity,界面可出现 NaN%/NaN秒",
       "severity": 0.4,
@@ -170,10 +170,10 @@
     "ISS-008": {
       "id": "ISS-008",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:39:46+00:00",
-      "updated_at": "2026-09-09T12:39:46+00:00",
+      "updated_at": "2026-09-09T12:41:22+00:00",
       "touched_round": 2,
       "summary": "formatGN 对 0<x<0.1 的小正数经 toFixed(1) 四舍五入显示成 0,有收益但显示为 0",
       "severity": 0.4,
@@ -183,15 +183,111 @@
     "ISS-009": {
       "id": "ISS-009",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:39:47+00:00",
-      "updated_at": "2026-09-09T12:39:47+00:00",
+      "updated_at": "2026-09-09T12:41:22+00:00",
       "touched_round": 2,
       "summary": "三处批量毁物/删除无确认:凝炼台入炉、一键清理行囊、删除构筑配置,误触即损",
       "severity": 0.5,
       "confidence": 1.0,
       "effort": 1
+    },
+    "CHG-005": {
+      "id": "CHG-005",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:41:22+00:00",
+      "updated_at": "2026-09-09T12:41:22+00:00",
+      "touched_round": 2,
+      "summary": "格式化守卫+洞府sanitize+三处毁物确认(10 文件)",
+      "commit": "0379b0a"
+    },
+    "ISS-010": {
+      "id": "ISS-010",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-09T12:48:57+00:00",
+      "updated_at": "2026-09-09T12:48:57+00:00",
+      "touched_round": 3,
+      "summary": "洞府巡游 dismissCaveEvent 只清模块态,30s 轮询会重掷新事件弹回,「离开」无意义且可无限重掷",
+      "severity": 0.6,
+      "confidence": 1.0,
+      "effort": 0.5
+    },
+    "CHG-006": {
+      "id": "CHG-006",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:48:57+00:00",
+      "updated_at": "2026-09-09T12:48:57+00:00",
+      "touched_round": 3,
+      "summary": "洞府离开占用今日+文案前置代价+生命周期测试",
+      "commit": "3e17c74"
+    },
+    "DEC-001": {
+      "id": "DEC-001",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:50:28+00:00",
+      "updated_at": "2026-09-09T12:50:28+00:00",
+      "touched_round": 3,
+      "summary": "一键分解弹窗勾选档位即时化尘存量同类:勾选即宣告该档为废料,与后续拾取自动回收对齐,配 toast 反馈,不做二次确认",
+      "rationale": "上轮自动回收反馈闭环(8d6d5b0)有意为之:让清除存量与后续拾取同一裁决,勾选即执行,省去每档单独确认的手续;库存化尘有明确 toast 计数",
+      "alternatives_rejected": "勾选仅记忆+另按分解钮才清存量:多一步操作,存量与拾取两套口径易再分叉"
+    },
+    "DEC-002": {
+      "id": "DEC-002",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:50:28+00:00",
+      "updated_at": "2026-09-09T12:50:28+00:00",
+      "touched_round": 3,
+      "summary": "建筑卡片:资源不足时按钮不置灰,点了提示「灵石或玄铁不足」",
+      "rationale": "点击给明确失败反馈比置灰隐藏理由更易用;置灰会让人误以为是 bug 或忘了扣费",
+      "alternatives_rejected": "把资源校验并入 canUpgrade 使按钮置灰:原因不可见,玩家只能猜"
+    },
+    "TASK-003": {
+      "id": "TASK-003",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:52:07+00:00",
+      "updated_at": "2026-09-09T12:52:07+00:00",
+      "touched_round": 3,
+      "summary": "安卓/Capacitor 端存档导出与导入被 Capacitor.isNativePlatform() 隐藏,移动端玩家无法备份/迁移存档,数据丢失风险高;可用已入依赖的 @capacitor/filesystem 实现(异于浏览器下载/选择文件路径)",
+      "category": "dx",
+      "severity": 0.5,
+      "confidence": 0.8,
+      "effort": 8
+    },
+    "ISS-011": {
+      "id": "ISS-011",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:52:36+00:00",
+      "updated_at": "2026-09-09T12:52:36+00:00",
+      "touched_round": 3,
+      "summary": "移动端(Capacitor)无存档导出/导入入口,存档仅存本地易因卸载/清缓存丢失",
+      "severity": 0.5,
+      "confidence": 0.8,
+      "effort": 8
+    },
+    "COMP-001": {
+      "id": "COMP-001",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:53:18+00:00",
+      "updated_at": "2026-09-09T12:53:18+00:00",
+      "touched_round": 3,
+      "summary": "SettingsView/存档系统(导出/导入/重置)"
     }
   },
   "edges": [
@@ -242,6 +338,48 @@
       "to": "ISS-005",
       "type": "resolves",
       "created_at": "2026-09-09T12:24:24+00:00"
+    },
+    {
+      "from": "CHG-005",
+      "to": "ISS-006",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:41:22+00:00"
+    },
+    {
+      "from": "CHG-005",
+      "to": "ISS-007",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:41:22+00:00"
+    },
+    {
+      "from": "CHG-005",
+      "to": "ISS-008",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:41:22+00:00"
+    },
+    {
+      "from": "CHG-005",
+      "to": "ISS-009",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:41:22+00:00"
+    },
+    {
+      "from": "CHG-006",
+      "to": "ISS-010",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:48:57+00:00"
+    },
+    {
+      "from": "TASK-003",
+      "to": "ISS-011",
+      "type": "addresses",
+      "created_at": "2026-09-09T12:52:36+00:00"
+    },
+    {
+      "from": "ISS-011",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-09T12:53:18+00:00"
     }
   ]
 }
