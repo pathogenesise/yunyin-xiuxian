@@ -285,9 +285,16 @@ export function chooseCaveOption(optionIndex: number): void {
   caveEvent = null
 }
 
-/** 玩家离开本次洞府巡游:清掉模块级事件,别让轮询再把它弹回来 */
+/**
+ * 玩家离开本次洞府巡游 = 今日不赴巡游。
+ * 只清模块级事件是不够的:mayTriggerCaveEvent 每 30s 轮询会重新掷一个新事件弹回来,
+ * 「离开」就成了白按。离开与选择一样占用今日一次 —— 决定留给玩家,代价也明确
+ */
 export function dismissCaveEvent(): void {
-  if (caveEvent) telemetry().record('cave_ignore', 'modal', '洞府巡游离开')
+  if (!caveEvent) return
+  telemetry().record('cave_ignore', 'modal', '洞府巡游离开')
+  const today = Math.floor(Date.now() / 86400000)
+  usePlayerStore().markCaveEventToday(today)
   caveEvent = null
 }
 

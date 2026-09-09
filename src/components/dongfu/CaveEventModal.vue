@@ -86,7 +86,7 @@ const locationLabel = computed(() =>
             class="w-full rounded bg-ink/10 px-4 py-2 text-sm text-ink/70 transition hover:bg-ink/20"
             @click="handleIgnore"
           >
-            离开
+            离开(今日不再巡游)
           </button>
         </div>
       </div>
