@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 5,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T14:46:51+00:00",
+  "updated_at": "2026-09-09T15:02:45+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -427,6 +427,65 @@
       "updated_at": "2026-09-09T14:46:51+00:00",
       "touched_round": 5,
       "summary": "转世/轮回系统(reincarnation.ts + player store 跨世字段)"
+    },
+    "ISS-016": {
+      "id": "ISS-016",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:59:19+00:00",
+      "updated_at": "2026-09-09T14:59:19+00:00",
+      "touched_round": 5,
+      "summary": "突破准备功能全链路死代码——prepareBreakthrough/getBreakthroughPrepBonus/BREAKTHROUGH_PREP_OPTIONS 全仓库零调用,界面无入口,突破成功率加成永不生效;且免费'静坐'+8% 反高于付费'服丹'+5%",
+      "severity": 0.5,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "COMP-004": {
+      "id": "COMP-004",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:59:19+00:00",
+      "updated_at": "2026-09-09T14:59:19+00:00",
+      "touched_round": 5,
+      "summary": "突破系统(breakthrough.ts + 突破准备数据)"
+    },
+    "ISS-017": {
+      "id": "ISS-017",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:00:00+00:00",
+      "updated_at": "2026-09-09T15:00:00+00:00",
+      "touched_round": 5,
+      "summary": "战斗先手判定单位不匹配:玩家侧 speed 是加成倍率(1+mod,装备仅 +3~6%),敌人侧是裸速度值(0.85~1.25)——先手实际只由敌人速度决定,玩家速度装备几乎无意义",
+      "severity": 0.55,
+      "confidence": 0.7,
+      "effort": 3
+    },
+    "ISS-018": {
+      "id": "ISS-018",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:01:47+00:00",
+      "updated_at": "2026-09-09T15:01:47+00:00",
+      "touched_round": 5,
+      "summary": "镇压区域装备掉落概率可>1:equipChance=0.4×hours,在线每tick hours≈0.0003 期望≈0.4/h,但离线大 dt 结算时 24h→9.6 概率恒真却每区只掉 1 件——离线装备产出被压死几倍,与灵石线性产出不同步",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 2
+    },
+    "COMP-005": {
+      "id": "COMP-005",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:01:47+00:00",
+      "updated_at": "2026-09-09T15:01:47+00:00",
+      "touched_round": 5,
+      "summary": "区域镇压系统(suppress.ts)"
     }
   },
   "edges": [
@@ -585,6 +644,24 @@
       "to": "COMP-003",
       "type": "located_in",
       "created_at": "2026-09-09T14:46:51+00:00"
+    },
+    {
+      "from": "ISS-016",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-09T15:00:00+00:00"
+    },
+    {
+      "from": "ISS-018",
+      "to": "COMP-005",
+      "type": "located_in",
+      "created_at": "2026-09-09T15:02:45+00:00"
+    },
+    {
+      "from": "ISS-017",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-09T15:02:45+00:00"
     }
   ]
 }
