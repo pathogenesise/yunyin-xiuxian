@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 1,
+  "round": 2,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T12:20:04+00:00",
+  "updated_at": "2026-09-09T12:39:47+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -81,10 +81,10 @@
     "ISS-002": {
       "id": "ISS-002",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:20:04+00:00",
-      "updated_at": "2026-09-09T12:20:04+00:00",
+      "updated_at": "2026-09-09T12:24:24+00:00",
       "touched_round": 1,
       "summary": "悟道顿悟/洞府巡游弹窗「忽略/离开」只清本地 ref,模块级事件未清,1s 轮询又弹回(需 dismissEnlightenment/dismissCaveEvent)",
       "severity": 0.7,
@@ -94,10 +94,10 @@
     "ISS-003": {
       "id": "ISS-003",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:20:04+00:00",
-      "updated_at": "2026-09-09T12:20:04+00:00",
+      "updated_at": "2026-09-09T12:24:24+00:00",
       "touched_round": 1,
       "summary": "gnum.cmp 对同为负数的 GNum 比较错误(指数分支忽略符号);且 m===0 携带非零指数时被当正负数(zero 应恒介于正负之间)",
       "severity": 0.75,
@@ -107,10 +107,10 @@
     "ISS-004": {
       "id": "ISS-004",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:20:04+00:00",
-      "updated_at": "2026-09-09T12:20:04+00:00",
+      "updated_at": "2026-09-09T12:24:24+00:00",
       "touched_round": 1,
       "summary": "CreateView.begin 无进行中保护,灵根鉴定动画期间连点可重复建号、重复发新手馈赠",
       "severity": 0.7,
@@ -120,15 +120,78 @@
     "ISS-005": {
       "id": "ISS-005",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T12:20:04+00:00",
-      "updated_at": "2026-09-09T12:20:04+00:00",
+      "updated_at": "2026-09-09T12:24:24+00:00",
       "touched_round": 1,
       "summary": "SpiritRootReveal 无 onUnmounted 清理,动画期间路由切换后定时器仍跑、onDone 仍触发推回首页",
       "severity": 0.5,
       "confidence": 1.0,
       "effort": 0.5
+    },
+    "CHG-004": {
+      "id": "CHG-004",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:24:24+00:00",
+      "updated_at": "2026-09-09T12:24:24+00:00",
+      "touched_round": 1,
+      "summary": "批量修复:弹窗忽略/负数比较/建号连点/动画定时器(六文件)",
+      "commit": "fc7cc9b"
+    },
+    "ISS-006": {
+      "id": "ISS-006",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:39:46+00:00",
+      "updated_at": "2026-09-09T12:39:46+00:00",
+      "touched_round": 2,
+      "summary": "dongfu store 是唯一无 sanitize 的持久化收益来源,levels.mansion 损坏会把 offlineCapHours 算成 NaN,离线收益全线 NaN",
+      "severity": 0.6,
+      "confidence": 1.0,
+      "effort": 1
+    },
+    "ISS-007": {
+      "id": "ISS-007",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:39:46+00:00",
+      "updated_at": "2026-09-09T12:39:46+00:00",
+      "touched_round": 2,
+      "summary": "formatPercent/formatDuration 未防 NaN/Infinity,界面可出现 NaN%/NaN秒",
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 0.5
+    },
+    "ISS-008": {
+      "id": "ISS-008",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:39:46+00:00",
+      "updated_at": "2026-09-09T12:39:46+00:00",
+      "touched_round": 2,
+      "summary": "formatGN 对 0<x<0.1 的小正数经 toFixed(1) 四舍五入显示成 0,有收益但显示为 0",
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 0.5
+    },
+    "ISS-009": {
+      "id": "ISS-009",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T12:39:47+00:00",
+      "updated_at": "2026-09-09T12:39:47+00:00",
+      "touched_round": 2,
+      "summary": "三处批量毁物/删除无确认:凝炼台入炉、一键清理行囊、删除构筑配置,误触即损",
+      "severity": 0.5,
+      "confidence": 1.0,
+      "effort": 1
     }
   },
   "edges": [
@@ -155,6 +218,30 @@
       "to": "TASK-002",
       "type": "implements",
       "created_at": "2026-09-09T12:02:03+00:00"
+    },
+    {
+      "from": "CHG-004",
+      "to": "ISS-002",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:24:24+00:00"
+    },
+    {
+      "from": "CHG-004",
+      "to": "ISS-003",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:24:24+00:00"
+    },
+    {
+      "from": "CHG-004",
+      "to": "ISS-004",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:24:24+00:00"
+    },
+    {
+      "from": "CHG-004",
+      "to": "ISS-005",
+      "type": "resolves",
+      "created_at": "2026-09-09T12:24:24+00:00"
     }
   ]
 }

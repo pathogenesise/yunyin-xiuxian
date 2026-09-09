@@ -54,7 +54,9 @@
     </div>
 
     <div class="grow" />
-    <button class="btn-seal mt-8 w-full !py-3 text-[16px]" @click="begin">踏 入 仙 途</button>
+    <button class="btn-seal mt-8 w-full !py-3 text-[16px]" :disabled="starting" @click="begin">
+      {{ starting ? '灵 根 鉴 定 中……' : '踏 入 仙 途' }}
+    </button>
 
     <!-- 灵根鉴定动画(踏入仙途后播放) -->
     <SpiritRootReveal ref="revealRef" />
@@ -95,6 +97,8 @@
   const profile = computed(() => game.createProfile!)
   const rerollsLeft = computed(() => game.createRerolls)
   const revealRef = ref<InstanceType<typeof SpiritRootReveal> | null>(null)
+  /** 鉴定动画进行中(约 2.6s):防连点导致重复建号、重复发新手馈赠 */
+  const starting = ref(false)
 
   /** 这一世的天然牌面(倾向文案,不含任何数值) */
   const tendencies = computed(() => tendencyLines(rootElements(profile.value.roots)))
@@ -109,6 +113,8 @@
   }
 
   function begin(): void {
+    if (starting.value) return
+    starting.value = true
     const finalName = name.value.trim().slice(0, 8) || '无名散修'
     player.initCharacter(finalName, profile.value)
     // 开局馈赠:入门功法 + 一柄竹剑 + 三枚聚气散

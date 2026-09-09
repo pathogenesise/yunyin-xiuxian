@@ -79,9 +79,16 @@
           </span>
           <span class="min-w-0 grow truncate font-kai text-[12px] text-ink">{{ lo.name }}</span>
           <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="applyLoadout(lo.id)">换装</button>
-          <button class="p-1 text-ink-ghost active:text-cinnabar" @click="deleteLoadout(lo.id)">
-            <GameIcon name="trash" :size="12" />
-          </button>
+          <!-- 删除二步确认:一套构筑是心血,误触垃圾桶不该直接没 -->
+          <template v-if="confirmDelete !== lo.id">
+            <button class="p-1 text-ink-ghost active:text-cinnabar" @click="confirmDelete = lo.id">
+              <GameIcon name="trash" :size="12" />
+            </button>
+          </template>
+          <template v-else>
+            <button class="btn-seal !px-2 !py-0.5 !text-[10px]" @click="doDeleteLoadout(lo.id)">确信删除</button>
+            <button class="text-[10px] text-ink-faint active:text-ink" @click="confirmDelete = null">取消</button>
+          </template>
         </div>
       </div>
       <p v-else class="text-[10px] text-ink-ghost">尚无快照,存一套后可在此与各区域间从容切换。</p>
@@ -199,10 +206,17 @@
 
   const saveOpen = ref(false)
   const saveName = ref('')
+  /** 等待二次确认删除的构筑 id */
+  const confirmDelete = ref<string | null>(null)
 
   function openSave(): void {
     saveName.value = build.value?.style.name ?? ''
     saveOpen.value = true
+  }
+
+  function doDeleteLoadout(id: string): void {
+    deleteLoadout(id)
+    confirmDelete.value = null
   }
 
   function confirmSave(): void {

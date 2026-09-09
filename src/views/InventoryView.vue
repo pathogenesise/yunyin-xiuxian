@@ -309,7 +309,21 @@
         <input v-model="settings.smartKeep.keepComboPiece" type="checkbox" class="h-4 w-4 accent-cinnabar" />
       </label>
       <template #footer>
-        <button class="btn-ghost w-full !text-[12px]" @click="smartClean">依此规则清理行囊(未锁定的无缘之物化尘)</button>
+        <!-- 一键清理二步确认:整包报废,按一下不该就此了结 -->
+        <template v-if="!cleanConfirm">
+          <button class="btn-ghost w-full !text-[12px]" @click="cleanConfirm = true">
+            依此规则清理行囊(未锁定的无缘之物化尘)
+          </button>
+        </template>
+        <template v-else>
+          <p class="mb-2 text-center text-[11px] text-cinnabar">
+            将把行囊中未锁定的无缘之物尽数化尘,共 {{ cleanCount }} 件——此举不可逆,仍要清理?
+          </p>
+          <div class="flex gap-2">
+            <button class="btn-ghost flex-1 !text-[12px]" @click="cleanConfirm = false">再想想</button>
+            <button class="btn-seal flex-1 !text-[12px]" @click="smartClean()">清理化尘</button>
+          </div>
+        </template>
       </template>
     </BaseModal>
   </div>
@@ -545,7 +559,14 @@
     { rank: 5, name: '地品' }
   ]
 
+  /** 待清理件数(确认提示用) */
+  const cleanCount = computed(() => inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep).length)
+
+  /** 清理确认态:按一次按钮先落在「再想想/清理化尘」上 */
+  const cleanConfirm = ref(false)
+
   function smartClean(): void {
+    cleanConfirm.value = false
     const targets = inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep)
     let n = 0
     for (const it of targets) {

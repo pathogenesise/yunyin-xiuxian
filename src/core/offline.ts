@@ -234,4 +234,5 @@ export function sanitizeOfflineInputs(): void {
   usePlayerStore().sanitize()
   useResourcesStore().sanitize()
   useLoreStore().sanitize()
+  useDongfuStore().sanitize() // 洞府等级非法会把离线封顶小时算成 NaN,收益全线 NaN
 }

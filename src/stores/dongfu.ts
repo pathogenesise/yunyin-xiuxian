@@ -70,6 +70,31 @@ export const useDongfuStore = defineStore(
       levels.value = { ...levels.value, [id]: lv }
     }
 
+    /**
+     * 存档修复:等级/产出小数/灵脉点数全部收敛为合法值。
+     * 损坏的 levels.mansion 会让 offlineCapHours 变 NaN,离线收益全线 NaN,
+     * 这是持久化收益来源里唯一没做 sanitize 的一处
+     */
+    function sanitize(): void {
+      const nextLevels = { ...levels.value }
+      for (const def of BUILDINGS) {
+        const cur = nextLevels[def.id]
+        if (cur === undefined || !Number.isFinite(cur) || cur < 0) nextLevels[def.id] = 0
+        else nextLevels[def.id] = Math.min(Math.floor(cur), def.maxLevel)
+      }
+      levels.value = nextLevels
+      const nextFrac = { ...frac.value }
+      for (const key of Object.keys(nextFrac) as (keyof typeof frac.value)[]) {
+        if (!Number.isFinite(nextFrac[key])) nextFrac[key] = 0
+      }
+      frac.value = nextFrac
+      const nextVein = { ...veinPoints.value }
+      for (const id of Object.keys(nextVein) as VeinId[]) {
+        if (!Number.isFinite(nextVein[id]) || nextVein[id] < 0) nextVein[id] = 0
+      }
+      veinPoints.value = nextVein
+    }
+
     /** 灵脉投点(校验由 veinService 负责) */
     function addVeinPoint(id: VeinId, n: number): void {
       veinPoints.value = { ...veinPoints.value, [id]: (veinPoints.value[id] ?? 0) + n }
@@ -119,7 +144,8 @@ export const useDongfuStore = defineStore(
       setLevel,
       addVeinPoint,
       setVeinMain,
-      produce
+      produce,
+      sanitize
     }
   },
   { persist: persistConfig('dongfu') }

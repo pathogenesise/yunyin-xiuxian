@@ -15,7 +15,11 @@ export function formatGN(v: GNum | number): string {
   if (g.e < 4) {
     const n = toNum(g)
     if (n < 1000) {
-      return n < 100 && !Number.isInteger(n) ? trimZero(n.toFixed(1)) : String(Math.floor(n))
+      if (n < 100 && !Number.isInteger(n)) {
+        // <0.1 时多留一位小数,别把 0.04 的收益显示成 0
+        return trimZero(n > 0 && n < 0.1 ? n.toFixed(2) : n.toFixed(1))
+      }
+      return String(Math.floor(n))
     }
     return Math.floor(n).toLocaleString('en-US')
   }
@@ -48,15 +52,20 @@ export function formatRate(v: GNum | number): string {
   return `${formatGN(v)}/秒`
 }
 
-/** 百分比:0.125 → 12.5% */
+/** 数值非法时的统一占位(避免界面出现 NaN%/Infinity%) */
+const NOT_AVAILABLE = '--'
+
+/** 百分比:0.125 → 12.5%;非法值(NaN/Infinity)显示 -- */
 export function formatPercent(x: number, dp = 1): string {
+  if (!Number.isFinite(x)) return NOT_AVAILABLE
   const v = x * 100
   const s = Number.isInteger(v) ? String(v) : v.toFixed(dp)
   return `${trimZero(s)}%`
 }
 
-/** 时长:秒 → 中文可读 */
+/** 时长:秒 → 中文可读;非法值(NaN/Infinity)显示 -- */
 export function formatDuration(totalSec: number): string {
+  if (!Number.isFinite(totalSec)) return NOT_AVAILABLE
   const sec = Math.max(0, Math.floor(totalSec))
   const d = Math.floor(sec / 86400)
   const h = Math.floor((sec % 86400) / 3600)

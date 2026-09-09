@@ -131,7 +131,18 @@
               <span :style="{ color: soulGradeDef(row.gradeRank).color }">{{ soulGradeDef(row.gradeRank).name }}·{{ row.typeName }}</span>
             </p>
           </div>
-          <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="refineEquipment(row.inst.uid)">入 炉</button>
+          <!-- 入炉二步确认:毁的是原器,不按一个「入 炉」就直接交代了 -->
+          <button
+            v-if="pendingRefineUid !== row.inst.uid"
+            class="btn-ghost !px-3 !py-1 !text-[11px]"
+            @click="pendingRefineUid = row.inst.uid"
+          >
+            入 炉
+          </button>
+          <div v-else class="flex shrink-0 items-center gap-1.5">
+            <button class="btn-seal !px-2.5 !py-1 !text-[11px]" @click="doRefine(row.inst.uid)">凝 炼</button>
+            <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="pendingRefineUid = null">取 消</button>
+          </div>
         </div>
       </div>
       <p v-else class="px-4 py-6 text-center text-[11px] leading-relaxed text-ink-ghost">
@@ -168,6 +179,14 @@
   const unlocked = computed(() => endgameUnlocked())
   const idleOpen = ref(false)
   const forgeOpen = ref(false)
+  /** 等待二次确认的行(uid);非 null 表示该行已展开确认态 */
+  const pendingRefineUid = ref<string | null>(null)
+
+  /** 二步确认后真正入炉;成功后收拢确认态 */
+  function doRefine(uid: string): void {
+    if (refineEquipment(uid)) pendingRefineUid.value = null
+    else pendingRefineUid.value = null // 失败(如道源不足)也收起确认态,让玩家重挑
+  }
 
   /** 未装配的器魂 */
   const idleSouls = computed(() => endgame.soulList.filter(s => !endgame.activeSouls.some(a => a.uid === s.uid)))

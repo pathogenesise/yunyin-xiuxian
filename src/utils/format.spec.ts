@@ -39,4 +39,22 @@ describe('数值格式化', () => {
     expect(formatPercent(0.125)).toBe('12.5%')
     expect(formatPercent(0.5)).toBe('50%')
   })
+
+  it('非法百分比显示 --', () => {
+    expect(formatPercent(NaN)).toBe('--')
+    expect(formatPercent(Infinity)).toBe('--')
+    expect(formatPercent(-Infinity)).toBe('--')
+  })
+
+  it('非法时长显示 --', () => {
+    expect(formatDuration(NaN)).toBe('--')
+    expect(formatDuration(Infinity)).toBe('--')
+  })
+
+  it('小正数不丢精度为 0', () => {
+    expect(formatGN(0.04)).toBe('0.04')
+    expect(formatGN(0.125)).toBe('0.1')
+    expect(formatGN(0.5)).toBe('0.5')
+    expect(formatGN(1)).toBe('1')
+  })
 })
