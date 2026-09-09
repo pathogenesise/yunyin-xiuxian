@@ -44,7 +44,7 @@
     <!-- 开始前的同意确认 -->
     <BaseModal :open="agreeOpen" title="进入前请确认" :closable="false">
       <p class="text-[12px] leading-relaxed text-ink-faint">
-        游戏数据仅保存在你的浏览器本地,不上传服务器、不接入第三方统计。继续游玩前,请阅读并同意隐私政策。
+        游戏数据仅保存在你的浏览器本地,不上传服务器。站点接入的流量统计不包含任何游戏数据(详见隐私政策)。继续游玩前,请阅读并同意隐私政策。
       </p>
       <label class="mt-3 flex items-center gap-2">
         <input v-model="agreed" type="checkbox" class="h-4 w-4 accent-cinnabar" />
