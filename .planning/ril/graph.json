@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 5,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T14:40:15+00:00",
+  "updated_at": "2026-09-09T14:46:51+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -341,10 +341,10 @@
     "ISS-013": {
       "id": "ISS-013",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T14:39:28+00:00",
-      "updated_at": "2026-09-09T14:39:28+00:00",
+      "updated_at": "2026-09-09T14:45:00+00:00",
       "touched_round": 5,
       "summary": "装备详情「分解」无二次确认——移动端误触即毁含强化/封存/重铸的装备,违背应用自身'删除必二步'模式",
       "severity": 0.55,
@@ -354,27 +354,25 @@
     "TASK-005": {
       "id": "TASK-005",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-09T14:39:28+00:00",
-      "updated_at": "2026-09-09T14:40:15+00:00",
+      "updated_at": "2026-09-09T14:45:00+00:00",
       "touched_round": 5,
       "category": "correctness",
       "severity": 0.6,
       "confidence": 0.95,
       "effort": 1,
       "unlock_factor": 1,
-      "summary": "EquipmentDetailDialog 分解按钮改行内二步确认(与 BuildView/SoulsView 同模式)",
-      "lock_owner": "yunyin-loop",
-      "lock_until": "2026-09-09T15:25:15+00:00"
+      "summary": "EquipmentDetailDialog 分解按钮改行内二步确认(与 BuildView/SoulsView 同模式)"
     },
     "ISS-014": {
       "id": "ISS-014",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T14:39:54+00:00",
-      "updated_at": "2026-09-09T14:39:54+00:00",
+      "updated_at": "2026-09-09T14:45:00+00:00",
       "touched_round": 5,
       "summary": "离线与在线区域首领门槛不一致:离线 wins>=5 触发,在线 s.wins>=10 才遇首领——离线以一半门槛拿首领奖励并解锁下一区",
       "severity": 0.5,
@@ -384,19 +382,51 @@
     "TASK-006": {
       "id": "TASK-006",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-09T14:39:54+00:00",
-      "updated_at": "2026-09-09T14:40:15+00:00",
+      "updated_at": "2026-09-09T14:45:01+00:00",
       "touched_round": 5,
       "category": "correctness",
       "severity": 0.55,
       "confidence": 0.95,
       "effort": 1,
       "unlock_factor": 1,
-      "summary": "离线结算首领门槛对齐在线:offline.ts wins>=5 改为 >=10",
-      "lock_owner": "yunyin-loop",
-      "lock_until": "2026-09-09T15:25:15+00:00"
+      "summary": "离线结算首领门槛对齐在线:offline.ts wins>=5 改为 >=10"
+    },
+    "CHG-008": {
+      "id": "CHG-008",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:43:26+00:00",
+      "updated_at": "2026-09-09T14:43:26+00:00",
+      "touched_round": 5,
+      "commit": "acf882a",
+      "summary": "装备分解行内二步确认 + 离线首领门槛对齐在线(10)"
+    },
+    "ISS-015": {
+      "id": "ISS-015",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:46:04+00:00",
+      "updated_at": "2026-09-09T14:46:04+00:00",
+      "touched_round": 5,
+      "summary": "转世不重置跨世状态——新世直接继承旧世镇压被动收入(engine每tick发放)/继承旧世秘境与区域事件/当日洞府巡游被旧世挤占(lastCaveEventDay未清),与'新的一世,新的天地'注释意图冲突",
+      "severity": 0.7,
+      "confidence": 0.8,
+      "effort": 3
+    },
+    "COMP-003": {
+      "id": "COMP-003",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:46:51+00:00",
+      "updated_at": "2026-09-09T14:46:51+00:00",
+      "touched_round": 5,
+      "summary": "转世/轮回系统(reincarnation.ts + player store 跨世字段)"
     }
   },
   "edges": [
@@ -525,6 +555,36 @@
       "to": "ISS-014",
       "type": "addresses",
       "created_at": "2026-09-09T14:40:15+00:00"
+    },
+    {
+      "from": "CHG-008",
+      "to": "ISS-013",
+      "type": "resolves",
+      "created_at": "2026-09-09T14:44:13+00:00"
+    },
+    {
+      "from": "CHG-008",
+      "to": "ISS-014",
+      "type": "resolves",
+      "created_at": "2026-09-09T14:44:13+00:00"
+    },
+    {
+      "from": "CHG-008",
+      "to": "TASK-005",
+      "type": "implements",
+      "created_at": "2026-09-09T14:44:13+00:00"
+    },
+    {
+      "from": "CHG-008",
+      "to": "TASK-006",
+      "type": "implements",
+      "created_at": "2026-09-09T14:44:13+00:00"
+    },
+    {
+      "from": "ISS-015",
+      "to": "COMP-003",
+      "type": "located_in",
+      "created_at": "2026-09-09T14:46:51+00:00"
     }
   ]
 }
