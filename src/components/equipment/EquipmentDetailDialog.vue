@@ -36,7 +36,7 @@
             </div>
             <button
               v-if="canSealAffix(line.id)"
-              class="ml-2 shrink-0 text-[10px] text-azure active:scale-90"
+              class="ml-2 shrink-0 rounded-md px-2 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
               @click="doSealAffix(line.id)"
             >
               封存

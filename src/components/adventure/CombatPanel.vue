@@ -64,7 +64,12 @@
 
       <!-- 战报 -->
       <div class="relative mt-3">
-        <button class="absolute right-1 -top-0.5 z-10 text-[10px] text-ink-faint active:text-ink" @click="skipPlayback">跳过播放 »</button>
+        <button
+          class="absolute right-1 -top-0.5 z-10 -m-2 rounded p-2 text-[10px] text-ink-faint active:text-ink active:opacity-60"
+          @click="skipPlayback"
+        >
+          跳过播放 »
+        </button>
         <div ref="logBox" class="h-48 space-y-1 overflow-y-auto rounded-md bg-ink/4 px-3 py-2">
           <p v-for="(entry, i) in displayed" :key="i" class="text-[12px] leading-relaxed" :class="KIND_COLOR[entry.t]">
             {{ entry.text }}
