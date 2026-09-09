@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 6,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T16:00:10+00:00",
+  "updated_at": "2026-09-09T16:09:33+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -547,6 +547,46 @@
       "touched_round": 6,
       "commit": "8a3c627",
       "summary": "镇压装备掉落次数期望结算,离线与在线 0.4件/h 对齐"
+    },
+    "ISS-019": {
+      "id": "ISS-019",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T16:06:03+00:00",
+      "updated_at": "2026-09-09T16:06:03+00:00",
+      "touched_round": 6,
+      "summary": "离线续行会话 nextBattleAt 未除 explorationSpeed,恢复后首战计时比在线慢一拍,速度加成被吞一次",
+      "severity": 0.4,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "TASK-008": {
+      "id": "TASK-008",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-09T16:06:03+00:00",
+      "updated_at": "2026-09-09T16:09:33+00:00",
+      "touched_round": 6,
+      "category": "correctness",
+      "severity": 0.45,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1,
+      "summary": "offline.ts 续行 nextBattleAt 除以 speed,与在线 nextBattleTime 对齐",
+      "lock_owner": "yunyin-loop",
+      "lock_until": "2026-09-09T16:54:33+00:00"
+    },
+    "COMP-006": {
+      "id": "COMP-006",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T16:07:51+00:00",
+      "updated_at": "2026-09-09T16:07:51+00:00",
+      "touched_round": 6,
+      "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     }
   },
   "edges": [
@@ -747,6 +787,18 @@
       "to": "TASK-007",
       "type": "implements",
       "created_at": "2026-09-09T15:59:15+00:00"
+    },
+    {
+      "from": "TASK-008",
+      "to": "ISS-019",
+      "type": "addresses",
+      "created_at": "2026-09-09T16:07:51+00:00"
+    },
+    {
+      "from": "ISS-019",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-09T16:09:33+00:00"
     }
   ]
 }

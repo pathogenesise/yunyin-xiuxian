@@ -192,7 +192,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           ...session,
           wins: session.wins + wins,
           events: session.events + events,
-          nextBattleAt: nowMs + EXPLORE_BATTLE_INTERVAL * 1000
+          // 与在线 nextBattleTime 同源:速度加成要除以 speed,否则恢复后首战被拖慢一拍
+          nextBattleAt: nowMs + (EXPLORE_BATTLE_INTERVAL * 1000) / speed
         })
       }
     }
