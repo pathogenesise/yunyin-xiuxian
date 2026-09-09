@@ -121,7 +121,7 @@ describe('区域镇压系统', () => {
       // 必掉 1 件;处置记账必须自洽:入包则件数+1且不化尘,回收则器灵尘按档位到账且不入包
       expect(total).not.toBeNull()
       expect(total!.equipment).toHaveLength(1)
-      const eq = total!.equipment[0]
+      const eq = total!.equipment[0]!
       const dustGain = resources.dust - dustBefore
       if (eq.recycled) {
         expect(inventory.items.length).toBe(itemsBefore)
