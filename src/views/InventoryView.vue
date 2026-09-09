@@ -252,7 +252,7 @@
 
     <!-- 一键分解:勾选品质(记忆勾选) -->
     <BaseModal :open="decomposeOpen" title="一键分解" @close="decomposeOpen = false">
-      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住。</p>
+      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊。</p>
       <div class="mt-2 space-y-1">
         <label
           v-for="q in QUALITIES"
@@ -280,7 +280,7 @@
     <!-- 智能收纳弹窗入口共用分解弹窗下方 -->
     <BaseModal :open="smartOpen" title="智能收纳" @close="smartOpen = false">
       <p class="text-[11px] leading-relaxed text-ink-faint">
-        行囊满时,新掉落若「值得收藏」将自动挤掉包内与道无缘的旧物。识别不只看品质:流派核心件与组合技部件亦在收藏之列。
+        开启后,新掉落先过智能裁决:无缘之物直接化尘不入包;行囊满时,值得收藏的新件会挤掉包内与道无缘的旧物。识别不只看品质:流派核心件与组合技部件亦在收藏之列。
       </p>
       <label class="mt-2 flex items-center justify-between py-1.5">
         <span class="text-[13px] text-ink-soft">启用智能收纳</span>

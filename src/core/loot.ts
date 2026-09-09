@@ -19,7 +19,7 @@ import {
 import { generateEquipment } from './equipGen'
 import { stoneByTier } from './formulas'
 import { modOf } from './statsCalc'
-import { keepVerdict, smartKeepEnabled } from './smartKeep'
+import { keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
 import { checkQualityAchievement, collect, track } from './progress'
 import { harvestMaterials } from './loreService'
 import { usePlayerStore } from '@/stores/player'
@@ -31,8 +31,13 @@ export interface DropSummary {
   lines: string[]
 }
 
-/** 拾取一件已生成的装备:入包或折算;智能收纳开启时,值得收藏的新件可挤掉包内与道无缘者 */
-export function acquireEquipment(inst: EquipmentInstance, quiet = false): string {
+/**
+ * 拾取一件已生成的装备:入包或折算。
+ * 无论在线(战斗掉落/事件/镇压)还是离线(挂机结算),都先过自动回收裁决——
+ * 命中回收规则的直接化尘不入包;forceKeep(新手馈赠)不受此闸约束。
+ * 入包后若行囊已满,智能收纳开启时,值得收藏的新件可挤掉包内与道无缘者。
+ */
+export function acquireEquipment(inst: EquipmentInstance, quiet = false, forceKeep = false): string {
   const inventory = useInventoryStore()
   const resources = useResourcesStore()
   const ui = useUiStore()
@@ -42,6 +47,12 @@ export function acquireEquipment(inst: EquipmentInstance, quiet = false): string
   track('equipsGained')
   collect('equip', inst.templateId)
   checkQualityAchievement(q.rank)
+  // 自动回收闸:新件先过裁决,命中回收规则的不占行囊,直接化尘
+  if (!forceKeep && shouldAutoRecycle(inst)) {
+    const dust = DECOMPOSE_DUST[q.rank] ?? 1
+    resources.addSmall('dust', dust)
+    return `${label}(自动回收,化作器灵尘×${dust})`
+  }
   if (!inventory.addEquipment(inst)) {
     // 智能收纳:新件值得留则腾位(分解包内最差的「与道无缘」件)
     if (smartKeepEnabled() && keepVerdict(inst).keep) {

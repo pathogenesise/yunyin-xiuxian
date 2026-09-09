@@ -102,19 +102,23 @@ describe('区域镇压系统', () => {
       expect(resources.spiritStone.m).toBeGreaterThan(initialStone.m)
     })
 
-    it('镇压区域产出装备的概率正确', () => {
+    it('镇压区域产出装备并按回收规则处置(入包或化尘)', () => {
       const player = usePlayerStore()
       player.major = 3
       player.suppressedRegions = ['qingyun']
       const inventory = useInventoryStore()
+      const resources = useResourcesStore()
 
       // 模拟随机数确保掉落
       vi.spyOn(Math, 'random').mockReturnValue(0.1) // 低于 0.4 的概率
 
+      const dustBefore = resources.dust
       settleSuppressedRegions(3600) // 1 小时
 
-      // 应该获得装备
-      expect(inventory.items.length).toBeGreaterThan(0)
+      // 掉落被正确处置:或者入了行囊,或者命中自动回收化作器灵尘
+      const keptInBag = inventory.items.length > 0
+      const recycled = resources.dust > dustBefore
+      expect(keptInBag || recycled).toBe(true)
 
       vi.restoreAllMocks()
     })

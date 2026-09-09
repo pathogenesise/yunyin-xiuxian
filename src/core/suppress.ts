@@ -12,6 +12,7 @@ import { regionDef } from '@/data/regions'
 import { stoneByTier } from '@/core/formulas'
 import { generateEquipment } from '@/core/equipGen'
 import { acquireEquipment } from '@/core/loot'
+import { useInventoryStore } from '@/stores/inventory'
 import { rng } from '@/utils/random'
 import { gnZero, add } from '@/utils/gnum'
 import type { GNum, QualityId } from '@/types'
@@ -114,7 +115,10 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
     if (Math.random() < equipChance) {
       const equip = generateEquipment(region.tier, rng, { luck: 0, minQualityRank: 0 })
       acquireEquipment(equip, true) // quiet=true 避免镇压收益刷屏
-      total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality })
+      // 只有真正入包(uid 在行囊)的才算产出:自动回收或满包化尘的都化作器灵尘
+      if (useInventoryStore().findItem(equip.uid)) {
+        total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality })
+      }
     }
   }
 
