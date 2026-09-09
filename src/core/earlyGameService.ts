@@ -82,6 +82,15 @@ export function chooseEnlightenment(optionIndex: number): void {
   enlightenmentEvent = null
 }
 
+/**
+ * 玩家忽略本次顿悟:清掉模块级事件,否则 1s 轮询的 getCurrentEnlightenment
+ * 会把它原封不动弹回来,「忽略」等于没按
+ */
+export function dismissEnlightenment(): void {
+  if (enlightenmentEvent) telemetry().record('enlightenment_ignore', 'modal', '悟道顿悟忽略')
+  enlightenmentEvent = null
+}
+
 /** 开始闭关(5分钟,修炼+150%,禁止探索) */
 export function startRetreat(): boolean {
   if (retreatEndTime && Date.now() < retreatEndTime) return false // 已在闭关
@@ -273,6 +282,12 @@ export function chooseCaveOption(optionIndex: number): void {
   const today = Math.floor(Date.now() / 86400000)
   player.markCaveEventToday(today)
   telemetry().record('cave_choose', 'modal', `洞府选择:${opt.label}`)
+  caveEvent = null
+}
+
+/** 玩家离开本次洞府巡游:清掉模块级事件,别让轮询再把它弹回来 */
+export function dismissCaveEvent(): void {
+  if (caveEvent) telemetry().record('cave_ignore', 'modal', '洞府巡游离开')
   caveEvent = null
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { add, cmp, div, gn, gte, mul, mulN, powN, progress, ratio, sub, subClamp, toNum } from './gnum'
+import { add, cmp, div, gn, gte, gt, lte, mul, mulN, powN, progress, ratio, sub, subClamp, toNum } from './gnum'
 
 describe('GameNumber 大数运算', () => {
   it('构造与规范化', () => {
@@ -45,6 +45,26 @@ describe('GameNumber 大数运算', () => {
     expect(cmp(gn(100), gn(99))).toBe(1)
     expect(cmp(gn(1e20), gn(2e20))).toBe(-1)
     expect(gte(gn(5), gn(5))).toBe(true)
+  })
+
+  it('同为负数时按数值序比较', () => {
+    // 指数不同:负指数越大负得越狠,数值越小(-100000 < -100)
+    expect(cmp({ m: -1, e: 5 }, { m: -1, e: 3 })).toBe(-1)
+    expect(cmp({ m: -1, e: 3 }, { m: -1, e: 5 })).toBe(1)
+    // 指数相同:尾数越大越靠近零,数值越大(-1×10^3 > -2×10^3)
+    expect(cmp({ m: -1, e: 3 }, { m: -2, e: 3 })).toBe(1)
+    expect(cmp({ m: -2, e: 3 }, { m: -1, e: 3 })).toBe(-1)
+    expect(cmp(gn(-1234), gn(-1200))).toBe(-1)
+    expect(cmp(gn(-1200), gn(-1234))).toBe(1)
+  })
+
+  it('正负混合与零的比较', () => {
+    expect(cmp({ m: -1, e: 5 }, gn(1))).toBe(-1)
+    expect(cmp(gn(1), { m: -1, e: 5 })).toBe(1)
+    expect(cmp(gn(0), { m: -1, e: 5 })).toBe(1)
+    expect(cmp({ m: -1, e: 5 }, gn(0))).toBe(-1)
+    expect(lte(gn(-8), gn(0))).toBe(true)
+    expect(gt(gn(0), gn(-8))).toBe(true)
   })
 
   it('比值与进度', () => {

@@ -88,11 +88,18 @@ export function powN(base: number, exp: number): GNum {
 
 /** 比较:a>b → 1, a<b → -1, 相等 → 0 */
 export function cmp(a: GNum, b: GNum): number {
+  // 零永远排在正数之下、负数之上(不认 m===0 对象的指数)
   if (a.m === 0 && b.m === 0) return 0
-  if (a.m <= 0 && b.m > 0) return -1
-  if (a.m > 0 && b.m <= 0) return 1
-  // 同为正数
-  if (a.e !== b.e) return a.e > b.e ? 1 : -1
+  if (a.m === 0) return b.m > 0 ? -1 : 1
+  if (b.m === 0) return a.m > 0 ? 1 : -1
+  if (a.m > 0 && b.m < 0) return 1
+  if (a.m < 0 && b.m > 0) return -1
+  // 同号:负数指数越大负得越狠,数值反而越小,不能照搬正数的大小序
+  const bothNeg = a.m < 0
+  if (a.e !== b.e) {
+    if (a.e > b.e) return bothNeg ? -1 : 1
+    return bothNeg ? 1 : -1
+  }
   if (a.m === b.m) return 0
   return a.m > b.m ? 1 : -1
 }
