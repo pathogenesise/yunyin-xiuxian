@@ -28,6 +28,9 @@
     <ReincarnationDialog />
     <EquipmentDetailDialog />
     <ExitConfirmDialog />
+    <!-- 修炼中偶发事件浮层(引擎触发、组件轮询展示;挂在全局才不会漏掉窗口期) -->
+    <EnlightenmentModal v-if="game.started" />
+    <CaveEventModal v-if="game.started" />
   </div>
 </template>
 
@@ -48,6 +51,8 @@
   import ReincarnationDialog from '@/components/character/ReincarnationDialog.vue'
   import EquipmentDetailDialog from '@/components/equipment/EquipmentDetailDialog.vue'
   import ExitConfirmDialog from '@/components/common/ExitConfirmDialog.vue'
+  import EnlightenmentModal from '@/components/cultivation/EnlightenmentModal.vue'
+  import CaveEventModal from '@/components/dongfu/CaveEventModal.vue'
 
   const game = useGameStore()
   const settings = useSettingsStore()

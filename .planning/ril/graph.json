@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 4,
+  "round": 5,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T12:53:18+00:00",
+  "updated_at": "2026-09-09T14:06:44+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,8 +286,48 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 3,
+      "touched_round": 5,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
+    },
+    "ISS-012": {
+      "id": "ISS-012",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:02:00+00:00",
+      "updated_at": "2026-09-09T14:02:00+00:00",
+      "touched_round": 5,
+      "summary": "悟道顿悟/洞府巡游两事件弹窗从未被任何组件挂载——引擎持续触发(顿悟8%/60s窗口、洞府巡游每日/2min窗口),模块态累积+遥测记录,但玩家永远看不到,奖励静默作废",
+      "severity": 0.85,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "TASK-004": {
+      "id": "TASK-004",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-09T14:03:03+00:00",
+      "updated_at": "2026-09-09T14:04:11+00:00",
+      "touched_round": 5,
+      "category": "correctness",
+      "severity": 0.85,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1,
+      "summary": "把 EnlightenmentModal 与 CaveEventModal 挂载到 App.vue 全局浮层(与 EventDialog 同级),使顿悟/巡游事件真正可见",
+      "lock_owner": "yunyin-loop",
+      "lock_until": "2026-09-09T14:49:11+00:00"
+    },
+    "COMP-002": {
+      "id": "COMP-002",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:05:15+00:00",
+      "updated_at": "2026-09-09T14:05:15+00:00",
+      "touched_round": 5,
+      "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
     }
   },
   "edges": [
@@ -380,6 +420,18 @@
       "to": "COMP-001",
       "type": "located_in",
       "created_at": "2026-09-09T12:53:18+00:00"
+    },
+    {
+      "from": "TASK-004",
+      "to": "ISS-012",
+      "type": "addresses",
+      "created_at": "2026-09-09T14:04:11+00:00"
+    },
+    {
+      "from": "ISS-012",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-09T14:06:44+00:00"
     }
   ]
 }
