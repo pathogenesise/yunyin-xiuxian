@@ -83,6 +83,11 @@ export const useUiStore = defineStore('ui', () => {
     }, ttl)
   }
 
+  /** 手动关闭某条提示(点按 toast 即收,不等超时) */
+  function dismissToast(id: number): void {
+    toasts.value = toasts.value.filter(t => t.id !== id)
+  }
+
   return {
     toasts,
     offlineSummary,
@@ -94,6 +99,7 @@ export const useUiStore = defineStore('ui', () => {
     deathDialog,
     reincarnation,
     corruptedNotice,
-    toast
+    toast,
+    dismissToast
   }
 })

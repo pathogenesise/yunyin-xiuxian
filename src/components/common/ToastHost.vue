@@ -3,14 +3,16 @@
   <div v-if="flashId !== null" :key="flashId" class="rare-flash" />
   <div class="pointer-events-none fixed inset-x-0 top-12 z-70 flex flex-col items-center gap-1.5 px-6">
     <TransitionGroup name="toast-slide">
-      <div
+      <button
         v-for="t in ui.toasts"
         :key="t.id"
-        class="max-w-90 rounded-lg border px-4 py-2 text-[13px] shadow-md font-kai tracking-wide"
+        type="button"
+        class="max-w-90 cursor-pointer rounded-lg border px-4 py-2 text-left text-[13px] shadow-md font-kai tracking-wide active:opacity-60"
         :class="KIND_CLASS[t.kind]"
+        @click="ui.dismissToast(t.id)"
       >
         {{ t.text }}
-      </div>
+      </button>
     </TransitionGroup>
   </div>
 </template>

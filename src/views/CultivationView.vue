@@ -241,12 +241,13 @@
 
   const mainDef = computed(() => (cultivation.mainGongfa ? gongfaDef(cultivation.mainGongfa) : undefined))
 
-  /** 修行相关丹药快捷栏 */
+  /** 修行相关丹药快捷栏:按品质降序,越珍稀的越靠前(原为插入序,先拿到什么显什么) */
   const quickPills = computed(() =>
     Object.entries(inventory.pills)
       .map(([id, count]) => ({ def: pillDef(id), count }))
       .filter(x => x.def !== undefined && x.count > 0)
       .filter(x => x.def!.kind === 'buff' || x.def!.instant?.expReqPct || x.def!.instant?.qiPct)
+      .sort((a, b) => qualityDef(b.def!.quality).rank - qualityDef(a.def!.quality).rank)
       .slice(0, 4)
   )
 
