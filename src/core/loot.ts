@@ -31,13 +31,28 @@ export interface DropSummary {
   lines: string[]
 }
 
+/** 品质 rank → 分解所得器灵尘 */
+function dustOfRank(rank: number): number {
+  return DECOMPOSE_DUST[rank] ?? 1
+}
+
+export interface AcquireResult {
+  /** 给人看的文案(战斗报告/事件/弹窗行) */
+  line: string
+  /** 是否真正入了行囊(未入 = 自动化尘或满包化尘) */
+  bagged: boolean
+  /** 本次拾取带来的器灵尘增量(化尘时为尘量,入包为 0) */
+  dust: number
+}
+
 /**
  * 拾取一件已生成的装备:入包或折算。
  * 无论在线(战斗掉落/事件/镇压)还是离线(挂机结算),都先过自动回收裁决——
  * 命中回收规则的直接化尘不入包;forceKeep(新手馈赠)不受此闸约束。
  * 入包后若行囊已满,智能收纳开启时,值得收藏的新件可挤掉包内与道无缘者。
  */
-export function acquireEquipment(inst: EquipmentInstance, quiet = false, forceKeep = false): string {
+export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolean; forceKeep?: boolean } = {}): AcquireResult {
+  const { quiet = false, forceKeep = false } = opts
   const inventory = useInventoryStore()
   const resources = useResourcesStore()
   const ui = useUiStore()
@@ -49,9 +64,9 @@ export function acquireEquipment(inst: EquipmentInstance, quiet = false, forceKe
   checkQualityAchievement(q.rank)
   // 自动回收闸:新件先过裁决,命中回收规则的不占行囊,直接化尘
   if (!forceKeep && shouldAutoRecycle(inst)) {
-    const dust = DECOMPOSE_DUST[q.rank] ?? 1
+    const dust = dustOfRank(q.rank)
     resources.addSmall('dust', dust)
-    return `${label}(自动回收,化作器灵尘×${dust})`
+    return { line: `${label}(自动回收,化作器灵尘×${dust})`, bagged: false, dust }
   }
   if (!inventory.addEquipment(inst)) {
     // 智能收纳:新件值得留则腾位(分解包内最差的「与道无缘」件)
@@ -60,22 +75,26 @@ export function acquireEquipment(inst: EquipmentInstance, quiet = false, forceKe
         .filter(it => !it.locked && !keepVerdict(it).keep)
         .sort((a, b) => qualityDef(a.quality).rank - qualityDef(b.quality).rank)[0]
       if (evictable) {
-        const evictDust = DECOMPOSE_DUST[qualityDef(evictable.quality).rank] ?? 1
+        const evictDust = dustOfRank(qualityDef(evictable.quality).rank)
         inventory.removeEquipment(evictable.uid)
         resources.addSmall('dust', evictDust)
         if (inventory.addEquipment(inst)) {
-          return `${label}(收纳规则腾位:${equipmentTemplate(evictable.templateId)?.name ?? '旧物'}化尘×${evictDust})`
+          return {
+            line: `${label}(收纳规则腾位:${equipmentTemplate(evictable.templateId)?.name ?? '旧物'}化尘×${evictDust})`,
+            bagged: true,
+            dust: evictDust
+          }
         }
       }
     }
-    const dust = DECOMPOSE_DUST[q.rank] ?? 1
+    const dust = dustOfRank(q.rank)
     resources.addSmall('dust', dust)
-    return `${label}(行囊已满,化作器灵尘×${dust})`
+    return { line: `${label}(行囊已满,化作器灵尘×${dust})`, bagged: false, dust }
   }
   if (!quiet && q.rank >= 3) {
     ui.toast(`灵光乍现,拾得「${label}」`, 'rare')
   }
-  return label
+  return { line: label, bagged: true, dust: 0 }
 }
 
 /** 获得法宝:重复则折算悟道点 */
@@ -153,7 +172,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   for (let i = 0; i < doubled; i += 1) {
     if (rng.chance(Math.min(0.9, equipChance)) || (isBoss && i === 0)) {
       const inst = generateEquipment(tier, rng, { luck, minQualityRank: isBoss ? 1 : 0 })
-      lines.push(acquireEquipment(inst))
+      lines.push(acquireEquipment(inst).line)
     }
   }
 

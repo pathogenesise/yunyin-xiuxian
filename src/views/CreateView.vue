@@ -115,7 +115,7 @@
     cultivation.learn('m_taixuan')
     cultivation.equipMain('m_taixuan')
     const starter = generateEquipment(1, rng, { slot: 'weapon' })
-    acquireEquipment(starter, true, true) // forceKeep:开局馈赠不受自动回收规则影响
+    acquireEquipment(starter, { quiet: true, forceKeep: true }) // forceKeep:开局馈赠不受自动回收规则影响
     const tpl = equipmentTemplate(starter.templateId)
     if (tpl) inventory.equip(starter.uid, tpl.slot)
     inventory.addPill('p_jvqisan', 3)

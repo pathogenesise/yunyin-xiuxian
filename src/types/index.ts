@@ -849,7 +849,10 @@ export interface OfflineSummary {
   battles: number
   wins: number
   events: number
-  equipment: { name: string; quality: QualityId }[]
+  /** 产出装备清单;回收(自动回收/满包化尘)的件以 recycled 标注 */
+  equipment: { name: string; quality: QualityId; recycled?: boolean }[]
+  /** 期间未入包装备化作的器灵尘总量 */
+  recycledDust: number
   notes: string[]
 }
 

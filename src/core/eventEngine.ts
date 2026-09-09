@@ -98,7 +98,7 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
         luck: modOf(player.finalStats.mods, 'luck'),
         minQualityRank: effect.minQualityRank
       })
-      return `获得 ${acquireEquipment(inst)}`
+      return `获得 ${acquireEquipment(inst).line}`
     }
     case 'pill': {
       const id = effect.id ?? randomEventPill(player.major)

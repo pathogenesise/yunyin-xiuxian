@@ -24,7 +24,6 @@ import { buildPlayerSnap } from './playerSnap'
 import { currentDaoRules } from './endgameService'
 import { generateEquipment } from './equipGen'
 import { acquireEquipment, afterWin } from './loot'
-import { useInventoryStore } from '@/stores/inventory'
 import { autoResolveEvent } from './eventEngine'
 import { clearRegionAndUnlockNext } from './exploration'
 import { placeContent } from './mortalWorldService'
@@ -54,7 +53,6 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   const dongfu = useDongfuStore()
   const cultivation = useCultivationStore()
   const adventure = useAdventureStore()
-  const inventory = useInventoryStore()
   const ui = useUiStore()
 
   if (!game.started || player.dead) return null
@@ -65,6 +63,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   const effSec = capSec * OFFLINE_EFFICIENCY
   const notes: string[] = []
   const equipmentGained: OfflineSummary['equipment'] = []
+  /** 离线期间未入包(自动回收/满包化尘)装备化作的器灵尘 */
+  let recycledDust = 0
 
   // ---- 修炼 ----
   const expBefore = { ...player.exp }
@@ -86,11 +86,10 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   const suppressYield = settleSuppressedRegions(dtSec)
   if (suppressYield && !isZero(suppressYield.stone)) {
     notes.push(`镇压诸域仍有余韵:灵石 +${formatGN(suppressYield.stone)}`)
-    if (suppressYield.equipment.length > 0) {
-      for (const eq of suppressYield.equipment) {
-        equipmentGained.push(eq)
-      }
+    for (const eq of suppressYield.equipment) {
+      equipmentGained.push(eq)
     }
+    recycledDust += suppressYield.recycledDust
   }
 
   // ---- 历练挂机 ----
@@ -139,12 +138,11 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         const realCount = Math.min(6, equipCount)
         for (let i = 0; i < realCount; i += 1) {
           const inst = generateEquipment(region.tier, rng, { luck: modOf(mods, 'luck') })
-          acquireEquipment(inst, true)
-          // 只有真正入包的才算"所得装备":自动回收或因满包化尘的都化作器灵尘,不计入清单。
-          // 判据取"uid 是否已入行囊",而非"是否过了回收闸"——满包分支也可能把通过闸的档化尘。
-          if (inventory.findItem(inst.uid)) {
-            equipmentGained.push({ name: equipmentTemplate(inst.templateId)?.name ?? '未知', quality: inst.quality })
-          }
+          const res = acquireEquipment(inst, { quiet: true })
+          // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收;
+          // 器灵尘按 acquire 返回值记账,不再依赖对行囊作 findItem 二次判定。
+          equipmentGained.push({ name: equipmentTemplate(inst.templateId)?.name ?? '未知', quality: inst.quality, recycled: !res.bagged })
+          if (!res.bagged) recycledDust += res.dust
         }
         if (equipCount > realCount) {
           resources.addSmall('dust', (equipCount - realCount) * 4)
@@ -219,6 +217,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     wins,
     events,
     equipment: equipmentGained,
+    recycledDust,
     notes
   }
   if (player.expFull) notes.push('修为已至圆满,可尝试突破')

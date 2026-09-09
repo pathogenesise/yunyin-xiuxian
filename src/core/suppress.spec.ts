@@ -3,6 +3,8 @@ import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
+import { DECOMPOSE_DUST } from '@/data/constants'
+import { qualityDef } from '@/data/qualities'
 import { checkSuppression, settleSuppressedRegions } from './suppress'
 
 describe('区域镇压系统', () => {
@@ -109,16 +111,27 @@ describe('区域镇压系统', () => {
       const inventory = useInventoryStore()
       const resources = useResourcesStore()
 
-      // 模拟随机数确保掉落
-      vi.spyOn(Math, 'random').mockReturnValue(0.1) // 低于 0.4 的概率
+      // 模拟随机数确保掉落(equipChance 0.4 × 1h > 0.1)
+      vi.spyOn(Math, 'random').mockReturnValue(0.1)
 
+      const itemsBefore = inventory.items.length
       const dustBefore = resources.dust
-      settleSuppressedRegions(3600) // 1 小时
+      const total = settleSuppressedRegions(3600) // 1 小时
 
-      // 掉落被正确处置:或者入了行囊,或者命中自动回收化作器灵尘
-      const keptInBag = inventory.items.length > 0
-      const recycled = resources.dust > dustBefore
-      expect(keptInBag || recycled).toBe(true)
+      // 必掉 1 件;处置记账必须自洽:入包则件数+1且不化尘,回收则器灵尘按档位到账且不入包
+      expect(total).not.toBeNull()
+      expect(total!.equipment).toHaveLength(1)
+      const eq = total!.equipment[0]
+      const dustGain = resources.dust - dustBefore
+      if (eq.recycled) {
+        expect(inventory.items.length).toBe(itemsBefore)
+        expect(dustGain).toBe(DECOMPOSE_DUST[qualityDef(eq.quality).rank] ?? 1)
+        expect(total!.recycledDust).toBe(dustGain)
+      } else {
+        expect(inventory.items.length).toBe(itemsBefore + 1)
+        expect(dustGain).toBe(0)
+        expect(total!.recycledDust).toBe(0)
+      }
 
       vi.restoreAllMocks()
     })

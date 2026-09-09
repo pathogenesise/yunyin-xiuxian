@@ -37,7 +37,7 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     for (const q of ['mortal', 'fine'] as const) {
       const dustBefore = resources.dust
       const item = mk(q)
-      const line = acquireEquipment(item)
+      const line = acquireEquipment(item).line
       expect(bagUids()).not.toContain(item.uid)
       expect(resources.dust).toBe(dustBefore + (DECOMPOSE_DUST[qualityDef(q).rank] ?? 1))
       expect(line).toContain('自动回收')
@@ -69,7 +69,7 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
 
   it('新手馈赠(forceKeep)不受回收规则影响,必入包', () => {
     const starter = mk('mortal')
-    acquireEquipment(starter, false, true)
+    acquireEquipment(starter, { forceKeep: true })
     expect(bagUids()).toContain(starter.uid)
   })
 

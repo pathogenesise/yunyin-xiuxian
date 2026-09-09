@@ -12,7 +12,6 @@ import { regionDef } from '@/data/regions'
 import { stoneByTier } from '@/core/formulas'
 import { generateEquipment } from '@/core/equipGen'
 import { acquireEquipment } from '@/core/loot'
-import { useInventoryStore } from '@/stores/inventory'
 import { rng } from '@/utils/random'
 import { gnZero, add } from '@/utils/gnum'
 import type { GNum, QualityId } from '@/types'
@@ -64,7 +63,9 @@ export function checkSuppression(player: ReturnType<typeof usePlayerStore>, regi
  */
 export interface SuppressedYield {
   stone: GNum
-  equipment: { name: string; quality: QualityId }[]
+  equipment: { name: string; quality: QualityId; recycled?: boolean }[]
+  /** 未入包(自动回收/满包化尘)装备化作的器灵尘(由 acquireEquipment 记账) */
+  recycledDust: number
 }
 
 export function settleSuppressedRegions(dt: number): SuppressedYield | null {
@@ -74,7 +75,7 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
   if (player.suppressedRegions.length === 0) return null
 
   const hours = dt / 3600
-  const total: SuppressedYield = { stone: gnZero(), equipment: [] }
+  const total: SuppressedYield = { stone: gnZero(), equipment: [], recycledDust: 0 }
   const now = Date.now()
 
   // Phase 30.9:复苏判定 —— 镇压超过 72h 无活动,区域妖气再聚,自动解除镇压
@@ -114,11 +115,10 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
     const equipChance = SUPPRESS_YIELD_PER_HOUR.equipmentChance * hours
     if (Math.random() < equipChance) {
       const equip = generateEquipment(region.tier, rng, { luck: 0, minQualityRank: 0 })
-      acquireEquipment(equip, true) // quiet=true 避免镇压收益刷屏
-      // 只有真正入包(uid 在行囊)的才算产出:自动回收或满包化尘的都化作器灵尘
-      if (useInventoryStore().findItem(equip.uid)) {
-        total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality })
-      }
+      const res = acquireEquipment(equip, { quiet: true }) // quiet=true 避免镇压收益刷屏
+      // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收
+      total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality, recycled: !res.bagged })
+      if (!res.bagged) total.recycledDust += res.dust
     }
   }
 

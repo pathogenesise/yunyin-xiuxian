@@ -252,7 +252,7 @@
 
     <!-- 一键分解:勾选品质(记忆勾选) -->
     <BaseModal :open="decomposeOpen" title="一键分解" @close="decomposeOpen = false">
-      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊。</p>
+      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊,已存入行囊的同类也会一并化作器灵尘。此规则优先于智能收纳。</p>
       <div class="mt-2 space-y-1">
         <label
           v-for="q in QUALITIES"
@@ -521,9 +521,15 @@
   const decomposeTotal = computed(() => settings.decomposeRanks.reduce((sum, rank) => sum + (decomposeCounts.value[rank] ?? 0), 0))
 
   function toggleRank(rank: number): void {
-    settings.decomposeRanks = settings.decomposeRanks.includes(rank)
-      ? settings.decomposeRanks.filter(r => r !== rank)
-      : [...settings.decomposeRanks, rank].sort((a, b) => a - b)
+    const adding = !settings.decomposeRanks.includes(rank)
+    settings.decomposeRanks = adding
+      ? [...settings.decomposeRanks, rank].sort((a, b) => a - b)
+      : settings.decomposeRanks.filter(r => r !== rank)
+    // 新勾选一档 = 宣告该档是废料:行囊内现存同类(未上锁)一并化尘,与"此后拾取自动回收"对齐
+    if (adding) {
+      const n = decomposeByRanks([rank])
+      if (n > 0) ui.toast(`行囊内 ${QUALITIES[rank]?.name ?? '该档'}×${n} 按新规则化作器灵尘`, 'info')
+    }
   }
 
   function confirmDecompose(): void {
