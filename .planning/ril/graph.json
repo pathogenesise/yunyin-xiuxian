@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 7,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T17:02:24+00:00",
+  "updated_at": "2026-09-09T17:09:44+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -454,11 +454,11 @@
     "ISS-017": {
       "id": "ISS-017",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "abandoned",
+      "version": 2,
       "created_at": "2026-09-09T15:00:00+00:00",
-      "updated_at": "2026-09-09T15:00:00+00:00",
-      "touched_round": 5,
+      "updated_at": "2026-09-09T17:08:25+00:00",
+      "touched_round": 7,
       "summary": "战斗先手判定单位不匹配:玩家侧 speed 是加成倍率(1+mod,装备仅 +3~6%),敌人侧是裸速度值(0.85~1.25)——先手实际只由敌人速度决定,玩家速度装备几乎无意义",
       "severity": 0.55,
       "confidence": 0.7,
@@ -607,6 +607,53 @@
       "touched_round": 7,
       "commit": "9749bab",
       "summary": "移动端存档导出/导入(savePlatform + 视图放行 + manifest 权限)"
+    },
+    "EV-002": {
+      "id": "EV-002",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T17:05:36+00:00",
+      "updated_at": "2026-09-09T17:05:36+00:00",
+      "touched_round": 7,
+      "source": "combat.ts:393 + affixes.ts:80-82 + enemies.ts",
+      "summary": "玩家速度是可堆叠加成(瞬影12-20%×多件可超30%),敌人speed是0.7~1.3的基准值;比较 1+mod >= enemy.speed 使'无速度装'必让1.3快敌先手、'堆速度'可反超——速度属性有真实培养深度,量纲差异是设计而非缺陷",
+      "confidence": 1.0
+    },
+    "HYP-002": {
+      "id": "HYP-002",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T17:05:36+00:00",
+      "updated_at": "2026-09-09T17:05:36+00:00",
+      "touched_round": 7,
+      "confidence": 0.65,
+      "summary": "战斗先手'单位不匹配'实为设计:玩家速度=倍率,敌人=基准值,堆叠才有意义,非bug"
+    },
+    "DEC-004": {
+      "id": "DEC-004",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T17:08:25+00:00",
+      "updated_at": "2026-09-09T17:08:25+00:00",
+      "touched_round": 7,
+      "summary": "ISS-017 战斗先手判定'单位不匹配'评估为非缺陷:玩家速度是可堆叠培养属性(瞬影12-20%×多件可超30%),敌人速度0.7~1.3是基准;1+mod>=enemy.speed 使无速度装必让快敌先手、堆速度可反超,速度属性有真实深度。不做改动",
+      "rationale": "探索代理标注'若为设计本意则问题降级';EV-002 实测速度加成可达30%+,足以抢过1.3基准——量纲差异是设计。改会洗牌61+敌人全部先手判定并破坏平衡模拟测试",
+      "alternatives_rejected": "把敌人速度也转成1+形式(全面改平衡,风险大于收益)/调玩家速度公式(破坏现有build计算)"
+    },
+    "EV-003": {
+      "id": "EV-003",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T17:09:44+00:00",
+      "updated_at": "2026-09-09T17:09:44+00:00",
+      "touched_round": 7,
+      "source": "earlyGameService.ts:119-161 + earlyGame.ts:90 + grep全库零调用",
+      "summary": "突破准备四个函数(BREAKTHROUGH_PREP_OPTIONS/prepareBreakthrough/getBreakthroughPrepBonus/isPreparingBreakthrough)全库零调用方,界面无入口;数据与遥测类别齐全说明设计意图明确但UI未接线;且免费'静坐'+8% 反高于付费'服丹'80灵石+5%",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -843,6 +890,12 @@
       "to": "TASK-003",
       "type": "implements",
       "created_at": "2026-09-09T17:01:12+00:00"
+    },
+    {
+      "from": "EV-002",
+      "to": "HYP-002",
+      "type": "validates",
+      "created_at": "2026-09-09T17:07:00+00:00"
     }
   ]
 }
