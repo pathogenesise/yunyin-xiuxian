@@ -136,6 +136,23 @@ describe('区域镇压系统', () => {
       vi.restoreAllMocks()
     })
 
+    it('长时离线装备按次数期望产出,不再被压成每区仅 1 件', () => {
+      const player = usePlayerStore()
+      player.major = 5
+      player.suppressedRegions = ['qingyun']
+
+      // 24h → equipChance = 0.4×24 = 9.6。旧实现 `random < 9.6` 恒真但只掉 1 件;
+      // 修复后 floor(9.6)=9 + 零头 60% 概率第 10 件。mock 0 → 零头必中,共 10 件
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      const total = settleSuppressedRegions(24 * 3600)
+
+      expect(total).not.toBeNull()
+      expect(total!.equipment.length).toBeGreaterThan(1)
+      expect(total!.equipment).toHaveLength(10)
+
+      vi.restoreAllMocks()
+    })
+
     it('多个镇压区域同时产出', () => {
       const player = usePlayerStore()
       player.major = 5

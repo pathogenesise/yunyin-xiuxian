@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 5,
+  "round": 6,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T15:23:45+00:00",
+  "updated_at": "2026-09-09T15:38:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -471,7 +471,7 @@
       "version": 1,
       "created_at": "2026-09-09T15:01:47+00:00",
       "updated_at": "2026-09-09T15:01:47+00:00",
-      "touched_round": 5,
+      "touched_round": 6,
       "summary": "镇压区域装备掉落概率可>1:equipChance=0.4×hours,在线每tick hours≈0.0003 期望≈0.4/h,但离线大 dt 结算时 24h→9.6 概率恒真却每区只掉 1 件——离线装备产出被压死几倍,与灵石线性产出不同步",
       "severity": 0.5,
       "confidence": 0.95,
@@ -521,6 +521,23 @@
       "summary": "ISS-015 拆分处置:镇压/区域兴衰跨世保留属'世界记忆'设计意图(世界改变不随转世回滚,见 suppress.ts MEMORIAL 叙事)暂不擅改;但 lastCaveEventDay/winStreak/secretRealm/regionEvent 为本世进程标记,跨世保留是纯泄漏,列为修复候选待后续 task",
       "rationale": "镇压系统 Phase 30 注释与 MEMORIAL_CHANCE'重访已镇压之地,世界说起你的旧事'叙事均指向跨世记忆是有意设计;而 samsaraAudit 审计主张区域进度 reset,两相冲突,核心经济改动需人工定夺。本世进程标记泄漏无设计支撑,可安全修复",
       "alternatives_rejected": "整体清空 suppressedRegions(破坏世界记忆设计)/整体不管(放任当日巡游被旧世吃掉)"
+    },
+    "TASK-007": {
+      "id": "TASK-007",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-09T15:38:38+00:00",
+      "updated_at": "2026-09-09T15:38:38+00:00",
+      "touched_round": 6,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1,
+      "summary": "镇压装备掉落概率>1 修正:equipChance=0.4×hours 在离线大 dt 下>1导致概率恒真却只掉1件,改为次数期望(整数件+零头概率),与在线0.4/h对齐",
+      "lock_owner": "yunyin-loop",
+      "lock_until": "2026-09-09T16:23:38+00:00"
     }
   },
   "edges": [
@@ -703,6 +720,12 @@
       "to": "HYP-001",
       "type": "validates",
       "created_at": "2026-09-09T15:19:12+00:00"
+    },
+    {
+      "from": "TASK-007",
+      "to": "ISS-018",
+      "type": "addresses",
+      "created_at": "2026-09-09T15:38:38+00:00"
     }
   ]
 }
