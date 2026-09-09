@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 6,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T15:38:38+00:00",
+  "updated_at": "2026-09-09T16:00:10+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -467,10 +467,10 @@
     "ISS-018": {
       "id": "ISS-018",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T15:01:47+00:00",
-      "updated_at": "2026-09-09T15:01:47+00:00",
+      "updated_at": "2026-09-09T16:00:10+00:00",
       "touched_round": 6,
       "summary": "镇压区域装备掉落概率可>1:equipChance=0.4×hours,在线每tick hours≈0.0003 期望≈0.4/h,但离线大 dt 结算时 24h→9.6 概率恒真却每区只掉 1 件——离线装备产出被压死几倍,与灵石线性产出不同步",
       "severity": 0.5,
@@ -525,19 +525,28 @@
     "TASK-007": {
       "id": "TASK-007",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-09T15:38:38+00:00",
-      "updated_at": "2026-09-09T15:38:38+00:00",
+      "updated_at": "2026-09-09T16:00:10+00:00",
       "touched_round": 6,
       "category": "correctness",
       "severity": 0.55,
       "confidence": 0.95,
       "effort": 1,
       "unlock_factor": 1,
-      "summary": "镇压装备掉落概率>1 修正:equipChance=0.4×hours 在离线大 dt 下>1导致概率恒真却只掉1件,改为次数期望(整数件+零头概率),与在线0.4/h对齐",
-      "lock_owner": "yunyin-loop",
-      "lock_until": "2026-09-09T16:23:38+00:00"
+      "summary": "镇压装备掉落概率>1 修正:equipChance=0.4×hours 在离线大 dt 下>1导致概率恒真却只掉1件,改为次数期望(整数件+零头概率),与在线0.4/h对齐"
+    },
+    "CHG-009": {
+      "id": "CHG-009",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:59:15+00:00",
+      "updated_at": "2026-09-09T15:59:15+00:00",
+      "touched_round": 6,
+      "commit": "8a3c627",
+      "summary": "镇压装备掉落次数期望结算,离线与在线 0.4件/h 对齐"
     }
   },
   "edges": [
@@ -726,6 +735,18 @@
       "to": "ISS-018",
       "type": "addresses",
       "created_at": "2026-09-09T15:38:38+00:00"
+    },
+    {
+      "from": "CHG-009",
+      "to": "ISS-018",
+      "type": "resolves",
+      "created_at": "2026-09-09T15:59:15+00:00"
+    },
+    {
+      "from": "CHG-009",
+      "to": "TASK-007",
+      "type": "implements",
+      "created_at": "2026-09-09T15:59:15+00:00"
     }
   ]
 }
