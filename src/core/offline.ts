@@ -165,8 +165,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           autoResolveEvent(rng.pick(pool), region.tier)
         }
       }
-      // 离线自动挑战区域首领(收益折损,胜则连锁解锁)
-      if (!adventure.cleared.includes(region.id) && wins >= 5) {
+      // 离线自动挑战区域首领(收益折损,胜则连锁解锁;门槛与在线一致,避免离线早一步解锁下一区)
+      if (!adventure.cleared.includes(region.id) && wins >= 10) {
         const bossDef = enemyDef(placeContent(region.id).boss)
         if (bossDef) {
           const dangerFactor = modeDef.dangerMult * (1 + (region.danger - 1) * 0.05)

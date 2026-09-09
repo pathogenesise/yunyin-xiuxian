@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 5,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T14:06:44+00:00",
+  "updated_at": "2026-09-09T14:40:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -292,10 +292,10 @@
     "ISS-012": {
       "id": "ISS-012",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T14:02:00+00:00",
-      "updated_at": "2026-09-09T14:02:00+00:00",
+      "updated_at": "2026-09-09T14:20:14+00:00",
       "touched_round": 5,
       "summary": "悟道顿悟/洞府巡游两事件弹窗从未被任何组件挂载——引擎持续触发(顿悟8%/60s窗口、洞府巡游每日/2min窗口),模块态累积+遥测记录,但玩家永远看不到,奖励静默作废",
       "severity": 0.85,
@@ -305,19 +305,17 @@
     "TASK-004": {
       "id": "TASK-004",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-09T14:03:03+00:00",
-      "updated_at": "2026-09-09T14:04:11+00:00",
+      "updated_at": "2026-09-09T14:20:15+00:00",
       "touched_round": 5,
       "category": "correctness",
       "severity": 0.85,
       "confidence": 0.95,
       "effort": 1,
       "unlock_factor": 1,
-      "summary": "把 EnlightenmentModal 与 CaveEventModal 挂载到 App.vue 全局浮层(与 EventDialog 同级),使顿悟/巡游事件真正可见",
-      "lock_owner": "yunyin-loop",
-      "lock_until": "2026-09-09T14:49:11+00:00"
+      "summary": "把 EnlightenmentModal 与 CaveEventModal 挂载到 App.vue 全局浮层(与 EventDialog 同级),使顿悟/巡游事件真正可见"
     },
     "COMP-002": {
       "id": "COMP-002",
@@ -328,6 +326,77 @@
       "updated_at": "2026-09-09T14:05:15+00:00",
       "touched_round": 5,
       "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
+    },
+    "CHG-007": {
+      "id": "CHG-007",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:18:56+00:00",
+      "updated_at": "2026-09-09T14:18:56+00:00",
+      "touched_round": 5,
+      "commit": "42da204",
+      "summary": "App.vue 挂载 EnlightenmentModal/CaveEventModal 两个事件弹窗,顿悟/巡游事件真正可见"
+    },
+    "ISS-013": {
+      "id": "ISS-013",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:39:28+00:00",
+      "updated_at": "2026-09-09T14:39:28+00:00",
+      "touched_round": 5,
+      "summary": "装备详情「分解」无二次确认——移动端误触即毁含强化/封存/重铸的装备,违背应用自身'删除必二步'模式",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "TASK-005": {
+      "id": "TASK-005",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-09T14:39:28+00:00",
+      "updated_at": "2026-09-09T14:40:15+00:00",
+      "touched_round": 5,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1,
+      "summary": "EquipmentDetailDialog 分解按钮改行内二步确认(与 BuildView/SoulsView 同模式)",
+      "lock_owner": "yunyin-loop",
+      "lock_until": "2026-09-09T15:25:15+00:00"
+    },
+    "ISS-014": {
+      "id": "ISS-014",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T14:39:54+00:00",
+      "updated_at": "2026-09-09T14:39:54+00:00",
+      "touched_round": 5,
+      "summary": "离线与在线区域首领门槛不一致:离线 wins>=5 触发,在线 s.wins>=10 才遇首领——离线以一半门槛拿首领奖励并解锁下一区",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "TASK-006": {
+      "id": "TASK-006",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-09T14:39:54+00:00",
+      "updated_at": "2026-09-09T14:40:15+00:00",
+      "touched_round": 5,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1,
+      "summary": "离线结算首领门槛对齐在线:offline.ts wins>=5 改为 >=10",
+      "lock_owner": "yunyin-loop",
+      "lock_until": "2026-09-09T15:25:15+00:00"
     }
   },
   "edges": [
@@ -432,6 +501,30 @@
       "to": "COMP-002",
       "type": "located_in",
       "created_at": "2026-09-09T14:06:44+00:00"
+    },
+    {
+      "from": "CHG-007",
+      "to": "ISS-012",
+      "type": "resolves",
+      "created_at": "2026-09-09T14:19:26+00:00"
+    },
+    {
+      "from": "CHG-007",
+      "to": "TASK-004",
+      "type": "implements",
+      "created_at": "2026-09-09T14:19:26+00:00"
+    },
+    {
+      "from": "TASK-005",
+      "to": "ISS-013",
+      "type": "addresses",
+      "created_at": "2026-09-09T14:40:15+00:00"
+    },
+    {
+      "from": "TASK-006",
+      "to": "ISS-014",
+      "type": "addresses",
+      "created_at": "2026-09-09T14:40:15+00:00"
     }
   ]
 }
