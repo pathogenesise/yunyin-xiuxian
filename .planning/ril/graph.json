@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 7,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T17:48:01+00:00",
+  "updated_at": "2026-09-09T17:53:32+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -431,11 +431,11 @@
     "ISS-016": {
       "id": "ISS-016",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "abandoned",
+      "version": 2,
       "created_at": "2026-09-09T14:59:19+00:00",
-      "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 5,
+      "updated_at": "2026-09-09T17:53:32+00:00",
+      "touched_round": 7,
       "summary": "突破准备功能全链路死代码——prepareBreakthrough/getBreakthroughPrepBonus/BREAKTHROUGH_PREP_OPTIONS 全仓库零调用,界面无入口,突破成功率加成永不生效;且免费'静坐'+8% 反高于付费'服丹'+5%",
       "severity": 0.5,
       "confidence": 0.9,
@@ -680,6 +680,18 @@
       "touched_round": 7,
       "commit": "c61ca3b",
       "summary": "转世清本世进程(连胜/巡游/秘境/区域事件),保留跨世记忆"
+    },
+    "DEC-005": {
+      "id": "DEC-005",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T17:51:52+00:00",
+      "updated_at": "2026-09-09T17:51:52+00:00",
+      "touched_round": 7,
+      "summary": "ISS-016 突破准备是'写了未接线的功能'而非可删死代码:数据(BREAKTHROUGH_PREP_OPTIONS)、遥测事件类型、choiceAnalysis 引用齐全,设计意图明确,删除会破坏未来接入。处理建议:接线(突破页加入口并消费加成)或连同定价倒挂(免费静坐+8% vs 付费服丹+5%)一并下架,二选一需后续轮次评估,本轮不做",
+      "rationale": "证据 EV-003 显示四函数全库零调用但数据/遥测/分类齐全;删会破坏设计意图,接需要 UI 产品决策;中 severity 未达本轮深探预算线",
+      "alternatives_rejected": "本轮强行接线(缺少产品对入口/定价的决策)/直接删除(破坏设计意图与遥测分类)"
     }
   },
   "edges": [
