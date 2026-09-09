@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 5,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T15:02:45+00:00",
+  "updated_at": "2026-09-09T15:23:45+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -273,7 +273,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:52:36+00:00",
       "updated_at": "2026-09-09T12:52:36+00:00",
-      "touched_round": 3,
+      "touched_round": 5,
       "summary": "移动端(Capacitor)无存档导出/导入入口,存档仅存本地易因卸载/清缓存丢失",
       "severity": 0.5,
       "confidence": 0.8,
@@ -486,6 +486,41 @@
       "updated_at": "2026-09-09T15:01:47+00:00",
       "touched_round": 5,
       "summary": "区域镇压系统(suppress.ts)"
+    },
+    "EV-001": {
+      "id": "EV-001",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:17:40+00:00",
+      "updated_at": "2026-09-09T15:17:40+00:00",
+      "touched_round": 5,
+      "source": "worldMemory.ts:1-20 + reincarnation.ts:211-216",
+      "summary": "镇压/区域兴衰跨世保留有设计依据:'世界记忆'哲学(玩家行为改变区域,叙事层 MEMORIAL_CHANCE 等);但 adventure.cleared=[] 被清空而 suppressedRegions 保留,行为不一致;lastCaveEventDay/winStreak 属当日/本世进程,保留是纯泄漏",
+      "confidence": 1.0
+    },
+    "HYP-001": {
+      "id": "HYP-001",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:18:26+00:00",
+      "updated_at": "2026-09-09T15:18:26+00:00",
+      "touched_round": 5,
+      "confidence": 0.75,
+      "summary": "转世泄漏的确定性成分是有意还是 bug 需拆分:镇压/世界记忆=设计;lastCaveEventDay/winStreak/eventChains=本世进程应清;secretRealm/regionEvent=一次性内容应清"
+    },
+    "DEC-003": {
+      "id": "DEC-003",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-09T15:23:45+00:00",
+      "updated_at": "2026-09-09T15:23:45+00:00",
+      "touched_round": 5,
+      "summary": "ISS-015 拆分处置:镇压/区域兴衰跨世保留属'世界记忆'设计意图(世界改变不随转世回滚,见 suppress.ts MEMORIAL 叙事)暂不擅改;但 lastCaveEventDay/winStreak/secretRealm/regionEvent 为本世进程标记,跨世保留是纯泄漏,列为修复候选待后续 task",
+      "rationale": "镇压系统 Phase 30 注释与 MEMORIAL_CHANCE'重访已镇压之地,世界说起你的旧事'叙事均指向跨世记忆是有意设计;而 samsaraAudit 审计主张区域进度 reset,两相冲突,核心经济改动需人工定夺。本世进程标记泄漏无设计支撑,可安全修复",
+      "alternatives_rejected": "整体清空 suppressedRegions(破坏世界记忆设计)/整体不管(放任当日巡游被旧世吃掉)"
     }
   },
   "edges": [
@@ -662,6 +697,12 @@
       "to": "COMP-004",
       "type": "located_in",
       "created_at": "2026-09-09T15:02:45+00:00"
+    },
+    {
+      "from": "EV-001",
+      "to": "HYP-001",
+      "type": "validates",
+      "created_at": "2026-09-09T15:19:12+00:00"
     }
   ]
 }
