@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 13,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T15:37:11+00:00",
+  "updated_at": "2026-09-10T15:50:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1132,10 +1132,10 @@
     "TASK-021": {
       "id": "TASK-021",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-10T14:42:00+00:00",
-      "updated_at": "2026-09-10T14:42:00+00:00",
+      "updated_at": "2026-09-10T15:50:21+00:00",
       "touched_round": 13,
       "category": "maintainability",
       "severity": 0.4,
@@ -1146,10 +1146,10 @@
     "ISS-022": {
       "id": "ISS-022",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-10T14:43:03+00:00",
-      "updated_at": "2026-09-10T14:43:03+00:00",
+      "updated_at": "2026-09-10T15:49:48+00:00",
       "touched_round": 13,
       "severity": 0.3,
       "confidence": 0.95,
@@ -1265,6 +1265,17 @@
       "touched_round": 13,
       "commit": "5d23f49",
       "summary": "突破准备接线:breakthroughPrepState/consumeBreakthroughPrep 重构、rate 并入就绪加成、尝试时消费、CultivationView 新增准备UI(仅无劫);硬化 gnum.cmp 未归一化比较"
+    },
+    "CHG-028": {
+      "id": "CHG-028",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:49:05+00:00",
+      "updated_at": "2026-09-10T15:49:05+00:00",
+      "touched_round": 13,
+      "commit": "7aca79c",
+      "summary": "移除被灵兽性格取代的探索路线/陪行灵兽死代码:getCurrentRouteConfig/getCompanionBonus(含TODO)、selectedRoute/companionBeastId 及 setter、ROUTE_CONFIGS、ExplorationRoute/RouteConfig 类型;突破准备/闭关数据保留"
     }
   },
   "edges": [
@@ -1711,6 +1722,18 @@
       "to": "TASK-023",
       "type": "governs",
       "created_at": "2026-09-10T15:36:11+00:00"
+    },
+    {
+      "from": "CHG-028",
+      "to": "TASK-021",
+      "type": "implements",
+      "created_at": "2026-09-10T15:49:05+00:00"
+    },
+    {
+      "from": "CHG-028",
+      "to": "ISS-022",
+      "type": "resolves",
+      "created_at": "2026-09-10T15:49:05+00:00"
     }
   ]
 }

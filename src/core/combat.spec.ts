@@ -63,6 +63,14 @@ describe('自动战斗', () => {
     expect(rate).toBeGreaterThan(0.3)
   })
 
+  it('sampleWinRate 取样数超表长时顶格,不越界取到 undefined→NaN', () => {
+    // 表是 4 档(0.08/0.4/0.72/0.93),samples=5 且全胜时旧代码算 table[5] → NaN
+    const enemy = makeEnemySnap(wolf, 1, 1)
+    const rate = sampleWinRate(playerSnap(1000), enemy, seeded(9), 5)
+    expect(rate).toBe(0.93)
+    expect(Number.isFinite(rate)).toBe(true)
+  })
+
   it('开局裸装带竹剑即可胜一层小怪(新手体验保护)', () => {
     // 炼气二层近似:基础三维 + 一柄凡品竹剑
     const p: CombatantSnap = {

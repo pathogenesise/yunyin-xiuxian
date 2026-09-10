@@ -469,5 +469,7 @@ export function sampleWinRate(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     if (resolveCombat(pSnap, eSnap, rng, rules).win) wins += 1
   }
   const table = [0.08, 0.4, 0.72, 0.93]
-  return table[Math.min(samples, wins)]!
+  // 索引夹到表长内:samples 取 >3 时 Math.min(samples, wins) 会越界取到 undefined →
+  // 静默变 NaN,被调用方当作胜率一路传导(离线收益/远征)。表是 4 档,顶格就是 0.93
+  return table[Math.min(table.length - 1, wins)]!
 }
