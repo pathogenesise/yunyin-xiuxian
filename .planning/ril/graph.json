@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 13,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T14:51:03+00:00",
+  "updated_at": "2026-09-10T15:05:07+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1169,18 +1169,16 @@
     "TASK-022": {
       "id": "TASK-022",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-10T14:50:40+00:00",
-      "updated_at": "2026-09-10T14:51:03+00:00",
+      "updated_at": "2026-09-10T15:04:38+00:00",
       "touched_round": 13,
       "category": "correctness",
       "severity": 0.8,
       "confidence": 0.95,
       "effort": 3,
-      "summary": "连胜机制接线:earlyGameService.recordWin/recordLoss/WIN_STREAK_REWARDS(3/5/10连胜奖励)从无调用方,连胜恒为0、奖励从不发放;需在 exploration.runBattle 胜负处接线并发放阈值奖励;注意与 worldMemory.recordLoss 同名冲突",
-      "lock_owner": "loop-2026-09-10",
-      "lock_until": "2026-09-10T15:51:03+00:00"
+      "summary": "连胜机制接线:earlyGameService.recordWin/recordLoss/WIN_STREAK_REWARDS(3/5/10连胜奖励)从无调用方,连胜恒为0、奖励从不发放;需在 exploration.runBattle 胜负处接线并发放阈值奖励;注意与 worldMemory.recordLoss 同名冲突"
     },
     "TASK-023": {
       "id": "TASK-023",
@@ -1209,6 +1207,41 @@
       "confidence": 0.6,
       "effort": 5,
       "summary": "闭关机制:startRetreat/isRetreating 无调用方,需设计闭关的玩法承载(UI/收益/与在线修炼的关系)后再接线,暂缓"
+    },
+    "CHG-026": {
+      "id": "CHG-026",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:03:45+00:00",
+      "updated_at": "2026-09-10T15:03:45+00:00",
+      "touched_round": 13,
+      "commit": "d7a31be",
+      "summary": "连胜机制接线:runBattle 胜负驱动 earlyGameService.recordWin/recordLoss,3/5/10档发奖;别名导入规避与 worldMemory.recordLoss 撞名;离线圈不参与连胜"
+    },
+    "ISS-023": {
+      "id": "ISS-023",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:04:38+00:00",
+      "updated_at": "2026-09-10T15:04:38+00:00",
+      "touched_round": 13,
+      "severity": 0.6,
+      "confidence": 0.9,
+      "summary": "突破准备承诺不生效:BREAKTHROUGH_PREP_OPTIONS(静坐调息+8%·3min / 聚气丹80灵石+5%)与 prepareBreakthrough 状态机无调用方,attemptBreakthrough 从不读 prep 加成 —— 图鉴/文案宣称的准备增益是空头支票"
+    },
+    "ISS-024": {
+      "id": "ISS-024",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:04:39+00:00",
+      "updated_at": "2026-09-10T15:04:39+00:00",
+      "touched_round": 13,
+      "severity": 0.4,
+      "confidence": 0.7,
+      "summary": "闭关机制未接线:startRetreat/isRetreating/retreat buff/retreatEndTime 无调用方,需先定玩法承载(UI/收益/在线关系)再接线"
     }
   },
   "edges": [
@@ -1607,6 +1640,36 @@
       "to": "ISS-021",
       "type": "resolves",
       "created_at": "2026-09-10T14:49:31+00:00"
+    },
+    {
+      "from": "CHG-026",
+      "to": "TASK-022",
+      "type": "implements",
+      "created_at": "2026-09-10T15:04:08+00:00"
+    },
+    {
+      "from": "TASK-023",
+      "to": "ISS-023",
+      "type": "addresses",
+      "created_at": "2026-09-10T15:05:07+00:00"
+    },
+    {
+      "from": "TASK-024",
+      "to": "ISS-024",
+      "type": "addresses",
+      "created_at": "2026-09-10T15:05:07+00:00"
+    },
+    {
+      "from": "ISS-023",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-10T15:05:07+00:00"
+    },
+    {
+      "from": "ISS-024",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-10T15:05:07+00:00"
     }
   ]
 }

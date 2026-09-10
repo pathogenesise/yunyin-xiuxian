@@ -146,15 +146,50 @@ export function prepareBreakthrough(optionId: string): boolean {
   return false
 }
 
-/** 获取突破准备加成 */
-export function getBreakthroughPrepBonus(): number {
-  if (breakthroughPrepEndTime && Date.now() < breakthroughPrepEndTime) {
-    return 0 // 静坐中,尚未完成
+export interface BreakthroughPrepView {
+  /** 是否正在静坐调息(3 分钟未完) */
+  sitting: boolean
+  /** 调息剩余秒数 */
+  remainingSec: number
+  /** 加成是否已就绪可用(静坐 3 分钟完成 / 聚气丹支付即了) */
+  ready: boolean
+  /** 就绪加成:静坐 0.08 / 聚气丹 0.05 */
+  bonus: number
+  kind: 'meditate' | 'pill' | null
+}
+
+/**
+ * 突破准备当前状态(只读,不消费)。
+ * 语义:静坐调息要坐满 3 分钟才转「就绪」;聚气丹支付即了就绪;
+ * 两者都是一次性加成,突破时经 consumeBreakthroughPrep 取走后即空
+ * (模块态,随页面刷新归零,与顿悟/巡游同一生命周期)。
+ */
+export function breakthroughPrepState(): BreakthroughPrepView {
+  if (breakthroughPrepEndTime !== null) {
+    const remainSec = Math.ceil((breakthroughPrepEndTime - Date.now()) / 1000)
+    if (remainSec > 0) {
+      return { sitting: true, remainingSec: remainSec, ready: false, bonus: 0, kind: 'meditate' }
+    }
   }
-  const bonus = breakthroughPrepBonus
+  if (breakthroughPrepBonus === 0) {
+    return { sitting: false, remainingSec: 0, ready: false, bonus: 0, kind: null }
+  }
+  return {
+    sitting: false,
+    remainingSec: 0,
+    ready: true,
+    bonus: breakthroughPrepBonus,
+    kind: breakthroughPrepEndTime === null ? 'pill' : 'meditate'
+  }
+}
+
+/** 取走就绪的突破准备加成(一次性;未就绪返回 0 且不动状态) */
+export function consumeBreakthroughPrep(): number {
+  const s = breakthroughPrepState()
+  if (!s.ready) return 0
   breakthroughPrepBonus = 0
   breakthroughPrepEndTime = null
-  return bonus
+  return s.bonus
 }
 
 /** 检查是否在突破准备中 */

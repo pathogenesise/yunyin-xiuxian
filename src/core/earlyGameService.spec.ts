@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
-import { toNum } from '@/utils/gnum'
+import { gn, toNum } from '@/utils/gnum'
 import {
   dismissCaveEvent,
   dismissEnlightenment,
@@ -11,7 +11,10 @@ import {
   mayTriggerCaveEvent,
   mayTriggerEnlightenment,
   recordWin,
-  recordLoss
+  recordLoss,
+  prepareBreakthrough,
+  breakthroughPrepState,
+  consumeBreakthroughPrep
 } from './earlyGameService'
 
 describe('洞府巡游(Phase 28)', () => {
@@ -97,5 +100,58 @@ describe('连胜(Phase 28 · 曾经无调用方,TASK-022 接线后)', () => {
     player.winStreak = 7
     recordLoss()
     expect(player.winStreak).toBe(0)
+  })
+})
+
+describe('突破准备(Phase 28 · TASK-023 接线后)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    consumeBreakthroughPrep() // 清掉上个用例残留的准备态(模块级单例)
+  })
+
+  it('静坐调息:开始为坐定态,3 分钟完转为就绪,+8% 一次性可取', () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(1_000_000)
+      expect(prepareBreakthrough('meditate')).toBe(true)
+
+      let s = breakthroughPrepState()
+      expect(s.sitting).toBe(true)
+      expect(s.ready).toBe(false)
+      expect(s.remainingSec).toBe(180)
+      // 坐定未完,突破无加成可取,且不耗准备
+      expect(consumeBreakthroughPrep()).toBe(0)
+      expect(s.sitting).toBe(true)
+
+      vi.advanceTimersByTime(181_000)
+      s = breakthroughPrepState()
+      expect(s.sitting).toBe(false)
+      expect(s.ready).toBe(true)
+      expect(s.bonus).toBeCloseTo(0.08)
+
+      expect(consumeBreakthroughPrep()).toBeCloseTo(0.08)
+      // 一次性:取过即空
+      expect(consumeBreakthroughPrep()).toBe(0)
+      expect(breakthroughPrepState().ready).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('服聚气丹:支付 80 灵石立即可取 +5%;灵石不足则拒绝', () => {
+    const resources = useResourcesStore()
+    resources.addStone(gn(100))
+
+    expect(prepareBreakthrough('pill')).toBe(true)
+    // GNum 减法在整数量级有浮点尾噪(19.9999…),显示层 formatGN 已兜底,断言取容差
+    expect(toNum(resources.spiritStone)).toBeCloseTo(20)
+    expect(breakthroughPrepState().ready).toBe(true)
+    expect(breakthroughPrepState().bonus).toBeCloseTo(0.05)
+    expect(consumeBreakthroughPrep()).toBeCloseTo(0.05)
+
+    // 灵石不足:拒绝且不动加成
+    resources.$patch({ spiritStone: gn(10) })
+    expect(prepareBreakthrough('pill')).toBe(false)
+    expect(breakthroughPrepState().ready).toBe(false)
   })
 })

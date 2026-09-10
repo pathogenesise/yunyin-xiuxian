@@ -47,6 +47,18 @@ describe('GameNumber 大数运算', () => {
     expect(gte(gn(5), gn(5))).toBe(true)
   })
 
+  it('未归一化输入也能正确比较(指数序只在 [1,10) 尾数下成立)', () => {
+    // $patch / 手工构造的 {m:1e12,e:0} 未经 normalize,照旧实现会被误判为小于 92
+    expect(cmp({ m: 1e12, e: 0 }, { m: 9.2, e: 1 })).toBe(1) // 1e12 > 92
+    expect(gte({ m: 1e12, e: 0 }, { m: 9.2, e: 1 })).toBe(true)
+    expect(cmp({ m: 500, e: 0 }, gn(1000))).toBe(-1) // 500 < 1000,但尾数未归一化
+    // 负号方向不因对齐翻转
+    expect(cmp({ m: -100, e: 3 }, { m: -1, e: 6 })).toBe(1) // -1e5 > -1e6
+    // 量级悬殊仍走指数序(NEGLIGIBLE_EXP_DIFF 之外)
+    expect(cmp(gn(1e30), gn(1))).toBe(1)
+    expect(cmp(gn(1), gn(1e30))).toBe(-1)
+  })
+
   it('同为负数时按数值序比较', () => {
     // 指数不同:负指数越大负得越狠,数值越小(-100000 < -100)
     expect(cmp({ m: -1, e: 5 }, { m: -1, e: 3 })).toBe(-1)

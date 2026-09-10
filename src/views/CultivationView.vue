@@ -75,6 +75,21 @@
         </template>
         <template v-else-if="btInfo.isMajor">· 大境界之槛</template>
       </p>
+
+      <!-- Phase 28 突破准备:静坐调息 / 服聚气丹(无劫突破时,一次性加成) -->
+      <div v-if="!btInfo.needTribulation" class="mt-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
+        <div class="flex items-center justify-between text-[10px] text-ink-faint">
+          <span>突破准备(一次有效)</span>
+          <span v-if="btInfo.prep.sitting" class="text-amber-ink">调息中 · {{ formatDuration(btInfo.prep.remainingSec) }}</span>
+          <span v-else-if="btInfo.prep.ready" class="text-jade">加成 +{{ Math.round(btInfo.prep.bonus * 100) }}% 就绪</span>
+        </div>
+        <div v-if="!btInfo.prep.sitting && !btInfo.prep.ready" class="mt-1.5 flex gap-1.5">
+          <button type="button" class="chip-ink text-[10px]" @click="startPrep('meditate')">静坐调息 · 3分钟 +8%</button>
+          <button type="button" class="chip-ink text-[10px]" :disabled="!prepCanPill" @click="startPrep('pill')">
+            服聚气丹 · 80灵石 +5%
+          </button>
+        </div>
+      </div>
       <button
         class="btn-seal mt-3 w-full !py-3"
         :class="{ 'animate-glow-pulse pulse-ready': btInfo.ready }"
@@ -182,6 +197,8 @@
   import { useInventoryStore } from '@/stores/inventory'
   import { useUiStore } from '@/stores/ui'
   import { attemptBreakthrough, breakthroughInfo } from '@/core/breakthrough'
+  import { prepareBreakthrough } from '@/core/earlyGameService'
+  import { toNum } from '@/utils/gnum'
   import { currentTribulationPlan, verdictLabel, type TribulationPlan } from '@/core/tribulationDecision'
   import { reliefElements, rootElements } from '@/core/linggenAffinity'
   import { comprehendGongfa } from '@/core/gongfaService'
@@ -209,6 +226,17 @@
   const now = useNow()
 
   const btInfo = computed(() => breakthroughInfo())
+
+  // Phase 28 突破准备:服聚气丹需 80 灵石,不够则置灰
+  const prepCanPill = computed(() => toNum(resources.spiritStone) >= 80)
+
+  function startPrep(option: 'meditate' | 'pill'): void {
+    if (prepareBreakthrough(option)) {
+      ui.toast(option === 'meditate' ? '你盘膝入定,静待调息完成' : '丹药入腹,气机已然蓄足', 'info')
+    } else {
+      ui.toast('灵石不足,无以备药', 'warn')
+    }
+  }
 
   // Phase 32.0 天劫决策:劫型 + 准备度(仅大关天劫时)
   const PLAN_COLOR: Record<TribulationPlan['verdict'], string> = {

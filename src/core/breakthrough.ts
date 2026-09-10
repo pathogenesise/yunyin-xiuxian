@@ -19,6 +19,8 @@ import { useUiStore } from '@/stores/ui'
 import type { BreakthroughView } from '@/stores/ui'
 import type { StatMods } from '@/types'
 import { playSfx } from './audio'
+// Phase 28 突破准备:静坐/服丹的一次性加成(见 earlyGameService;仅无劫突破受益)
+import { breakthroughPrepState, consumeBreakthroughPrep, type BreakthroughPrepView } from './earlyGameService'
 
 export interface BreakthroughInfo {
   ready: boolean
@@ -30,6 +32,8 @@ export interface BreakthroughInfo {
   isMajor: boolean
   needTribulation: boolean
   targetLabel: string
+  /** 突破准备状态(就绪时 rate 已并入加成,见 AN 接线) */
+  prep: BreakthroughPrepView
 }
 
 /** 蒙特卡洛采样次数:渡劫波次少(4~15),几千次也在毫秒级 */
@@ -79,7 +83,14 @@ export function breakthroughInfo(): BreakthroughInfo {
   const needTribulation = isMajor && realmDef(nextMajor).tribulation && player.major < nextMajor
   const qiCost = Math.floor(player.qiCapValue * BT_QI_COST_RATIO)
   const mods = player.finalStats.mods
-  const rate = clampRate(breakthroughBaseRate(player.major, player.sub) + modOf(mods, 'breakthroughRate') + modOf(mods, 'luck') * 0.05)
+  // Phase 28 突破准备:就绪的静坐/丹药加成并入展示率(消费在 attemptBreakthrough,一次性)
+  const prep = breakthroughPrepState()
+  const rate = clampRate(
+    breakthroughBaseRate(player.major, player.sub) +
+      modOf(mods, 'breakthroughRate') +
+      modOf(mods, 'luck') * 0.05 +
+      (prep.ready ? prep.bonus : 0)
+  )
   let ready = true
   let reason = ''
   if (player.atMaxRealm) {
@@ -100,7 +111,8 @@ export function breakthroughInfo(): BreakthroughInfo {
     qiCost,
     isMajor,
     needTribulation,
-    targetLabel: realmLabel(nextMajor, nextSub)
+    targetLabel: realmLabel(nextMajor, nextSub),
+    prep
   }
 }
 
@@ -153,6 +165,8 @@ export function attemptBreakthrough(): BreakthroughView | null {
     tribulationLog = result.log
     track('tribulations')
   } else {
+    // 无劫突破消费掉就绪的准备加成(info.rate 已并入,见 breakthroughInfo peek)
+    consumeBreakthroughPrep()
     success = rng.chance(info.rate)
   }
 

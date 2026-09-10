@@ -2,10 +2,12 @@
 /**
  * 突破服务 —— 渡劫成功率推演
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { tribulationSuccessRate, breakthroughInfo } from './breakthrough'
+import { tribulationSuccessRate, breakthroughInfo, attemptBreakthrough } from './breakthrough'
 import { buildTribulationPlan, currentTribulationPlan } from './tribulationDecision'
+import { prepareBreakthrough, breakthroughPrepState, consumeBreakthroughPrep } from './earlyGameService'
+import { gn } from '@/utils/gnum'
 import type { StatMods } from '@/types'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
@@ -73,6 +75,36 @@ describe('渡劫成功率推演', () => {
         expect(plan.prep[dim]).toBeLessThanOrEqual(3)
       }
       console.log(`  劫型=${plan.title} 档=${plan.verdict} 准备度=${JSON.stringify(plan.prep)}`)
+    }
+  })
+
+  it('突破准备就绪计入成功率;尝试突破后一次性消耗(TASK-023)', () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(1_000_000)
+      const player = usePlayerStore()
+      const resources = useResourcesStore()
+      // major:0 sub:3 —— 非大关,走平概率掷点(渡劫不食此益,见 DEC)
+      player.$patch({ major: 0, sub: 3, exp: { m: 1e12, e: 0 } })
+      resources.$patch({ qi: 99999 })
+      const base = breakthroughInfo().rate
+      expect(breakthroughInfo().needTribulation).toBe(false)
+
+      resources.addStone(gn(80))
+      expect(prepareBreakthrough('pill')).toBe(true)
+      const withPrep = breakthroughInfo()
+      expect(withPrep.prep.ready).toBe(true)
+      expect(withPrep.rate).toBeCloseTo(Math.min(1, base + 0.05))
+
+      // 尝试突破后,加成一次性消费。掷点成败与消费无关(消费在掷点前),
+      // 不做概率断言——rng 是按值捕获的 Math.random,spyOn 替不掉它
+      const view = attemptBreakthrough()
+      expect(view).not.toBeNull()
+      expect(breakthroughPrepState().ready).toBe(false)
+      expect(consumeBreakthroughPrep()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+      vi.restoreAllMocks()
     }
   })
 
