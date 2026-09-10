@@ -50,7 +50,7 @@
           <span>{{ t.text }}</span>
         </p>
       </div>
-      <button class="btn-ghost mt-4 w-full" :disabled="rerollsLeft <= 0" @click="reroll">逆天改命(余 {{ rerollsLeft }} 次)</button>
+      <button class="btn-ghost mt-4 w-full" :disabled="starting || rerollsLeft <= 0" @click="reroll">逆天改命(余 {{ rerollsLeft }} 次)</button>
     </div>
 
     <div class="grow" />
@@ -104,6 +104,9 @@
   const tendencies = computed(() => tendencyLines(rootElements(profile.value.roots)))
 
   function reroll(): void {
+    // 鉴定动画进行中禁止重掷:begin 已按当时的 profile 建号,
+    // 此刻重掷既改不了已成真身的灵根,又白扣一次「逆天改命」
+    if (starting.value) return
     if (!game.spendCreateReroll()) return
     game.setCreateProfile(rollLinggen(rng))
   }
