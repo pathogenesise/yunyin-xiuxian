@@ -24,6 +24,10 @@ import { useUiStore } from '@/stores/ui'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
 import { recordLoss, isNemesis, markAvenged, ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE } from './worldMemory'
 import { personalityEffects } from './petPersonality'
+// 连胜与宿敌各有一个 recordLoss,一个管连胜清空、一个管宿敌(败北阈值):
+// 前者来自 Phase 28 前期玩法(earlyGameService),后者来自世界记忆(worldMemory),
+// 这里都走别名,免得互相遮蔽
+import { recordWin as recordStreakWin, recordLoss as recordStreakLoss } from './earlyGameService'
 import { currentRegionEvent, regionEventDef, rollRegionEvent } from './regionEvent'
 import { noteEnemy } from './loreService'
 import { noteTaboo } from './samsaraService'
@@ -188,6 +192,8 @@ function runBattle(now: number): void {
 
   if (result.win) {
     track('kills')
+    // Phase 28 连胜:再下一城,3/5/10 档发放只管奖(见 earlyGameService.recordWin)
+    recordStreakWin()
     // Phase 31 A2:区域事件掉落修正(妖潮/古墓/商队更丰)
     const regReward = regEv ? (regionEventDef(regEv.eventId)?.rewardMult ?? 1) : 1
     const drops = afterWin(region, modeDef.rewardMult * regReward, Boolean(eDef.isBoss))
@@ -233,6 +239,8 @@ function runBattle(now: number): void {
     cultivation.addBuff('injury', now)
     adventure.setSession({ ...s, losses: s.losses + 1 })
 
+    // Phase 28 连胜:真正的败北清空连胜(灵兽护住的那次不在此列)
+    recordStreakLoss()
     // Phase 30.9 S2: 记录败北,达到阈值标记宿敌
     const { list, becameNemesis } = recordLoss(player.nemeses, eDef.id, eDef.name, region.id, now)
     if (becameNemesis) {

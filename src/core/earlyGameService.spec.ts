@@ -1,13 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
+import { useResourcesStore } from '@/stores/resources'
+import { toNum } from '@/utils/gnum'
 import {
   dismissCaveEvent,
   dismissEnlightenment,
   getCurrentCaveEvent,
   getCurrentEnlightenment,
   mayTriggerCaveEvent,
-  mayTriggerEnlightenment
+  mayTriggerEnlightenment,
+  recordWin,
+  recordLoss
 } from './earlyGameService'
 
 describe('洞府巡游(Phase 28)', () => {
@@ -53,5 +57,45 @@ describe('悟道顿悟(Phase 28)', () => {
     dismissEnlightenment()
     expect(getCurrentEnlightenment()).toBeNull()
     vi.restoreAllMocks()
+  })
+})
+
+describe('连胜(Phase 28 · 曾经无调用方,TASK-022 接线后)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('第 3/5/10 连胜发放对应奖励,中间档不发', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    player.initCharacter('连胜测试', { roots: [] } as never)
+
+    player.winStreak = 2
+    recordWin()
+    expect(player.winStreak).toBe(3)
+    expect(toNum(resources.spiritStone)).toBe(20)
+    expect(resources.wudao).toBe(1)
+
+    recordWin() // 4:非奖励档
+    expect(player.winStreak).toBe(4)
+    expect(toNum(resources.spiritStone)).toBe(20)
+
+    player.winStreak = 4
+    recordWin() // 5
+    expect(toNum(resources.spiritStone)).toBe(60)
+    expect(resources.wudao).toBe(3)
+
+    player.winStreak = 9
+    recordWin() // 10
+    expect(toNum(resources.spiritStone)).toBe(160)
+    expect(resources.wudao).toBe(8)
+  })
+
+  it('败北重置连胜', () => {
+    const player = usePlayerStore()
+    player.initCharacter('连胜测试', { roots: [] } as never)
+    player.winStreak = 7
+    recordLoss()
+    expect(player.winStreak).toBe(0)
   })
 })

@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 13,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T14:43:46+00:00",
+  "updated_at": "2026-09-10T14:51:03+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1094,18 +1094,16 @@
     "TASK-020": {
       "id": "TASK-020",
       "type": "task",
-      "status": "active",
-      "version": 3,
+      "status": "resolved",
+      "version": 5,
       "created_at": "2026-09-10T14:24:00+00:00",
-      "updated_at": "2026-09-10T14:42:24+00:00",
+      "updated_at": "2026-09-10T14:49:56+00:00",
       "touched_round": 13,
       "category": "correctness",
       "severity": 0.75,
       "confidence": 0.95,
       "effort": 4,
-      "summary": "灵兽性格效果接线补齐(描述即承诺,但从未生效):dropLuck(贪宝+稀掉落/谨慎-稀掉宝)接入 loot.afterWin 与 offline 装备品质luck;lossReduction(慢稳/谨慎降低失败率)接入 exploration.runBattle,败北低概率由灵兽护住免重伤不计败绩",
-      "lock_owner": "loop-2026-09-10",
-      "lock_until": "2026-09-10T15:42:24+00:00"
+      "summary": "灵兽性格效果接线补齐(描述即承诺,但从未生效):dropLuck(贪宝+稀掉落/谨慎-稀掉宝)接入 loot.afterWin 与 offline 装备品质luck;lossReduction(慢稳/谨慎降低失败率)接入 exploration.runBattle,败北低概率由灵兽护住免重伤不计败绩"
     },
     "DEC-007": {
       "id": "DEC-007",
@@ -1122,10 +1120,10 @@
     "ISS-021": {
       "id": "ISS-021",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-10T14:42:00+00:00",
-      "updated_at": "2026-09-10T14:42:00+00:00",
+      "updated_at": "2026-09-10T14:49:32+00:00",
       "touched_round": 13,
       "severity": 0.75,
       "confidence": 0.95,
@@ -1156,6 +1154,61 @@
       "severity": 0.3,
       "confidence": 0.95,
       "summary": "Phase 28 探索路线/陪行灵兽死代码残留:companionBeastId/setCompanionBeast/getCompanionBonus(getCompanionBonus 带 TODO)/getCurrentRouteConfig/selectedRoute/setSelectedRoute/ROUTE_CONFIGS 全无调用方,被 Phase 31 灵兽性格取代;占 store 序列化体积与心智噪音,易被后续误当功能入口"
+    },
+    "CHG-025": {
+      "id": "CHG-025",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:48:47+00:00",
+      "updated_at": "2026-09-10T14:48:47+00:00",
+      "touched_round": 13,
+      "commit": "2a2b802",
+      "summary": "灵兽性格接线:dropLuck→afterWin/offline 品质 luck;lossReduction→runBattle 败北护主掷点;新增 exploration.spec + loot.petLuck.spec;test-report 登记分类"
+    },
+    "TASK-022": {
+      "id": "TASK-022",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-10T14:50:40+00:00",
+      "updated_at": "2026-09-10T14:51:03+00:00",
+      "touched_round": 13,
+      "category": "correctness",
+      "severity": 0.8,
+      "confidence": 0.95,
+      "effort": 3,
+      "summary": "连胜机制接线:earlyGameService.recordWin/recordLoss/WIN_STREAK_REWARDS(3/5/10连胜奖励)从无调用方,连胜恒为0、奖励从不发放;需在 exploration.runBattle 胜负处接线并发放阈值奖励;注意与 worldMemory.recordLoss 同名冲突",
+      "lock_owner": "loop-2026-09-10",
+      "lock_until": "2026-09-10T15:51:03+00:00"
+    },
+    "TASK-023": {
+      "id": "TASK-023",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:50:40+00:00",
+      "updated_at": "2026-09-10T14:50:40+00:00",
+      "touched_round": 13,
+      "category": "core-feature",
+      "severity": 0.6,
+      "confidence": 0.9,
+      "effort": 5,
+      "summary": "突破准备接线:BREAKTHROUGH_PREP_OPTIONS(静坐调息+8%·3min / 聚气丹80灵石+5%)与 prepareBreakthrough 状态机无调用方,attemptBreakthrough 从不读 prep 加成;需提供触发UI+在突破判定前叠加成"
+    },
+    "TASK-024": {
+      "id": "TASK-024",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:50:40+00:00",
+      "updated_at": "2026-09-10T14:50:40+00:00",
+      "touched_round": 13,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.6,
+      "effort": 5,
+      "summary": "闭关机制:startRetreat/isRetreating 无调用方,需设计闭关的玩法承载(UI/收益/与在线修炼的关系)后再接线,暂缓"
     }
   },
   "edges": [
@@ -1542,6 +1595,18 @@
       "to": "COMP-002",
       "type": "located_in",
       "created_at": "2026-09-10T14:43:46+00:00"
+    },
+    {
+      "from": "CHG-025",
+      "to": "TASK-020",
+      "type": "implements",
+      "created_at": "2026-09-10T14:49:31+00:00"
+    },
+    {
+      "from": "CHG-025",
+      "to": "ISS-021",
+      "type": "resolves",
+      "created_at": "2026-09-10T14:49:31+00:00"
     }
   ]
 }

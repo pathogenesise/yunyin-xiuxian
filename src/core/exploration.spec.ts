@@ -22,7 +22,7 @@ import { tickExploration } from './exploration'
  */
 const CAUTIOUS_LOSS_REDUCTION = 0.04
 
-const { protect } = vi.hoisted(() => ({ protect: { value: false } }))
+const { protect, combatWin } = vi.hoisted(() => ({ protect: { value: false }, combatWin: { value: false } }))
 
 vi.mock('@/utils/random', async importOriginal => {
   const mod = await importOriginal<typeof import('@/utils/random')>()
@@ -40,12 +40,12 @@ vi.mock('@/utils/random', async importOriginal => {
   }
 })
 
-// 固定让每一战都输:resolveCombat 恒败,makeEnemySnap 恒为占位敌
+// resolveCombat 恒为可控胜负(默认败),makeEnemySnap 恒为占位敌
 vi.mock('./combat', async importOriginal => {
   const mod = await importOriginal<typeof import('./combat')>()
   return {
     ...mod,
-    resolveCombat: () => ({ win: false, rounds: 5, playerHpPct: 0.4 }),
+    resolveCombat: () => (combatWin.value ? { win: true, rounds: 5, playerHpPct: 0.9 } : { win: false, rounds: 5, playerHpPct: 0.4 }),
     makeEnemySnap: () => ({ hp: 100, def: 10, atk: 10 })
   }
 })
@@ -70,6 +70,7 @@ describe('灵兽性格 · 败北保护(lossReduction 接入 runBattle)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     protect.value = false
+    combatWin.value = false
   })
 
   it('谨慎灵兽败北时护住:不加重伤、不计败绩、历练继续', () => {
@@ -120,5 +121,47 @@ describe('灵兽性格 · 败北保护(lossReduction 接入 runBattle)', () => {
     const adventure = useAdventureStore()
     expect(cultivation.buffs.some(b => b.defId === 'injury')).toBe(true)
     expect(adventure.session).toBeNull()
+  })
+})
+
+describe('连胜(TASK-022 接线 · runBattle 胜负驱动 player.winStreak)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    protect.value = false
+    combatWin.value = false
+  })
+
+  it('战场得胜让连胜 +1', () => {
+    const player = usePlayerStore()
+    player.initCharacter('连胜测试', { roots: [] } as never)
+    const now = Date.now()
+    forgeSession(now)
+
+    combatWin.value = true
+    tickExploration(now)
+
+    expect(player.winStreak).toBe(1)
+  })
+
+  it('真正的败北重置连胜(3→0);灵兽护住的那次不重置', () => {
+    const player = usePlayerStore()
+    player.initCharacter('连胜测试', { roots: [] } as never)
+    player.setPet('pet_yueying') // cautious → lossReduction 0.04
+    player.winStreak = 3
+    const now = Date.now()
+    forgeSession(now)
+
+    protect.value = true // 败北被护住:不算败 → 连胜保留
+    tickExploration(now)
+    expect(player.winStreak).toBe(3)
+    expect(useAdventureStore().session).not.toBeNull()
+
+    // 再来一场真正的败北(无灵兽保护):连胜清空
+    player.setPet('pet_huoque') // fierce → lossReduction 0
+    protect.value = false
+    player.winStreak = 5
+    forgeSession(now)
+    tickExploration(now)
+    expect(player.winStreak).toBe(0)
   })
 })
