@@ -82,8 +82,10 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   // ---- 藏经阁被动钻研(与在线同源,只是 dt 不同) ----
   studyTick(effSec)
 
-  // ---- 镇压区域被动收益(不受离线效率折扣,是统治该区域的补偿) ----
-  const suppressYield = settleSuppressedRegions(dtSec)
+  // ---- 镇压区域被动收益(豁免离线效率折扣,是统治该区域的补偿;但仍受洞府离线上限约束) ----
+  // 之前误传完整 dtSec:镇压收益绕过 mansion 离线封顶,洞府离线等级对"镇压力"玩家几乎失效。
+  // 折扣豁免只豁免 0.9 效率,不平白豁免洞府离线上限本身
+  const suppressYield = settleSuppressedRegions(capSec)
   if (suppressYield && !isZero(suppressYield.stone)) {
     notes.push(`镇压诸域仍有余韵:灵石 +${formatGN(suppressYield.stone)}`)
     for (const eq of suppressYield.equipment) {
