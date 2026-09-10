@@ -16,10 +16,13 @@ export function formatGN(v: GNum | number): string {
     const n = toNum(g)
     if (n < 1000) {
       if (n < 100 && !Number.isInteger(n)) {
-        // <0.1 时多留一位小数,别把 0.04 的收益显示成 0
-        return trimZero(n > 0 && n < 0.1 ? n.toFixed(2) : n.toFixed(1))
+        // 0.04 显示成 0.04、0.004 也应收着——任何正收益都不该因为太细碎而显示成 0。
+        // 位数随数量级抬升(0.04→2 位,0.004→3 位),封顶 6 位,杜绝 0.0000000001 刷屏
+        const tiny = n > 0 && n < 0.1 ? n.toFixed(Math.max(2, Math.min(6, 1 - Math.floor(Math.log10(n))))) : n.toFixed(1)
+        return trimZero(tiny)
       }
-      return String(Math.floor(n))
+      // 与 <100 档(四舍五入)一致,不再向下取整:999.6 显示 1000 而非 999
+      return String(Math.round(n))
     }
     return Math.floor(n).toLocaleString('en-US')
   }
@@ -59,6 +62,8 @@ const NOT_AVAILABLE = '--'
 export function formatPercent(x: number, dp = 1): string {
   if (!Number.isFinite(x)) return NOT_AVAILABLE
   const v = x * 100
+  // -0.001% 这类连一位小数都到不了的极小值,不该显示成「-0%」吓人
+  if (Math.abs(v) < Math.pow(10, -dp)) return '0%'
   const s = Number.isInteger(v) ? String(v) : v.toFixed(dp)
   return `${trimZero(s)}%`
 }
