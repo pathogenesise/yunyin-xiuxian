@@ -31,6 +31,7 @@ import { stoneByTier } from './formulas'
 import { settleSuppressedRegions } from './suppress'
 import { harvestMaterials, studyTick } from './loreService'
 import { modOf } from './statsCalc'
+import { personalityEffects } from './petPersonality'
 import { track } from './progress'
 import { equipmentTemplate } from '@/data/equipment'
 import { usePlayerStore } from '@/stores/player'
@@ -139,7 +140,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * (1 + modOf(mods, 'dropRate')))
         const realCount = Math.min(6, equipCount)
         for (let i = 0; i < realCount; i += 1) {
-          const inst = generateEquipment(region.tier, rng, { luck: modOf(mods, 'luck') })
+          // 灵兽性格同样管离线掉落:贪宝更易稀出,谨慎稍稍寻常(与在线 afterWin 同源)
+          const inst = generateEquipment(region.tier, rng, { luck: modOf(mods, 'luck') + personalityEffects(player.petId).dropLuck })
           const res = acquireEquipment(inst, { quiet: true })
           // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收;
           // 器灵尘按 acquire 返回值记账,不再依赖对行囊作 findItem 二次判定。

@@ -221,12 +221,19 @@ function runBattle(now: number): void {
       ui.toast(`【雪耻】宿敌${eDef.name}已被斩于剑下!`, 'rare')
     }
   } else {
+    // Phase 31 S4:灵兽护主 —— 慢稳/谨慎的灵兽(lossReduction>0)在危急时低概率
+    // 护住这一击:免于重伤、不计败绩、历练继续(「失败率下降」落到实处)。
+    // 好战型 lossReduction=0,恒不触发,与无灵兽行为一致
+    const ui = useUiStore()
+    if (rng.chance(personalityEffects(player.petId).lossReduction)) {
+      adventure.setSession({ ...s, nextBattleAt: nextBattleTime(now) })
+      ui.toast('灵兽机警,替你挡开了这一击,历练继续', 'info')
+      return
+    }
     cultivation.addBuff('injury', now)
     adventure.setSession({ ...s, losses: s.losses + 1 })
 
     // Phase 30.9 S2: 记录败北,达到阈值标记宿敌
-    const player = usePlayerStore()
-    const ui = useUiStore()
     const { list, becameNemesis } = recordLoss(player.nemeses, eDef.id, eDef.name, region.id, now)
     if (becameNemesis) {
       player.setNemeses(list)

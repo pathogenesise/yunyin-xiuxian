@@ -19,6 +19,7 @@ import {
 import { generateEquipment } from './equipGen'
 import { stoneByTier } from './formulas'
 import { modOf } from './statsCalc'
+import { personalityEffects } from './petPersonality'
 import { keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
 import { checkQualityAchievement, collect, track } from './progress'
 import { harvestMaterials } from './loreService'
@@ -166,8 +167,9 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
     lines.push(`功法残页×${n}`)
   }
 
-  // 装备
-  const luck = modOf(mods, 'luck')
+  // 装备 —— 品质 luck 并入灵兽性格的掉落倾向:
+  // 贪宝(dropLuck>0)更易出稀有,谨慎(dropLuck<0)则稍稍寻常 —— 图鉴承诺,此处兑现
+  const luck = modOf(mods, 'luck') + personalityEffects(player.petId).dropLuck
   const equipChance = EQUIP_DROP_CHANCE * rewardMult * (1 + modOf(mods, 'dropRate')) * (isBoss ? 2.5 : 1)
   for (let i = 0; i < doubled; i += 1) {
     if (rng.chance(Math.min(0.9, equipChance)) || (isBoss && i === 0)) {

@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 12,
+  "round": 13,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T12:09:25+00:00",
+  "updated_at": "2026-09-10T14:43:46+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -324,7 +324,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:05:15+00:00",
       "updated_at": "2026-09-09T14:05:15+00:00",
-      "touched_round": 5,
+      "touched_round": 13,
       "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
     },
     "CHG-007": {
@@ -448,7 +448,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:59:19+00:00",
       "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 5,
+      "touched_round": 13,
       "summary": "突破系统(breakthrough.ts + 突破准备数据)"
     },
     "ISS-017": {
@@ -502,11 +502,11 @@
     "HYP-001": {
       "id": "HYP-001",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T15:18:26+00:00",
-      "updated_at": "2026-09-09T15:18:26+00:00",
-      "touched_round": 5,
+      "updated_at": "2026-09-10T14:11:58+00:00",
+      "touched_round": 13,
       "confidence": 0.75,
       "summary": "转世泄漏的确定性成分是有意还是 bug 需拆分:镇压/世界记忆=设计;lastCaveEventDay/winStreak/eventChains=本世进程应清;secretRealm/regionEvent=一次性内容应清"
     },
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 6,
+      "touched_round": 13,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1047,11 +1047,11 @@
     "HYP-003": {
       "id": "HYP-003",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "abandoned",
+      "version": 2,
       "created_at": "2026-09-10T12:08:06+00:00",
-      "updated_at": "2026-09-10T12:08:06+00:00",
-      "touched_round": 12,
+      "updated_at": "2026-09-10T14:11:58+00:00",
+      "touched_round": 13,
       "confidence": 0.4,
       "summary": "crypto.spec '兼容旧版明文' 在完整并行跑时会偶发失败(孤立/少量文件/多轮全量均绿),疑似 vitest worker 并行下 crypto-js 环境性抖动,与本仓库改动无关"
     },
@@ -1066,6 +1066,96 @@
       "source": "bun run test ×6 + 多轮 test:report",
       "confidence": 1,
       "summary": "crypto 测试孤立 4/4 过,与新增 spec 同跑 3×全过,全量 4 连绿;仅约 1/5 概率在完整并行下偶发,未能捕获消息"
+    },
+    "EV-007": {
+      "id": "EV-007",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:11:29+00:00",
+      "updated_at": "2026-09-10T14:11:29+00:00",
+      "touched_round": 13,
+      "source": "player.ts:352-360 (rebirth) + reincarnation.ts:208-231 (confirmReincarnation)",
+      "summary": "本世进程泄漏已按 DEC-003 处置落地:rebirth() 清除 winStreak/lastCaveEventDay/secretRealm/regionEvent;suppressedRegions/suppressedSince/regionStats/fortuneChoices/eventChains/mentor/regionWins/nemeses 按世界记忆设计保留(有注释与 DEC-003 背书);regionStats 泄漏仅喂 prosperity 阶段与 72h 自动复苏,无利用面",
+      "confidence": 1
+    },
+    "EV-008": {
+      "id": "EV-008",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:11:34+00:00",
+      "updated_at": "2026-09-10T14:11:34+00:00",
+      "touched_round": 13,
+      "source": "bunx vitest run ×6 + test:report 多连 (2026-09-10 复现失败)",
+      "summary": "复现失败:基线 106 文件/984 测试全绿;连跑 6 轮 bunx vitest run 均绿,crypto.spec 4/4 过。EV-006 与本次合计 7+ 次全量并行未见失败,无法捕获错误消息 → 判定为冷启动 transform CPU 竞争下的环境抖动,非代码缺陷",
+      "confidence": 0.95
+    },
+    "TASK-020": {
+      "id": "TASK-020",
+      "type": "task",
+      "status": "active",
+      "version": 3,
+      "created_at": "2026-09-10T14:24:00+00:00",
+      "updated_at": "2026-09-10T14:42:24+00:00",
+      "touched_round": 13,
+      "category": "correctness",
+      "severity": 0.75,
+      "confidence": 0.95,
+      "effort": 4,
+      "summary": "灵兽性格效果接线补齐(描述即承诺,但从未生效):dropLuck(贪宝+稀掉落/谨慎-稀掉宝)接入 loot.afterWin 与 offline 装备品质luck;lossReduction(慢稳/谨慎降低失败率)接入 exploration.runBattle,败北低概率由灵兽护住免重伤不计败绩",
+      "lock_owner": "loop-2026-09-10",
+      "lock_until": "2026-09-10T15:42:24+00:00"
+    },
+    "DEC-007": {
+      "id": "DEC-007",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:41:23+00:00",
+      "updated_at": "2026-09-10T14:41:23+00:00",
+      "touched_round": 13,
+      "summary": "灵兽性格 dropLuck/lossReduction 接线方式定案:dropLuck 并入 afterWin(在线战斗/离线boss)与 settleOffline 掉落装品质 luck,与装备/天赋等 mods 同源线性叠加;lossReduction 作为败北时的『灵兽护主』掷点,成功则免重伤/不计败绩/历练继续。两效果均用原始值(不乘 beastMult/beastPct),与已接线的 exploreDurMult/dangerMult 保持一致",
+      "rationale": "图鉴与 petPersonality 描述对玩家承诺了『贪宝更易稀出/谨慎少掉宝/慢稳谨慎败率低』,但两效果从未接入 gameplay,属于描述即承诺的欺骗;接入点选 afterWin 的品质 luck(rollQuality 对 luck 单调)与 runBattle 败北分支,均是与现有 mods 同源的部位,不动经济体系;离线同步了一行以免线上离线手感不一致",
+      "alternatives_rejected": "按 beastMult 缩放 personality 效果(与现有接线不一致,引入两套口径)/lossReduction 直接改战斗胜负(会扰动战斗模拟与经济审计,风险高)/删除死掉的 ROUTE_CONFIGS+selectedRoute 一并做(与本接线无耦合,留给单独清理task)"
+    },
+    "ISS-021": {
+      "id": "ISS-021",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:42:00+00:00",
+      "updated_at": "2026-09-10T14:42:00+00:00",
+      "touched_round": 13,
+      "severity": 0.75,
+      "confidence": 0.95,
+      "summary": "灵兽性格承诺未兑现:petPersonality.EFFECTS 定义了 dropLuck(贪宝/谨慎)与 lossReduction(慢稳/谨慎),图鉴性格说明亦向玩家承诺,但 gameplay 从未消费 —— 选择灵兽只剩探索时长/危险率两维有效,『掉落倾向/失败率』是假承诺"
+    },
+    "TASK-021": {
+      "id": "TASK-021",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:42:00+00:00",
+      "updated_at": "2026-09-10T14:42:00+00:00",
+      "touched_round": 13,
+      "category": "maintainability",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "清理 Phase 28 遗留死代码:getCompanionBonus/getCurrentRouteConfig/companionBeastId/setCompanionBeast/selectedRoute/setSelectedRoute/ROUTE_CONFIGS 均无调用方(被 Phase 31 灵兽性格设计取代),仅占存储与心智噪音"
+    },
+    "ISS-022": {
+      "id": "ISS-022",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T14:43:03+00:00",
+      "updated_at": "2026-09-10T14:43:03+00:00",
+      "touched_round": 13,
+      "severity": 0.3,
+      "confidence": 0.95,
+      "summary": "Phase 28 探索路线/陪行灵兽死代码残留:companionBeastId/setCompanionBeast/getCompanionBonus(getCompanionBonus 带 TODO)/getCurrentRouteConfig/selectedRoute/setSelectedRoute/ROUTE_CONFIGS 全无调用方,被 Phase 31 灵兽性格取代;占 store 序列化体积与心智噪音,易被后续误当功能入口"
     }
   },
   "edges": [
@@ -1410,6 +1500,48 @@
       "to": "HYP-003",
       "type": "validates",
       "created_at": "2026-09-10T12:09:25+00:00"
+    },
+    {
+      "from": "EV-007",
+      "to": "HYP-001",
+      "type": "validates",
+      "created_at": "2026-09-10T14:11:58+00:00"
+    },
+    {
+      "from": "EV-008",
+      "to": "HYP-003",
+      "type": "refutes",
+      "created_at": "2026-09-10T14:11:58+00:00"
+    },
+    {
+      "from": "TASK-020",
+      "to": "ISS-021",
+      "type": "addresses",
+      "created_at": "2026-09-10T14:42:24+00:00"
+    },
+    {
+      "from": "DEC-007",
+      "to": "TASK-020",
+      "type": "governs",
+      "created_at": "2026-09-10T14:42:24+00:00"
+    },
+    {
+      "from": "ISS-021",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-10T14:43:03+00:00"
+    },
+    {
+      "from": "TASK-021",
+      "to": "ISS-022",
+      "type": "addresses",
+      "created_at": "2026-09-10T14:43:21+00:00"
+    },
+    {
+      "from": "ISS-022",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-10T14:43:46+00:00"
     }
   ]
 }
