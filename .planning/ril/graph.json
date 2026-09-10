@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 10,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T10:43:04+00:00",
+  "updated_at": "2026-09-10T11:04:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -874,10 +874,10 @@
     "TASK-014": {
       "id": "TASK-014",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-10T10:43:04+00:00",
-      "updated_at": "2026-09-10T10:43:04+00:00",
+      "updated_at": "2026-09-10T10:43:55+00:00",
       "touched_round": 10,
       "category": "correctness",
       "severity": 0.7,
@@ -885,9 +885,36 @@
       "effort": 1,
       "unlock_factor": 1.0,
       "priority_score": 6,
-      "summary": "离线镇压收益绕过洞府离线上限:settleSuppressedRegions 传完整 dtSec,60h 缺席仍按 60h 结算且装备 0.4/h 洪水",
+      "summary": "离线镇压收益绕过洞府离线上限:settleSuppressedRegions 传完整 dtSec,60h 缺席仍按 60h 结算且装备 0.4/h 洪水"
+    },
+    "CHG-018": {
+      "id": "CHG-018",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T10:44:29+00:00",
+      "updated_at": "2026-09-10T10:44:29+00:00",
+      "touched_round": 10,
+      "commit": "776a9ef",
+      "summary": "离线镇压收益走 capSec"
+    },
+    "TASK-015": {
+      "id": "TASK-015",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-10T11:04:22+00:00",
+      "updated_at": "2026-09-10T11:04:22+00:00",
+      "touched_round": 10,
+      "category": "core-feature",
+      "severity": 0.75,
+      "confidence": 0.95,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "priority_score": 6.5,
+      "summary": "灵脉主脉机制 UI 不可达:卡片恒显 /30、主脉 70 上限不可投、无主脉标识、switchMainVein 无入口",
       "lock_owner": "yunyin-52",
-      "lock_until": "2026-09-10T11:13:04+00:00"
+      "lock_until": "2026-09-10T11:34:22+00:00"
     }
   },
   "edges": [
@@ -1184,6 +1211,12 @@
       "to": "TASK-013",
       "type": "implements",
       "created_at": "2026-09-10T09:52:28+00:00"
+    },
+    {
+      "from": "CHG-018",
+      "to": "TASK-014",
+      "type": "implements",
+      "created_at": "2026-09-10T10:44:29+00:00"
     }
   ]
 }
