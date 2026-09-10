@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 9,
+  "round": 10,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T08:55:46+00:00",
+  "updated_at": "2026-09-10T09:50:41+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -808,10 +808,10 @@
     "TASK-012": {
       "id": "TASK-012",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-10T08:55:46+00:00",
-      "updated_at": "2026-09-10T08:55:46+00:00",
+      "updated_at": "2026-09-10T09:00:29+00:00",
       "touched_round": 9,
       "category": "correctness",
       "severity": 0.6,
@@ -819,9 +819,36 @@
       "effort": 1,
       "unlock_factor": 1.0,
       "priority_score": 6.5,
-      "summary": "离线总结/旅途记录把全程预估事件数当实际结算数(实际只结算40个),玩家看到虚高际会次数",
+      "summary": "离线总结/旅途记录把全程预估事件数当实际结算数(实际只结算40个),玩家看到虚高际会次数"
+    },
+    "CHG-016": {
+      "id": "CHG-016",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T09:00:30+00:00",
+      "updated_at": "2026-09-10T09:00:30+00:00",
+      "touched_round": 9,
+      "commit": "062fbc6",
+      "summary": "离线事件计数收敛,summary/session 不再虚报"
+    },
+    "TASK-013": {
+      "id": "TASK-013",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-10T09:50:41+00:00",
+      "updated_at": "2026-09-10T09:50:41+00:00",
+      "touched_round": 10,
+      "category": "correctness",
+      "severity": 0.85,
+      "confidence": 0.98,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "priority_score": 8,
+      "summary": "悟道顿悟全部选项 + 洞府巡游 buff/惩罚均为静默 no-op:引用的 buffId 在 buffs.ts 无定义,addBuff 查无此定义直接 return",
       "lock_owner": "yunyin-52",
-      "lock_until": "2026-09-10T09:25:46+00:00"
+      "lock_until": "2026-09-10T10:20:41+00:00"
     }
   },
   "edges": [
@@ -1106,6 +1133,12 @@
       "to": "TASK-011",
       "type": "implements",
       "created_at": "2026-09-10T08:38:43+00:00"
+    },
+    {
+      "from": "CHG-016",
+      "to": "TASK-012",
+      "type": "implements",
+      "created_at": "2026-09-10T09:00:30+00:00"
     }
   ]
 }

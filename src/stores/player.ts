@@ -125,15 +125,22 @@ export const usePlayerStore = defineStore(
       if (!petId.value) return {}
       const def = petDef(petId.value)
       if (!def) return {}
+      // 灵兽园等级(beastMult)与「安抚灵兽」类 buff(beastPct)都放大灵兽效果;
+      // buffMods 只依赖 cultivation 自身,不兜回本 computed,无循环
+      const buffPct = 1 + modOf(cultivation.buffMods, 'beastPct')
       const scaled: StatMods = {}
       for (const k in def.mods) {
         const key = k as keyof StatMods
-        scaled[key] = (def.mods[key] ?? 0) * dongfu.beastMult
+        scaled[key] = (def.mods[key] ?? 0) * dongfu.beastMult * buffPct
       }
       return scaled
     })
 
-    const qiCapValue = computed(() => Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult))
+    const qiCapValue = computed(() => {
+      // 聚灵阵(qiCapMult)与「修复阵法」类 buff(qiCapPct)都能抬高灵气上限
+      const buffPct = 1 + modOf(cultivation.buffMods, 'qiCapPct')
+      return Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult * buffPct)
+    })
     const qiRich = computed(() => resources.qi >= qiCapValue.value * 0.5)
 
     const finalStats = computed<FinalStats>(() =>

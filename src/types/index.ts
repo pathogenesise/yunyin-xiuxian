@@ -18,9 +18,12 @@ export interface EnlightenmentOption {
   type: EnlightenmentType
   label: string
   desc: string
-  buffId: string
+  /** 生效的 buff;无 buff 的选项走即时 reward */
+  buffId?: string
   /** 持续时间(秒) */
   duration: number
+  /** 即时奖励(不走 buff,如"灵机一动"直接给悟道点——悟道产出无速率词条可挂) */
+  reward?: { type: 'wudao'; value: number }
 }
 
 /** 悟道顿悟实例(60秒窗口) */
@@ -118,6 +121,8 @@ export type PercentStatKey =
   | 'expGain'
   | 'alchemyYield'
   | 'forgeDiscount'
+  | 'qiCapPct'
+  | 'beastPct'
 
 /** 特殊词条(战斗/系统内特判) */
 export type SpecialKey =

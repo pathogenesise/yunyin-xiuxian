@@ -4,6 +4,7 @@
 import { usePlayerStore } from '@/stores/player'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useResourcesStore } from '@/stores/resources'
+import { useUiStore } from '@/stores/ui'
 import { usePacingTelemetry } from '@/stores/pacingTelemetry'
 import type { EnlightenmentEvent, EnlightenmentOption, CaveEvent } from '@/types'
 import {
@@ -73,10 +74,18 @@ export function chooseEnlightenment(optionIndex: number): void {
   if (!enlightenmentEvent || optionIndex >= enlightenmentEvent.options.length) return
   const opt = enlightenmentEvent.options[optionIndex]!
   const cult = useCultivationStore()
+  const ui = useUiStore()
   const now = Date.now()
 
-  // 应用buff(addBuff签名: defId, now)
-  cult.addBuff(opt.buffId, now)
+  // 即时奖励(如灵机一动直接给悟道点)或挂 buff;buff 未注册时 addBuff 会静默……
+  // 但那不再是"选项该有的样子"——守卫在这里兜住,让漏注册显式为错误而不是静默空转
+  if (opt.reward) {
+    useResourcesStore().addSmall('wudao', opt.reward.value)
+    ui.toast(`灵机一动,悟道点 +${opt.reward.value}`, 'success')
+  } else if (opt.buffId) {
+    cult.addBuff(opt.buffId, now)
+    ui.toast(opt.desc, 'success')
+  }
 
   telemetry().record('enlightenment_choose', 'modal', `悟道:${opt.label}`)
   enlightenmentEvent = null
@@ -274,13 +283,16 @@ export function chooseCaveOption(optionIndex: number): void {
     }
   }
 
-  // 应用惩罚
+  // 应用惩罚:按 penalty.type 映射已注册的惩罚 buff(如 cave_penalty_cultivationSpeed)。
+  // 修的是"动态随机 id 永远查无此 buff"——惩罚名称就是 type,不该掺时间戳
   if (opt.penalty) {
-    cult.addBuff(`cave_penalty_${Date.now()}`, now)
+    cult.addBuff(`cave_penalty_${opt.penalty.type}`, now)
   }
 
   const today = Math.floor(Date.now() / 86400000)
   player.markCaveEventToday(today)
+  // 选完给一句回执——此前选完弹窗直接关,拿到什么全凭感觉
+  useUiStore().toast(`洞府巡游·${opt.effect}`, 'success')
   telemetry().record('cave_choose', 'modal', `洞府选择:${opt.label}`)
   caveEvent = null
 }

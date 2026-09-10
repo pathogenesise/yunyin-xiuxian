@@ -51,13 +51,13 @@ export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
     buffId: 'enlighten_qi',
     duration: 600
   },
-  // 悟道点
+  // 悟道点 —— 悟道产出没有速率词条可挂,走即时奖励(文案与实发一致)
   {
     type: 'insight',
     label: '灵机一动',
-    desc: '悟道点获取 +30%',
-    buffId: 'enlighten_insight',
-    duration: 600
+    desc: '立即获得 5 悟道点',
+    duration: 0,
+    reward: { type: 'wudao', value: 5 }
   }
 ]
 
