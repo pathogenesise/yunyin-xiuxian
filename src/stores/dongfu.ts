@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { BuildingId, StatMods } from '@/types'
 import type { VeinId } from '@/data/veins'
 import { persistConfig } from '@/utils/storage'
-import { BUILDINGS } from '@/data/buildings'
+import { BUILDINGS, buildingDef } from '@/data/buildings'
 import { INSIGHT_DISCOUNT_PER_POINT, VEINS } from '@/data/veins'
 import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS } from '@/data/constants'
 import { mergeMods } from '@/core/statsCalc'
@@ -60,6 +60,12 @@ export const useDongfuStore = defineStore(
     const offlineCapHours = computed(() => OFFLINE_CAP_HOURS[Math.min(levels.value.mansion, OFFLINE_CAP_HOURS.length - 1)]!)
     /** 洞府等级限制其余建筑上限 */
     const buildingLevelCap = computed(() => (levels.value.mansion + 1) * 5)
+    /** 建筑实际可达上限:洞府全局闸门与自身品类上限取小(洞府自身不受自己闸门所限) */
+    function buildingCap(id: BuildingId): number {
+      const def = buildingDef(id)
+      if (id === 'mansion' || !def) return def?.maxLevel ?? 0
+      return Math.min(def.maxLevel, buildingLevelCap.value)
+    }
     const subGongfaSlots = computed(() => 1 + Math.floor(levels.value.library / 3))
     const alchemyLevel = computed(() => levels.value.alchemy)
     const forgeCapBonus = computed(() => Math.floor(levels.value.forge / 2))
@@ -136,6 +142,7 @@ export const useDongfuStore = defineStore(
       veinTotal,
       offlineCapHours,
       buildingLevelCap,
+      buildingCap,
       subGongfaSlots,
       alchemyLevel,
       forgeCapBonus,
