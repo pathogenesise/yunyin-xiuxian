@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 13,
+  "round": 14,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T15:50:21+00:00",
+  "updated_at": "2026-09-10T15:59:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -425,7 +425,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:46:51+00:00",
       "updated_at": "2026-09-09T14:46:51+00:00",
-      "touched_round": 5,
+      "touched_round": 13,
       "summary": "转世/轮回系统(reincarnation.ts + player store 跨世字段)"
     },
     "ISS-016": {
@@ -623,11 +623,11 @@
     "HYP-002": {
       "id": "HYP-002",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-09T17:05:36+00:00",
-      "updated_at": "2026-09-09T17:05:36+00:00",
-      "touched_round": 7,
+      "updated_at": "2026-09-10T15:59:24+00:00",
+      "touched_round": 13,
       "confidence": 0.65,
       "summary": "战斗先手'单位不匹配'实为设计:玩家速度=倍率,敌人=基准值,堆叠才有意义,非bug"
     },
@@ -1276,6 +1276,65 @@
       "touched_round": 13,
       "commit": "7aca79c",
       "summary": "移除被灵兽性格取代的探索路线/陪行灵兽死代码:getCurrentRouteConfig/getCompanionBonus(含TODO)、selectedRoute/companionBeastId 及 setter、ROUTE_CONFIGS、ExplorationRoute/RouteConfig 类型;突破准备/闭关数据保留"
+    },
+    "CHG-029": {
+      "id": "CHG-029",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:57:21+00:00",
+      "updated_at": "2026-09-10T15:57:21+00:00",
+      "touched_round": 13,
+      "commit": "f2de0c2",
+      "summary": "防御性数值修复:sampleWinRate 索引夹到表长(防 samples>4 越界 NaN);samsara 'all' 指标 need<=0 视为已达成(防除零/NaN选错最落后);combat.spec 新增 5 取样测试"
+    },
+    "ISS-025": {
+      "id": "ISS-025",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-10T15:57:21+00:00",
+      "updated_at": "2026-09-10T15:57:54+00:00",
+      "touched_round": 13,
+      "severity": 0.35,
+      "confidence": 1.0,
+      "summary": "sampleWinRate 表索引未夹界:samples>3 且全胜时 table[min(samples,wins)] 越界取 undefined→NaN(现调用方均 samples=3 不可达,导出 API 隐患)"
+    },
+    "ISS-026": {
+      "id": "ISS-026",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-10T15:57:21+00:00",
+      "updated_at": "2026-09-10T15:57:54+00:00",
+      "touched_round": 13,
+      "severity": 0.3,
+      "confidence": 1.0,
+      "summary": "samsaraService 'all' 指标用 cur/need 比烂,need=0 时 0/0→NaN、cur/0→Infinity 让 reduce 恒留 a(当前数据 n>0 不可达)"
+    },
+    "DEC-009": {
+      "id": "DEC-009",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:58:42+00:00",
+      "updated_at": "2026-09-10T15:58:42+00:00",
+      "touched_round": 13,
+      "summary": "三个『今天』的日界不一(F2):洞府巡游与今日天道按 UTC 日(floor(Date/86400000)),每日任务按本地日历日。UTC+8 的 00:00–08:00 窗口内,前两个先翻日、任务还在昨天。判定为产品/体验权衡而非 bug:统一需选一个『权威日』,但天道以 UTC 日为确定性种子(换口径会改当天所有玩家的题目),任务以本地日(晨间刷新更贴合玩家直觉),两者各为有意选择;巡游的 UTC 日是历史遗留。决定:暂不统一,保留三处各按设计;若产品期想要统一口径,优先把巡游改成本地日历日(低影响),天道保持 UTC",
+      "rationale": "统一有真实成本(改确定性种子/玩家习惯)且各口径都有成立理由;影响面是一天里 8 小时的体验错位,非数值/经济缺陷",
+      "alternatives_rejected": "把天道改成本地日(破坏每日一次题目的确定性)/把任务改成 UTC 日(玩家在午夜后的『昨天任务』体验更怪)/三处全本地(天道种子非确定性)"
+    },
+    "DEC-010": {
+      "id": "DEC-010",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:58:42+00:00",
+      "updated_at": "2026-09-10T15:58:42+00:00",
+      "touched_round": 13,
+      "summary": "后台标签页绕离线上限(F6):引擎仅当 dt≥120s 走 settleOffline(效率0.9+洞府上限),否则 advance(dt) 全速。浏览器后台节流定时器到 ~60s/tick,后台常驻标签的 dt 恰在 120s 内,于是挂机也拿 100% 效率且不受 OFFLINE_CAP_HOURS 约束。判定:设计取舍暂不修——『它还在跑』对离线与在线未作刻意区分,收紧需把进程内大 dt 也并入离线结算,会改变后台挂机收益,属经济平衡改动,需产品定夺后再做",
+      "rationale": "该洞在 bug-hunt 中判定为 needs design confirmation:后台继续计时算『在线』与否是无明确答案的产品问题;修起来也简单(把 advance 里 dt>阈值 的走 settleOffline)但收益曲线会变",
+      "alternatives_rejected": "强制后台也走离线(后台收益大砍,可能被玩家视为惩罚)/无脑把 dt 上限(引入时间丢失的更多边界)"
     }
   },
   "edges": [
@@ -1734,6 +1793,30 @@
       "to": "ISS-022",
       "type": "resolves",
       "created_at": "2026-09-10T15:49:05+00:00"
+    },
+    {
+      "from": "CHG-029",
+      "to": "ISS-025",
+      "type": "resolves",
+      "created_at": "2026-09-10T15:57:54+00:00"
+    },
+    {
+      "from": "CHG-029",
+      "to": "ISS-026",
+      "type": "resolves",
+      "created_at": "2026-09-10T15:57:54+00:00"
+    },
+    {
+      "from": "ISS-025",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-10T15:57:54+00:00"
+    },
+    {
+      "from": "ISS-026",
+      "to": "COMP-003",
+      "type": "located_in",
+      "created_at": "2026-09-10T15:57:54+00:00"
     }
   ]
 }
