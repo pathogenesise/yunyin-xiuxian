@@ -165,6 +165,10 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           autoResolveEvent(rng.pick(pool), region.tier)
         }
       }
+      // 事件只实际结算了 evCap 个;events 此前按全程估算,超额部分只是"路上料到"、
+      // 并非真实经历。总结与旅途记录若按全量上报,玩家会看到「际会 3456 次」
+      // 而实际只结算了 40 次——把 count 收敛为真实经历再写进 summary 与 session
+      events = evCap
       // 离线自动挑战区域首领(收益折损,胜则连锁解锁;门槛与在线一致,避免离线早一步解锁下一区)
       if (!adventure.cleared.includes(region.id) && wins >= 10) {
         const bossDef = enemyDef(placeContent(region.id).boss)
