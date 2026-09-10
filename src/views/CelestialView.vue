@@ -541,6 +541,22 @@
       </template>
     </BaseModal>
 
+    <!-- 道途选择确认:一世只此一次,点了就锁到转世 -->
+    <BaseModal :open="pendingDao !== undefined" title="定下道途" @close="pendingDaoId = null">
+      <template v-if="pendingDao">
+        <p class="font-kai text-[14px] tracking-wider text-ink">{{ pendingDao.name }}</p>
+        <p class="mt-1.5 text-[12px] leading-relaxed text-ink-soft">{{ pendingDao.desc }}</p>
+        <p v-for="(r, i) in pendingDao.ruleText" :key="i" class="mt-0.5 text-[11px] text-azure">· {{ r }}</p>
+        <p class="mt-3 border-l-2 border-cinnabar/60 pl-2 text-[11px] text-cinnabar">道途既定,此世不再更改;误选须待兵解转世方能重择</p>
+      </template>
+      <template #footer>
+        <div class="flex gap-2">
+          <button class="btn-ghost flex-1" @click="pendingDaoId = null">再想想</button>
+          <button class="btn-seal flex-1 !bg-cinnabar-deep" @click="confirmDao">道心已定</button>
+        </div>
+      </template>
+    </BaseModal>
+
     <!-- Phase 30.9 S2:道源说明弹窗 -->
     <BaseModal :open="daoSourceDialogOpen" title="道源" @close="daoSourceDialogOpen = false">
       <div class="space-y-3 text-[12px] leading-relaxed">
@@ -718,8 +734,17 @@
     return swordPurity(player.finalStats.mods, inventory.currentArtifacts.length, detectBuild(player.finalStats.mods))
   })
 
+  /** 道途选择二段式:先弹确认,再落一子。道途一世只定一次,误触即被锁死到转世 */
+  const pendingDaoId = ref<(typeof DAO_PATHS)[number]['id'] | null>(null)
+  const pendingDao = computed(() => (pendingDaoId.value ? daoPathDef(pendingDaoId.value) : undefined))
+
   function pickDao(id: (typeof DAO_PATHS)[number]['id']): void {
-    chooseDaoPath(id)
+    pendingDaoId.value = id
+  }
+
+  function confirmDao(): void {
+    if (pendingDaoId.value) chooseDaoPath(pendingDaoId.value)
+    pendingDaoId.value = null
   }
 
   // ---- 远征准备 ----
