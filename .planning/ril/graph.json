@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 13,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T15:05:07+00:00",
+  "updated_at": "2026-09-10T15:37:11+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1183,10 +1183,10 @@
     "TASK-023": {
       "id": "TASK-023",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-10T14:50:40+00:00",
-      "updated_at": "2026-09-10T14:50:40+00:00",
+      "updated_at": "2026-09-10T15:37:11+00:00",
       "touched_round": 13,
       "category": "core-feature",
       "severity": 0.6,
@@ -1222,10 +1222,10 @@
     "ISS-023": {
       "id": "ISS-023",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-10T15:04:38+00:00",
-      "updated_at": "2026-09-10T15:04:38+00:00",
+      "updated_at": "2026-09-10T15:36:40+00:00",
       "touched_round": 13,
       "severity": 0.6,
       "confidence": 0.9,
@@ -1242,6 +1242,29 @@
       "severity": 0.4,
       "confidence": 0.7,
       "summary": "闭关机制未接线:startRetreat/isRetreating/retreat buff/retreatEndTime 无调用方,需先定玩法承载(UI/收益/在线关系)再接线"
+    },
+    "DEC-008": {
+      "id": "DEC-008",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:35:38+00:00",
+      "updated_at": "2026-09-10T15:35:38+00:00",
+      "touched_round": 13,
+      "summary": "突破准备接线定案:earception 只作用于无劫突破(渡劫走波次模拟,加平概率百分比无意义且破坏劫势叙事);加成一次性(成败皆耗,与『坐完打一把』语义一致);模块态不落盘(与顿悟/巡游同生命周期)。顺带硬化 gnum.cmp 对未归一化输入的鲁棒(潜在正确性洞,借测试暴露)",
+      "rationale": "设计完备(数据+状态机)只是没接线;最干净的是把『状态机只读视图+一次性消费』拆开,UI 据此诚实展示调息中/就绪;渡劫分流在前作 Phase 32.0 已有自成体系的劫势决策,叠加百分比会双轨打架",
+      "alternatives_rejected": "把 +8% 叠进渡劫波次(双轨耦合,破坏劫势预判)/准备态落盘持久化(与顿悟/巡游的短生命周期玩法不一致,悔改成本高)/直接删掉突破准备(设计意图明确要这个前期玩法,接线优于删除)"
+    },
+    "CHG-027": {
+      "id": "CHG-027",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T15:36:10+00:00",
+      "updated_at": "2026-09-10T15:36:10+00:00",
+      "touched_round": 13,
+      "commit": "5d23f49",
+      "summary": "突破准备接线:breakthroughPrepState/consumeBreakthroughPrep 重构、rate 并入就绪加成、尝试时消费、CultivationView 新增准备UI(仅无劫);硬化 gnum.cmp 未归一化比较"
     }
   },
   "edges": [
@@ -1670,6 +1693,24 @@
       "to": "COMP-002",
       "type": "located_in",
       "created_at": "2026-09-10T15:05:07+00:00"
+    },
+    {
+      "from": "CHG-027",
+      "to": "TASK-023",
+      "type": "implements",
+      "created_at": "2026-09-10T15:36:11+00:00"
+    },
+    {
+      "from": "CHG-027",
+      "to": "ISS-023",
+      "type": "resolves",
+      "created_at": "2026-09-10T15:36:11+00:00"
+    },
+    {
+      "from": "DEC-008",
+      "to": "TASK-023",
+      "type": "governs",
+      "created_at": "2026-09-10T15:36:11+00:00"
     }
   ]
 }

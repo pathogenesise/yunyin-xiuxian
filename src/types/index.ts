@@ -36,17 +36,6 @@ export interface EnlightenmentEvent {
   expiresAt: number
 }
 
-/** 探索路线类型 */
-export type ExplorationRoute = 'safe' | 'risky' | 'dangerous'
-
-/** 探索路线配置 */
-export interface RouteConfig {
-  label: string
-  desc: string
-  safeMod: number
-  rewardMod: number
-  eventMod: number
-}
 
 /** 奇遇连锁状态(玩家已触发的连锁ID → 当前阶段) */
 export type EventChainState = Record<string, number>

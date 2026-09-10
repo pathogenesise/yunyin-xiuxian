@@ -1,7 +1,7 @@
 /**
  * Phase 28 前期玩法数据 —— 悟道顿悟/突破准备/探索路线/洞府巡游
  */
-import type { EnlightenmentOption, RouteConfig, BreakthroughPrepOption } from '@/types'
+import type { EnlightenmentOption, BreakthroughPrepOption } from '@/types'
 
 /** 悟道顿悟选项池(修炼时随机触发,三选一) */
 export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
@@ -60,31 +60,6 @@ export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
     reward: { type: 'wudao', value: 5 }
   }
 ]
-
-/** 探索路线配置 */
-export const ROUTE_CONFIGS: Record<'safe' | 'risky' | 'dangerous', RouteConfig> = {
-  safe: {
-    label: '浅山',
-    desc: '安全但收益一般',
-    safeMod: 1.2,
-    rewardMod: 0.85,
-    eventMod: 0.9
-  },
-  risky: {
-    label: '密林',
-    desc: '中等危险,高掉落',
-    safeMod: 1.0,
-    rewardMod: 1.15,
-    eventMod: 1.1
-  },
-  dangerous: {
-    label: '旧洞',
-    desc: '高危但事件多',
-    safeMod: 0.85,
-    rewardMod: 1.1,
-    eventMod: 1.35
-  }
-}
 
 /** 突破准备选项 */
 export const BREAKTHROUGH_PREP_OPTIONS: BreakthroughPrepOption[] = [

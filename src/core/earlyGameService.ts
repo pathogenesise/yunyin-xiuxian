@@ -9,7 +9,6 @@ import { usePacingTelemetry } from '@/stores/pacingTelemetry'
 import type { EnlightenmentEvent, EnlightenmentOption, CaveEvent } from '@/types'
 import {
   ENLIGHTENMENT_OPTIONS,
-  ROUTE_CONFIGS,
   CAVE_EVENT_POOL,
   CHAIN_EVENT_IDS,
   WIN_STREAK_REWARDS
@@ -224,29 +223,6 @@ export function recordWin(): void {
 export function recordLoss(): void {
   const player = usePlayerStore()
   player.resetWinStreak()
-}
-
-/** 获取当前探索路线配置 */
-export function getCurrentRouteConfig() {
-  const player = usePlayerStore()
-  return ROUTE_CONFIGS[player.selectedRoute]
-}
-
-/** 获取灵兽陪行加成 */
-export function getCompanionBonus(): {
-  eventMod: number
-  safeMod: number
-  lootMod: number
-} {
-  const player = usePlayerStore()
-  if (!player.companionBeastId) return { eventMod: 1, safeMod: 1, lootMod: 1 }
-
-  // TODO: 根据不同灵兽返回不同加成,暂时简化
-  return {
-    eventMod: 1.15,
-    safeMod: 1.08,
-    lootMod: 1.12
-  }
 }
 
 /** 触发洞府巡游(每日一次) */

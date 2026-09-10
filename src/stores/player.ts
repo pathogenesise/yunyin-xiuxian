@@ -77,8 +77,6 @@ export const usePlayerStore = defineStore(
     const eventChains = ref<Record<string, number>>({}) // 奇遇连锁进度
     const winStreak = ref(0) // 当前连胜数
     const lastCaveEventDay = ref(0) // 上次洞府巡游日期
-    const selectedRoute = ref<'safe' | 'risky' | 'dangerous'>('safe') // 当前探索路线
-    const companionBeastId = ref<string | null>(null) // 陪行灵兽
 
     // Phase 30 区域镇压(每个区域独立统计)
     const regionStats = ref<Record<string, import('@/core/suppress').RegionStats>>({})
@@ -395,14 +393,6 @@ export const usePlayerStore = defineStore(
       winStreak.value = 0
     }
 
-    function setSelectedRoute(route: 'safe' | 'risky' | 'dangerous'): void {
-      selectedRoute.value = route
-    }
-
-    function setCompanionBeast(id: string | null): void {
-      companionBeastId.value = id
-    }
-
     function markCaveEventToday(day: number): void {
       lastCaveEventDay.value = day
     }
@@ -502,8 +492,6 @@ export const usePlayerStore = defineStore(
       eventChains,
       winStreak,
       lastCaveEventDay,
-      selectedRoute,
-      companionBeastId,
       regionStats,
       suppressedRegions,
       suppressedSince,
@@ -554,8 +542,6 @@ export const usePlayerStore = defineStore(
       advanceEventChain,
       incrementWinStreak,
       resetWinStreak,
-      setSelectedRoute,
-      setCompanionBeast,
       markCaveEventToday,
       updateRegionStats,
       suppressRegion,
