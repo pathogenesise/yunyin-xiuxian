@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 8,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-09T17:53:32+00:00",
+  "updated_at": "2026-09-10T04:53:34+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -692,6 +692,52 @@
       "summary": "ISS-016 突破准备是'写了未接线的功能'而非可删死代码:数据(BREAKTHROUGH_PREP_OPTIONS)、遥测事件类型、choiceAnalysis 引用齐全,设计意图明确,删除会破坏未来接入。处理建议:接线(突破页加入口并消费加成)或连同定价倒挂(免费静坐+8% vs 付费服丹+5%)一并下架,二选一需后续轮次评估,本轮不做",
       "rationale": "证据 EV-003 显示四函数全库零调用但数据/遥测/分类齐全;删会破坏设计意图,接需要 UI 产品决策;中 severity 未达本轮深探预算线",
       "alternatives_rejected": "本轮强行接线(缺少产品对入口/定价的决策)/直接删除(破坏设计意图与遥测分类)"
+    },
+    "DEC-006": {
+      "id": "DEC-006",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T04:52:09+00:00",
+      "updated_at": "2026-09-10T04:52:09+00:00",
+      "touched_round": 8,
+      "summary": "洞府建筑等级上限判定为『软闸门』设计,维持 min(品类上限, (洞府级+1)*5),不动 maxLevel、不搞加法式加档;修复落在承诺文案与建筑卡实际可达上限的呈现(ISS-020 观感)",
+      "rationale": "成本曲线 BUILDING_COST_GROWTH=2.3 指数增长对线性的每级效果:任何超出品类上限(8~20)的加法档位,填满需 39亿~13万亿 灵石,远超可达收入(经济sim 可达模型 2+2×大境界/级),是永远填不满的假档;洞府效果的本质就是进度闸门(洞府0级全部卡5/逐级上浮),此前坏的是 tooltip 承诺『25』与品类上限冲突的观感,修观感即可",
+      "alternatives_rejected": "①洞府每级给其余建筑 +5 加法式:计算证明高阶档位(如灵兽园 8→28 需 3.1万亿 石)不可达,制造新的假上限;②抬高各建筑 maxLevel 到 25+ 或调低 BUILDING_COST_GROWTH:系统性数值重排,牵动藏经阁辅修栏/炼器台强化上限等阶梯效果与灵兽/炼丹倍率,今日不做"
+    },
+    "ISS-020": {
+      "id": "ISS-020",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-10T04:52:29+00:00",
+      "updated_at": "2026-09-10T04:53:04+00:00",
+      "touched_round": 8,
+      "severity": 0.5,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "观感:洞府效果『建筑等级上限 25』看似未生效——各建筑按自身品类上限(灵兽园8/炉台10/藏经阁12/田15/阵20)更早『已至顶层』,洞府闸门后段被架空,玩家误以为效果坏了"
+    },
+    "CHG-013": {
+      "id": "CHG-013",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-10T04:52:29+00:00",
+      "updated_at": "2026-09-10T04:53:03+00:00",
+      "touched_round": 8,
+      "summary": "洞府建筑上限观感修正:tooltip 不再承诺『25』改为『每级+5、另有品类上限』;建筑卡显示 当前/实际可达上限 min(品类,洞府)(dongfu.buildingCap);动工日志见 DEC-006",
+      "commit": "d4cc741"
+    },
+    "COMP-007": {
+      "id": "COMP-007",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T04:53:34+00:00",
+      "updated_at": "2026-09-10T04:53:34+00:00",
+      "touched_round": 8,
+      "summary": "洞府建筑系统(data/buildings + stores/dongfu + buildingService:等级闸门、离线收益上限、品类上限)"
     }
   },
   "edges": [
@@ -952,6 +998,18 @@
       "to": "TASK-009",
       "type": "implements",
       "created_at": "2026-09-09T17:46:19+00:00"
+    },
+    {
+      "from": "CHG-013",
+      "to": "ISS-020",
+      "type": "resolves",
+      "created_at": "2026-09-10T04:53:04+00:00"
+    },
+    {
+      "from": "DEC-006",
+      "to": "COMP-007",
+      "type": "governs",
+      "created_at": "2026-09-10T04:53:34+00:00"
     }
   ]
 }
