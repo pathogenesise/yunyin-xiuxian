@@ -402,6 +402,7 @@
   import { useLoadoutsStore } from '@/stores/loadouts'
   import { modOf } from '@/core/statsCalc'
   import { fruitMarginalInfo } from '@/core/resourceGuidance'
+  import { branchCodex, materialCodex } from '@/ui/codex'
   import { mentorVerdict, mentorChoices } from '@/core/mentorService'
   import { mentorHint } from '@/core/fortuneChain'
   import { buildIdentity } from '@/core/identityService'
@@ -456,10 +457,21 @@
       quests.collections.artifact.length +
       quests.collections.pet.length +
       quests.collections.event.length +
-      quests.collections.talent.length
+      quests.collections.talent.length +
+      // 图鉴页还有灵材谱与悟道录两类(派生视图,见 ui/codex.ts),计数要带上,否则两页对不上
+      branchCodex().entries.filter(e => e.stage > 0).length +
+      materialCodex().entries.filter(e => e.stage > 0).length
   )
   const collectTotal =
-    EQUIPMENT_TEMPLATES.length + GONGFA.length + PILLS.length + ARTIFACTS.length + PETS.length + EVENTS.length + TALENTS.length
+    EQUIPMENT_TEMPLATES.length +
+    GONGFA.length +
+    PILLS.length +
+    ARTIFACTS.length +
+    PETS.length +
+    EVENTS.length +
+    TALENTS.length +
+    branchCodex().entries.length +
+    materialCodex().entries.length
 
   // ---- 轮回 ----
   const rebirthOpen = ref(false)
