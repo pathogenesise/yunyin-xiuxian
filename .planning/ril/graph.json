@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 10,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T11:04:22+00:00",
+  "updated_at": "2026-09-10T11:21:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -901,10 +901,10 @@
     "TASK-015": {
       "id": "TASK-015",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-10T11:04:22+00:00",
-      "updated_at": "2026-09-10T11:04:22+00:00",
+      "updated_at": "2026-09-10T11:05:39+00:00",
       "touched_round": 10,
       "category": "core-feature",
       "severity": 0.75,
@@ -912,9 +912,50 @@
       "effort": 2,
       "unlock_factor": 1.0,
       "priority_score": 6.5,
-      "summary": "灵脉主脉机制 UI 不可达:卡片恒显 /30、主脉 70 上限不可投、无主脉标识、switchMainVein 无入口",
-      "lock_owner": "yunyin-52",
-      "lock_until": "2026-09-10T11:34:22+00:00"
+      "summary": "灵脉主脉机制 UI 不可达:卡片恒显 /30、主脉 70 上限不可投、无主脉标识、switchMainVein 无入口"
+    },
+    "CHG-019": {
+      "id": "CHG-019",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T11:05:39+00:00",
+      "updated_at": "2026-09-10T11:05:39+00:00",
+      "touched_round": 10,
+      "commit": "8f4526a",
+      "summary": "灵脉主脉 UI 可达"
+    },
+    "TASK-016": {
+      "id": "TASK-016",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T11:21:21+00:00",
+      "updated_at": "2026-09-10T11:21:21+00:00",
+      "touched_round": 10,
+      "category": "dx",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "priority_score": 3.5,
+      "summary": "易用性:锁定地界无解锁提示、建号鉴定动画期间可点 reroll 白扣次数"
+    },
+    "TASK-017": {
+      "id": "TASK-017",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T11:21:21+00:00",
+      "updated_at": "2026-09-10T11:21:21+00:00",
+      "touched_round": 10,
+      "category": "maintainability",
+      "severity": 0.45,
+      "confidence": 0.98,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "priority_score": 3,
+      "summary": "数值显示打磨:细碎正数显 0、[100,1000) 档向下取整不一致、极小负百分比显 -0%"
     }
   },
   "edges": [
@@ -1217,6 +1258,12 @@
       "to": "TASK-014",
       "type": "implements",
       "created_at": "2026-09-10T10:44:29+00:00"
+    },
+    {
+      "from": "CHG-019",
+      "to": "TASK-015",
+      "type": "implements",
+      "created_at": "2026-09-10T11:05:40+00:00"
     }
   ]
 }
