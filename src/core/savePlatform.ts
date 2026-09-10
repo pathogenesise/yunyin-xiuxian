@@ -31,7 +31,7 @@ export async function exportSaveToDevice(): Promise<string | null> {
       })
       useUiStore().toast(`已导出到「文档/Export/${file}」`, 'success')
       return null
-    } catch (err) {
+    } catch {
       // 写盘失败(存储不可用/权限异常)明确告知,不静默
       useUiStore().toast('存档导出失败,请检查存储空间后重试', 'warn')
       return '导出失败'
