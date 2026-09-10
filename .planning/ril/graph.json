@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 14,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T15:59:24+00:00",
+  "updated_at": "2026-09-10T16:03:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -506,7 +506,7 @@
       "version": 2,
       "created_at": "2026-09-09T15:18:26+00:00",
       "updated_at": "2026-09-10T14:11:58+00:00",
-      "touched_round": 13,
+      "touched_round": 14,
       "confidence": 0.75,
       "summary": "转世泄漏的确定性成分是有意还是 bug 需拆分:镇压/世界记忆=设计;lastCaveEventDay/winStreak/eventChains=本世进程应清;secretRealm/regionEvent=一次性内容应清"
     },
@@ -1197,11 +1197,11 @@
     "TASK-024": {
       "id": "TASK-024",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-10T14:50:40+00:00",
-      "updated_at": "2026-09-10T14:50:40+00:00",
-      "touched_round": 13,
+      "updated_at": "2026-09-10T16:03:22+00:00",
+      "touched_round": 14,
       "category": "core-feature",
       "severity": 0.4,
       "confidence": 0.6,
@@ -1335,6 +1335,30 @@
       "summary": "后台标签页绕离线上限(F6):引擎仅当 dt≥120s 走 settleOffline(效率0.9+洞府上限),否则 advance(dt) 全速。浏览器后台节流定时器到 ~60s/tick,后台常驻标签的 dt 恰在 120s 内,于是挂机也拿 100% 效率且不受 OFFLINE_CAP_HOURS 约束。判定:设计取舍暂不修——『它还在跑』对离线与在线未作刻意区分,收紧需把进程内大 dt 也并入离线结算,会改变后台挂机收益,属经济平衡改动,需产品定夺后再做",
       "rationale": "该洞在 bug-hunt 中判定为 needs design confirmation:后台继续计时算『在线』与否是无明确答案的产品问题;修起来也简单(把 advance 里 dt>阈值 的走 settleOffline)但收益曲线会变",
       "alternatives_rejected": "强制后台也走离线(后台收益大砍,可能被玩家视为惩罚)/无脑把 dt 上限(引入时间丢失的更多边界)"
+    },
+    "EV-009": {
+      "id": "EV-009",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T16:02:48+00:00",
+      "updated_at": "2026-09-10T16:02:48+00:00",
+      "touched_round": 14,
+      "source": "buffs.ts 全文搜索 'retreat' 无定义 + cultivation.ts addBuff 对未定义返回",
+      "summary": "闭关玩法比连胜/突破准备更碎:startRetreat 调 addBuff('retreat') 但 buffs.ts 无此 buff,addBuff 对未定义静默 return —— 宣的 +150% 修炼加成从不生效;且无调用方、无 UI 入口、『禁探索』无接线(retreatEndTime 只被 startRetreat/isRetreating 自指)。要接线需先造 buff 定义+定入口+补探索锁,数值/交互都是产品决策而非既有设计兑现",
+      "confidence": 0.98
+    },
+    "DEC-011": {
+      "id": "DEC-011",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T16:02:48+00:00",
+      "updated_at": "2026-09-10T16:02:48+00:00",
+      "touched_round": 14,
+      "summary": "闭关(TASK-024)判定为『设计未定』暂缓:与连胜/突破准备(数据完备只缺接线)不同,闭关连 retreat buff 定义都没有,入口与『禁探索』也没落过 UI/逻辑;强行接线等于从零设计一套新玩法(数值+入口+约束)。记入图谱待产品定 mex",
+      "rationale": "写完本批 Phase 28 其余全部接线后,闭关是唯一剩余的死功能;差别在于它没有『可兑现的既有设计』可依,贸然造一套与封包期产品意图未必相符",
+      "alternatives_rejected": "照 5 分钟 +150% 原样造 buff 并硬塞 UI(数值未审、入口未定,造出与产品意图可能相悖的机制)"
     }
   },
   "edges": [
@@ -1817,6 +1841,18 @@
       "to": "COMP-003",
       "type": "located_in",
       "created_at": "2026-09-10T15:57:54+00:00"
+    },
+    {
+      "from": "EV-009",
+      "to": "HYP-001",
+      "type": "validates",
+      "created_at": "2026-09-10T16:03:22+00:00"
+    },
+    {
+      "from": "DEC-011",
+      "to": "TASK-024",
+      "type": "governs",
+      "created_at": "2026-09-10T16:03:22+00:00"
     }
   ]
 }
