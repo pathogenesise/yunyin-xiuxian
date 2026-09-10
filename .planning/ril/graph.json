@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 11,
+  "round": 12,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T11:50:49+00:00",
+  "updated_at": "2026-09-10T12:09:25+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1020,10 +1020,10 @@
     "TASK-019": {
       "id": "TASK-019",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-10T11:50:49+00:00",
-      "updated_at": "2026-09-10T11:50:49+00:00",
+      "updated_at": "2026-09-10T11:51:42+00:00",
       "touched_round": 11,
       "category": "dx",
       "severity": 0.45,
@@ -1032,6 +1032,40 @@
       "unlock_factor": 1.0,
       "priority_score": 3.2,
       "summary": "桌面/Electron 弹窗不支持 Esc 关闭(只可点X/背景);人物页图鉴 X/Y 漏数灵材谱与悟道录,与图鉴页口径不符"
+    },
+    "CHG-024": {
+      "id": "CHG-024",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T11:51:42+00:00",
+      "updated_at": "2026-09-10T11:51:42+00:00",
+      "touched_round": 11,
+      "commit": Infinity,
+      "summary": "Esc 关闭弹窗 + 图鉴计数口径对齐"
+    },
+    "HYP-003": {
+      "id": "HYP-003",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T12:08:06+00:00",
+      "updated_at": "2026-09-10T12:08:06+00:00",
+      "touched_round": 12,
+      "confidence": 0.4,
+      "summary": "crypto.spec '兼容旧版明文' 在完整并行跑时会偶发失败(孤立/少量文件/多轮全量均绿),疑似 vitest worker 并行下 crypto-js 环境性抖动,与本仓库改动无关"
+    },
+    "EV-006": {
+      "id": "EV-006",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-10T12:08:07+00:00",
+      "updated_at": "2026-09-10T12:08:07+00:00",
+      "touched_round": 12,
+      "source": "bun run test ×6 + 多轮 test:report",
+      "confidence": 1,
+      "summary": "crypto 测试孤立 4/4 过,与新增 spec 同跑 3×全过,全量 4 连绿;仅约 1/5 概率在完整并行下偶发,未能捕获消息"
     }
   },
   "edges": [
@@ -1364,6 +1398,18 @@
       "to": "TASK-018",
       "type": "implements",
       "created_at": "2026-09-10T11:36:50+00:00"
+    },
+    {
+      "from": "CHG-024",
+      "to": "TASK-019",
+      "type": "implements",
+      "created_at": "2026-09-10T11:51:42+00:00"
+    },
+    {
+      "from": "EV-006",
+      "to": "HYP-003",
+      "type": "validates",
+      "created_at": "2026-09-10T12:09:25+00:00"
     }
   ]
 }
