@@ -5,6 +5,15 @@
 
     <!-- 装备:部位槽,点击唤起部位列表 -->
     <template v-if="tab === 'equip'">
+      <!-- 装备共鸣:机制是活的,玩家却看不见 —— 同组两件即共鸣,（2/2）亮起 -->
+      <div v-if="setRows.length" class="card-ink mt-3 px-4 py-2.5">
+        <p class="text-[10px] text-ink-faint">装备共鸣(同组两件即共鸣,机制不叠数值)</p>
+        <p v-for="s in setRows" :key="s.def.id" class="mt-1 flex items-baseline gap-2 text-[11px]">
+          <span class="font-kai" :class="s.active ? 'text-jade' : 'text-ink-soft'">{{ s.def.name }}</span>
+          <span class="tabular" :class="s.active ? 'text-jade' : 'text-ink-faint'">{{ s.count }}/{{ s.def.required }}</span>
+          <span class="min-w-0 text-[10px] leading-relaxed text-ink-faint">{{ s.def.effectDesc }}</span>
+        </p>
+      </div>
       <div class="mt-3 flex items-center justify-between px-1">
         <span class="text-[11px] text-ink-faint tabular">藏品 {{ inventory.bagItems.length }} · 器灵尘 {{ resources.dust }}</span>
         <span class="flex gap-3">
@@ -345,6 +354,7 @@
   import { craftability, type Craftability } from '@/core/craftability'
   import { decomposeByRanks, decomposeEquipment, artifactUpCost, upgradeArtifact } from '@/core/forge'
   import { keepVerdict } from '@/core/smartKeep'
+  import { equipSetDef, setCounts, type EquipSetDef } from '@/core/equipSet'
   import { formatGN, formatNum, formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import type { AnyStatKey, EquipSlot, GNum, PillDef } from '@/types'
@@ -374,6 +384,18 @@
   // ---- 装备:部位槽 + 部位候选列表 ----
   const SLOTS: EquipSlot[] = ['weapon', 'head', 'body', 'wrist', 'belt', 'boots', 'necklace', 'ring', 'talisman']
   const pickerSlot = ref<EquipSlot | null>(null)
+
+  /** 装备共鸣:已装备件里的同组计数(未满也列出来,让玩家知道差几件) */
+  const setRows = computed(() => {
+    const counts = setCounts(inventory.equippedItems)
+    return [...counts.entries()]
+      .map(([id, count]) => {
+        const def = equipSetDef(id)
+        return def ? { def, count, active: count >= def.required } : null
+      })
+      .filter((row): row is { def: EquipSetDef; count: number; active: boolean } => row !== null)
+      .sort((a, b) => Number(b.active) - Number(a.active) || b.count - a.count)
+  })
 
   const slotRows = computed(() =>
     SLOTS.map(slot => {

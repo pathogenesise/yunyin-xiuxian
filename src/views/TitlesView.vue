@@ -41,6 +41,10 @@
             </p>
             <p class="truncate text-[10px] text-ink-ghost">{{ row.def.desc }}</p>
             <p v-if="row.modText" class="text-[10px] text-azure tabular">{{ row.modText }}</p>
+            <!-- 性格是灵兽的"人味":它在探索里怎么表现,得让玩家看得见,而不是只看数值 -->
+            <p class="text-[10px] text-violet-ink">
+              {{ row.personalityName }} · <span class="text-ink-faint">{{ row.personalityDesc }}</span>
+            </p>
           </div>
           <button class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="togglePet(row.def.id)">
             {{ row.active ? '暂别' : '唤来' }}
@@ -62,6 +66,7 @@
   import { useQuestsStore } from '@/stores/quests'
   import { TITLES } from '@/data/titles'
   import { petDef, PETS } from '@/data/pets'
+  import { PERSONALITY_NAMES, personalityDesc } from '@/core/petPersonality'
   import { qualityDef } from '@/data/qualities'
   import { formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
@@ -109,7 +114,13 @@
     quests.collections.pet
       .map(id => petDef(id))
       .filter(def => def !== undefined)
-      .map(def => ({ def: def!, active: player.petId === def!.id, modText: modsText(def!.mods) }))
+      .map(def => ({
+        def: def!,
+        active: player.petId === def!.id,
+        modText: modsText(def!.mods),
+        personalityName: PERSONALITY_NAMES[def!.personality],
+        personalityDesc: personalityDesc(def!.personality)
+      }))
       .sort((a, b) => Number(b.active) - Number(a.active))
   )
 

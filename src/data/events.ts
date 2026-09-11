@@ -1207,12 +1207,15 @@ export const FORTUNE_EVENTS: EventDef[] = [
 ]
 const FORTUNE_BY_ID = new Map(FORTUNE_EVENTS.map(x => [x.id, x]))
 
-export function fortuneEventDef(id: string): EventDef | undefined {
-  return FORTUNE_BY_ID.get(id)
-}
-
 const BY_ID = new Map(EVENTS.map(x => [x.id, x]))
 
+/**
+ * 按 id 取事件 —— **普通事件与机缘同表**。
+ *
+ * 机缘(ft_)同样是 pickEventFor 选出来的,也会写进 adventure.pendingEventId。
+ * 此前这个查表只搜 EVENTS,于是 EventDialog 查不到机缘 → 弹窗不开,
+ * 会话卡到超时、自动结算又同样查不到 → 玩家白白丢掉一次机缘(2% 概率的静默空转)。
+ */
 export function eventDef(id: string): EventDef | undefined {
-  return BY_ID.get(id)
+  return BY_ID.get(id) ?? FORTUNE_BY_ID.get(id)
 }
