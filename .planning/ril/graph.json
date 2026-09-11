@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 89,
+  "round": 90,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:57:56+00:00",
+  "updated_at": "2026-09-11T20:01:44+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2979,7 +2979,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:41:15+00:00",
       "updated_at": "2026-09-11T16:41:15+00:00",
-      "touched_round": 60,
+      "touched_round": 89,
       "summary": "界域志/经典系统(classics.ts 典籍志 + yijing.ts 易 + RealmCodexView):承载传统经典的阅读与术数玩法"
     },
     "CHG-078": {
@@ -4355,6 +4355,52 @@
       "source": "dataTextAudit.spec(5 例):变数/秘境规则/增益/契约四表;故障注入三处(变数 28→30、增益 15→25、契约 25→30)各自被点名(commit 25d760f);另记反向结论:gongfa/artifacts/pills 等表只扫到 2 个百分比,不值得建判据",
       "summary": "『说明与实现不一致』这一类可被自动点名;判据只适用于说明与数值同属一条目的表",
       "confidence": 0.85
+    },
+    "ISS-063": {
+      "id": "ISS-063",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:01:25+00:00",
+      "updated_at": "2026-09-11T20:01:36+00:00",
+      "touched_round": 89,
+      "summary": "两处视图手抄游戏数字(注释却写着唯一来源是 X):人物页「修行 +3%,道躯 +1.5%」+ 边际收益里的 ×3,而 resourceGuidance/progressionDoc 读的是 DAO_FRUIT_CULT_BONUS;修行页闭关文案手打「5 分钟 +150%」,而 buffs.ts 的 retreat 里就是 durationSec=300/cultivationSpeed=1.5 —— 改常数即互相矛盾",
+      "severity": 0.4,
+      "confidence": 0.95
+    },
+    "CHG-113": {
+      "id": "CHG-113",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:01:25+00:00",
+      "updated_at": "2026-09-11T20:01:25+00:00",
+      "touched_round": 89,
+      "commit": "36c9813",
+      "summary": "两处视图改读来源(DAO_FRUIT_* / buffDef retreat);dataTextAudit 增视图不手抄数字两条红线"
+    },
+    "EV-069": {
+      "id": "EV-069",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:01:36+00:00",
+      "updated_at": "2026-09-11T20:01:36+00:00",
+      "touched_round": 89,
+      "source": "扫全部 .vue 模板:14 处硬编码百分比中 12 处是 SVG/CSS,真手抄数字 2 处(均已改);dataTextAudit 增两条红线,故障注入改回手抄即红(commit 36c9813)",
+      "summary": "视图文案数字的确认归属处已接线并有红线;通用规则因需逐条判断而不设",
+      "confidence": 0.85
+    },
+    "HYP-022": {
+      "id": "HYP-022",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:01:43+00:00",
+      "updated_at": "2026-09-11T20:01:43+00:00",
+      "touched_round": 89,
+      "confidence": 0.8,
+      "summary": "『文案数值对账』在视图层的正确形态是**定点接线 + 定点红线**,不是通用规则:模板数字的归属需逐条判断(SVG 的 0%/100%、CSS 的 calc、游戏常量、表数据混在一起),通用扫描会又漏又吵"
     }
   },
   "edges": [
@@ -6050,6 +6096,24 @@
       "to": "HYP-016",
       "type": "validates",
       "created_at": "2026-09-11T19:57:56+00:00"
+    },
+    {
+      "from": "CHG-113",
+      "to": "ISS-063",
+      "type": "resolves",
+      "created_at": "2026-09-11T20:01:36+00:00"
+    },
+    {
+      "from": "ISS-063",
+      "to": "COMP-012",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:01:36+00:00"
+    },
+    {
+      "from": "EV-069",
+      "to": "HYP-022",
+      "type": "validates",
+      "created_at": "2026-09-11T20:01:44+00:00"
     }
   ]
 }
