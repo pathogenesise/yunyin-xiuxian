@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 68,
+  "round": 69,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:12:16+00:00",
+  "updated_at": "2026-09-11T17:16:40+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -425,7 +425,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:46:51+00:00",
       "updated_at": "2026-09-09T14:46:51+00:00",
-      "touched_round": 13,
+      "touched_round": 68,
       "summary": "转世/轮回系统(reincarnation.ts + player store 跨世字段)"
     },
     "ISS-016": {
@@ -3429,6 +3429,52 @@
       "touched_round": 67,
       "commit": 9594635,
       "summary": "界域志分册(InkTabs 六册)+ 分册契约 3 例"
+    },
+    "ISS-051": {
+      "id": "ISS-051",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:16:34+00:00",
+      "updated_at": "2026-09-11T17:16:37+00:00",
+      "touched_round": 68,
+      "summary": "转世继承清单会静默漏项:HERITAGE 靠手写 REQUIRED 清单守着,新加的状态字段不入账(divination/breakthroughPrep/enlightenmentAt 漏了一整轮;倒推后另发现 姓名/转世次数/历世履历/本世命题 从未登记)—— 玩家在轮回结算里看不到这几项的交代",
+      "severity": 0.45,
+      "confidence": 0.95
+    },
+    "CHG-088": {
+      "id": "CHG-088",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:16:34+00:00",
+      "updated_at": "2026-09-11T17:16:34+00:00",
+      "touched_round": 68,
+      "commit": "9e90fd5",
+      "summary": "HERITAGE 补 7 行;新增从 $state 倒推的字段覆盖红线与弹窗同源断言"
+    },
+    "HYP-013": {
+      "id": "HYP-013",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:16:37+00:00",
+      "updated_at": "2026-09-11T17:16:37+00:00",
+      "touched_round": 68,
+      "confidence": 0.85,
+      "summary": "『手写清单』守不住新字段:凡是要穷举覆盖的契约,都必须从真实来源(store $state / 类型 / 数据表)倒推,手写清单只能作为展示层"
+    },
+    "EV-048": {
+      "id": "EV-048",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:16:40+00:00",
+      "updated_at": "2026-09-11T17:16:40+00:00",
+      "touched_round": 68,
+      "source": "samsaraAudit.spec「存档里的每个字段都登记了跨世去留 —— 从 $state 倒推」+ 弹窗同源断言;故障注入删掉 divination 映射立刻报该字段无结论(commit 9e90fd5)",
+      "summary": "倒推式覆盖红线确有分辨力;手写 REQUIRED 清单漏掉七项正是反例",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -4764,6 +4810,24 @@
       "to": "TASK-045",
       "type": "implements",
       "created_at": "2026-09-11T17:12:16+00:00"
+    },
+    {
+      "from": "CHG-088",
+      "to": "ISS-051",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:16:37+00:00"
+    },
+    {
+      "from": "ISS-051",
+      "to": "COMP-003",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:16:37+00:00"
+    },
+    {
+      "from": "EV-048",
+      "to": "HYP-013",
+      "type": "validates",
+      "created_at": "2026-09-11T17:16:40+00:00"
     }
   ]
 }
