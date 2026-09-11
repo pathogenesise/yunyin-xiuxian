@@ -16,7 +16,7 @@ const CATEGORIES = [
     name: 'Unit        数值纯函数',
     match: ['gnum', 'format', 'formulas', 'linggenGen', 'equipGen', 'crypto', 'quests', 'codex', 'craftability', 'reforge', 'theme', 'savePersistence', 'dongfu.spec', 'ui.spec']
   },
-  { name: 'Combat      战斗规则', match: ['combat.spec', 'ironwall', 'bossAudit', 'bossPhaseAudit', 'exploration.spec'] },
+  { name: 'Combat      战斗规则', match: ['combat.spec', 'highTierSmoke', 'ironwall', 'bossAudit', 'bossPhaseAudit', 'exploration.spec'] },
   {
     name: 'Balance     流派与生态',
     match: ['buildSim', 'buildSearch', 'buildDetect', 'buildAdvisor', 'equipSet', 'gongfaBranch', 'softCapAudit', 'linggenAffinity', 'linggenRole']

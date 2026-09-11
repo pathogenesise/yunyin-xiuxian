@@ -1,0 +1,63 @@
+/**
+ * 高界战斗/掉落冒烟(扩界)
+ *
+ * 新界 24 处地界此前只有数据层审计(敌人被引用、区域可达),**从未真的跑过一次**
+ * 战斗与掉落。数据写错(阈值越界、数值 NaN、掉落池空)在数据审计里看不出来,
+ * 一跑就现形。这里对每个新界域各取一处高层地界,真跑敌人快照与掉落结算。
+ */
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { makeEnemySnap } from './combat'
+import { afterWin } from './loot'
+import { regionDef } from '@/data/regions'
+import { enemyDef } from '@/data/enemies'
+import { toNum } from '@/utils/gnum'
+import { useResourcesStore } from '@/stores/resources'
+import { usePlayerStore } from '@/stores/player'
+
+/** 仙界/神界/混沌海各取两处,覆盖同层正区与第二处地界 */
+const HIGH_REGIONS = ['yunhai', 'zhexian', 'jinyuan', 'shenjihuang', 'guji', 'hongmengbenyuan', 'wudaoya'] as const
+
+describe('高界冒烟 · 敌人快照与掉落结算', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('新界各层地界的敌人快照数值有限且为正', () => {
+    for (const rid of HIGH_REGIONS) {
+      const region = regionDef(rid)
+      expect(region, `样本地界 ${rid} 不存在`).toBeDefined()
+      const ids = [...region!.enemies, region!.boss]
+      for (const id of ids) {
+        const def = enemyDef(id)
+        expect(def, `${rid} 引用了不存在的敌人 ${id}`).toBeDefined()
+        const snap = makeEnemySnap(def!, region!.tier, 1)
+        for (const [k, v] of Object.entries({
+          attack: toNum(snap.attack),
+          defense: toNum(snap.defense),
+          maxHp: toNum(snap.maxHp),
+          speed: snap.speed
+        })) {
+          expect(Number.isFinite(v), `${def!.name} 的 ${k} 非有限值`).toBe(true)
+          expect(v, `${def!.name} 的 ${k} 非正`).toBeGreaterThan(0)
+        }
+        expect(snap.skills.length, `${def!.name} 没有招式`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('新界各层地界都能真的结算出战斗奖励(灵石/修为有增、文案非空、无 NaN)', () => {
+    for (const rid of HIGH_REGIONS) {
+      const region = regionDef(rid)!
+      const resources = useResourcesStore()
+      const player = usePlayerStore()
+      const stoneBefore = toNum(resources.spiritStone)
+      const expBefore = toNum(player.exp)
+      const drops = afterWin(region, 1, true)
+      expect(drops.lines.length, `${region.name} 战利品文案为空`).toBeGreaterThan(0)
+      expect(toNum(resources.spiritStone), `${region.name} 灵石未增加`).toBeGreaterThan(stoneBefore)
+      expect(toNum(player.exp), `${region.name} 修为未增加`).toBeGreaterThan(expBefore)
+      expect(Number.isFinite(toNum(resources.spiritStone))).toBe(true)
+    }
+  })
+})
