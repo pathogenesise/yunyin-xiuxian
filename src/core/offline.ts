@@ -13,7 +13,6 @@ import {
   BATTLE_EXP_REQ_PCT,
   EQUIP_DROP_CHANCE,
   EXPLORE_BATTLE_INTERVAL,
-  EXPLORE_EVENT_CHANCE,
   EXPLORE_MODES,
   OFFLINE_BOSS_REWARD_MULT,
   OFFLINE_EFFICIENCY,
@@ -25,7 +24,7 @@ import { currentDaoRules } from './endgameService'
 import { generateEquipment } from './equipGen'
 import { acquireEquipment, afterWin } from './loot'
 import { autoResolveEvent } from './eventEngine'
-import { clearRegionAndUnlockNext } from './exploration'
+import { clearRegionAndUnlockNext, exploreEventChance } from './exploration'
 import { placeContent } from './mortalWorldService'
 import { stoneByTier } from './formulas'
 import { settleSuppressedRegions } from './suppress'
@@ -116,7 +115,9 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       const mods = player.finalStats.mods
       const speed = 1 + modOf(mods, 'explorationSpeed')
       const encounters = Math.floor((simSec / EXPLORE_BATTLE_INTERVAL) * speed)
-      events = Math.round(encounters * EXPLORE_EVENT_CHANCE * (1 + modOf(mods, 'eventLuck')))
+      // 与在线同源:同一个 exploreEventChance(含今日星象之利)——
+      // 从前离线漏了星象,同一天同一地会比在线少算一成际遇
+      events = Math.round(encounters * exploreEventChance(region.id, mods))
       battles = Math.max(0, encounters - events)
 
       if (battles > 0) {

@@ -8,6 +8,7 @@ import { enemyDef } from '@/data/enemies'
 import { regionDef, REGIONS } from '@/data/regions'
 import { EVENT_AUTO_RESOLVE_SECONDS, EXPLORE_BATTLE_INTERVAL, EXPLORE_EVENT_CHANCE, EXPLORE_MODES } from '@/data/constants'
 import { mansionEventLuck } from './astronomy'
+import type { StatMods } from '@/types'
 import { makeEnemySnap, resolveCombat } from './combat'
 import { mergeRules } from './gauntlet'
 import { lifeTrialRules } from './lifeTrialService'
@@ -329,6 +330,17 @@ function nextBattleTime(now: number): number {
   return now + (EXPLORE_BATTLE_INTERVAL * 1000) / speed
 }
 
+/**
+ * 一次遭遇里出际遇的概率 —— **在线 Tick 与离线结算共用这一份口径**。
+ *
+ * 从前两边各写一遍:在线加自身福缘,离线也加自身福缘;星象接进来时只改了在线,
+ * 于是同一天同一地,离线挂机算出的事件数比在线少一成。故抽成一处,
+ * 让"所见即所算"有地方可钉(见 astronomy.spec 的在线/离线同源一条)。
+ */
+export function exploreEventChance(regionId: string, mods: StatMods): number {
+  return EXPLORE_EVENT_CHANCE * (1 + modOf(mods, 'eventLuck') + mansionEventLuck(regionId))
+}
+
 /** 每 Tick 推进探索(由引擎调用) */
 export function tickExploration(now: number): void {
   const adventure = useAdventureStore()
@@ -356,9 +368,7 @@ export function tickExploration(now: number): void {
   if (now >= s.nextBattleAt) {
     const region = regionDef(s.regionId)
     if (!region) return
-    // 际遇概率:自身福缘 + 今日星象(值日宿所配界域之地,际遇更易)
-    const eventLuck = modOf(player.finalStats.mods, 'eventLuck') + mansionEventLuck(region.id)
-    if (rng.chance(EXPLORE_EVENT_CHANCE * (1 + eventLuck))) {
+    if (rng.chance(exploreEventChance(region.id, player.finalStats.mods))) {
       // 事件标签同样走本世内容
       const ev = pickEventFor({ ...region, eventTags: [...placeContent(region.id).eventTags] })
       if (ev) {

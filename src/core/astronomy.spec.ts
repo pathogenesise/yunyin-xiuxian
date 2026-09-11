@@ -18,6 +18,7 @@ import { REGIONS, regionDef } from '@/data/regions'
 import { worldOf } from '@/data/realms'
 import { useGameStore } from '@/stores/game'
 import { MANSION_EVENT_LUCK, favoredWorld, isFavoredRegion, mansionEventLuck, mansionOfDay, todayMansion, todayMansionLine } from './astronomy'
+import { exploreEventChance } from './exploration'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -126,5 +127,31 @@ describe('星象 · 接线', () => {
         .replace(/\/\/.*$/gm, '')
       expect(src, `${file} 没有显示今日星象`).toContain('todayMansion')
     }
+  })
+
+  it('在线与离线同源:际遇概率只有一份口径(含星象之利)', () => {
+    // 从前在线与离线各写一遍公式;星象只接进了在线,同一天同一地离线少算一成际遇
+    const game = useGameStore()
+    let day = -1
+    for (let d = 0; d < 28; d += 1) {
+      if (favoredWorld(mansionOfDay(d)) === 'mortal') {
+        day = d
+        break
+      }
+    }
+    game.$patch({ totalPlaySec: day * 86400 })
+    const mortal = REGIONS.find(r => worldOf(r.minRealm).id === 'mortal')!
+    const immortal = REGIONS.find(r => worldOf(r.minRealm).id === 'immortal')!
+    // 同一个函数算两地:得利之地高出 MANSION_EVENT_LUCK 的比例,他处原样
+    const lucky = exploreEventChance(mortal.id, {})
+    const plain = exploreEventChance(immortal.id, {})
+    expect(lucky / plain).toBeCloseTo(1 + MANSION_EVENT_LUCK, 6)
+
+    // 离线结算文件必须调用这一个函数,不许再自己乘一遍
+    const offlineSrc = readFileSync(resolve(__dirname, 'offline.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+    expect(offlineSrc).toContain('exploreEventChance(')
+    expect(offlineSrc).not.toContain('EXPLORE_EVENT_CHANCE')
   })
 })
