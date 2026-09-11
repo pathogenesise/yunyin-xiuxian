@@ -1,4 +1,4 @@
-/** 功法库 —— 主修 12 / 辅修 13 / 秘术 8 */
+/** 功法库 —— 主修 15 / 辅修 16 / 秘术 11 */
 import type { GongfaDef, GongfaType, QualityId, StatMods } from '@/types'
 
 function g(
@@ -391,6 +391,36 @@ export const GONGFA: GongfaDef[] = [
     { cultivationSpeed: 0.5, attackPct: 0.24, defensePct: 0.22, maxHpPct: 0.22 },
     { cultivationSpeed: 0.06, attackPct: 0.025, defensePct: 0.021 },
     { element: 'chaos', skill: { name: '混元一炁', mult: 3.8, rate: 0.28 } }
+  ),
+  g(
+    's_hundunti',
+    '混沌体术',
+    'sub',
+    'divine',
+    19,
+    '以混沌之气淬体,身与道同,不增不减',
+    { maxHpPct: 0.24, defensePct: 0.2, damageReduction: 0.08 },
+    { maxHpPct: 0.026, defensePct: 0.018 }
+  ),
+  g(
+    'x_shenji',
+    '神机衍数',
+    'secret',
+    'divine',
+    17,
+    '推演天机,行止皆在算中',
+    { luck: 0.12, dropRate: 0.12, explorationSpeed: 0.12 },
+    { luck: 0.035, dropRate: 0.03, explorationSpeed: 0.03 }
+  ),
+  g(
+    'x_daoyin',
+    '道音玄章',
+    'secret',
+    'divine',
+    20,
+    '大道之音不绝于耳,闻之者道基自厚',
+    { cultivationSpeed: 0.32, breakthroughRate: 0.05, luck: 0.08 },
+    { cultivationSpeed: 0.09, breakthroughRate: 0.015 }
   )
 ]
 

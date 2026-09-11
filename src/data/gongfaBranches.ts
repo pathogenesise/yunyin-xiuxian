@@ -250,7 +250,16 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   // 主修:混元无极经
   b('m_hunyuan', 'b_hunyuan_hua', '化形', '混元化形,四象俱足', { attackPct: 0.24, defensePct: 0.24, maxHpPct: 0.24 }),
   b('m_hunyuan', 'b_hunyuan_gui', '归元', '万法归元,道基自厚', { cultivationSpeed: 0.3, qiRegen: 0.28, breakthroughRate: 0.06 }),
-  b('m_hunyuan', 'b_hunyuan_kai', '开天', '无极开天,一击破界', { attackPct: 0.28, armorPen: 0.2, critDamage: 0.6 })
+  b('m_hunyuan', 'b_hunyuan_kai', '开天', '无极开天,一击破界', { attackPct: 0.28, armorPen: 0.2, critDamage: 0.6 }),
+  // 辅修:混沌体术
+  b('s_hundunti', 'b_hundunti_gu', '固本', '混沌磐身,万击不摇', { maxHpPct: 0.3, defensePct: 0.3 }),
+  b('s_hundunti', 'b_hundunti_ren', '润身', '身化混沌,伤处自弥', { regenPerRound: 0.06, maxHpPct: 0.2, damageReduction: 0.1 }),
+  // 秘术:神机衍数
+  b('x_shenji', 'b_shenji_ce', '测算', '天机在算,机缘自来', { luck: 0.15, dropRate: 0.25, spiritStoneGain: 0.35 }),
+  b('x_shenji', 'b_shenji_yan', '验天', '行止皆数,福地自现', { dropRate: 0.2, explorationSpeed: 0.25, luck: 0.1 }),
+  // 秘术:道音玄章
+  b('x_daoyin', 'b_daoyin_ming', '明道', '道音入耳,修行不辍', { cultivationSpeed: 0.3, qiRegen: 0.28, breakthroughRate: 0.06 }),
+  b('x_daoyin', 'b_daoyin_wu', '悟道', '闻音悟道,一日千里', { cultivationSpeed: 0.28, expGain: 0.28, luck: 0.12 })
 ]
 
 const BY_ID = new Map(GONGFA_BRANCHES.map(b => [b.id, b]))
