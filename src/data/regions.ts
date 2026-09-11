@@ -1,5 +1,5 @@
 /**
- * 历练区域 —— 32 处,层级递进,击败首领解锁下一区域。
+ * 历练区域 —— 44 处,层级递进,击败首领解锁下一区域。
  *
  * 1-20 层属人间界(旧表原样保留);21 层起每层一处,依次对应
  * 仙界/神界/混沌海的新境界(minRealm 9-20)。凡界路线生成只取人间界部分,
@@ -263,165 +263,33 @@ export const REGIONS: RegionDef[] = [
     ['general', 'sky'],
     'xianfu'
   ),
-  // ============ 仙界(21-25 层)============
-  r(
-    'yunhai',
-    '云海仙门',
-    21,
-    9,
-    5,
-    'cloud',
-    '云海尽头,一道仙门巍然矗立,过此门者方称仙人',
-    ['e_imm_guard', 'e_imm_crane'],
-    'e_imm_gate',
-    ['general', 'sky', 'immortal'],
-    'hongmeng'
-  ),
-  r(
-    'yujing',
-    '金阙玉京',
-    22,
-    10,
-    5,
-    'castle',
-    '金阙千重,玉京巍峨,天兵列阵森然',
-    ['e_imm_jade', 'e_imm_spear'],
-    'e_imm_general',
-    ['general', 'sky', 'immortal'],
-    'yunhai'
-  ),
-  r(
-    'yaochi',
-    '瑶池仙苑',
-    23,
-    11,
-    5,
-    'leaf',
-    '瑶池之畔仙桃垂枝,守苑仙兽蛰伏于花影之间',
-    ['e_imm_fairy', 'e_imm_beast'],
-    'e_imm_queen',
-    ['general', 'immortal'],
-    'yujing'
-  ),
-  r(
-    'leichi',
-    '太乙雷池',
-    24,
-    12,
-    5,
-    'zap',
-    '一池雷水亘古不涸,太乙仙光自池底冲天而起',
-    ['e_tai_thunder', 'e_tai_light'],
-    'e_tai_zun',
-    ['general', 'thunder', 'immortal'],
-    'yaochi'
-  ),
-  r(
-    'daluotian',
-    '大罗天阙',
-    25,
-    13,
-    5,
-    'star',
-    '大罗天阙悬于星河之上,星君执掌周天星斗',
-    ['e_luo_star', 'e_luo_void'],
-    'e_luo_lord',
-    ['general', 'sky', 'immortal'],
-    'leichi'
-  ),
-  // ============ 神界(26-29 层)============
-  r(
-    'shenbian',
-    '神域边陲',
-    26,
-    14,
-    5,
-    'shield',
-    '神域边陲法则紊乱,斥候与凶兽游弋其间',
-    ['e_god_scout', 'e_god_beast'],
-    'e_god_border',
-    ['general', 'god'],
-    'daluotian'
-  ),
-  r(
-    'shenbingguan',
-    '神兵天关',
-    27,
-    15,
-    5,
-    'sword',
-    '神兵列于天关,代天神将持戈而立',
-    ['e_god_soldier', 'e_god_chariot'],
-    'e_god_general',
-    ['general', 'god'],
-    'shenbian'
-  ),
-  r(
-    'shenwangdian',
-    '神王圣殿',
-    28,
-    16,
-    5,
-    'crown',
-    '圣殿神光普照,神官诵念法则之名',
-    ['e_god_priest', 'e_god_light'],
-    'e_god_king',
-    ['general', 'god'],
-    'shenbingguan'
-  ),
-  r(
-    'shendigong',
-    '神帝天宫',
-    29,
-    17,
-    5,
-    'castle',
-    '天宫之上,神帝垂目,法则化形为兽',
-    ['e_god_guard', 'e_god_law'],
-    'e_god_emperor',
-    ['general', 'god'],
-    'shenwangdian'
-  ),
-  // ============ 混沌海(30-32 层)============
-  r(
-    'hundunbin',
-    '混沌之滨',
-    30,
-    18,
-    5,
-    'sparkles',
-    '混沌之滨,天地未分,一点真灵游走其间',
-    ['e_chaos_wisp', 'e_chaos_beast'],
-    'e_chaos_lord',
-    ['general', 'chaos'],
-    'shendigong'
-  ),
-  r(
-    'shenmoyuan',
-    '神魔渊',
-    31,
-    19,
-    5,
-    'skull',
-    '神魔一体,开天辟地的余威仍在此渊回荡',
-    ['e_chaos_demon', 'e_chaos_void'],
-    'e_chaos_king',
-    ['general', 'chaos', 'dark'],
-    'hundunbin'
-  ),
-  r(
-    'hongmengbenyuan',
-    '鸿蒙本源',
-    32,
-    20,
-    5,
-    'sparkles',
-    '万道之源,鸿蒙本源静悬于此,道祖一念可开天地',
-    ['e_chaos_origin', 'e_chaos_shadow'],
-    'e_chaos_zu',
-    ['general', 'chaos', 'sky'],
-    'shenmoyuan'
-  )
+  // ============ 仙界(21-25 层,每层两处)============
+  r('yunhai', '云海仙门', 21, 9, 5, 'cloud', '云海尽头,一道仙门巍然矗立,过此门者方称仙人', ['e_imm_guard', 'e_imm_crane'], 'e_imm_gate', ['general', 'sky', 'immortal'], 'hongmeng'),
+  r('zhexian', '谪仙古渡', 21, 9, 5, 'droplets', '古渡无舟,只有被贬下界的仙人在此徘徊', ['e_banished', 'e_duchuan'], 'e_duweng', ['general', 'immortal'], 'yunhai'),
+  r('yujing', '金阙玉京', 22, 10, 5, 'castle', '金阙千重,玉京巍峨,天兵列阵森然', ['e_imm_jade', 'e_imm_spear'], 'e_imm_general', ['general', 'sky', 'immortal'], 'zhexian'),
+  r('xingyuntai', '星陨仙台', 22, 10, 5, 'star', '陨落的仙星堆积成台,台上紫气昼夜不散', ['e_meteorguard', 'e_ziqi'], 'e_xingtai', ['general', 'sky', 'immortal'], 'yujing'),
+  r('yaochi', '瑶池仙苑', 23, 11, 5, 'leaf', '瑶池之畔仙桃垂枝,守苑仙兽蛰伏于花影之间', ['e_imm_fairy', 'e_imm_beast'], 'e_imm_queen', ['general', 'immortal'], 'xingyuntai'),
+  r('jinyuan', '不朽金渊', 23, 11, 5, 'gem', '一渊金气沉如渊海,号称不朽之物尽沉其中', ['e_goldbeast', 'e_ironbody'], 'e_jinyuanzhu', ['general', 'immortal'], 'yaochi'),
+  r('leichi', '太乙雷池', 24, 12, 5, 'zap', '一池雷水亘古不涸,太乙仙光自池底冲天而起', ['e_tai_thunder', 'e_tai_light'], 'e_tai_zun', ['general', 'thunder', 'immortal'], 'jinyuan'),
+  r('daochang', '玄机道场', 24, 12, 5, 'scroll', '残破的道场里机关仍在自转,道童仍在扫地', ['e_qitong', 'e_puppet'], 'e_daozun', ['general', 'immortal'], 'leichi'),
+  r('daluotian', '大罗天阙', 25, 13, 5, 'star', '大罗天阙悬于星河之上,星君执掌周天星斗', ['e_luo_star', 'e_luo_void'], 'e_luo_lord', ['general', 'sky', 'immortal'], 'daochang'),
+  r('xinghai', '罗天星海', 25, 13, 5, 'sparkles', '星海浩瀚无垠,每一粒星都是一位陨落星君的余烬', ['e_sealing', 'e_meteorbeast'], 'e_xinghaizhu', ['general', 'sky', 'immortal'], 'daluotian'),
+  // ============ 神界(26-29 层,每层两处)============
+  r('shenbian', '神域边陲', 26, 14, 5, 'shield', '神域边陲法则紊乱,斥候与凶兽游弋其间', ['e_god_scout', 'e_god_beast'], 'e_god_border', ['general', 'god'], 'xinghai'),
+  r('shenjihuang', '神迹荒原', 26, 14, 5, 'sparkles', '荒原上散落着上古神迹,抬眼即是神明留下的手笔', ['e_miraclepuppet', 'e_wildbeast'], 'e_miraclekeeper', ['general', 'god'], 'shenbian'),
+  r('shenbingguan', '神兵天关', 27, 15, 5, 'sword', '神兵列于天关,代天神将持戈而立', ['e_god_soldier', 'e_god_chariot'], 'e_god_general', ['general', 'god'], 'shenjihuang'),
+  r('yunshenzhanchang', '陨神战场', 27, 15, 5, 'skull', '众神陨落之处的战场,千百年后仍有战意翻涌', ['e_deadgod', 'e_wargod'], 'e_battlelord', ['general', 'god', 'dark'], 'shenbingguan'),
+  r('shenwangdian', '神王圣殿', 28, 16, 5, 'crown', '圣殿神光普照,神官诵念法则之名', ['e_god_priest', 'e_god_light'], 'e_god_king', ['general', 'god'], 'yunshenzhanchang'),
+  r('wanshendian', '万神殿堂', 28, 16, 5, 'gem', '一万尊神像并列成堂,神像脚下的香火从未熄过', ['e_idol', 'e_hymn'], 'e_pantheonlord', ['general', 'god'], 'shenwangdian'),
+  r('shendigong', '神帝天宫', 29, 17, 5, 'castle', '天宫之上,神帝垂目,法则化形为兽', ['e_god_guard', 'e_god_law'], 'e_god_emperor', ['general', 'god'], 'wanshendian'),
+  r('diquetianjie', '帝阙天阶', 29, 17, 5, 'castle', '帝阙之下九千级天阶,一步一重神威压身', ['e_tianjiewei', 'e_royalseal'], 'e_tianjiekeeper', ['general', 'god'], 'shendigong'),
+  // ============ 混沌海(30-32 层,每层两处)============
+  r('hundunbin', '混沌之滨', 30, 18, 5, 'sparkles', '混沌之滨,天地未分,一点真灵游走其间', ['e_chaos_wisp', 'e_chaos_beast'], 'e_chaos_lord', ['general', 'chaos'], 'diquetianjie'),
+  r('youtan', '真灵幽滩', 30, 18, 5, 'droplets', '幽滩之上真灵浮沉,似是徘徊又似在守着什么', ['e_lingying', 'e_mudbeast'], 'e_youtanling', ['general', 'chaos'], 'hundunbin'),
+  r('shenmoyuan', '神魔渊', 31, 19, 5, 'skull', '神魔一体,开天辟地的余威仍在此渊回荡', ['e_chaos_demon', 'e_chaos_void'], 'e_chaos_king', ['general', 'chaos', 'dark'], 'youtan'),
+  r('guji', '神魔古祭', 31, 19, 5, 'skull', '一座比天地更早的古祭坛,祭的正是开天的那场厮杀', ['e_altar', 'e_riteshadow'], 'e_jitanlord', ['general', 'chaos', 'dark'], 'shenmoyuan'),
+  r('hongmengbenyuan', '鸿蒙本源', 32, 20, 5, 'sparkles', '万道之源,鸿蒙本源静悬于此,道祖一念可开天地', ['e_chaos_origin', 'e_chaos_shadow'], 'e_chaos_zu', ['general', 'chaos', 'sky'], 'guji'),
+  r('wudaoya', '道祖悟道崖', 32, 20, 5, 'mountain', '传说混沌道祖曾在这面崖下坐了三万年,崖上字迹至今依稀', ['e_cliffshadow', 'e_wordbeast'], 'e_daoyalord', ['general', 'chaos'], 'hongmengbenyuan')
 ]
 
 /** 人间界最高区域层级 —— 其上的层级属仙界/神界/混沌海,不进凡界路线池 */

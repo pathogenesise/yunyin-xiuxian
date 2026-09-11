@@ -1,4 +1,4 @@
-/** 敌人库 —— 96 个,含 32 名区域首领;多段/真伤/闪避等机制用于流派克制 */
+/** 敌人库 —— 132 个,含 44 名区域首领;多段/真伤/闪避等机制用于流派克制 */
 import type { BossArchetype, BossPhase, ElementId, EnemyDef, EnemySkill, StatMods } from '@/types'
 
 function e(
@@ -361,6 +361,160 @@ export const ENEMIES: EnemyDef[] = [
     archetype: 'threshold',
     mods: { damageReduction: 0.25, critRate: 0.15 },
     phases: [{ hpThreshold: 0.5, modChanges: { damageReduction: 0.4, damageBonus: 0.5 }, label: '道祖临世' }]
+  }),
+
+  // ============ 第二处界域地界(t21-32,与同层正区同难度带)============
+  // t21 谪仙古渡
+  e('e_banished', '谪仙守卫', 21, 'shield', [1.4, 1.35, 1.3, 1.0], [heavy('谪仙戟', 2.0, 0.3)], { element: 'metal' }),
+  e('e_duchuan', '渡厄仙槎', 21, 'droplets', [1.2, 1.3, 1.1, 1.15], [{ name: '渡厄浪', mult: 1.2, rate: 0.45, effect: 'multi' }], {
+    element: 'water'
+  }),
+  e('e_duweng', '渡人仙翁', 21, 'skull', [5.1, 1.6, 1.45, 1.1], [{ name: '引渡长生', mult: 2.5, rate: 0.3, effect: 'drain' }], {
+    boss: true,
+    element: 'water',
+    archetype: 'attrition',
+    mods: { regenPerRound: 0.02, lifesteal: 0.1 },
+    phases: [{ hpThreshold: 0.5, modChanges: { regenPerRound: 0.16, lifesteal: 0.25 }, label: '渡尽苦海' }]
+  }),
+  // t22 星陨仙台
+  e('e_meteorguard', '星陨仙傀', 22, 'star', [1.35, 1.45, 1.2, 1.05], [heavy('陨星锤', 2.1, 0.3)], { element: 'light' }),
+  e('e_ziqi', '紫气仙灵', 22, 'sparkles', [1.05, 1.5, 1.0, 1.3], [{ name: '紫气贯顶', mult: 2.0, rate: 0.32, effect: 'pierce' }], {
+    element: 'light'
+  }),
+  e('e_xingtai', '星台仙主', 22, 'skull', [5.3, 1.9, 1.35, 1.15], [{ name: '星坠一击', mult: 2.7, rate: 0.32, effect: 'pierce' }], {
+    boss: true,
+    element: 'light',
+    archetype: 'truedmg',
+    mods: { critDamage: 0.5, critRate: 0.1 },
+    phases: [{ hpThreshold: 0.55, skillChanges: [{ name: '星陨·贯天', mult: 3.1, rate: 0.36, effect: 'pierce' }], label: '星陨贯天' }]
+  }),
+  // t23 不朽金渊
+  e('e_goldbeast', '金渊仙兽', 23, 'paw', [1.7, 1.3, 1.5, 0.95], [{ name: '金噬', mult: 2.2, rate: 0.3, effect: 'bleed' }], {
+    element: 'metal'
+  }),
+  e('e_ironbody', '不坏金卫', 23, 'shield', [1.5, 1.2, 1.6, 0.85], [{ name: '不朽壁', mult: 1.8, rate: 0.3, effect: 'shield' }], {
+    element: 'metal'
+  }),
+  e('e_jinyuanzhu', '金渊之主', 23, 'skull', [5.6, 1.7, 1.7, 1.0], [{ name: '不朽金身', mult: 2.6, rate: 0.3, effect: 'shield' }], {
+    boss: true,
+    element: 'metal',
+    archetype: 'threshold',
+    mods: { shieldOnStart: 0.3, damageReduction: 0.1 },
+    phases: [{ hpThreshold: 0.5, modChanges: { shieldOnStart: 0.5, damageReduction: 0.2 }, label: '金渊封锁' }]
+  }),
+  // t24 玄机道场
+  e('e_qitong', '玄机道童', 24, 'moon', [1.1, 1.5, 1.05, 1.3], [{ name: '玄机印', mult: 1.9, rate: 0.3, effect: 'stun' }]),
+  e('e_puppet', '机关仙傀', 24, 'shield', [1.6, 1.35, 1.45, 1.0], [{ name: '机括连击', mult: 1.25, rate: 0.5, effect: 'multi' }], {
+    element: 'metal'
+  }),
+  e('e_daozun', '道场仙尊', 24, 'skull', [5.5, 1.9, 1.3, 1.2], [{ name: '玄机反照', mult: 1.1, rate: 0.55, effect: 'multi' }], {
+    boss: true,
+    archetype: 'counter',
+    mods: { counterRate: 0.2, critDamage: 0.3 },
+    phases: [{ hpThreshold: 0.5, modChanges: { counterRate: 0.4 }, skillChanges: [{ name: '玄机·反照', mult: 1.4, rate: 0.5, effect: 'multi' }], label: '玄机反照' }]
+  }),
+  // t25 罗天星海
+  e('e_sealing', '星海仙灵', 25, 'star', [1.2, 1.5, 1.1, 1.35], [{ name: '星屑乱舞', mult: 1.3, rate: 0.5, effect: 'multi' }], {
+    element: 'light'
+  }),
+  e('e_meteorbeast', '陨星仙兽', 25, 'paw', [1.8, 1.4, 1.4, 1.0], [heavy('陨星冲撞', 2.5, 0.3)], { element: 'earth' }),
+  e('e_xinghaizhu', '星海之主', 25, 'skull', [6.1, 2.0, 1.4, 1.3], [{ name: '星海乱流', mult: 1.3, rate: 0.5, effect: 'multi' }], {
+    boss: true,
+    element: 'light',
+    archetype: 'evasive',
+    mods: { dodgeRate: 0.28 },
+    phases: [{ hpThreshold: 0.5, modChanges: { dodgeRate: 0.46 }, label: '星海无形' }]
+  }),
+  // t26 神迹荒原
+  e('e_miraclepuppet', '神迹傀儡', 26, 'shield', [1.5, 1.5, 1.5, 1.0], [heavy('神迹重击', 2.4, 0.3)]),
+  e('e_wildbeast', '荒原神兽', 26, 'paw', [1.8, 1.35, 1.4, 1.0], [{ name: '荒神撕咬', mult: 2.4, rate: 0.3, effect: 'bleed' }], {
+    element: 'earth'
+  }),
+  e('e_miraclekeeper', '神迹守者', 26, 'skull', [5.7, 2.0, 1.5, 1.1], [{ name: '神迹镇压', mult: 2.9, rate: 0.32 }], {
+    boss: true,
+    archetype: 'spellbane',
+    mods: { damageReduction: 0.2, critRate: 0.12 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageReduction: 0.38 }, label: '神迹不破' }]
+  }),
+  // t27 陨神战场
+  e('e_deadgod', '陨神残魂', 27, 'ghost', [1.4, 1.7, 1.3, 1.1], [{ name: '陨神之噬', mult: 2.5, rate: 0.3, effect: 'drain' }], {
+    element: 'dark'
+  }),
+  e('e_wargod', '神战幽影', 27, 'ghost', [1.3, 1.8, 1.2, 1.25], [{ name: '神战裂影', mult: 2.6, rate: 0.32, effect: 'pierce' }], {
+    element: 'dark'
+  }),
+  e('e_battlelord', '战场主宰', 27, 'skull', [6.3, 2.2, 1.4, 1.2], [heavy('主宰一击', 3.1, 0.32)], {
+    boss: true,
+    element: 'dark',
+    archetype: 'berserk',
+    mods: { critRate: 0.15, critDamage: 0.3 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.6 }, skillChanges: [{ name: '主宰·屠神', mult: 3.5, rate: 0.42 }], label: '屠神' }]
+  }),
+  // t28 万神殿堂
+  e('e_idol', '神像卫', 28, 'gem', [1.7, 1.6, 1.6, 1.0], [{ name: '神像壁垒', mult: 2.3, rate: 0.3, effect: 'shield' }], {
+    element: 'light'
+  }),
+  e('e_hymn', '颂神使', 28, 'star', [1.2, 1.7, 1.2, 1.3], [{ name: '颂神光', mult: 2.6, rate: 0.32, effect: 'pierce' }], {
+    element: 'light'
+  }),
+  e('e_pantheonlord', '万神殿主', 28, 'skull', [6.7, 2.1, 1.6, 1.15], [{ name: '万神加护', mult: 3.0, rate: 0.3, effect: 'shield' }], {
+    boss: true,
+    element: 'light',
+    archetype: 'threshold',
+    mods: { shieldOnStart: 0.35, critRate: 0.12 },
+    phases: [{ hpThreshold: 0.5, modChanges: { shieldOnStart: 0.55, damageReduction: 0.2 }, label: '万神同殿' }]
+  }),
+  // t29 帝阙天阶
+  e('e_tianjiewei', '天阶神卫', 29, 'shield', [1.6, 1.7, 1.55, 1.1], [{ name: '阶前反戈', mult: 1.1, rate: 0.55, effect: 'multi' }], {
+    element: 'metal'
+  }),
+  e('e_royalseal', '帝印神兽', 29, 'gem', [1.5, 1.8, 1.35, 1.2], [{ name: '帝印镇落', mult: 2.9, rate: 0.32, effect: 'pierce' }], {
+    element: 'chaos'
+  }),
+  e('e_tianjiekeeper', '帝阙守者', 29, 'skull', [7.1, 2.3, 1.6, 1.2], [{ name: '帝阙噬灵', mult: 3.2, rate: 0.3, effect: 'drain' }], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'antiheal',
+    mods: { lifesteal: 0.15, critRate: 0.1 },
+    phases: [{ hpThreshold: 0.5, modChanges: { lifesteal: 0.38 }, label: '帝阙绝生' }]
+  }),
+  // t30 真灵幽滩
+  e('e_lingying', '真灵游影', 30, 'sparkles', [1.35, 1.7, 1.15, 1.4], [{ name: '真灵游噬', mult: 2.6, rate: 0.3, effect: 'drain' }], {
+    element: 'chaos'
+  }),
+  e('e_mudbeast', '幽滩异兽', 30, 'paw', [2.0, 1.5, 1.5, 1.0], [{ name: '幽滩缠噬', mult: 2.7, rate: 0.3, effect: 'bleed' }], {
+    element: 'water'
+  }),
+  e('e_youtanling', '幽滩真灵', 30, 'skull', [6.9, 2.2, 1.5, 1.25], [heavy('真灵归寂', 3.2, 0.3)], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'attrition',
+    mods: { regenPerRound: 0.02, lifesteal: 0.12 },
+    phases: [{ hpThreshold: 0.5, modChanges: { regenPerRound: 0.16, lifesteal: 0.28 }, label: '真灵不灭' }]
+  }),
+  // t31 神魔古祭
+  e('e_altar', '古祭神魔', 31, 'skull', [1.9, 1.9, 1.6, 1.15], [heavy('古祭魔斩', 3.1, 0.32)], { element: 'chaos' }),
+  e('e_riteshadow', '祭影', 31, 'ghost', [1.4, 1.85, 1.2, 1.4], [{ name: '祭影侵蚀', mult: 2.8, rate: 0.32, effect: 'pierce' }], {
+    element: 'dark'
+  }),
+  e('e_jitanlord', '古祭之主', 31, 'skull', [7.5, 2.4, 1.6, 1.2], [heavy('开祭一击', 3.5, 0.32)], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'berserk',
+    mods: { critDamage: 0.4, armorPen: 0.1 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.7 }, skillChanges: [{ name: '古祭·神魔怒', mult: 4.0, rate: 0.42, effect: 'pierce' }], label: '神魔同祭' }]
+  }),
+  // t32 道祖悟道崖
+  e('e_cliffshadow', '悟道残影', 32, 'moon', [1.6, 2.0, 1.35, 1.45], [{ name: '道影千重', mult: 1.5, rate: 0.5, effect: 'multi' }], {
+    element: 'chaos'
+  }),
+  e('e_wordbeast', '道文神兽', 32, 'paw', [2.1, 1.9, 1.7, 1.15], [heavy('道文压顶', 3.3, 0.32)], { element: 'chaos' }),
+  e('e_daoyalord', '悟道崖主', 32, 'skull', [8.1, 2.6, 1.7, 1.3], [{ name: '崖前一斩', mult: 3.8, rate: 0.32, effect: 'pierce' }], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'truedmg',
+    mods: { critDamage: 0.5, armorPen: 0.1 },
+    phases: [{ hpThreshold: 0.55, skillChanges: [{ name: '悟道·斩念', mult: 4.2, rate: 0.36, effect: 'pierce' }], label: '斩念' }]
   })
 ]
 

@@ -127,7 +127,8 @@ describe('内容可达性 · 区域解锁链', () => {
       if (!r.requireCleared) continue
       const prev = byId.get(r.requireCleared)
       expect(prev, `${r.id} 的前置 ${r.requireCleared} 不存在`).toBeDefined()
-      expect(r.tier, `${r.id} 层级低于前置 ${prev!.id}`).toBeGreaterThan(prev!.tier)
+      // 同层第二处地界与正区同 tier(同难度带),故只要求不回退
+      expect(r.tier, `${r.id} 层级低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.tier)
       expect(r.minRealm, `${r.id} 境界门槛低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.minRealm)
     }
   })
