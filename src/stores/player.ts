@@ -117,6 +117,14 @@ export const usePlayerStore = defineStore(
      */
     const breakthroughPrep = ref<import('@/core/earlyGameService').BreakthroughPrepState | null>(null)
 
+    /**
+     * 上次顿悟的时刻 —— 这是**频次闸**,必须随档。
+     *
+     * 顿悟给悟道点(真货币),原先冷却挂在模块上:刷新一次页面冷却归零,
+     * 变成「重开页面刷顿悟」。闸门跨世保留(它不是本世进度,是速率限制)。
+     */
+    const enlightenmentAt = ref(0)
+
     // Phase 31.1 机缘链:机缘选择记忆(取/弃),影响师承推荐与未来同类机缘
     const fortuneChoices = ref<Record<string, FortuneChoice>>({})
 
@@ -469,6 +477,8 @@ export const usePlayerStore = defineStore(
         const ok = Number.isFinite(p.bonus) && Number.isFinite(p.readyAt) && (p.kind === 'meditate' || p.kind === 'pill')
         if (!ok) breakthroughPrep.value = null
       }
+      // 旧存档没有顿悟冷却一栏(Phase 34.6):0 = 从未顿悟,合法
+      if (!Number.isFinite(enlightenmentAt.value) || enlightenmentAt.value < 0) enlightenmentAt.value = 0
       for (const id of suppressedRegions.value) {
         if (!suppressQualified.value.includes(id)) suppressQualified.value.push(id)
       }
@@ -597,6 +607,10 @@ export const usePlayerStore = defineStore(
       breakthroughPrep.value = state
     }
 
+    function setEnlightenmentAt(t: number): void {
+      enlightenmentAt.value = Number.isFinite(t) ? Math.max(0, t) : 0
+    }
+
     // ---------- Phase 31.1 机缘链 ----------
     function setFortuneChoices(choices: Record<string, FortuneChoice>): void {
       fortuneChoices.value = choices
@@ -628,6 +642,7 @@ export const usePlayerStore = defineStore(
       secretRealm,
       divination,
       breakthroughPrep,
+      enlightenmentAt,
       fortuneChoices,
       realm,
       realmName,
@@ -690,6 +705,7 @@ export const usePlayerStore = defineStore(
       setSecretRealm,
       setDivination,
       setBreakthroughPrep,
+      setEnlightenmentAt,
       setFortuneChoices
     }
   },

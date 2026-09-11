@@ -67,6 +67,29 @@ describe('悟道顿悟(Phase 28)', () => {
     expect(getCurrentEnlightenment()).toBeNull()
     vi.restoreAllMocks()
   })
+
+  it('冷却随档:重开页面刷不出顿悟(Phase 34.6)', () => {
+    // 顿悟给悟道点(真货币),冷却若挂模块,刷新一次就等于清掉 5 分钟闸门
+    vi.spyOn(Math, 'random').mockReturnValue(0.001)
+    mayTriggerEnlightenment()
+    const player = usePlayerStore()
+    const firstAt = player.enlightenmentAt
+    expect(firstAt, '触发后应记下时刻').toBeGreaterThan(0)
+
+    // 写盘取的就是这份 $state —— 冷却必须在这里面
+    const persisted = JSON.parse(JSON.stringify(player.$state)) as { enlightenmentAt?: number }
+    expect(persisted.enlightenmentAt).toBe(firstAt)
+
+    // 模拟刷新:新进程 + 把写盘的档灌回去,再试一次 —— 冷却未过,不该再给
+    setActivePinia(createPinia())
+    const reloaded = usePlayerStore()
+    reloaded.$patch({ enlightenmentAt: persisted.enlightenmentAt as never })
+    dismissEnlightenment()
+    mayTriggerEnlightenment()
+    expect(getCurrentEnlightenment(), '刷新后冷却被清掉了,可以刷顿悟').toBeNull()
+    expect(reloaded.enlightenmentAt).toBe(firstAt)
+    vi.restoreAllMocks()
+  })
 })
 
 describe('连胜(Phase 28 · 曾经无调用方,TASK-022 接线后)', () => {
@@ -112,7 +135,7 @@ describe('连胜(Phase 28 · 曾经无调用方,TASK-022 接线后)', () => {
 describe('突破准备(Phase 28 · TASK-023 接线后)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    consumeBreakthroughPrep() // 清掉上个用例残留的准备态(模块级单例)
+    consumeBreakthroughPrep() // 兜底清态;准备态自 Phase 34.6 起随 pinia 隔离
   })
 
   it('静坐调息:开始为坐定态,3 分钟完转为就绪,+8% 一次性可取', () => {
@@ -236,18 +259,16 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
     setActivePinia(createPinia())
   })
 
-  // 隔离约束:earlyGameService 是模块级单例态,顿悟的 5 分钟冷却与遗留事件会跨用例泄漏。
-  // 因此把所有"不应触发"用例排在前面(它们统一把假时钟钉在"本文件前期真实触发点 +600s",
-  // 稳定越过冷却,只测衰减);唯一一个"应触发"用例(会写入 lastEnlightenmentTime)排最后。
-  // useFakeTimers 与 Date.now 交互下,lastEnlightenmentTime 只会被真正触发的那次写入,
-  // 前面的用例看到的一直是"早期真实时间触发点",彼此互不污染。
+  // 顿悟的 5 分钟冷却 Phase 34.6 起存在 player store(随档),不再跨用例泄漏 ——
+  // 每个用例一个新 pinia 即天然隔离,这几条不必再按触发/不触发排序。
+  // (遗留的 enlightenmentEvent 仍是模块态:它只是"当下的弹窗",重开即无,不影响频次。)
   it('真仙后顿悟完全退出(衰减 0)', () => {
     const player = usePlayerStore()
     player.major = 5
     const realNow = Date.now()
     vi.useFakeTimers()
     try {
-      vi.setSystemTime(realNow + 600_000) // 越过 5 分钟模块级冷却,只测衰减
+      vi.setSystemTime(realNow + 600_000) // 越过 5 分钟冷却(新档该栏为 0),只测衰减
       vi.spyOn(Math, 'random').mockReturnValue(0.001) // 即使随机数最小也不该触发
       mayTriggerEnlightenment()
       expect(getCurrentEnlightenment()).toBeNull()
@@ -290,7 +311,7 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
     vi.restoreAllMocks()
   })
 
-  // 最后一个顿悟用例:低随机数在金丹仍可触发(0.08×0.35 之上),写入 lastEnlightenmentTime
+  // 低随机数在金丹仍可触发(0.08×0.35 之上);触发会写入 store 的顿悟冷却
   it('低随机数在金丹仍可触发(0.08×0.35 之上)', () => {
     const player = usePlayerStore()
     player.major = 2

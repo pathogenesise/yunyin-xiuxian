@@ -36,13 +36,18 @@ export function getCurrentEnlightenment(): EnlightenmentEvent | null {
   return enlightenmentEvent
 }
 
-/** 触发悟道顿悟(修炼时低概率,每5分钟最多触发1次) */
-let lastEnlightenmentTime = 0
+/**
+ * 触发悟道顿悟(修炼时低概率,每5分钟最多触发1次)
+ *
+ * 冷却存在 player store(随档):顿悟给悟道点,闸门若挂模块,
+ * 刷新一次页面就等于把 5 分钟冷却清掉 —— 那是「重开页面刷顿悟」。
+ */
 export function mayTriggerEnlightenment(): void {
+  const player = usePlayerStore()
   const now = Date.now()
-  if (now - lastEnlightenmentTime < 300000) return // 5分钟冷却
+  if (now - player.enlightenmentAt < 300000) return // 5分钟冷却
   // EARLY_EVENT_DECAY:顿悟是"前期玩法",境界越高存在感越低,真仙后完全退出
-  const presence = earlyEventDecay('enlightenment', usePlayerStore().major)
+  const presence = earlyEventDecay('enlightenment', player.major)
   if (presence <= 0) return
   if (Math.random() > 0.08 * presence) return // 8% × 当前境界存在感
 
@@ -67,7 +72,7 @@ export function mayTriggerEnlightenment(): void {
     triggeredAt: now,
     expiresAt: now + 60000 // 60秒窗口
   }
-  lastEnlightenmentTime = now
+  player.setEnlightenmentAt(now)
   telemetry().record('enlightenment', 'modal', '悟道顿悟浮现')
 }
 
