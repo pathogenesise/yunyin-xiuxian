@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 63,
+  "round": 64,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:50:42+00:00",
+  "updated_at": "2026-09-11T16:54:37+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -448,7 +448,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:59:19+00:00",
       "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 42,
+      "touched_round": 63,
       "summary": "突破系统(breakthrough.ts + 突破准备数据)"
     },
     "ISS-017": {
@@ -3148,6 +3148,105 @@
       "touched_round": 62,
       "confidence": 0.85,
       "summary": "日更的术数玩法可以彼此不重复:天时管全境之气、星象管一方界域之利、卦管自己一时的机 —— 三者各占一层,不互相顶替"
+    },
+    "ISS-050": {
+      "id": "ISS-050",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T16:52:38+00:00",
+      "updated_at": "2026-09-11T16:52:41+00:00",
+      "touched_round": 63,
+      "summary": "突破准备的付费加成随刷新丢失:聚气丹花 80 灵石买 +5%,而状态挂在 earlyGameService 模块上(与顿悟/巡游同一生命周期),页面一刷新(手机上切后台回来也算)加成无声归零 —— 免费提示丢状态无所谓,吞已付资源是缺陷",
+      "severity": 0.6,
+      "confidence": 0.95
+    },
+    "CHG-082": {
+      "id": "CHG-082",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:52:40+00:00",
+      "updated_at": "2026-09-11T16:52:40+00:00",
+      "touched_round": 63,
+      "commit": "c5aebda",
+      "summary": "突破准备存进 player store(持久化):付费一次性加成不再随刷新丢失;倒计时读引擎心跳"
+    },
+    "DEC-023": {
+      "id": "DEC-023",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:52:44+00:00",
+      "updated_at": "2026-09-11T16:52:44+00:00",
+      "touched_round": 63,
+      "summary": "已付代价的一次性状态必须落存档:凡玩家花资源(灵石/丹药/道源)换来且尚未兑现的加成、次数、进度,一律进 store 随档持久化;模块态只留给免费的临时提示(顿悟/巡游)",
+      "rationale": "突破准备曾与顿悟同挂模块态,刷新即丢,而它是要花 80 灵石买的 —— 同类风险还有任何未来新增的付费一次性机制。判据不看'是不是临时状态',看'是不是已经付过钱'",
+      "alternatives_rejected": [
+        "继续用模块态 + 界面上写一句提醒:提醒挡不住刷新",
+        "把准备改成不收费:改动了既有经济与平衡",
+        "只在启动时补偿:补偿无从判定玩家是否真付过"
+      ]
+    },
+    "EV-043": {
+      "id": "EV-043",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:52:47+00:00",
+      "updated_at": "2026-09-11T16:52:47+00:00",
+      "touched_round": 63,
+      "source": "src/core/earlyGameService.spec.ts『付费的一次性加成存进档:刷新页面不吞玩家的 80 灵石』与『转世不带突破准备』;故障注入(把 store 写入改回不落态)后立刻报『准备态没进 store,刷新必丢』(commit c5aebda)",
+      "summary": "写盘状态灌回新进程后加成仍在,且仍是一次性;故障注入可红",
+      "confidence": 0.9
+    },
+    "HYP-010": {
+      "id": "HYP-010",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:52:47+00:00",
+      "updated_at": "2026-09-11T16:52:47+00:00",
+      "touched_round": 63,
+      "confidence": 0.8,
+      "summary": "同类缺陷(付费或已耗资源的状态挂模块态)可以靠一条判据批量排查:凡模块态字段,问一句『它有没有代价』——有代价的一律迁入 store"
+    },
+    "TASK-042": {
+      "id": "TASK-042",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T16:52:50+00:00",
+      "updated_at": "2026-09-11T16:54:32+00:00",
+      "touched_round": 63,
+      "category": "correctness",
+      "severity": 0.5,
+      "confidence": 0.8,
+      "effort": 3,
+      "summary": "按 DEC-023 排查其余模块态字段:earlyGameService 的 enlightenmentEvent/caveEvent/regionEvent? 逐个问『有没有代价』——凡玩家已付代价或已耗资源的(如已领未用的奖励、已付费的临时增益)迁入 store;纯免费提示保留模块态"
+    },
+    "CHG-083": {
+      "id": "CHG-083",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:54:32+00:00",
+      "updated_at": "2026-09-11T16:54:32+00:00",
+      "touched_round": 63,
+      "commit": "867ccd3",
+      "summary": "顿悟冷却迁入 player store(随档);模块态逐个复核,其余无须迁"
+    },
+    "EV-044": {
+      "id": "EV-044",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:54:35+00:00",
+      "updated_at": "2026-09-11T16:54:35+00:00",
+      "touched_round": 63,
+      "source": "src/core/earlyGameService.spec.ts『冷却随档:重开页面刷不出顿悟』;故障注入(冷却不读 store / 触发后不记时刻)立刻变红(commit 867ccd3)",
+      "summary": "冷却持久化后,刷新不再能刷悟道点;全库模块态逐个复核完毕",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -4393,6 +4492,42 @@
       "to": "HYP-009",
       "type": "validates",
       "created_at": "2026-09-11T16:50:42+00:00"
+    },
+    {
+      "from": "ISS-050",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-11T16:52:40+00:00"
+    },
+    {
+      "from": "CHG-082",
+      "to": "ISS-050",
+      "type": "resolves",
+      "created_at": "2026-09-11T16:52:40+00:00"
+    },
+    {
+      "from": "DEC-023",
+      "to": "COMP-004",
+      "type": "governs",
+      "created_at": "2026-09-11T16:52:45+00:00"
+    },
+    {
+      "from": "EV-043",
+      "to": "HYP-010",
+      "type": "validates",
+      "created_at": "2026-09-11T16:52:50+00:00"
+    },
+    {
+      "from": "CHG-083",
+      "to": "TASK-042",
+      "type": "implements",
+      "created_at": "2026-09-11T16:54:32+00:00"
+    },
+    {
+      "from": "EV-044",
+      "to": "HYP-010",
+      "type": "validates",
+      "created_at": "2026-09-11T16:54:37+00:00"
     }
   ]
 }
