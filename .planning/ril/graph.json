@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 38,
+  "round": 39,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:51:35+00:00",
+  "updated_at": "2026-09-11T14:54:25+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 37,
+      "touched_round": 38,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -1970,7 +1970,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T14:10:24+00:00",
-      "touched_round": 36,
+      "touched_round": 38,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
       "severity": 0.6,
@@ -2370,6 +2370,29 @@
       "touched_round": 37,
       "source": "故障注入:e_chaos_zu hpMult=0 → 「maxHp 非正」红;恢复后 112 files / 1066 tests 绿;分类报告 112/112 无漏算",
       "summary": "新界战斗/掉落在高 tier 的运行时正确性有了冒烟守卫",
+      "confidence": 1.0
+    },
+    "CHG-053": {
+      "id": "CHG-053",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:54:25+00:00",
+      "updated_at": "2026-09-11T14:54:25+00:00",
+      "touched_round": 38,
+      "summary": "两处静默失效守卫:①事件点名的 丹药/增益/灵兽/法宝/功法 id 引用完整性(EVENTS+FORTUNE_EVENTS);②新界每张可炼丹方以满料满技逐张真开炉,不因缺方/缺料中止",
+      "commit": "20f8ef6"
+    },
+    "EV-029": {
+      "id": "EV-029",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:54:25+00:00",
+      "updated_at": "2026-09-11T14:54:25+00:00",
+      "touched_round": 38,
+      "source": "故障注入:事件 pill id→p_nope 红;道源丹 herb→9900万 红;恢复后 112 files / 1068 tests 绿",
+      "summary": "事件引用错配与高界丹方缺料都能被守卫拦下",
       "confidence": 1.0
     }
   },
@@ -3304,6 +3327,18 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T14:51:35+00:00"
+    },
+    {
+      "from": "CHG-053",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:54:25+00:00"
+    },
+    {
+      "from": "EV-029",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:54:25+00:00"
     }
   ]
 }
