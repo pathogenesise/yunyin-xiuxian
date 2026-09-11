@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 39,
+  "round": 40,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:54:25+00:00",
+  "updated_at": "2026-09-11T14:56:13+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1970,7 +1970,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T14:10:24+00:00",
-      "touched_round": 38,
+      "touched_round": 39,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
       "severity": 0.6,
@@ -2394,6 +2394,17 @@
       "source": "故障注入:事件 pill id→p_nope 红;道源丹 herb→9900万 红;恢复后 112 files / 1068 tests 绿",
       "summary": "事件引用错配与高界丹方缺料都能被守卫拦下",
       "confidence": 1.0
+    },
+    "CHG-054": {
+      "id": "CHG-054",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:56:13+00:00",
+      "updated_at": "2026-09-11T14:56:13+00:00",
+      "touched_round": 39,
+      "summary": "高界离线结算冒烟:混沌道祖(20 境)离线结算不崩、修为有增、数值有限;此前离线只在元婴期验过",
+      "commit": "edc5f14"
     }
   },
   "edges": [
@@ -3339,6 +3350,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T14:54:25+00:00"
+    },
+    {
+      "from": "CHG-054",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:56:13+00:00"
     }
   ]
 }
