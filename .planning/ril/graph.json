@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 46,
+  "round": 47,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:16:09+00:00",
+  "updated_at": "2026-09-11T15:18:23+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1956,7 +1956,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T15:08:49+00:00",
-      "touched_round": 45,
+      "touched_round": 46,
       "category": "core-feature",
       "summary": "界外长尾节奏实测调优:扩界后真仙→混沌道祖约 58x 真仙耗时(progressionSim 口径),需在真实存档口径上验证四界是否符合放置节奏并可调 LATE_* 常数",
       "severity": 0.5,
@@ -2507,6 +2507,17 @@
       "source": "故障注入:文档 mortal 倍率改 7 → 与公式环比不符即红;恢复后 115 files / 1087 tests 绿",
       "summary": "界面说明与公式同源可证、可被打红",
       "confidence": 1.0
+    },
+    "CHG-061": {
+      "id": "CHG-061",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:18:23+00:00",
+      "updated_at": "2026-09-11T15:18:23+00:00",
+      "touched_round": 46,
+      "summary": "花费曲线纳入数值体系说明:洞府/功法/强化/灵石四条复利倍率从 constants 取值,弹窗展示,审计对 buildingCost/gongfaUpCost/upgradeCost/stoneByTier 真算环比复核",
+      "commit": "b7e21ee"
     }
   },
   "edges": [
@@ -3512,6 +3523,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T15:16:09+00:00"
+    },
+    {
+      "from": "CHG-061",
+      "to": "TASK-034",
+      "type": "implements",
+      "created_at": "2026-09-11T15:18:23+00:00"
     }
   ]
 }
