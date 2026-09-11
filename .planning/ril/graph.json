@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 32,
+  "round": 33,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:34:05+00:00",
+  "updated_at": "2026-09-11T14:37:41+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 31,
+      "touched_round": 32,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -2208,6 +2208,41 @@
       "touched_round": 31,
       "source": "故障注入:cap=20 → 金仙·雷鸣劫红;cap=9 → 110 files / 1052 tests 全绿;major≤9 数值逐位不变",
       "summary": "新守卫可被打红,证明其真能拦住高界天劫的硬墙",
+      "confidence": 1.0
+    },
+    "ISS-042": {
+      "id": "ISS-042",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T14:37:40+00:00",
+      "updated_at": "2026-09-11T14:37:41+00:00",
+      "touched_round": 32,
+      "summary": "主线任务链只铺到化神(第5境),其后 16 个境界没有任何主线指引——扩界把玩家带到了没有路标的地方;另 goal.spec 未登记进分类测试报告(110 spec 中唯一漏算)",
+      "severity": 0.55,
+      "confidence": 1.0
+    },
+    "CHG-047": {
+      "id": "CHG-047",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:37:40+00:00",
+      "updated_at": "2026-09-11T14:37:40+00:00",
+      "touched_round": 32,
+      "summary": "主线任务链补齐至混沌道祖:新增 炼虚…渡劫/飞升真仙/玄仙…大罗/神人…神帝/混沌真灵…万道之祖 共 17 条主线 + 人间界后期 20 首领节点;奖励随境界缩放;新增主线覆盖审计(每境必有节点、终点=最高境);补登 goal.spec 分类",
+      "commit": "2b4567c"
+    },
+    "EV-024": {
+      "id": "EV-024",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:37:41+00:00",
+      "updated_at": "2026-09-11T14:37:41+00:00",
+      "touched_round": 32,
+      "source": "故障注入:q_hundundaozu 改回 major 19 → 「第20个大境界没有主线节点」红;恢复后 110 files / 1055 tests 绿",
+      "summary": "新审计可被打红,证明其能拦住主线再次半途而废",
       "confidence": 1.0
     }
   },
@@ -3076,6 +3111,18 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T14:34:05+00:00"
+    },
+    {
+      "from": "CHG-047",
+      "to": "ISS-042",
+      "type": "resolves",
+      "created_at": "2026-09-11T14:37:41+00:00"
+    },
+    {
+      "from": "EV-024",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:37:41+00:00"
     }
   ]
 }
