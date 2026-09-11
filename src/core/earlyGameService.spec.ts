@@ -16,6 +16,7 @@ import {
   breakthroughPrepState,
   consumeBreakthroughPrep
 } from './earlyGameService'
+import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
 
 describe('洞府巡游(Phase 28)', () => {
   beforeEach(() => {
@@ -153,5 +154,128 @@ describe('突破准备(Phase 28 · TASK-023 接线后)', () => {
     resources.$patch({ spiritStone: gn(10) })
     expect(prepareBreakthrough('pill')).toBe(false)
     expect(breakthroughPrepState().ready).toBe(false)
+  })
+})
+
+describe('突破准备数据源(BREAKTHROUGH_PREP_OPTIONS · TASK-029 接线后)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    consumeBreakthroughPrep()
+  })
+
+  it('备选数值与数据表一致:加成/时长/药价读数据,不硬编码', () => {
+    const meditate = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'meditate')!
+    const pill = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'pill')!
+    const pillCost = pill.cost?.stone ?? 0
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(1_000_000)
+      prepareBreakthrough('meditate')
+      // 坐满数据表里的时长后,加成 = 数据表 bonusRate(不再是某处硬编码的 0.08)
+      vi.advanceTimersByTime(meditate.duration * 1000 + 1000)
+      expect(breakthroughPrepState().bonus).toBeCloseTo(meditate.bonusRate)
+      expect(consumeBreakthroughPrep()).toBeCloseTo(meditate.bonusRate)
+
+      // 聚气丹:药价与加成都来自数据表
+      const resources = useResourcesStore()
+      resources.addStone(gn(pillCost + 1))
+      expect(prepareBreakthrough('pill')).toBe(true)
+      expect(toNum(resources.spiritStone)).toBeCloseTo(1)
+      expect(breakthroughPrepState().bonus).toBeCloseTo(pill.bonusRate)
+      expect(consumeBreakthroughPrep()).toBeCloseTo(pill.bonusRate)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('direct(直接突破)不是准备动作:不产生加成,也不报错', () => {
+    expect(BREAKTHROUGH_PREP_OPTIONS.some(o => o.id === 'direct')).toBe(true)
+    expect(prepareBreakthrough('direct')).toBe(false)
+    expect(breakthroughPrepState().ready).toBe(false)
+  })
+})
+
+describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  // 隔离约束:earlyGameService 是模块级单例态,顿悟的 5 分钟冷却与遗留事件会跨用例泄漏。
+  // 因此把所有"不应触发"用例排在前面(它们统一把假时钟钉在"本文件前期真实触发点 +600s",
+  // 稳定越过冷却,只测衰减);唯一一个"应触发"用例(会写入 lastEnlightenmentTime)排最后。
+  // useFakeTimers 与 Date.now 交互下,lastEnlightenmentTime 只会被真正触发的那次写入,
+  // 前面的用例看到的一直是"早期真实时间触发点",彼此互不污染。
+  it('真仙后顿悟完全退出(衰减 0)', () => {
+    const player = usePlayerStore()
+    player.major = 5
+    const realNow = Date.now()
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(realNow + 600_000) // 越过 5 分钟模块级冷却,只测衰减
+      vi.spyOn(Math, 'random').mockReturnValue(0.001) // 即使随机数最小也不该触发
+      mayTriggerEnlightenment()
+      expect(getCurrentEnlightenment()).toBeNull()
+      vi.restoreAllMocks()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('金丹(境界2)顿悟触发率按曲线 0.35 收窄:高随机数不再触发', () => {
+    const player = usePlayerStore()
+    player.major = 2
+    const realNow = Date.now()
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(realNow + 600_000)
+      vi.spyOn(Math, 'random').mockReturnValue(0.9) // 0.9 > 0.08×0.35
+      mayTriggerEnlightenment()
+      expect(getCurrentEnlightenment()).toBeNull()
+      vi.restoreAllMocks()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('元婴后洞府巡游退出,不占用当日', () => {
+    const player = usePlayerStore()
+    player.major = 3 // cavePatrol.yuanying = 0
+    expect(mayTriggerCaveEvent()).toBeNull()
+    expect(player.lastCaveEventDay).toBe(0)
+  })
+
+  it('金丹巡游存在感 0.25:掷败则今日让位(不反复重掷)', () => {
+    const player = usePlayerStore()
+    player.major = 2
+    const today = Math.floor(Date.now() / 86400000)
+    vi.spyOn(Math, 'random').mockReturnValue(0.9) // 0.9 > 0.25 → 今日让位
+    expect(mayTriggerCaveEvent()).toBeNull()
+    expect(player.lastCaveEventDay).toBe(today)
+    vi.restoreAllMocks()
+  })
+
+  // 最后一个顿悟用例:低随机数在金丹仍可触发(0.08×0.35 之上),写入 lastEnlightenmentTime
+  it('低随机数在金丹仍可触发(0.08×0.35 之上)', () => {
+    const player = usePlayerStore()
+    player.major = 2
+    const realNow = Date.now()
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(realNow + 600_000)
+      vi.spyOn(Math, 'random').mockReturnValue(0.001) // 0.001 ≤ 0.028 → 触发
+      mayTriggerEnlightenment()
+      expect(getCurrentEnlightenment()).not.toBeNull()
+      vi.restoreAllMocks()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('金丹巡游存在感 0.25:掷中则在当日出现', () => {
+    const player = usePlayerStore()
+    player.major = 2
+    vi.spyOn(Math, 'random').mockReturnValue(0.1) // 0.1 ≤ 0.25 → 触发
+    expect(mayTriggerCaveEvent()).not.toBeNull()
+    vi.restoreAllMocks()
   })
 })

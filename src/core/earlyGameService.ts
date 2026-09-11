@@ -11,7 +11,9 @@ import {
   ENLIGHTENMENT_OPTIONS,
   CAVE_EVENT_POOL,
   CHAIN_EVENT_IDS,
-  WIN_STREAK_REWARDS
+  WIN_STREAK_REWARDS,
+  BREAKTHROUGH_PREP_OPTIONS,
+  earlyEventDecay
 } from '@/data/earlyGame'
 import { gn } from '@/utils/gnum'
 
@@ -41,7 +43,10 @@ let lastEnlightenmentTime = 0
 export function mayTriggerEnlightenment(): void {
   const now = Date.now()
   if (now - lastEnlightenmentTime < 300000) return // 5分钟冷却
-  if (Math.random() > 0.08) return // 8%概率
+  // EARLY_EVENT_DECAY:顿悟是"前期玩法",境界越高存在感越低,真仙后完全退出
+  const presence = earlyEventDecay('enlightenment', usePlayerStore().major)
+  if (presence <= 0) return
+  if (Math.random() > 0.08 * presence) return // 8% × 当前境界存在感
 
   // 随机选3个不同类型的选项
   const pool = [...ENLIGHTENMENT_OPTIONS]
@@ -123,26 +128,23 @@ export function isRetreating(): boolean {
   return true
 }
 
-/** 突破准备(静坐/服丹) */
+/** 突破准备(静坐/服丹)——数值与药价全部取自 BREAKTHROUGH_PREP_OPTIONS,逻辑不持有第二份魔法数 */
 export function prepareBreakthrough(optionId: string): boolean {
+  const opt = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === optionId)
+  if (!opt || opt.bonusRate <= 0) return false // direct/未知项 = 不是准备动作,不产生加成
+
   const resources = useResourcesStore()
-
-  if (optionId === 'meditate') {
-    breakthroughPrepBonus = 0.08
-    breakthroughPrepEndTime = Date.now() + 180000 // 3分钟
-    telemetry().record('breakthrough_prep', 'modal', '突破准备:静坐')
-    return true
+  if (opt.cost?.stone) {
+    if (!resources.hasStone(gn(opt.cost.stone))) return false
+    resources.spendStone(gn(opt.cost.stone))
   }
-
-  if (optionId === 'pill') {
-    if (!resources.hasStone(gn(80))) return false
-    resources.spendStone(gn(80))
-    breakthroughPrepBonus = 0.05
-    telemetry().record('breakthrough_prep', 'modal', '突破准备:服丹')
-    return true
+  breakthroughPrepBonus = opt.bonusRate
+  if (opt.duration > 0) {
+    // duration 单位为秒(meditate=180);=0 表示支付即了就绪(聚气丹)
+    breakthroughPrepEndTime = Date.now() + opt.duration * 1000
   }
-
-  return false
+  telemetry().record('breakthrough_prep', 'modal', `突破准备:${opt.label}`)
+  return true
 }
 
 export interface BreakthroughPrepView {
@@ -232,6 +234,15 @@ export function mayTriggerCaveEvent(): CaveEvent | null {
   const player = usePlayerStore()
   const today = Math.floor(Date.now() / 86400000)
   if (player.lastCaveEventDay === today) return null // 今日已触发
+
+  // EARLY_EVENT_DECAY:巡游是"前期活跃",元婴后让位给更重要的系统(存在感归零完全退出)。
+  // 掷签失败即视为今日让位,否则 30s 轮询会把"今日未出"变成反复重掷,存在感被稀释
+  const presence = earlyEventDecay('cavePatrol', player.major)
+  if (presence <= 0) return null
+  if (Math.random() > presence) {
+    player.markCaveEventToday(today)
+    return null
+  }
 
   // 随机选择一个区域
   const locations = Object.keys(CAVE_EVENT_POOL) as Array<keyof typeof CAVE_EVENT_POOL>

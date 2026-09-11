@@ -84,9 +84,12 @@
           <span v-else-if="btInfo.prep.ready" class="text-jade">加成 +{{ Math.round(btInfo.prep.bonus * 100) }}% 就绪</span>
         </div>
         <div v-if="!btInfo.prep.sitting && !btInfo.prep.ready" class="mt-1.5 flex gap-1.5">
-          <button type="button" class="chip-ink text-[10px]" @click="startPrep('meditate')">静坐调息 · 3分钟 +8%</button>
+          <button type="button" class="chip-ink text-[10px]" @click="startPrep('meditate')">
+            {{ prepMeditate.label }} · {{ Math.round(prepMeditate.duration / 60) }}分钟
+            +{{ Math.round(prepMeditate.bonusRate * 100) }}%
+          </button>
           <button type="button" class="chip-ink text-[10px]" :disabled="!prepCanPill" @click="startPrep('pill')">
-            服聚气丹 · 80灵石 +5%
+            {{ prepPill.label }} · {{ prepPillCost }}灵石 +{{ Math.round(prepPill.bonusRate * 100) }}%
           </button>
         </div>
       </div>
@@ -204,6 +207,7 @@
   import { comprehendGongfa } from '@/core/gongfaService'
   import { usePill } from '@/core/pillService'
   import { useNow } from '@/composables/useNow'
+  import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
   import { gongfaDef } from '@/data/gongfa'
   import { ELEMENTS } from '@/data/linggen'
   import { canEnlighten as canEnlightenGongfa, gongfaBranchDef } from '@/data/gongfaBranches'
@@ -227,8 +231,11 @@
 
   const btInfo = computed(() => breakthroughInfo())
 
-  // Phase 28 突破准备:服聚气丹需 80 灵石,不够则置灰
-  const prepCanPill = computed(() => toNum(resources.spiritStone) >= 80)
+  // Phase 28 突破准备:按钮文案/耗时/药价全部来自 BREAKTHROUGH_PREP_OPTIONS,不再在视图里写第二份
+  const prepMeditate = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'meditate')!
+  const prepPill = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'pill')!
+  const prepPillCost = prepPill.cost?.stone ?? 0
+  const prepCanPill = computed(() => toNum(resources.spiritStone) >= prepPillCost)
 
   function startPrep(option: 'meditate' | 'pill'): void {
     if (prepareBreakthrough(option)) {

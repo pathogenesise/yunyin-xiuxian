@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 19,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T04:41:07+00:00",
+  "updated_at": "2026-09-11T06:00:19+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -324,7 +324,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:05:15+00:00",
       "updated_at": "2026-09-09T14:05:15+00:00",
-      "touched_round": 13,
+      "touched_round": 19,
       "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
     },
     "CHG-007": {
@@ -448,7 +448,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:59:19+00:00",
       "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 13,
+      "touched_round": 19,
       "summary": "突破系统(breakthrough.ts + 突破准备数据)"
     },
     "ISS-017": {
@@ -1597,6 +1597,56 @@
       "touched_round": 19,
       "rationale": "停止条件五条全足",
       "alternatives_rejected": "继续无导向深挖会触碰第8节五项硬性预算约束"
+    },
+    "ISS-031": {
+      "id": "ISS-031",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T05:36:59+00:00",
+      "updated_at": "2026-09-11T06:00:19+00:00",
+      "touched_round": 19,
+      "summary": "EARLY_EVENT_DECAY 设计衰减曲线从未被消费:earlyGameService 顿悟触发恒定 8%、巡游恒定每日一次,设计上'金丹后 0.35、元婴后 0/退出'的内容退场完全没生效 (evidence: earlyGame.ts:181-206 + earlyGameService.ts:41,229)",
+      "severity": 0.55
+    },
+    "ISS-032": {
+      "id": "ISS-032",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T05:36:59+00:00",
+      "updated_at": "2026-09-11T06:00:19+00:00",
+      "touched_round": 19,
+      "summary": "BREAKTHROUGH_PREP_OPTIONS 数据表无人消费:突破准备的 0.08/180s/80灵石/0.05 硬编码在早 GameService 与 CultivationView 两处,数据驱动表(meditate/pill/direct)成了死数据,改动数据不会反映到游戏 (evidence: earlyGame.ts:65-94 + earlyGameService.ts:130-149 + CultivationView.vue:87-89)",
+      "severity": 0.35
+    },
+    "TASK-028": {
+      "id": "TASK-028",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T05:37:16+00:00",
+      "updated_at": "2026-09-11T06:00:18+00:00",
+      "touched_round": 19,
+      "category": "correctness",
+      "severity": 0.8,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "EARLY_EVENT_DECAY 接线:顿悟触发概率乘 earlyEventDecay('enlightenment', major),巡游按 cavePatrol 存在感掷日签(金丹 0.25/元婴 0 退出),数据即设计源,无新设计决策"
+    },
+    "TASK-029": {
+      "id": "TASK-029",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T05:37:16+00:00",
+      "updated_at": "2026-09-11T06:00:19+00:00",
+      "touched_round": 19,
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "BREAKTHROUGH_PREP_OPTIONS 单源化:prepareBreakthrough 与 CultivationView 按钮/药价改读数据表,消除 0.08/180/80/0.05 硬编码双份定义"
     }
   },
   "edges": [
@@ -2176,6 +2226,30 @@
       "to": "TASK-027",
       "type": "implements",
       "created_at": "2026-09-11T03:24:15+00:00"
+    },
+    {
+      "from": "ISS-031",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-11T05:37:16+00:00"
+    },
+    {
+      "from": "ISS-032",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-11T05:37:16+00:00"
+    },
+    {
+      "from": "TASK-028",
+      "to": "ISS-031",
+      "type": "addresses",
+      "created_at": "2026-09-11T05:37:16+00:00"
+    },
+    {
+      "from": "TASK-029",
+      "to": "ISS-032",
+      "type": "addresses",
+      "created_at": "2026-09-11T05:37:16+00:00"
     }
   ]
 }
