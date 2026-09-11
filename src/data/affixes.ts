@@ -1,4 +1,4 @@
-/** 随机词条池 —— 118 条,通过权重与品质门槛控制稀有度 */
+/** 随机词条池 —— 110 条,通过权重与品质门槛控制稀有度 */
 import type { AffixDef, AnyStatKey, EquipSlot, AffixRarity } from '@/types'
 
 const W = ['weapon'] as EquipSlot[]

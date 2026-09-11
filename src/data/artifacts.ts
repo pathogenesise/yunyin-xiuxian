@@ -1,4 +1,4 @@
-/** 法宝池 —— 20 件,拥有被动属性与自动触发的主动神通 */
+/** 法宝池 —— 26 件,拥有被动属性与自动触发的主动神通 */
 import type { ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
 
 function f(

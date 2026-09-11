@@ -1,4 +1,4 @@
-/** 装备模板池 —— 50 件,按掉落层级逐步解锁 */
+/** 装备模板池 —— 77 件,按掉落层级逐步解锁 */
 import type { EquipmentTemplate, EquipSlot, StatMods } from '@/types'
 
 function t(
