@@ -19,8 +19,10 @@ export const ACTIVE_STAMP_MS = 5000
 /** 每现实 1 小时增加的年龄(岁) */
 export const AGE_YEARS_PER_HOUR = 1
 export const START_AGE = 16
-/** 寿元低于该比例提示告警 */
-export const LIFESPAN_WARN_RATIO = 0.1
+/** 寿元低于该比例即进入告警色(界面) */
+export const LIFESPAN_WARN_RATIO = 0.15
+/** 寿元低于该比例记为「寿元低位」(成就口径,较告警更危急) */
+export const LIFESPAN_CRITICAL_RATIO = 0.1
 
 // ============ 修炼曲线 ============
 /** 炼气一层突破需求 */
@@ -210,8 +212,8 @@ export const MITIGATION_K = 1.15
 export const DAMAGE_VARIANCE = 0.1
 
 // ============ 装备 ============
-/** 每掉落层级数值倍率 */
-export const EQUIP_TIER_GROWTH = 2.05
+// (原「每掉落层级数值倍率 EQUIP_TIER_GROWTH」已于 Phase 33.2 停用:
+//  装备平铺改由 powerScale(tier) 直接对齐境界与内容曲线,该常数不再参与任何计算。)
 /**
  * 装备基础属性整体系数(Phase 33.2:1.0 → 0.6)。
  *

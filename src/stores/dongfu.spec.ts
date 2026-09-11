@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useDongfuStore } from './dongfu'
 import { BUILDINGS } from '@/data/buildings'
+import { FORGE_LEVEL_PER_CAP } from '@/data/constants'
 import type { BuildingId } from '@/types'
 
 describe('dongfu store · sanitize', () => {
@@ -19,6 +20,14 @@ describe('dongfu store · sanitize', () => {
     // 修复后离线封顶小时恢复合法值,不再 NaN
     expect(dongfu.offlineCapHours).toBeGreaterThan(0)
     expect(Number.isFinite(dongfu.offlineCapHours)).toBe(true)
+  })
+
+  it('炼器台每 FORGE_LEVEL_PER_CAP 级提升强化上限 1(常数真的接线,不是写死的 2)', () => {
+    const dongfu = useDongfuStore()
+    dongfu.setLevel('forge', FORGE_LEVEL_PER_CAP * 3)
+    expect(dongfu.forgeCapBonus).toBe(3)
+    dongfu.setLevel('forge', FORGE_LEVEL_PER_CAP * 3 + 1)
+    expect(dongfu.forgeCapBonus).toBe(3) // 未满一档
   })
 
   it('越界的等级钳到建筑上限', () => {

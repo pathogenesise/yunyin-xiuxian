@@ -1,5 +1,6 @@
 /** Buff 定义 —— 丹药增益 / 事件祝福 / 负面状态 */
 import type { BuffDef, StatMods } from '@/types'
+import { INJURY_DURATION } from './constants'
 
 function b(id: string, name: string, kind: BuffDef['kind'], durationSec: number, desc: string, mods: StatMods, icon = 'sparkles'): BuffDef {
   return { id, name, kind, durationSec, desc, mods, icon }
@@ -20,7 +21,7 @@ export const BUFFS: BuffDef[] = [
     'injury',
     '重伤',
     'injury',
-    150,
+    INJURY_DURATION,
     '气血亏损,修炼速度减半,战力大减',
     { cultivationSpeed: -0.5, attackPct: -0.2, defensePct: -0.2 },
     'skull'

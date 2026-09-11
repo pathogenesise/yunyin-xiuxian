@@ -18,7 +18,7 @@
       </svg>
       <div class="relative z-10 flex items-start justify-between">
         <div class="min-w-0 flex-1">
-          <p class="text-[11px]" :class="player.lifespanRatio < 0.15 ? 'text-cinnabar' : 'text-ink-faint'">
+          <p class="text-[11px]" :class="player.lifespanRatio < LIFESPAN_WARN_RATIO ? 'text-cinnabar' : 'text-ink-faint'">
             {{ statusText }}
           </p>
           <!-- 今日天时:确定性环境,影响当日产出与渡劫 -->
@@ -129,6 +129,7 @@
   import { useQuestsStore } from '@/stores/quests'
   import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
   import { VEIN_UNLOCK_MAJOR } from '@/data/constants'
+  import { LIFESPAN_WARN_RATIO } from '@/data/constants'
   import { WORLD_BREAK_MAJOR } from '@/data/realms'
   import { todayWeather } from '@/core/weather'
   import { generateCurrentGoal, type Goal } from '@/core/goal'

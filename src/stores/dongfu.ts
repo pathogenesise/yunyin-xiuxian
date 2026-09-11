@@ -6,7 +6,13 @@ import type { VeinId } from '@/data/veins'
 import { persistConfig } from '@/utils/storage'
 import { BUILDINGS, buildingDef } from '@/data/buildings'
 import { INSIGHT_DISCOUNT_PER_POINT, VEINS } from '@/data/veins'
-import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS } from '@/data/constants'
+import {
+  FIELD_HERB_PER_HOUR,
+  FIELD_ORE_PER_HOUR,
+  FORGE_LEVEL_PER_CAP,
+  LIBRARY_WUDAO_PER_HOUR,
+  OFFLINE_CAP_HOURS
+} from '@/data/constants'
 import { mergeMods } from '@/core/statsCalc'
 import { useResourcesStore } from './resources'
 
@@ -68,7 +74,8 @@ export const useDongfuStore = defineStore(
     }
     const subGongfaSlots = computed(() => 1 + Math.floor(levels.value.library / 3))
     const alchemyLevel = computed(() => levels.value.alchemy)
-    const forgeCapBonus = computed(() => Math.floor(levels.value.forge / 2))
+    // 炼器台每 FORGE_LEVEL_PER_CAP 级提高强化上限 1(此前把 2 写死在业务代码里)
+    const forgeCapBonus = computed(() => Math.floor(levels.value.forge / FORGE_LEVEL_PER_CAP))
     const qiCapMult = computed(() => 1 + levels.value.array * 0.08)
     const beastMult = computed(() => 1 + levels.value.beast * 0.1)
 

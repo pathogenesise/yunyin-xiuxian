@@ -7,6 +7,7 @@ import { gte } from '@/utils/gnum'
 import { todayStr } from '@/utils/time'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
+import { LIFESPAN_CRITICAL_RATIO } from '@/data/constants'
 import { titleDef } from '@/data/titles'
 import { pillDef } from '@/data/pills'
 import { stoneByTier } from './formulas'
@@ -132,7 +133,7 @@ export function checkCustomAchievement(key: string): void {
 export function checkStateAchievements(): void {
   const player = usePlayerStore()
   const resources = useResourcesStore()
-  if (player.lifespanRatio <= 0.1 && player.lifespanRatio > 0) checkCustomAchievement('lifespanLow')
+  if (player.lifespanRatio <= LIFESPAN_CRITICAL_RATIO && player.lifespanRatio > 0) checkCustomAchievement('lifespanLow')
   if (player.lifespanMax >= 10000) checkCustomAchievement('lifespan10k')
   if (gte(resources.spiritStone, { m: 1, e: 6 })) checkCustomAchievement('stone1m')
 }

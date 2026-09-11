@@ -9,6 +9,13 @@
  *     两个新词条真的抬高灵气上限与灵兽效果。
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { INJURY_DURATION } from '@/data/constants'
+
+describe('重伤时长取自 INJURY_DURATION(常数接线)', () => {
+  it('buffs.ts 的重伤时长就是那个常数', () => {
+    expect(buffDef('injury')?.durationSec).toBe(INJURY_DURATION)
+  })
+})
 import { setActivePinia, createPinia } from 'pinia'
 import { buffDef } from '@/data/buffs'
 import { ENLIGHTENMENT_OPTIONS, CAVE_EVENT_POOL } from '@/data/earlyGame'
