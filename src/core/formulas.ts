@@ -18,6 +18,11 @@ import {
   EXP_BASE,
   EXP_MAJOR_GROWTH,
   EXP_SUB_GROWTH,
+  LATE_COMBAT_GROWTH,
+  LATE_CULT_SPEED_GROWTH,
+  LATE_EXP_GROWTH,
+  LATE_QI_CAP_GROWTH,
+  LATE_QI_REGEN_GROWTH,
   QI_BASE_CAP,
   QI_BASE_REGEN,
   QI_CAP_MAJOR_GROWTH,
@@ -40,46 +45,85 @@ import {
   UPGRADE_DUST_GROWTH,
   UPGRADE_STONE_TIER_BASE
 } from '@/data/constants'
+import { WORLD_BREAK_MAJOR } from '@/data/realms'
 
-/** 区域层级 → 对应大境界(与 regions.ts 设计同步) */
-const TIER_MAJOR = [0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8] as const
+/**
+ * 区域层级 → 对应大境界(与 regions.ts 设计同步)。
+ * 1-20 对应人间界 0-8;21 起每层一个新境界,依次覆盖仙界/神界/混沌海。
+ */
+const TIER_MAJOR = [
+  0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+] as const
 /** 区域层级 → 大境界内的小层位置 */
-const TIER_SUB = [1, 4, 1, 4, 7, 2, 6, 1, 4, 8, 2, 7, 2, 7, 2, 7, 2, 7, 2, 7] as const
+const TIER_SUB = [1, 4, 1, 4, 7, 2, 6, 1, 4, 8, 2, 7, 2, 7, 2, 7, 2, 7, 2, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4] as const
 
 export function tierMajor(tier: number): number {
   return TIER_MAJOR[Math.max(0, Math.min(TIER_MAJOR.length - 1, tier - 1))]!
+}
+
+/** 区域层级总数 */
+export const REGION_TIER_MAX = TIER_MAJOR.length
+
+/**
+ * 大境界 → 成长指数(把 major 拆成「人间界内」与「跨界之后」两段)。
+ * 人间界沿用旧曲线,跨界后用平坦的 LATE_* 曲线(见 constants 注释)。
+ */
+function earlyLate(major: number): { early: number; late: number } {
+  const early = Math.min(Math.max(0, major), WORLD_BREAK_MAJOR)
+  return { early, late: Math.max(0, major - early) }
+}
+
+/** 大境界基础战力因子:realmScale 与 powerScale 共用,保证玩家与内容永不脱节 */
+export function majorCombatFactor(major: number): GNum {
+  const { early, late } = earlyLate(major)
+  return mul(powN(COMBAT_MAJOR_GROWTH, early), powN(LATE_COMBAT_GROWTH, late))
 }
 
 /** 战力曲线因子:装备数值与敌人数值都基于它,永远与玩家境界曲线对齐 */
 export function powerScale(tier: number): GNum {
   const m = tierMajor(tier)
   const s = TIER_SUB[Math.max(0, Math.min(TIER_SUB.length - 1, tier - 1))]!
-  return mul(powN(COMBAT_MAJOR_GROWTH, m), powN(COMBAT_SUB_GROWTH, s))
+  return mul(majorCombatFactor(m), powN(COMBAT_SUB_GROWTH, s))
 }
 
 /** 境界曲线因子(玩家自身基础属性) */
 export function realmScale(major: number, sub: number): GNum {
-  return mul(powN(COMBAT_MAJOR_GROWTH, major), powN(COMBAT_SUB_GROWTH, sub))
+  return mul(majorCombatFactor(major), powN(COMBAT_SUB_GROWTH, sub))
 }
 
 /** 突破所需修为 */
 export function expRequirement(major: number, sub: number): GNum {
-  return mulN(mul(powN(EXP_MAJOR_GROWTH, major), powN(EXP_SUB_GROWTH, sub)), EXP_BASE)
+  const { early, late } = earlyLate(major)
+  const majorFactor = mul(powN(EXP_MAJOR_GROWTH, early), powN(LATE_EXP_GROWTH, late))
+  return mulN(mul(majorFactor, powN(EXP_SUB_GROWTH, sub)), EXP_BASE)
 }
 
 /** 基础修为/秒(未计任何倍率) */
 export function baseCultPerSec(major: number, sub: number): number {
-  return CULT_BASE_SPEED * Math.pow(CULT_MAJOR_SPEED_GROWTH, major) * Math.pow(CULT_SUB_SPEED_GROWTH, sub)
+  const { early, late } = earlyLate(major)
+  return (
+    CULT_BASE_SPEED *
+    Math.pow(CULT_MAJOR_SPEED_GROWTH, early) *
+    Math.pow(LATE_CULT_SPEED_GROWTH, late) *
+    Math.pow(CULT_SUB_SPEED_GROWTH, sub)
+  )
 }
 
 /** 灵气上限 */
 export function qiCap(major: number, sub: number): number {
-  return Math.floor(QI_BASE_CAP * Math.pow(QI_CAP_MAJOR_GROWTH, major) * Math.pow(QI_CAP_SUB_GROWTH, sub))
+  const { early, late } = earlyLate(major)
+  return Math.floor(
+    QI_BASE_CAP *
+      Math.pow(QI_CAP_MAJOR_GROWTH, early) *
+      Math.pow(LATE_QI_CAP_GROWTH, late) *
+      Math.pow(QI_CAP_SUB_GROWTH, sub)
+  )
 }
 
 /** 灵气恢复/秒(未计倍率) */
 export function baseQiRegen(major: number): number {
-  return QI_BASE_REGEN * Math.pow(QI_REGEN_MAJOR_GROWTH, major)
+  const { early, late } = earlyLate(major)
+  return QI_BASE_REGEN * Math.pow(QI_REGEN_MAJOR_GROWTH, early) * Math.pow(LATE_QI_REGEN_GROWTH, late)
 }
 
 /** 玩家基础战斗三维 */

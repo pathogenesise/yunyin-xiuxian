@@ -26,7 +26,7 @@
  * 要定实际参数,须先在真实存档口径上重建耗时模型。
  */
 import { DAO_FRUIT_SOFT_EXP } from '@/data/constants'
-import { MAX_MAJOR } from '@/data/realms'
+import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 import { hoursToReach, type SimAssumptions } from './progressionSim'
 import { daoFruitAfterLives, FRUIT_PER_LIFE, talentCultBonusAt, veinCultBonusAt } from './samsaraAudit'
 
@@ -110,9 +110,9 @@ function assumptionsAt(lives: number): SimAssumptions {
   return { linggenMult: 1.6, talentCultBonus: talentCultBonusAt(lives - 1) + veinCultBonusAt(lives - 1) }
 }
 
-/** 某曲线下,第 n 世从炼气修满真仙所需小时 */
+/** 某曲线下,第 n 世从炼气修满人间界并飞升真仙所需小时 */
 export function hoursToPeakUnder(curve: FruitCurve, lives: number): number {
-  return hoursToReach(MAX_MAJOR, equivalentFruit(curve, daoFruitAfterLives(lives - 1)), assumptionsAt(lives))
+  return hoursToReach(REBIRTH_REFERENCE_MAJOR, equivalentFruit(curve, daoFruitAfterLives(lives - 1)), assumptionsAt(lives))
 }
 
 export interface CurveRow {

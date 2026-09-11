@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { FinalStats, GNum, LinggenProfile, StatMods } from '@/types'
 import { gn, gnMin, gnZero, add, gte, mulN, progress, subClamp } from '@/utils/gnum'
 import { persistConfig } from '@/utils/storage'
-import { realmDef, realmLabel, SUB_NAMES, MAX_MAJOR } from '@/data/realms'
+import { realmDef, realmLabel, worldOf, SUB_NAMES, MAX_MAJOR } from '@/data/realms'
 import { SUB_LEVELS, START_AGE } from '@/data/constants'
 import { legacyInsightOf } from '@/data/samsara'
 import { titleDef } from '@/data/titles'
@@ -106,6 +106,8 @@ export const usePlayerStore = defineStore(
     // ---------- 境界 ----------
     const realm = computed(() => realmDef(major.value))
     const realmName = computed(() => realmLabel(major.value, sub.value))
+    const world = computed(() => worldOf(major.value))
+    const worldName = computed(() => world.value.name)
     const subName = computed(() => SUB_NAMES[Math.min(sub.value, SUB_NAMES.length - 1)]!)
     const expReq = computed(() => expRequirement(major.value, sub.value))
     const expProgress = computed(() => progress(exp.value, expReq.value))
@@ -511,6 +513,8 @@ export const usePlayerStore = defineStore(
       fortuneChoices,
       realm,
       realmName,
+      world,
+      worldName,
       subName,
       expReq,
       expProgress,

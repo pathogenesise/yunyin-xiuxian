@@ -225,7 +225,32 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
     lowHpReduction: 0.35,
     lifespanPct: 0.09
   }),
-  b('x_nitian', 'b_nitian_wo', '由我', '我命由我,道途自开', { cultivationSpeed: 0.18, expGain: 0.2, breakRefund: 0.15 })
+  b('x_nitian', 'b_nitian_wo', '由我', '我命由我,道途自开', { cultivationSpeed: 0.18, expGain: 0.2, breakRefund: 0.15 }),
+
+  // ---- 仙界功法(仙品) ----
+  // 主修:御虚仙典
+  b('m_yuxu', 'b_yuxu_kong', '空明', '御虚凌空,气机自足', { cultivationSpeed: 0.2, qiRegen: 0.2, damageReduction: 0.1 }),
+  b('m_yuxu', 'b_yuxu_feng', '仙锋', '仙光化刃,无坚不摧', { attackPct: 0.16, critDamage: 0.4, armorPen: 0.12 }),
+  b('m_yuxu', 'b_yuxu_ti', '仙体', '仙躯不坏,绵延自愈', { maxHpPct: 0.2, defensePct: 0.18, regenPerRound: 0.05 }),
+  // 辅修:仙灵淬体术
+  b('s_xianling', 'b_xianling_gu', '固本', '仙灵固本,根骨愈坚', { maxHpPct: 0.24, defensePct: 0.2 }),
+  b('s_xianling', 'b_xianling_yu', '愈体', '仙灵润体,伤处自愈', { regenPerRound: 0.06, damageReduction: 0.12, maxHpPct: 0.12 }),
+  // 秘术:仙机通玄
+  b('x_xianji', 'b_xianji_ji', '窥机', '仙机在握,机缘自来', { luck: 0.15, eventLuck: 0.2, dropRate: 0.15 }),
+  b('x_xianji', 'b_xianji_ying', '应劫', '洞悉天机,逢凶化吉', { dropRate: 0.25, spiritStoneGain: 0.35, luck: 0.1 }),
+
+  // ---- 神界功法(神品) ----
+  // 主修:神霄九变
+  b('m_shenxiao', 'b_shenxiao_lei', '雷变', '九变归雷,一击焚天', { attackPct: 0.22, critDamage: 0.5, armorPen: 0.16 }),
+  b('m_shenxiao', 'b_shenxiao_shen', '神变', '通神入化,气机不绝', { cultivationSpeed: 0.26, qiRegen: 0.24, breakthroughRate: 0.05 }),
+  b('m_shenxiao', 'b_shenxiao_ti', '体变', '化身神躯,万法难伤', { maxHpPct: 0.3, defensePct: 0.3, damageReduction: 0.12 }),
+  // 辅修:神炼不灭身
+  b('s_shenlianti', 'b_shenlianti_bu', '不灭', '神躯不灭,历劫不磨', { maxHpPct: 0.3, defensePct: 0.24, damageReduction: 0.12 }),
+  b('s_shenlianti', 'b_shenlianti_yu', '愈神', '神火自愈,血尽复生', { regenPerRound: 0.06, maxHpPct: 0.2, damageReduction: 0.1 }),
+  // 主修:混元无极经
+  b('m_hunyuan', 'b_hunyuan_hua', '化形', '混元化形,四象俱足', { attackPct: 0.24, defensePct: 0.24, maxHpPct: 0.24 }),
+  b('m_hunyuan', 'b_hunyuan_gui', '归元', '万法归元,道基自厚', { cultivationSpeed: 0.3, qiRegen: 0.28, breakthroughRate: 0.06 }),
+  b('m_hunyuan', 'b_hunyuan_kai', '开天', '无极开天,一击破界', { attackPct: 0.28, armorPen: 0.2, critDamage: 0.6 })
 ]
 
 const BY_ID = new Map(GONGFA_BRANCHES.map(b => [b.id, b]))

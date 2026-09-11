@@ -77,6 +77,43 @@ export const PETS: PetDef[] = [
     quality: 'heaven',
     mods: { attackPct: 0.1, maxHpPct: 0.1, cultivationSpeed: 0.06 },
     personality: 'fierce'
+  },
+  // ---- 仙界及以上神兽(仅由高界区域事件发放,见 data/events.ts) ----
+  {
+    id: 'pet_yinglong',
+    name: '应龙',
+    desc: '四爪生翼,云雨相随,仙门之上的护道神兽',
+    icon: 'sparkles',
+    quality: 'immortal',
+    mods: { attackPct: 0.15, maxHpPct: 0.15, cultivationSpeed: 0.1 },
+    personality: 'fierce'
+  },
+  {
+    id: 'pet_qilin',
+    name: '麒麟',
+    desc: '仁兽现世,祥瑞所至,福泽自生',
+    icon: 'paw',
+    quality: 'immortal',
+    mods: { luck: 0.15, dropRate: 0.12, defensePct: 0.12 },
+    personality: 'steady'
+  },
+  {
+    id: 'pet_kunpeng',
+    name: '鲲鹏',
+    desc: '北冥有鱼,化而为鹏,扶摇直上九万里',
+    icon: 'bird',
+    quality: 'divine',
+    mods: { explorationSpeed: 0.25, dodgeRate: 0.08, eventLuck: 0.12 },
+    personality: 'cautious'
+  },
+  {
+    id: 'pet_taotie',
+    name: '混沌饕餮',
+    desc: '混沌中孕育的凶兽,吞天噬地,不知餍足',
+    icon: 'skull',
+    quality: 'divine',
+    mods: { cultivationSpeed: 0.15, breakthroughRate: 0.05, lifesteal: 0.04 },
+    personality: 'fierce'
   }
 ]
 

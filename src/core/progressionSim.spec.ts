@@ -1,7 +1,7 @@
 /* eslint-disable no-console -- 模拟器体检报告的正式输出(bun run test:report 依赖) */
 import { describe, expect, it } from 'vitest'
-import { REALMS } from '@/data/realms'
-import { firstLifeMilestones, multiLifeTable, secondsForMajor } from './progressionSim'
+import { REALMS, WORLD_BREAK_MAJOR, MAX_MAJOR } from '@/data/realms'
+import { firstLifeMilestones, hoursToReach, multiLifeTable, secondsForMajor } from './progressionSim'
 
 const fmt = (h: number): string => (h < 1 ? `${(h * 60).toFixed(1)}分` : h < 48 ? `${h.toFixed(1)}时` : `${(h / 24).toFixed(1)}天`)
 
@@ -28,6 +28,31 @@ describe('数值曲线审计(Phase 14)', () => {
       expect(ratio).toBeGreaterThan(2)
       expect(ratio).toBeLessThan(6)
     }
+  })
+
+  /**
+   * 界外节奏(仙界/神界/混沌海):0-9 号境界沿用旧曲线,不在此约束内。
+   * 跨界后改用 LATE_* 平坦曲线,这里守住两件事:
+   *   1. 每个新大境界仍比上一境更慢(是攀登,不是白送),但增幅被压到 2 倍以内
+   *   2. 整条界外长尾有界——不至于让最后一个境界成为数学上不可达
+   */
+  it('界外每境耗时增幅收敛在 (1, 2) 之间', () => {
+    for (let m = WORLD_BREAK_MAJOR + 1; m <= MAX_MAJOR; m += 1) {
+      const ratio = secondsForMajor(m, 0) / secondsForMajor(m - 1, 0)
+      expect(ratio, `${REALMS[m]!.name} 相对 ${REALMS[m - 1]!.name} 的耗时增幅`).toBeGreaterThan(1)
+      expect(ratio).toBeLessThan(2)
+    }
+  })
+
+  it('界外长尾有界:修满混沌道祖的耗时不到修满真仙的 100 倍', () => {
+    const toZhenxian = hoursToReach(WORLD_BREAK_MAJOR, 0)
+    const toPeak = hoursToReach(MAX_MAJOR, 0)
+    console.log(
+      `\n界外长尾:至真仙 ${fmt(toZhenxian)} → 至${REALMS[MAX_MAJOR]!.name} ${fmt(toPeak)}` +
+        `(×${(toPeak / toZhenxian).toFixed(1)})`
+    )
+    expect(toPeak / toZhenxian).toBeGreaterThan(2) // 四界确实是长线,不是几步就到
+    expect(toPeak / toZhenxian).toBeLessThan(100) // 但有界,不至于数学上不可达
   })
 
   it('多周目:转世加速但绝非无限加速器', () => {

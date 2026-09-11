@@ -3,6 +3,7 @@
     <!-- 境界与突破(修为圆满时整卡蓄势充能) -->
     <div class="card-ink px-4 py-4" :class="player.expFull ? 'card-charged' : ''">
       <div class="text-center">
+        <p class="font-kai text-[11px] tracking-[0.5em] text-ink-faint">{{ player.worldName }}</p>
         <p class="font-kai text-[30px] tracking-[0.3em] text-ink">{{ player.realm.name }}</p>
         <p class="mt-0.5 font-kai text-[14px] tracking-[0.4em] text-cinnabar">{{ player.subName }}</p>
         <p class="mt-1 text-[11px] text-ink-faint">{{ player.realm.desc }}</p>

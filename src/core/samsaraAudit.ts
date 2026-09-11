@@ -28,7 +28,7 @@
 import { DAO_FRUIT_COMBAT_BONUS, TALENT_DRAW_DIV, VEIN_MAIN_CAPACITY, VEIN_TOTAL_CAPACITY } from '@/data/constants'
 import { VEINS } from '@/data/veins'
 import { TALENTS } from '@/data/talents'
-import { MAX_MAJOR } from '@/data/realms'
+import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 import type { StatMods } from '@/types'
 import { daoFruitGain } from './formulas'
 import { effectiveDaoFruit } from './statsCalc'
@@ -132,7 +132,7 @@ export const HERITAGE: HeritageRow[] = [
     id: 'daoFruit',
     name: '道果',
     mode: 'full',
-    detail: `每世凝 ${daoFruitGain(MAX_MAJOR, 9)} 枚(修满真仙口径),永不清零`,
+    detail: `每世凝 ${daoFruitGain(REBIRTH_REFERENCE_MAJOR, 9)} 枚(修满人间界并飞升真仙口径),永不清零`,
     kind: 'legacy',
     power: 'high',
     compressesGrowth: true
@@ -231,8 +231,8 @@ export const HERITAGE: HeritageRow[] = [
 
 // ---------------- 跨世永久量的累积 ----------------
 
-/** 修满真仙再转世时,每世凝得的道果 */
-export const FRUIT_PER_LIFE = daoFruitGain(MAX_MAJOR, 9)
+/** 修满人间界并飞升真仙再转世时,每世凝得的道果 */
+export const FRUIT_PER_LIFE = daoFruitGain(REBIRTH_REFERENCE_MAJOR, 9)
 
 /** 走完 n 世后累积的道果总数 */
 export function daoFruitAfterLives(lives: number): number {
@@ -241,7 +241,7 @@ export function daoFruitAfterLives(lives: number): number {
 
 /** 走完 n 世后持有的天赋数(每世 1 + major/DIV,封顶于天赋总数) */
 export function talentsAfterLives(lives: number): number {
-  const perLife = 1 + Math.floor(MAX_MAJOR / TALENT_DRAW_DIV)
+  const perLife = 1 + Math.floor(REBIRTH_REFERENCE_MAJOR / TALENT_DRAW_DIV)
   return Math.min(TALENTS.length, Math.max(0, lives) * perLife)
 }
 
@@ -312,7 +312,7 @@ function assumptionsAt(lives: number): SimAssumptions {
  * 道果与天赋都按「上一世结束时」的存量计——这一世出生就带着它们
  */
 export function hoursToPeakAt(lives: number): number {
-  return hoursToReach(MAX_MAJOR, daoFruitAfterLives(lives - 1), assumptionsAt(lives))
+  return hoursToReach(REBIRTH_REFERENCE_MAJOR, daoFruitAfterLives(lives - 1), assumptionsAt(lives))
 }
 
 export function pacePerLife(lifeList: number[]): PaceRow[] {

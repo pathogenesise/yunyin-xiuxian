@@ -316,9 +316,14 @@ export interface BuffInstance {
 }
 
 // ============ 境界 ============
+/** 界域 —— 人间界 / 仙界 / 神界 / 混沌海 */
+export type WorldId = 'mortal' | 'immortal' | 'god' | 'chaos'
+
 export interface RealmDef {
   id: string
   name: string
+  /** 所属界域 */
+  world: WorldId
   lifespanYears: number
   /** 大境界突破是否需渡天劫 */
   tribulation: boolean

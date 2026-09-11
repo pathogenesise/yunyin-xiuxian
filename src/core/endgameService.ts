@@ -21,7 +21,7 @@ import {
   trialDef,
   type FurnaceRate
 } from '@/data/endgame'
-import { MAX_MAJOR } from '@/data/realms'
+import { WORLD_BREAK_MAJOR } from '@/data/realms'
 import { stoneByTier } from './formulas'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
@@ -33,9 +33,15 @@ import { useResourcesStore } from '@/stores/resources'
 import { useEndgameStore } from '@/stores/endgame'
 import { useUiStore } from '@/stores/ui'
 
-/** 真仙方可踏足天界 */
+/**
+ * 真仙(仙界门槛)方可踏足天界。
+ *
+ * 旧设计里「满级 = 真仙 = 天界」,故门槛写作 major >= MAX_MAJOR;
+ * 扩界后真仙之上还有玄仙至混沌道祖,若仍借 MAX_MAJOR,终局会随加境漂移。
+ * 现改锚到具名的飞升门槛 WORLD_BREAK_MAJOR(真仙),语义与手感都不变。
+ */
 export function endgameUnlocked(): boolean {
-  return usePlayerStore().major >= MAX_MAJOR
+  return usePlayerStore().major >= WORLD_BREAK_MAJOR
 }
 
 /** 当前道途的全局战斗规则(历练/离线同样生效) */

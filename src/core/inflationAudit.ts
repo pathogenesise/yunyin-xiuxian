@@ -20,16 +20,16 @@ import { toNum } from '@/utils/gnum'
 import { mulberry32, RandomService } from '@/utils/random'
 import { COMBAT_ATK_BASE, COMBAT_DEF_BASE, COMBAT_HP_BASE, EQUIP_QUALITY_FLAT_EXP } from '@/data/constants'
 import { GONGFA } from '@/data/gongfa'
-import { REGIONS } from '@/data/regions'
+import { MORTAL_TIER_MAX, REGIONS } from '@/data/regions'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
 import { MAX_MAJOR } from '@/data/realms'
-import { enemyGearFactor, powerScale, powerScore, realmScale } from './formulas'
+import { enemyGearFactor, powerScale, powerScore, realmScale, REGION_TIER_MAX } from './formulas'
 import { generateEquipment, resolveEquipStats } from './equipGen'
 import { celestialDepthScale } from './gauntlet'
 import { computeFinalStats, mergeMods, modDepth } from './statsCalc'
 
 /** 区域层级总数(与 regions.ts 同步) */
-export const MAX_TIER = 20
+export const MAX_TIER = REGION_TIER_MAX
 
 /** 玩家同时佩戴的非法宝槽位 */
 const WEAR_SLOTS = ['weapon', 'head', 'body', 'wrist', 'belt', 'boots', 'necklace', 'ring', 'talisman'] as const
@@ -377,12 +377,17 @@ export interface GearAsymmetry {
  * 玩家与敌人「装备乘区」的增长速度对比。
  * 玩家:品质倍率 × (1 + 强化等级 × 每级加成);敌人:enemyGearFactor(tier)
  * 这两条线本应同速,一旦分叉,后期必然出现数值碾压
+ *
+ * 口径:这场对账定义在**人间界层级**(tier 1→20)上——Phase 33.2 的治理结论
+ * 就是在这一段得出的。仙界以上的层级走 LATE_COMBAT_GROWTH 的平坦曲线,
+ * 其玩家/内容对齐由 contentCoverageAudit 全程守;若仍按 32 层算总跨度,
+ * 会把「敌人补偿在 20 层之上的自然增量」误读成乘区失衡。
  */
 export function gearAsymmetry(): GearAsymmetry {
   const playerLow = Math.pow(1.0, EQUIP_QUALITY_FLAT_EXP) * (1 + 0 * 0.12)
   const playerHigh = Math.pow(9.5, EQUIP_QUALITY_FLAT_EXP) * (1 + 10 * 0.12)
   const enemyLow = enemyGearFactor(1)
-  const enemyHigh = enemyGearFactor(MAX_TIER)
+  const enemyHigh = enemyGearFactor(MORTAL_TIER_MAX)
   const playerGearGrowth = playerHigh / playerLow
   const enemyGearGrowth = enemyHigh / enemyLow
   return { playerGearGrowth, enemyGearGrowth, ratio: playerGearGrowth / enemyGearGrowth }

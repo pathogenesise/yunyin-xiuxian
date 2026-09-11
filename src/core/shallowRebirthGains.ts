@@ -136,7 +136,7 @@ export const SHALLOW_GAINS: ShallowGainRow[] = [
     perLife: '—',
     cap: null,
     livesToCap: null,
-    evidence: 'endgameUnlocked() 要求 major >= MAX_MAJOR,金丹够不着'
+    evidence: 'endgameUnlocked() 要求 major >= WORLD_BREAK_MAJOR(真仙),金丹够不着'
   }
 ]
 

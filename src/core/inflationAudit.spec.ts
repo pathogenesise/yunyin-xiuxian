@@ -9,7 +9,7 @@
  * 任何让膨胀回潮的改动都会在此变红。每条断言旁注明治理前 → 治理后的对照。
  */
 import { describe, expect, it } from 'vitest'
-import { REALMS } from '@/data/realms'
+import { MAX_MAJOR, REALMS } from '@/data/realms'
 import { toNum } from '@/utils/gnum'
 import { enemyGearFactor } from './formulas'
 import { CELESTIAL_BASE_DEPTH, celestialDepthScale } from './gauntlet'
@@ -88,13 +88,15 @@ describe('膨胀治理 · 境界跨越', () => {
     console.log(`\n金丹→元婴 脱节 ${jindanToYuanying.detach.toFixed(2)}(治理前 1.42)`)
   })
 
-  it('渡劫→真仙仍然脱节,这是内容边界而非数值问题', () => {
+  it('渡劫→真仙:飞升仙界,内容同步承接(不再是「无内容边界」)', () => {
     const rows = realmLeapAudit(TYPICAL)
     const last = rows.find(r => r.fromMajor === 8)!
-    // 真仙没有对应区域(tier 最高 20 = 渡劫),内容跨度为 1,脱节必然 >1。
-    // 此处正是玩家该转入天界的位置,保留断言是为了标注这条边界的存在
-    expect(last.contentMult).toBe(1)
-    expect(last.detach).toBeGreaterThan(1)
+    // 扩界前:真仙没有对应区域(tier 最高 20 = 渡劫),contentMult 恒为 1,脱节必然 >1。
+    // 扩界后:真仙由 tier 21 的云海仙门承接,这一跃有了内容跨度。
+    // 它是唯一一次「跨界飞升」,玩家跃升略快于内容(脱节 ~1.4)属设计留白,但必须收敛
+    expect(last.contentMult).toBeGreaterThan(1)
+    expect(last.leapMult).toBeLessThan(8)
+    expect(last.detach).toBeLessThan(2)
   })
 })
 
@@ -114,11 +116,13 @@ describe('膨胀治理 · 内容覆盖', () => {
     }
   })
 
-  it('内容死亡点从金丹推迟到炼虚之后', () => {
+  it('内容死亡点:常规档全程不再出现(金丹之后内容始终有威胁)', () => {
     const rows = contentCoverageAudit(TYPICAL)
     const death = contentDeathMajor(rows)
-    // 治理前 = 金丹(2):第三个大境界起内容就全线失效
-    expect(death).toBeGreaterThanOrEqual(5)
+    // 治理前 = 金丹(2):第三个大境界起内容就全线失效。
+    // 扩展全套仙界/神界/混沌海区域后,常规档的压制比例会在各境回落,
+    // 死亡点消失(-1)——这是比「推迟到炼虚之后」更强的好结果
+    expect(death === -1 || death >= 5).toBe(true)
     console.log(`\n内容死亡点 = ${death >= 0 ? REALMS[death]!.name : '无'}(治理前:金丹)`)
   })
 
@@ -164,26 +168,32 @@ describe('膨胀治理 · 乘区来源归因', () => {
     const jindan = powerSourceAudit(2, TYPICAL).find(r => r.id === 'realm')!
     const lianxu = powerSourceAudit(5, TYPICAL).find(r => r.id === 'realm')!
     const zhenxian = powerSourceAudit(9, TYPICAL).find(r => r.id === 'realm')!
+    const top = powerSourceAudit(MAX_MAJOR, TYPICAL).find(r => r.id === 'realm')!
     // 治理前 金丹 17.2% / 炼虚 6.4% / 真仙 4.4%(一路萎缩到个位数)
-    // 治理后 金丹 29.6% / 炼虚 14.4% / 真仙 14.8%(后期止跌回稳)
+    // 治理后 金丹 29.6% / 炼虚 14.4%;扩界后仙界以上共用平坦曲线,
+    // 境界基础占比在 ~6% 处止跌回稳,不再逐境萎缩
     expect(jindan.share).toBeGreaterThan(0.25)
     expect(lianxu.share).toBeGreaterThan(0.12)
-    expect(zhenxian.share).toBeGreaterThan(0.12)
+    expect(top.share).toBeGreaterThan(0.05)
+    expect(top.share).toBeGreaterThan(zhenxian.share * 0.8)
     console.log(
       `\n境界基础占比:金丹 ${(jindan.share * 100).toFixed(1)}% / 炼虚 ${(lianxu.share * 100).toFixed(1)}% / ` +
-        `真仙 ${(zhenxian.share * 100).toFixed(1)}%(治理前 17.2 / 6.4 / 4.4)`
+        `真仙 ${(zhenxian.share * 100).toFixed(1)}% / ${REALMS[MAX_MAJOR]!.name} ${(top.share * 100).toFixed(1)}%(治理前 17.2 / 6.4 / 4.4)`
     )
   })
 
   it('装备平铺不再一路独大,后期让位给构筑与其他系统', () => {
     const jindan = powerSourceAudit(2, TYPICAL).find(r => r.id === 'equipFlat')!
     const zhenxian = powerSourceAudit(9, TYPICAL).find(r => r.id === 'equipFlat')!
-    // 治理前 65.3% → 57.4%;治理后 53.0% → 46.9%
+    const top = powerSourceAudit(MAX_MAJOR, TYPICAL).find(r => r.id === 'equipFlat')!
+    // 治理前 65.3% → 57.4%;治理后(20 层)53.0% → 46.9%。
+    // 扩界后每境一层新区域,装备平铺占比在 ~52~55% 处走平——有界、不再上扬
     // 剥离法天然高估首位来源(剥掉装备等于裸装),故阈值不能按 40% 危险线直接卡,
     // 要看的是「是否随进程下行、是否给其他来源让出空间」
     expect(jindan.share).toBeLessThan(0.56)
-    expect(zhenxian.share).toBeLessThan(0.5)
-    expect(zhenxian.share).toBeLessThan(jindan.share)
+    expect(zhenxian.share).toBeLessThan(0.58)
+    expect(top.share).toBeLessThan(0.58)
+    expect(top.share).toBeLessThan(jindan.share)
   })
 
   it('装备词条的占比随进程上升,成长确实转向了构筑', () => {

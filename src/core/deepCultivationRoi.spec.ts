@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
 import { compensationTable, distinctRouteCount, exponentialFruitTable, requiredFruitGrowth } from './deepCultivationRoi'
 import { optimalRebirthPoint } from './rebirthRoi'
-import { MAX_MAJOR } from '@/data/realms'
+import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 
 const NAMES = ['炼气', '筑基', '金丹', '元婴', '化神', '炼虚', '合体', '大乘', '渡劫', '真仙']
 
@@ -40,7 +40,7 @@ describe('深修补偿 · A 案:道果阶数追平耗时', () => {
   it('代价:真仙单世道果暴涨百倍以上,重新成为膨胀源', () => {
     const rows = exponentialFruitTable(requiredFruitGrowth(0.5))
     const zhenxian = rows[rows.length - 1]!
-    expect(zhenxian.major).toBe(MAX_MAJOR)
+    expect(zhenxian.major).toBe(REBIRTH_REFERENCE_MAJOR)
     // 现行 168 枚 → A 案约 2.85 万枚
     expect(zhenxian.inflation).toBeGreaterThan(100)
     // 单**一世**就给出天文级战力加成
@@ -121,7 +121,7 @@ describe('深修补偿 · 结论:补偿路线走不通,出路在不可替代性'
     // 唯一跳出比较的方式是让它不可替代——那时问题从「多少倍」
     // 变成「玩家此刻要的是哪一种东西」
     const routes = distinctRouteCount()
-    expect(routes).toBe(MAX_MAJOR - MANUAL_REBIRTH_MIN_MAJOR + 1)
+    expect(routes).toBe(REBIRTH_REFERENCE_MAJOR - MANUAL_REBIRTH_MIN_MAJOR + 1)
     console.log(
       `\n金丹之上共 ${routes} 个可作停世点的境界。若每境有各自独一份的回报` +
         `(如灵兽师承 / 炼丹炼器 / 区域规则认知 / 天界道痕),` +

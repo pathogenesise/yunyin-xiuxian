@@ -873,6 +873,145 @@ export const EVENTS: EventDef[] = [
       ]),
       leave('天机莫测,你看了两眼便移开目光。')
     ]
+  ),
+  // ============ 仙界及以上奇遇(准入境界 9-20)============
+  ev(
+    'ev_xianmen_yize',
+    '仙门遗泽',
+    '云海深处,一座废弃仙门的匾额半悬。门内灵光未散,似有传承静候有缘。',
+    ['general', 'sky', 'immortal'],
+    [
+      c(
+        '拜入仙门',
+        [
+          o(
+            55,
+            '门后灵光化形,一头生翼四爪的神兽自光中踏出,俯首于你。',
+            { type: 'pet', id: 'pet_yinglong' }
+          ),
+          o(30, '传承是你早已通晓的仙典,你仍添了几分体悟。', { type: 'exp', reqPct: 0.08 }),
+          o(15, '禁制仍在,你被反震出数丈,气血翻涌。', { type: 'buff', id: 'injury' })
+        ],
+        { isDefault: true }
+      ),
+      c('取匾额残金', [o(1, '匾额由仙金铸成,你敲下一块。', { type: 'material', id: 'ore', amount: 40 })])
+    ],
+    { minRealm: 9, once: true }
+  ),
+  ev(
+    'ev_yaochi_xianpai',
+    '瑶池仙桃',
+    '一株仙桃横斜于瑶池之畔,果香沁入神魂——只是树下盘着一条守苑仙蟒。',
+    ['general', 'immortal'],
+    [
+      c(
+        '摘取仙桃',
+        [
+          o(60, '你摘下仙桃,一口入腹,寿元大增。', { type: 'lifespan', years: 800 }),
+          o(40, '仙蟒骤然发难,你夺桃而走,却也受了些伤。', { type: 'lifespan', years: 300 }, { type: 'buff', id: 'injury' })
+        ],
+        { isDefault: true }
+      ),
+      c('不扰仙苑', [o(1, '机缘在前而能不取,你心境反而更明。', { type: 'exp', reqPct: 0.05 })])
+    ],
+    { minRealm: 11 }
+  ),
+  ev(
+    'ev_shenyu_zhen',
+    '神域奇珍',
+    '神域边陲的乱石滩上,一枚法则碎片半埋沙中,微光吞吐不定。',
+    ['general', 'god'],
+    [
+      c(
+        '纳碎片入体',
+        [
+          o(55, '碎片化入经脉,你对法则的认知更深一层。', { type: 'material', id: 'wudao', amount: 40 }),
+          o(
+            45,
+            '碎片竟是一头麒麟的内丹所化,神兽残魂认你为主。',
+            { type: 'pet', id: 'pet_qilin' }
+          )
+        ],
+        { isDefault: true }
+      ),
+      c('收归宗门', [o(1, '你以重器封存碎片,带回宗门换得灵石。', { type: 'stone', tierAmount: 220 })])
+    ],
+    { minRealm: 14, once: true }
+  ),
+  ev(
+    'ev_shenbing_canfeng',
+    '神兵残锋',
+    '一柄折断的神兵插在巨岩之中,断口处仍有神威流转,震得周身气血翻腾。',
+    ['general', 'god'],
+    [
+      c(
+        '硬撼拔之',
+        [
+          o(60, '神兵被你拔起,一件材宝随之而出。', { type: 'equipment', minQualityRank: 6 }),
+          o(40, '神威反噬,你被震退,只截下一段锋铁。', { type: 'material', id: 'ore', amount: 60 }, { type: 'buff', id: 'injury' })
+        ],
+        { isDefault: true }
+      ),
+      c('绕行', [o(1, '你记下此处方位,转身离去。')])
+    ],
+    { minRealm: 15 }
+  ),
+  ev(
+    'ev_kunpeng_hua',
+    '北冥化鹏',
+    '混沌之滨,一头巨鲲正于虚无之海中蜕变。它望向你,眼中似有询问。',
+    ['general', 'chaos'],
+    [
+      c(
+        '助其化鹏',
+        [
+          o(60, '鲲鹏化形既成,振翅冲天,而后折返,愿随你同行。', { type: 'pet', id: 'pet_kunpeng' }),
+          o(40, '化形之劫余波扫过,你护住己身,却也见识了大道一角。', { type: 'exp', reqPct: 0.1 })
+        ],
+        { isDefault: true }
+      ),
+      c('静观天道', [o(1, '观鲲鹏化形,若有所悟。', { type: 'material', id: 'wudao', amount: 30 })])
+    ],
+    { minRealm: 18, once: true }
+  ),
+  ev(
+    'ev_taotie_xiong',
+    '混沌凶兽',
+    '虚无凶影之后,一头饕餮踏混沌而来,张口便要吞噬你周身气机。',
+    ['general', 'chaos', 'dark'],
+    [
+      c(
+        '以力降之',
+        [
+          o(55, '一番恶战,饕餮竟俯首,摄于你的威势。', { type: 'pet', id: 'pet_taotie' }),
+          o(45, '饕餮之威远超预估,你负伤遁走。', { type: 'buff', id: 'injury' })
+        ],
+        { isDefault: true }
+      ),
+      c('避其锋芒', [o(1, '你收敛气机,悄然绕开。')])
+    ],
+    { minRealm: 19, once: true }
+  ),
+  ev(
+    'ev_hongmeng_benyuan',
+    '鸿蒙本源',
+    '万道之源静悬于此。伸手可及的,是开天辟地的第一缕本源。',
+    ['general', 'chaos', 'sky'],
+    [
+      c(
+        '纳本源入道',
+        [
+          o(50, '本源入体,你窥见大道真容。', { type: 'material', id: 'wudao', amount: 80 }),
+          o(30, '本源太过浩瀚,你只摄得一缕,却也修为大涨。', { type: 'exp', reqPct: 0.15 }),
+          o(20, '本源反噬,你道基震荡。', { type: 'buff', id: 'injury' })
+        ],
+        { isDefault: true }
+      ),
+      c('凝本源为一丹', [o(1, '你以本源凝成一枚丹药,收于袖中。', { type: 'pill', id: 'p_daoyuan', count: 1 })], {
+        cond: { type: 'stone', tierAmount: 300 }
+      })
+    ],
+    { minRealm: 20, weight: 60 }
   )
 ]
 
@@ -956,7 +1095,6 @@ export const FORTUNE_EVENTS: EventDef[] = [
     { element: 'dark' }
   )
 ]
-
 const FORTUNE_BY_ID = new Map(FORTUNE_EVENTS.map(x => [x.id, x]))
 
 export function fortuneEventDef(id: string): EventDef | undefined {

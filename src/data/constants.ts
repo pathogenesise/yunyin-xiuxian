@@ -38,6 +38,26 @@ export const CULT_BASE_SPEED = 1.6
 export const CULT_MAJOR_SPEED_GROWTH = 5.2
 /** 每小层基础速度倍率 */
 export const CULT_SUB_SPEED_GROWTH = 1.06
+
+/**
+ * 界外成长节奏(仙界/神界/混沌海,即 major > WORLD_BREAK_MAJOR)。
+ *
+ * 人间界 0-9 号境界沿用上面 18 / 5.2 这套曲线(净耗时 ≈ ×3.46/境),
+ * 若原样外推到 21 境,终局需求会变成天文数字,那 12 个新境界等同于不存在。
+ * 因此跨界之后改用一套平缓得多的节奏:
+ *
+ *   净耗时/境   = LATE_EXP_GROWTH / LATE_CULT_SPEED_GROWTH = 1.8 / 1.5 = ×1.2
+ *   战力/境     = LATE_COMBAT_GROWTH                       = ×1.2
+ *
+ * 两者对齐,是为了让「每多花 1.2 倍时间,恰好多得 1.2 倍战力」——
+ * 与人间界「耗时与内容同步」的治理口径一致,不在新界重新制造膨胀。
+ * 仙/神/混沌三段的体量差异由各境道果与内容分布去承担,不再靠指数堆叠。
+ */
+export const LATE_EXP_GROWTH = 1.8
+export const LATE_CULT_SPEED_GROWTH = 1.5
+export const LATE_COMBAT_GROWTH = 1.2
+export const LATE_QI_CAP_GROWTH = 2.2
+export const LATE_QI_REGEN_GROWTH = 2.0
 /** 小境界数量(9 层 + 圆满) */
 export const SUB_LEVELS = 10
 

@@ -21,7 +21,7 @@ import { baseCultPerSec, baseQiRegen, breakthroughBaseRate, daoFruitGain, expReq
 import { DEFAULT_ASSUMPTIONS, type SimAssumptions, estimateCultMult } from './progressionSim'
 import { BT_FAIL_EXP_LOSS, BT_QI_COST_RATIO, SUB_LEVELS } from '@/data/constants'
 import { toNum } from '@/utils/gnum'
-import { MAX_MAJOR } from '@/data/realms'
+import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 
 /**
  * 修满一个大境界的完整耗时(秒)。
@@ -73,7 +73,7 @@ export interface RebirthPoint {
 /** 合法转世点(金丹起,低于此境界不允许手动轮回) */
 export function rebirthPoints(): RebirthPoint[] {
   const out: RebirthPoint[] = []
-  for (let m = MANUAL_REBIRTH_MIN_MAJOR; m <= MAX_MAJOR; m += 1) {
+  for (let m = MANUAL_REBIRTH_MIN_MAJOR; m <= REBIRTH_REFERENCE_MAJOR; m += 1) {
     const fruit = daoFruitGain(m, 9)
     const hours = fullHoursToReach(m + 1)
     out.push({ major: m, fruit, hours, efficiency: fruit / hours })
@@ -108,7 +108,7 @@ export interface MarginalRow {
 export function marginalTable(): MarginalRow[] {
   const opt = optimalRebirthPoint()
   const out: MarginalRow[] = []
-  for (let m = MANUAL_REBIRTH_MIN_MAJOR; m < MAX_MAJOR; m += 1) {
+  for (let m = MANUAL_REBIRTH_MIN_MAJOR; m < REBIRTH_REFERENCE_MAJOR; m += 1) {
     const fruitGain = daoFruitGain(m + 1, 9) - daoFruitGain(m, 9)
     const hoursCost = fullHoursToReach(m + 2) - fullHoursToReach(m + 1)
     const marginal = hoursCost > 0 ? fruitGain / hoursCost : 0
@@ -135,7 +135,7 @@ export interface GrowthOrders {
 
 export function growthOrders(): GrowthOrders {
   const lo = MANUAL_REBIRTH_MIN_MAJOR
-  const fruitSpan = daoFruitGain(MAX_MAJOR, 9) / daoFruitGain(lo, 9)
-  const hoursSpan = fullHoursToReach(MAX_MAJOR + 1) / fullHoursToReach(lo + 1)
+  const fruitSpan = daoFruitGain(REBIRTH_REFERENCE_MAJOR, 9) / daoFruitGain(lo, 9)
+  const hoursSpan = fullHoursToReach(REBIRTH_REFERENCE_MAJOR + 1) / fullHoursToReach(lo + 1)
   return { fruitSpan, hoursSpan, efficiencyDrop: hoursSpan / fruitSpan }
 }

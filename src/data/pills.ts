@@ -230,7 +230,74 @@ export const PILLS: PillDef[] = [
   p('p_pantao', '蟠桃', 'earth', 5, '瑶池灵桃,延寿五百载', { instant: { lifespanYears: 500 } }, 'leaf'),
   p('p_zaohua', '造化丹', 'heaven', 5, '服之道韵加身', { kind: 'buff', buffId: 'bless_daoyun' }, 'star'),
   /** 混沌丹:照法则 H 退到九转还魂丹之下(0.35 → 0.15)—— 全表最强的修为丹不该是白捡的 */
-  p('p_hundun', '混沌丹', 'immortal', 8, '混沌初分时的一缕本源', { instant: { expReqPct: 0.15 } })
+  p('p_hundun', '混沌丹', 'immortal', 8, '混沌初分时的一缕本源', { instant: { expReqPct: 0.15 } }),
+
+  // ============ 仙界及以上(准入境界 9-20)============
+  /**
+   * 修为线自九转还魂丹(天品 0.3)向上延伸。
+   * 照法则 B:同族可炼线内,地品/仙品/神品的药力序与品质序一致。
+   */
+  p('p_taichu', '太初丹', 'immortal', 10, '太初之气凝丹,服之修为如潮', {
+    instant: { expReqPct: 0.34 },
+    recipe: { herb: 260, stoneBase: 640 },
+    alchemyLevel: 11
+  }),
+  p('p_xiancheng', '仙成丹', 'divine', 14, '仙道既成,一枚抵百年苦修', {
+    instant: { expReqPct: 0.42 },
+    recipe: { herb: 340, stoneBase: 900 },
+    alchemyLevel: 12
+  }),
+  p('p_daoyuan', '道源丹', 'divine', 18, '一炉道源,吞服者直窥大道', {
+    instant: { expReqPct: 0.55 },
+    recipe: { herb: 460, stoneBase: 1400 },
+    alchemyLevel: 13
+  }),
+  /** 寿元线自万寿金丹(地品 1000)向上;掉落线顶端(蟠桃 500)始终在可炼线之下(法则 H) */
+  p('p_yongchang', '永昌丹', 'immortal', 13, '服之添寿三千载,岁月于我何有', {
+    instant: { lifespanYears: 3000 },
+    recipe: { herb: 320, stoneBase: 820 },
+    alchemyLevel: 12
+  }),
+  p('p_wugou', '无垢金丹', 'divine', 17, '金丹无垢,寿与天齐,增寿万载', {
+    instant: { lifespanYears: 10000 },
+    recipe: { herb: 440, stoneBase: 1300 },
+    alchemyLevel: 13
+  }),
+  /** 悟道线自悟道丹(玄品 20)向上 */
+  p('p_daoyindan', '道音丹', 'immortal', 12, '耳畔道音不绝,悟道点 +60', {
+    instant: { wudao: 60 },
+    recipe: { herb: 300, stoneBase: 760 },
+    alchemyLevel: 11
+  }),
+  /** 灵气线:玉液一口涤尽枯竭,照法则 F 仍是可炼品(一口回满必须付制备代价) */
+  p(
+    'p_xiantianquan',
+    '仙泉玉液',
+    'immortal',
+    11,
+    '仙泉一盏,灵气涤尽复满 —— 泉眼难寻,火候更难',
+    { instant: { qiPct: 1 }, recipe: { herb: 90, stoneBase: 260 }, alchemyLevel: 11 },
+    'droplets'
+  ),
+  /** 增益线:每 buff 仅此一味丹产出(法则 C),增益定义见 data/buffs.ts */
+  p('p_xianlidan', '仙力丹', 'immortal', 10, '服之仙力贯体,出手重若崩山', {
+    kind: 'buff',
+    buffId: 'buff_xianli',
+    recipe: { herb: 240, stoneBase: 620 },
+    alchemyLevel: 11
+  }),
+  p('p_shenweidan', '神威丹', 'divine', 15, '神威临世,诸邪辟易', {
+    kind: 'buff',
+    buffId: 'buff_shenwei',
+    recipe: { herb: 360, stoneBase: 1000 },
+    alchemyLevel: 12
+  }),
+  p('p_benyuandan', '本源丹', 'divine', 18, '混沌本源入体,一日修行抵百日', {
+    kind: 'buff',
+    buffId: 'buff_hundun',
+    recipe: { herb: 480, stoneBase: 1500 },
+    alchemyLevel: 13
+  })
 ]
 
 const BY_ID = new Map(PILLS.map(x => [x.id, x]))

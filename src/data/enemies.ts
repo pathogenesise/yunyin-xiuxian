@@ -1,4 +1,4 @@
-/** 敌人库 —— 60 个,含 20 名区域首领;多段/真伤/闪避等机制用于流派克制 */
+/** 敌人库 —— 96 个,含 32 名区域首领;多段/真伤/闪避等机制用于流派克制 */
 import type { BossArchetype, BossPhase, ElementId, EnemyDef, EnemySkill, StatMods } from '@/types'
 
 function e(
@@ -202,7 +202,166 @@ export const ENEMIES: EnemyDef[] = [
   e('e_chaosshadow', '混沌魔影', 20, 'ghost', [1.5, 1.7, 1.3, 1.25], [{ name: '混沌侵蚀', mult: 2.4, rate: 0.32, effect: 'drain' }], {
     element: 'chaos'
   }),
-  e('e_hmdemon', '鸿蒙古魔', 20, 'skull', [6.6, 2.6, 1.1, 1.2], [heavy('开天魔焰', 3.2, 0.32)], { boss: true, element: 'chaos', archetype: 'berserk', phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.7 }, skillChanges: [{ name: '开天·灭世', mult: 3.6, rate: 0.4, effect: 'pierce' }], label: '灭世' }] })
+  e('e_hmdemon', '鸿蒙古魔', 20, 'skull', [6.6, 2.6, 1.1, 1.2], [heavy('开天魔焰', 3.2, 0.32)], { boss: true, element: 'chaos', archetype: 'berserk', phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.7 }, skillChanges: [{ name: '开天·灭世', mult: 3.6, rate: 0.4, effect: 'pierce' }], label: '灭世' }] }),
+
+  // ============ 仙界(t21-25)============
+  // t21 云海仙门
+  e('e_imm_guard', '云海仙卫', 21, 'shield', [1.3, 1.35, 1.25, 1.05], [heavy('仙门戟', 2.0, 0.3)], { element: 'metal' }),
+  e('e_imm_crane', '接引仙鹤', 21, 'bird', [1.0, 1.3, 0.95, 1.35], [{ name: '鹤唳长空', mult: 1.1, rate: 0.45, effect: 'multi' }], {
+    element: 'wind',
+    mods: { dodgeRate: 0.12 }
+  }),
+  e('e_imm_gate', '仙门执事', 21, 'skull', [5.0, 1.5, 1.5, 1.1], [{ name: '仙门禁制', mult: 2.6, rate: 0.3, effect: 'shield' }], {
+    boss: true,
+    element: 'metal',
+    archetype: 'threshold',
+    mods: { shieldOnStart: 0.3 },
+    phases: [{ hpThreshold: 0.5, modChanges: { shieldOnStart: 0.5, damageReduction: 0.2 }, label: '仙门紧闭' }]
+  }),
+  // t22 金阙玉京
+  e('e_imm_jade', '玉京天兵', 22, 'shield', [1.4, 1.4, 1.3, 1.0], [heavy('金阙戟法', 2.1, 0.3)], { element: 'metal' }),
+  e('e_imm_spear', '金阙枪灵', 22, 'sword', [1.1, 1.5, 1.0, 1.25], [{ name: '枪出如龙', mult: 2.0, rate: 0.32, effect: 'pierce' }], {
+    element: 'metal'
+  }),
+  e('e_imm_general', '金阙仙将', 22, 'skull', [5.2, 1.8, 1.4, 1.1], [heavy('仙将镇岳', 2.6, 0.32)], {
+    boss: true,
+    element: 'metal',
+    archetype: 'berserk',
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.5 }, skillChanges: [{ name: '仙将·裂天', mult: 3.0, rate: 0.42 }], label: '裂天' }]
+  }),
+  // t23 瑶池仙苑
+  e('e_imm_fairy', '瑶池仙娥', 23, 'moon', [1.1, 1.4, 1.05, 1.25], [{ name: '仙乐摄魂', mult: 1.9, rate: 0.3, effect: 'stun' }], {
+    element: 'wood'
+  }),
+  e('e_imm_beast', '守苑仙兽', 23, 'paw', [1.7, 1.2, 1.4, 0.9], [{ name: '仙藤缠噬', mult: 2.0, rate: 0.3, effect: 'bleed' }], {
+    element: 'wood'
+  }),
+  e('e_imm_queen', '瑶池仙后', 23, 'skull', [5.5, 1.6, 1.35, 1.2], [{ name: '瑶池甘露', mult: 2.2, rate: 0.3, effect: 'drain' }], {
+    boss: true,
+    element: 'wood',
+    archetype: 'attrition',
+    mods: { regenPerRound: 0.02, lifesteal: 0.12 },
+    phases: [{ hpThreshold: 0.5, modChanges: { regenPerRound: 0.16, lifesteal: 0.25 }, label: '仙苑复苏' }]
+  }),
+  // t24 太乙雷池
+  e('e_tai_thunder', '雷池仙灵', 24, 'zap', [1.3, 1.55, 1.1, 1.2], [{ name: '太乙雷芒', mult: 2.2, rate: 0.3, effect: 'stun' }], {
+    element: 'thunder'
+  }),
+  e('e_tai_light', '太乙仙光', 24, 'star', [1.0, 1.6, 0.95, 1.35], [{ name: '仙光贯体', mult: 2.1, rate: 0.32, effect: 'pierce' }], {
+    element: 'light'
+  }),
+  e('e_tai_zun', '太乙雷尊', 24, 'skull', [5.4, 2.2, 0.95, 1.25], [{ name: '太乙神雷', mult: 2.9, rate: 0.32, effect: 'stun' }], {
+    boss: true,
+    element: 'thunder',
+    archetype: 'berserk',
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.55 }, skillChanges: [{ name: '太乙·灭世雷', mult: 3.3, rate: 0.42, effect: 'pierce' }], label: '灭世雷' }]
+  }),
+  // t25 大罗天阙
+  e('e_luo_star', '大罗星君', 25, 'star', [1.35, 1.6, 1.25, 1.15], [heavy('星沉一击', 2.5, 0.3)], { element: 'light' }),
+  e('e_luo_void', '虚空仙将', 25, 'ghost', [1.15, 1.5, 1.05, 1.35], [{ name: '虚空裂斩', mult: 2.3, rate: 0.32 }], {
+    element: 'wind',
+    mods: { dodgeRate: 0.22 }
+  }),
+  e('e_luo_lord', '大罗天主', 25, 'skull', [6.0, 2.0, 1.5, 1.2], [{ name: '大罗神通', mult: 2.8, rate: 0.32 }], {
+    boss: true,
+    element: 'light',
+    archetype: 'evasive',
+    mods: { dodgeRate: 0.3 },
+    phases: [{ hpThreshold: 0.5, modChanges: { dodgeRate: 0.48 }, label: '大罗化身' }]
+  }),
+
+  // ============ 神界(t26-29)============
+  // t26 神域边陲
+  e('e_god_scout', '神域斥候', 26, 'wind', [1.2, 1.5, 1.15, 1.35], [heavy('神风探路', 2.3, 0.3)], { element: 'wind' }),
+  e('e_god_beast', '神界凶兽', 26, 'paw', [1.8, 1.3, 1.4, 0.95], [{ name: '凶兽撕裂', mult: 2.4, rate: 0.3, effect: 'bleed' }], {
+    element: 'earth'
+  }),
+  e('e_god_border', '边陲神将', 26, 'skull', [5.6, 2.0, 1.45, 1.15], [{ name: '神威镇守', mult: 2.9, rate: 0.32, effect: 'shield' }], {
+    boss: true,
+    element: 'wind',
+    archetype: 'threshold',
+    mods: { damageReduction: 0.2 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageReduction: 0.35, shieldOnStart: 0.4 }, label: '神域封锁' }]
+  }),
+  // t27 神兵天关
+  e('e_god_soldier', '神兵卫', 27, 'shield', [1.5, 1.6, 1.5, 1.05], [heavy('神兵重斩', 2.6, 0.3)], { element: 'metal' }),
+  e('e_god_chariot', '战车神兽', 27, 'paw', [2.0, 1.35, 1.5, 0.9], [{ name: '神车碾踏', mult: 1.3, rate: 0.5, effect: 'multi' }], {
+    element: 'earth'
+  }),
+  e('e_god_general', '神将统领', 27, 'skull', [6.2, 2.1, 1.5, 1.15], [{ name: '神兵天罚', mult: 3.0, rate: 0.32 }], {
+    boss: true,
+    element: 'metal',
+    archetype: 'berserk',
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.6 }, skillChanges: [{ name: '天罚·神兵阵', mult: 1.4, rate: 0.5, effect: 'multi' }], label: '神兵阵' }]
+  }),
+  // t28 神王圣殿
+  e('e_god_priest', '圣殿神官', 28, 'ghost', [1.3, 1.7, 1.2, 1.2], [{ name: '神言噬魂', mult: 2.5, rate: 0.3, effect: 'drain' }], {
+    element: 'light'
+  }),
+  e('e_god_light', '圣光神使', 28, 'star', [1.25, 1.6, 1.25, 1.3], [{ name: '圣光贯世', mult: 2.6, rate: 0.32, effect: 'pierce' }], {
+    element: 'light'
+  }),
+  e('e_god_king', '神王', 28, 'crown', [6.6, 2.2, 1.6, 1.2], [{ name: '神王法谕', mult: 3.1, rate: 0.32 }], {
+    boss: true,
+    element: 'light',
+    archetype: 'spellbane',
+    mods: { damageReduction: 0.2 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageReduction: 0.38 }, label: '法谕加身' }]
+  }),
+  // t29 神帝天宫
+  e('e_god_guard', '天宫神卫', 29, 'shield', [1.7, 1.7, 1.6, 1.1], [heavy('天宫镇守', 2.9, 0.3)], { element: 'metal' }),
+  e('e_god_law', '法则神兽', 29, 'star', [1.5, 1.8, 1.35, 1.25], [{ name: '法则崩灭', mult: 2.9, rate: 0.32, effect: 'pierce' }], {
+    element: 'chaos'
+  }),
+  e('e_god_emperor', '神帝', 29, 'crown', [7.0, 2.4, 1.6, 1.25], [{ name: '神帝一念', mult: 3.3, rate: 0.32, effect: 'pierce' }], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'threshold',
+    mods: { critRate: 0.15 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.5, critDamage: 0.5 }, label: '神帝临尘' }]
+  }),
+
+  // ============ 混沌海(t30-32)============
+  // t30 混沌之滨
+  e('e_chaos_wisp', '混沌游灵', 30, 'sparkles', [1.3, 1.7, 1.15, 1.4], [{ name: '混沌游弋', mult: 2.6, rate: 0.3 }], {
+    element: 'chaos',
+    mods: { dodgeRate: 0.2 }
+  }),
+  e('e_chaos_beast', '混沌异兽', 30, 'paw', [2.0, 1.5, 1.5, 1.05], [{ name: '本源噬体', mult: 2.7, rate: 0.3, effect: 'drain' }], {
+    element: 'chaos'
+  }),
+  e('e_chaos_lord', '混沌真灵', 30, 'skull', [6.8, 2.3, 1.55, 1.25], [{ name: '真灵噬道', mult: 3.2, rate: 0.32 }], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'evasive',
+    mods: { dodgeRate: 0.28 },
+    phases: [{ hpThreshold: 0.5, modChanges: { dodgeRate: 0.45, critRate: 0.2 }, label: '真灵无相' }]
+  }),
+  // t31 神魔渊
+  e('e_chaos_demon', '混沌神魔', 31, 'skull', [1.9, 1.9, 1.6, 1.15], [heavy('开天神魔斩', 3.1, 0.32)], { element: 'chaos' }),
+  e('e_chaos_void', '虚无凶影', 31, 'ghost', [1.4, 1.8, 1.2, 1.4], [{ name: '虚无侵蚀', mult: 2.8, rate: 0.32, effect: 'pierce' }], {
+    element: 'dark'
+  }),
+  e('e_chaos_king', '混沌神魔王', 31, 'skull', [7.4, 2.5, 1.6, 1.25], [{ name: '神魔开天', mult: 3.5, rate: 0.32 }], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'berserk',
+    phases: [{ hpThreshold: 0.5, modChanges: { damageBonus: 0.7 }, skillChanges: [{ name: '开天·神魔怒', mult: 4.0, rate: 0.42, effect: 'pierce' }], label: '开天' }]
+  }),
+  // t32 鸿蒙本源
+  e('e_chaos_origin', '鸿蒙本源', 32, 'sparkles', [2.2, 2.0, 1.7, 1.15], [{ name: '本源演进', mult: 3.3, rate: 0.32, effect: 'pierce' }], {
+    element: 'chaos'
+  }),
+  e('e_chaos_shadow', '大道残影', 32, 'moon', [1.6, 2.1, 1.35, 1.45], [{ name: '大道千重', mult: 1.5, rate: 0.5, effect: 'multi' }], {
+    element: 'chaos'
+  }),
+  e('e_chaos_zu', '混沌道祖', 32, 'skull', [8.0, 2.7, 1.7, 1.3], [{ name: '道祖一斩', mult: 3.8, rate: 0.32, effect: 'pierce' }], {
+    boss: true,
+    element: 'chaos',
+    archetype: 'threshold',
+    mods: { damageReduction: 0.25, critRate: 0.15 },
+    phases: [{ hpThreshold: 0.5, modChanges: { damageReduction: 0.4, damageBonus: 0.5 }, label: '道祖临世' }]
+  })
 ]
 
 const BY_ID = new Map(ENEMIES.map(x => [x.id, x]))

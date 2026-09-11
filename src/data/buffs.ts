@@ -54,7 +54,14 @@ export const BUFFS: BuffDef[] = [
   b('cave_penalty_cultivationSpeed', '修炼倦怠', 'injury', 300, '强行吸纳伤了根基,修炼速度下降 15%', { cultivationSpeed: -0.15 }, 'skull'),
   // ---- Phase 28 闭关:5 分钟 +150% 修炼、期间禁止探索。
   // durationSec=300 必须与 earlyGameService.startRetreat 的 5 分钟口径一致(同一真相源=buff 本身) ----
-  b('retreat', '闭关', 'blessing', 300, '闭关静修,修炼速度提升 150%,期间无法外出探索', { cultivationSpeed: 1.5 }, 'mountain')
+  b('retreat', '闭关', 'blessing', 300, '闭关静修,修炼速度提升 150%,期间无法外出探索', { cultivationSpeed: 1.5 }, 'mountain'),
+  // ---- 仙界及以上丹药增益(每 buff 仅一味丹产出,见 pillValue 法则 C) ----
+  b('buff_xianli', '仙力加身', 'pill', 1200, '仙力贯体,攻击提升 35%,暴击伤害提升 30%', { attackPct: 0.35, critDamage: 0.3 }, 'sword'),
+  b('buff_shenwei', '神威临世', 'pill', 1200, '神威加身,造成伤害提升 25%,受伤降低 12%', { damageBonus: 0.25, damageReduction: 0.12 }, 'crown'),
+  b('buff_hundun', '本源归一', 'pill', 1800, '混沌本源入体,修炼速度提升 80%,突破成功率提升 10%', {
+    cultivationSpeed: 0.8,
+    breakthroughRate: 0.1
+  }, 'sparkles')
 ]
 
 const BY_ID = new Map(BUFFS.map(x => [x.id, x]))

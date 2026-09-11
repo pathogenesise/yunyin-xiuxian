@@ -327,6 +327,70 @@ export const GONGFA: GongfaDef[] = [
     '我命由我不由天',
     { luck: 0.1, breakthroughRate: 0.05, lifespanPct: 0.1 },
     { luck: 0.03, breakthroughRate: 0.012, lifespanPct: 0.03 }
+  ),
+  // ---- 仙界及以上(准入境界 9-20)----
+  g(
+    'm_yuxu',
+    '御虚仙典',
+    'main',
+    'immortal',
+    9,
+    '御虚而行,仙光护体,一步一重天',
+    { cultivationSpeed: 0.34, attackPct: 0.16, defensePct: 0.14, maxHpPct: 0.14 },
+    { cultivationSpeed: 0.045, attackPct: 0.018, defensePct: 0.016 },
+    { element: 'wind', skill: { name: '御虚仙光', mult: 3.0, rate: 0.26 } }
+  ),
+  g(
+    's_xianling',
+    '仙灵淬体术',
+    'sub',
+    'immortal',
+    10,
+    '以仙灵之气淬炼肉身,脱胎换骨',
+    { maxHpPct: 0.18, defensePct: 0.14, regenPerRound: 0.012 },
+    { maxHpPct: 0.022, defensePct: 0.015 }
+  ),
+  g(
+    'x_xianji',
+    '仙机通玄',
+    'secret',
+    'immortal',
+    11,
+    '仙机在握,福祸先知',
+    { luck: 0.12, eventLuck: 0.16, dropRate: 0.12 },
+    { luck: 0.035, eventLuck: 0.045, dropRate: 0.03 }
+  ),
+  g(
+    'm_shenxiao',
+    '神霄九变',
+    'main',
+    'divine',
+    14,
+    '九变通神,雷动九天',
+    { cultivationSpeed: 0.4, attackPct: 0.2, defensePct: 0.16, maxHpPct: 0.16 },
+    { cultivationSpeed: 0.05, attackPct: 0.022, defensePct: 0.017 },
+    { element: 'thunder', skill: { name: '神霄神雷', mult: 3.4, rate: 0.26 } }
+  ),
+  g(
+    's_shenlianti',
+    '神炼不灭身',
+    'sub',
+    'divine',
+    16,
+    '神火炼体,身成不灭',
+    { damageReduction: 0.1, maxHpPct: 0.2, lowHpReduction: 0.4 },
+    { damageReduction: 0.022, maxHpPct: 0.024 }
+  ),
+  g(
+    'm_hunyuan',
+    '混元无极经',
+    'main',
+    'divine',
+    18,
+    '混元一体,无极而生,万法归一',
+    { cultivationSpeed: 0.5, attackPct: 0.24, defensePct: 0.22, maxHpPct: 0.22 },
+    { cultivationSpeed: 0.06, attackPct: 0.025, defensePct: 0.021 },
+    { element: 'chaos', skill: { name: '混元一炁', mult: 3.8, rate: 0.28 } }
   )
 ]
 

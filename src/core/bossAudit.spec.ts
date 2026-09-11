@@ -1,6 +1,7 @@
 /* eslint-disable no-console -- Phase 30.6 Boss 生态审计报告 */
 import { describe, expect, it } from 'vitest'
 import { ENEMIES } from '@/data/enemies'
+import { REGIONS } from '@/data/regions'
 
 /**
  * Phase 30.6: Boss 生态审计
@@ -178,6 +179,8 @@ describe('Phase 30.6: Boss 生态审计', () => {
     for (const boss of ALL_BOSSES) {
       console.log(`  ${boss.name} (tier ${boss.tier})`)
     }
-    expect(ALL_BOSSES.length, 'Boss 总数应为 20').toBe(20)
+    // 每处区域恰由一位首领镇守:首领池随区域表一同增长,不再钉死某个历史数字
+    expect(ALL_BOSSES.length, '每位区域首领都应有定义,且总数与区域数一致').toBe(REGIONS.length)
+    expect(ALL_BOSSES.every(b => b.archetype !== undefined), '首领必须带 archetype 机制家族').toBe(true)
   })
 })
