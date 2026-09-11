@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 57,
+  "round": 58,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:12:51+00:00",
+  "updated_at": "2026-09-11T16:15:23+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2827,10 +2827,10 @@
     "TASK-039": {
       "id": "TASK-039",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T16:12:41+00:00",
-      "updated_at": "2026-09-11T16:12:41+00:00",
+      "updated_at": "2026-09-11T16:15:23+00:00",
       "touched_round": 57,
       "category": "core-feature",
       "summary": "转世继承的后续:①界面在轮回结算里明确列出『这一世带走什么/放下什么』(与清单同源)②评测新继承模型对多周目节奏的影响(灵脉归零后早期变慢,daoFruitCurve 假设已同步)",
@@ -2851,6 +2851,17 @@
       "severity": 0.25,
       "confidence": 0.6,
       "effort": 2
+    },
+    "CHG-073": {
+      "id": "CHG-073",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:15:23+00:00",
+      "updated_at": "2026-09-11T16:15:23+00:00",
+      "touched_round": 57,
+      "summary": "轮回结算交割清单:回顾页按 随神魂带走/折损带走/随皮囊放下 三组列出继承项(悬停显示代码依据);heritageGroups() 为分组单一来源;补审计『一行不漏一行不重』",
+      "commit": "b81c628"
     }
   },
   "edges": [
@@ -3970,6 +3981,12 @@
       "to": "TASK-040",
       "type": "implements",
       "created_at": "2026-09-11T16:12:51+00:00"
+    },
+    {
+      "from": "CHG-073",
+      "to": "TASK-039",
+      "type": "implements",
+      "created_at": "2026-09-11T16:15:23+00:00"
     }
   ]
 }
