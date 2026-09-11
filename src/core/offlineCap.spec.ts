@@ -17,7 +17,8 @@ import { usePlayerStore } from '@/stores/player'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useUiStore } from '@/stores/ui'
 import { todayWeather } from './weather'
-import { toNum } from '@/utils/gnum'
+import { gn, mulN, toNum } from '@/utils/gnum'
+import { OFFLINE_EFFICIENCY } from '@/data/constants'
 
 const GAP_HOURS = 60
 
@@ -121,5 +122,64 @@ describe('离线结算同源吃天时(ISS-027 续)', () => {
     expect(summary, '高界离线应产出总结').not.toBeNull()
     expect(toNum(player.exp), '高界离线修为未增长').toBeGreaterThan(before)
     expect(Number.isFinite(toNum(player.exp))).toBe(true)
+  })
+
+  /**
+   * 高界离线的**全产线**体检:修为、灵气、洞府、镇压、藏经阁都在同一次结算里跑。
+   * 只验修为是不够的 —— 镇压产出按 capSec 结算、洞府产出按 effSec,两处量级不同,
+   * 谁在高界算出负数/NaN,总结里会直接现形。
+   */
+  it('混沌道祖离线:五条产线的读数全部有限且非负', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    game.markStarted()
+    game.lastActiveAt = Date.now() - GAP_HOURS * 3600 * 1000
+    player.major = 20
+    player.sub = 9
+    // 开一条镇压线(混沌海地界),让镇压产出也进这次结算
+    player.suppressRegion('hongmengbenyuan')
+    player.suppressQualified.push('hongmengbenyuan')
+
+    const summary = settleOffline(Date.now())!
+    expect(summary).not.toBeNull()
+    const numeric: Record<string, number> = {
+      exp: toNum(summary.exp),
+      stone: toNum(summary.stone),
+      herb: summary.herb,
+      ore: summary.ore,
+      wudao: summary.wudao
+    }
+    for (const [k, v] of Object.entries(numeric)) {
+      expect(Number.isFinite(v), `${k} 非有限值`).toBe(true)
+      expect(v, `${k} 为负`).toBeGreaterThanOrEqual(0)
+    }
+    for (const line of summary.notes) expect(line).not.toContain('NaN')
+    for (const e of summary.equipment) expect(e.name).not.toContain('NaN')
+  })
+
+  /**
+   * 离线折扣的**口径一致性**:离线修为 = 在线速率 × 时长 × OFFLINE_EFFICIENCY。
+   * 单看「有没有增长」看不出量级走样 —— 高界数值跨十几个数量级,
+   * 某处若被 clamp 或精度丢失,增长率就会悄悄偏离这个折扣。
+   */
+  it('离线折扣全程一致:人间/真仙/神人/混沌的增益都恰是 在线速率 ×0.9', () => {
+    for (const major of [0, 9, 14, 20]) {
+      setActivePinia(createPinia())
+      const game = useGameStore()
+      const player = usePlayerStore()
+      game.markStarted()
+      player.major = major
+      player.sub = 0
+      const gapHours = 4 // 低于最低封顶(8h),故 capSec = 真实时长
+      game.lastActiveAt = Date.now() - gapHours * 3600 * 1000
+      const rate = player.cultPerSec
+      const effSec = gapHours * 3600 * OFFLINE_EFFICIENCY
+      const before = toNum(player.exp)
+      expect(settleOffline(Date.now()), `major ${major} 离线未结算`).not.toBeNull()
+      const gained = toNum(player.exp) - before
+      const expected = toNum(mulN(gn(rate), effSec))
+      expect(expected, `major ${major} 期望增益为 0,断言形同虚设`).toBeGreaterThan(0)
+      expect(gained / expected, `major ${major} 离线增益偏离 0.9 折扣:${(gained / expected).toFixed(4)}`).toBeCloseTo(1, 3)
+    }
   })
 })
