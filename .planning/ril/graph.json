@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 35,
+  "round": 36,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:42:01+00:00",
+  "updated_at": "2026-09-11T14:44:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1970,7 +1970,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T14:10:24+00:00",
-      "touched_round": 34,
+      "touched_round": 35,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
       "severity": 0.6,
@@ -2302,6 +2302,17 @@
       "source": "故障注入:道文符 minTier=99 → 「永不掉落」红;恢复 31 → 111 files / 1063 tests 绿",
       "summary": "高界掉落内容不会再因 minTier 写超而静默成为死内容",
       "confidence": 1.0
+    },
+    "CHG-050": {
+      "id": "CHG-050",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:44:05+00:00",
+      "updated_at": "2026-09-11T14:44:05+00:00",
+      "touched_round": 35,
+      "summary": "飞升节点落档验证:以真实成功率重试到飞升成功,断言 first_immortal 节点已记、境界为真仙、突破文案含仙界;故障注入(注释 recordMilestone)可打红",
+      "commit": "ca91e24"
     }
   },
   "edges": [
@@ -3205,6 +3216,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T14:42:01+00:00"
+    },
+    {
+      "from": "CHG-050",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:44:05+00:00"
     }
   ]
 }
