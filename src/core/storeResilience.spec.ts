@@ -26,6 +26,7 @@ import { useEndgameStore } from '@/stores/endgame'
 import { useLoadoutsStore } from '@/stores/loadouts'
 import { useSettingsStore } from '@/stores/settings'
 import { useGameStore } from '@/stores/game'
+import type { BondState } from '@/core/daoluService'
 
 /** 有 sanitize 的 store:名字 → 取 store 的函数 */
 const STORES: { name: string; use: () => Store & { sanitize: () => void } }[] = [
@@ -115,4 +116,40 @@ describe('坏档韧性 · 恶意值也不该炸', () => {
       expect(failures, `${name} 在这些恶意值下会抛错:\n${[...new Set(failures)].join('\n')}`).toEqual([])
     })
   }
+})
+
+describe('坏档韧性 · 复杂状态的值也要修回来(不只是"不炸")', () => {
+  it('道侣:三维夹回 0~100、坏 id 作废、坏意图整块丢掉', () => {
+    setActivePinia(createPinia())
+    const player = usePlayerStore()
+    const bad = {
+      daoluId: 'dl_qingli',
+      stage: 'nope',
+      fate: 999,
+      trust: NaN,
+      accord: -5,
+      shared: -3,
+      metAt: -1,
+      fallen: 'x',
+      doneEvents: ['be_relic', 42],
+      opportunities: -2,
+      nextEventAt: NaN,
+      intent: { wish: 1, sparks: 'bad' }
+    } as unknown as BondState
+    player.$patch({ bond: bad })
+    player.sanitize()
+    const b = player.bond!
+    expect(b.fate).toBe(100)
+    expect(b.trust).toBe(0)
+    expect(b.accord).toBe(0)
+    expect(b.stage).toBe('met')
+    expect(b.shared).toBe(0)
+    expect(b.doneEvents).toEqual(['be_relic'])
+    expect(b.intent).toBeNull()
+    expect(b.fallen).toBe(false)
+
+    player.$patch({ bond: { ...b, daoluId: 'dl_nope' } as unknown as BondState })
+    player.sanitize()
+    expect(player.bond).toBeNull()
+  })
 })

@@ -19,6 +19,7 @@ import { todayWeather } from '@/core/weather'
 import { readingFromState, readingMods } from '@/core/divination'
 import { asFiniteNumber, asStringArray } from '@/utils/saveShape'
 import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
+import { DAOLU, STAGE_ORDER } from '@/data/daolu'
 import { fateChart, fateMods, fateSeed } from '@/core/fate'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
@@ -499,6 +500,37 @@ export const usePlayerStore = defineStore(
             rules: asStringArray(sr.rules).filter(t => SECRET_RULES.some(r => r.text === t)),
             carriedHpPct: Math.min(1, asFiniteNumber(sr.carriedHpPct, 1, 0.05)),
             finished: sr.finished === true
+          }
+        }
+      }
+      /**
+       * 道侣状态修形(Phase 34.10):三维是 0~100 的钳制量(advanceBond 里夹过),
+       * 但坏档能绕过写入口。若 trust 被改成 NaN,门槛判定(nextGateHint)与履历都会跟着算歪。
+       */
+      if (bond.value) {
+        const b = bond.value
+        const known = DAOLU.some(d => d.id === b.daoluId)
+        if (!known) {
+          bond.value = null
+        } else {
+          const clamp100 = (v: unknown, fallback = 0): number => Math.min(100, asFiniteNumber(v, fallback, 0))
+          bond.value = {
+            ...b,
+            stage: STAGE_ORDER.includes(b.stage) ? b.stage : 'met',
+            fate: clamp100(b.fate),
+            trust: clamp100(b.trust),
+            accord: clamp100(b.accord),
+            shared: Math.floor(asFiniteNumber(b.shared, 0, 0)),
+            metAt: asFiniteNumber(b.metAt, Date.now(), 0),
+            fallen: b.fallen === true,
+            departed: b.departed === true,
+            doneEvents: asStringArray(b.doneEvents),
+            opportunities: Math.floor(asFiniteNumber(b.opportunities, 0, 0)),
+            nextEventAt: Math.floor(asFiniteNumber(b.nextEventAt, 0, 0)),
+            pendingEventId: typeof b.pendingEventId === 'string' ? b.pendingEventId : null,
+            intentPending: b.intentPending === true,
+            // 意图结构复杂且由经历催生:形状不对就整块作废,让她重新酝酿
+            intent: b.intent && Array.isArray(b.intent.sparks) && typeof b.intent.wish === 'string' ? b.intent : null
           }
         }
       }
