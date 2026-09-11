@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 101,
+  "round": 102,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T22:49:18+00:00",
+  "updated_at": "2026-09-11T23:02:34+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 98,
+      "touched_round": 101,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -4874,7 +4874,7 @@
       "version": 1,
       "created_at": "2026-09-11T21:56:27+00:00",
       "updated_at": "2026-09-11T21:56:27+00:00",
-      "touched_round": 97,
+      "touched_round": 101,
       "summary": "「玩家的疑问」可以变成一条可审计的等式:面板显示 X,那么用来解释 X 的那份明细必须逐键相加等于 X。凡合并过程里有非线性(递减词条按来源强弱打折、软阈值对合计折算),就必须把折算摊回来源 —— 否则「解释了」与「没解释」在玩家眼里一样,甚至更糟",
       "confidence": 0.75
     },
@@ -5085,6 +5085,56 @@
       "touched_round": 100,
       "summary": "storeResilience 的 store 清单改为从 store 源码倒推(import.meta.glob + persistConfig 扫描,$id 判定 store 导出);新增「持久化 store 必须有 sanitize」与「分片键唯一」两条判据;pacingTelemetry 补 sanitize 与行为用例",
       "commit": "bf51683"
+    },
+    "ISS-076": {
+      "id": "ISS-076",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:53:49+00:00",
+      "updated_at": "2026-09-11T23:02:34+00:00",
+      "touched_round": 101,
+      "summary": "修行速度的来路只在人物页看得到:修行页那行「修为 +X/秒」最常被盯,却没有一处说明它是「基础 ×(1+加成)」的哪一段 —— 玩家想弄清为什么慢,得翻到人物页再从一堆属性里找修炼速度;而两个数(基础/总速率)之间本来就需要写得能算回来",
+      "severity": 0.2,
+      "confidence": 0.8,
+      "effort": 2
+    },
+    "TASK-067": {
+      "id": "TASK-067",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:53:49+00:00",
+      "updated_at": "2026-09-11T23:02:34+00:00",
+      "touched_round": 101,
+      "summary": "修行页就地摊开修炼速度:基础(境界/层/灵根)× (1 + 各来源)= 速率,来源读 finalStats.breakdown;并加红线「三个数必须乘得回来」",
+      "category": "core-feature",
+      "severity": 0.2,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-081": {
+      "id": "EV-081",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:53:53+00:00",
+      "updated_at": "2026-09-11T22:53:53+00:00",
+      "touched_round": 101,
+      "summary": "statBreakdown.spec 增第 6 例:基础(境界/层)× (1 + 来源之和) = cultPerSec,且来源之和 = 面板总加成;一次故障注入(给 cultPerSec 乘 1.1)即转红;无头实证:炼虚三层单灵根档展开得「基础 6,835/秒 ×(1 + 109.5%)= 1.432万/秒」,来源 天时+10/命格+5/灵根+50/道果+44.5 相加正是 109.5;全量 134 文件 1381 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/statBreakdown.spec.ts"
+    },
+    "CHG-125": {
+      "id": "CHG-125",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:02:34+00:00",
+      "updated_at": "2026-09-11T23:02:34+00:00",
+      "touched_round": 101,
+      "summary": "修行页修为行可点开「来路」:基础(境界/层/灵根)× (1 + 各来源)= 速率,来源读 finalStats.breakdown;statBreakdown.spec 增「三个数乘得回来」用例",
+      "commit": "2b6c2cd"
     }
   },
   "edges": [
@@ -7206,6 +7256,36 @@
       "to": "HYP-032",
       "type": "validates",
       "created_at": "2026-09-11T22:49:18+00:00"
+    },
+    {
+      "from": "ISS-076",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-11T23:02:34+00:00"
+    },
+    {
+      "from": "TASK-067",
+      "to": "ISS-076",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:02:34+00:00"
+    },
+    {
+      "from": "CHG-125",
+      "to": "TASK-067",
+      "type": "implements",
+      "created_at": "2026-09-11T23:02:34+00:00"
+    },
+    {
+      "from": "CHG-125",
+      "to": "ISS-076",
+      "type": "resolves",
+      "created_at": "2026-09-11T23:02:34+00:00"
+    },
+    {
+      "from": "EV-081",
+      "to": "HYP-030",
+      "type": "validates",
+      "created_at": "2026-09-11T23:02:34+00:00"
     }
   ]
 }
