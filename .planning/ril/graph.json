@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 93,
+  "round": 94,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T20:50:45+00:00",
+  "updated_at": "2026-09-11T21:05:48+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1535,7 +1535,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 16,
+      "touched_round": 93,
       "summary": "藏经阁钻研/认知系统(loreService.ts + lore store)"
     },
     "COMP-010": {
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 25,
+      "touched_round": 93,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -4595,6 +4595,67 @@
       "touched_round": 92,
       "summary": "灵脉卡自陈读三条容量常数;天道三处可行流派分母读 BUILD_PROFILES.length(生态健康度同源);新增 realms.ascensionLeap() 由寿元曲线推出飞升大跃倍数,说明文案从手写 ×100 改为 ×102",
       "commit": "7d6f49a"
+    },
+    "ISS-067": {
+      "id": "ISS-067",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:57:58+00:00",
+      "updated_at": "2026-09-11T21:05:48+00:00",
+      "touched_round": 93,
+      "summary": "四境无新功法、境界退化为数值台阶:渡劫(8)/太乙(12)/大罗(13)/神将(15)在 42 部功法里一条门槛落在本境的都没有 —— 玩家走到这四境时,参悟池里没有任何新东西;扩界(ISS-038)只补到「每境有地界与敌人」的结构齐备",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "TASK-059": {
+      "id": "TASK-059",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:58:01+00:00",
+      "updated_at": "2026-09-11T21:05:48+00:00",
+      "touched_round": 93,
+      "summary": "补四境空白的功法各一部(含各两条悟道分支),并新增内容密度审计:每一境至少一条门槛落在该境的功法,另钉住每境有地界/有敌人、每界域有专属天时与装备法宝",
+      "category": "core-feature",
+      "severity": 0.3,
+      "confidence": 0.8,
+      "effort": 4
+    },
+    "HYP-026": {
+      "id": "HYP-026",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:58:01+00:00",
+      "updated_at": "2026-09-11T20:58:01+00:00",
+      "touched_round": 93,
+      "summary": "「境界是不是只是数值台阶」可以用一条结构判据提前发现:每个境界至少要有一条门槛恰好落在该境的内容(本项目取功法 —— 参悟池按 minRealm ≤ 当前+1 过滤,表里有就一定会撞见);判据读表而不读感觉,故内容缺哪一境会立刻点名",
+      "confidence": 0.7
+    },
+    "EV-073": {
+      "id": "EV-073",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:58:04+00:00",
+      "updated_at": "2026-09-11T20:58:04+00:00",
+      "touched_round": 93,
+      "summary": "contentDensity.spec 5 例:逐境内容矩阵(打印)、每境至少一条本境功法、每境有地界且地界有敌人、每界域有专属天时、各界域装备/法宝非空(秘境仅两阶标注为设计);两次故障注入(m_daluo 13→12、混沌海两境 minRealm 20→19)各转红一次,恢复即复绿;全量 132 文件 1329 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/contentDensity.spec.ts"
+    },
+    "CHG-117": {
+      "id": "CHG-117",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:05:43+00:00",
+      "updated_at": "2026-09-11T21:05:43+00:00",
+      "touched_round": 93,
+      "summary": "补四部功法(九霄渡劫经/太乙金华/大罗天章/神将兵符,各两条悟道分支),填上渡劫/太乙/大罗/神将四境的内容空白;新增 contentDensity.spec(5 例)并登记进分类报告",
+      "commit": "b5fd09e"
     }
   },
   "edges": [
@@ -6428,6 +6489,48 @@
       "to": "HYP-025",
       "type": "validates",
       "created_at": "2026-09-11T20:50:40+00:00"
+    },
+    {
+      "from": "ISS-067",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-11T21:05:43+00:00"
+    },
+    {
+      "from": "TASK-059",
+      "to": "ISS-067",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:05:44+00:00"
+    },
+    {
+      "from": "CHG-117",
+      "to": "TASK-059",
+      "type": "implements",
+      "created_at": "2026-09-11T21:05:44+00:00"
+    },
+    {
+      "from": "CHG-117",
+      "to": "ISS-067",
+      "type": "resolves",
+      "created_at": "2026-09-11T21:05:44+00:00"
+    },
+    {
+      "from": "EV-073",
+      "to": "HYP-026",
+      "type": "validates",
+      "created_at": "2026-09-11T21:05:44+00:00"
+    },
+    {
+      "from": "ISS-038",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-11T21:05:44+00:00"
+    },
+    {
+      "from": "TASK-059",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:05:48+00:00"
     }
   ]
 }
