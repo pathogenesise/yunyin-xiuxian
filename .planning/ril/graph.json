@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 74,
+  "round": 75,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:35:59+00:00",
+  "updated_at": "2026-09-11T17:39:30+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3672,9 +3672,46 @@
       "version": 1,
       "created_at": "2026-09-11T17:35:59+00:00",
       "updated_at": "2026-09-11T17:35:59+00:00",
-      "touched_round": 73,
+      "touched_round": 74,
       "confidence": 0.85,
       "summary": "可达性判据要按「发放点」倒推:凡内容表里的东西(称号/奖励/条件类型),都必须有一个真实的发放或求值点;没有就是看得见拿不到"
+    },
+    "TASK-048": {
+      "id": "TASK-048",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:39:26+00:00",
+      "updated_at": "2026-09-11T17:39:30+00:00",
+      "touched_round": 74,
+      "category": "test-quality",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2,
+      "summary": "数据完整性红线:属性键必须有人写、内容门槛(命题 minStage/层级/品质)必须可达"
+    },
+    "CHG-094": {
+      "id": "CHG-094",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:39:26+00:00",
+      "updated_at": "2026-09-11T17:39:26+00:00",
+      "touched_round": 74,
+      "commit": 7147059,
+      "summary": "新增 dataIntegrity.spec(3 例);删掉自己写的正则白名单版拼写检查(类型系统已覆盖且实测更准)"
+    },
+    "EV-053": {
+      "id": "EV-053",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:39:30+00:00",
+      "updated_at": "2026-09-11T17:39:30+00:00",
+      "touched_round": 74,
+      "source": "dataIntegrity.spec(3 例);故障注入把命题 minStage 改成 9 → 报「要第 9 阶,而阶位只到 4」;另用 vue-tsc 实测确认属性键拼错会被类型系统拦下(Did you mean)(commit 7147059)",
+      "summary": "门槛类静默失效可被倒推红线拦住;而属性键拼错交给类型系统更准 —— 自写的正则版已删",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -5100,6 +5137,18 @@
       "to": "HYP-016",
       "type": "validates",
       "created_at": "2026-09-11T17:35:59+00:00"
+    },
+    {
+      "from": "CHG-094",
+      "to": "TASK-048",
+      "type": "implements",
+      "created_at": "2026-09-11T17:39:30+00:00"
+    },
+    {
+      "from": "EV-053",
+      "to": "HYP-016",
+      "type": "validates",
+      "created_at": "2026-09-11T17:39:30+00:00"
     }
   ]
 }
