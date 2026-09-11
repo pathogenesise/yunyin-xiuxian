@@ -58,6 +58,9 @@ describe('数值体系说明 · 与公式同源', () => {
     expect(PROGRESSION_NOTES.tribulationCapMajor).toBeGreaterThan(0)
     expect(PROGRESSION_NOTES.banking.length).toBeGreaterThanOrEqual(3)
     expect(PROGRESSION_NOTES.basis.length).toBe(4)
+    expect(PROGRESSION_NOTES.breakthrough.length).toBeGreaterThanOrEqual(3)
+    // 天劫口径里点名的封顶境界,必须就是 constants 里那一个
+    expect(PROGRESSION_NOTES.breakthrough[1]).toContain(REALMS[PROGRESSION_NOTES.tribulationCapMajor]!.name)
   })
 
   it('花费曲线同样是复利,且文档倍率 = 公式实际环比', () => {

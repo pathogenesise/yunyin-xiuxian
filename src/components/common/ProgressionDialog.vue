@@ -30,9 +30,6 @@
           数值按指数堆叠,耗时却压在 x{{ OUTER_TIME_PER_MAJOR.toFixed(2) }} —— 于是每一境都明显更"重",
           整条阶梯仍在可达范围。渡劫之上为界外(第 {{ PROGRESSION_NOTES.worldBreakMajor + 1 }} 境起)。
         </p>
-        <p class="mt-1 text-[10px] text-ink-faint">
-          天劫难度在「{{ tribulationCapRealm }}」处封顶:再往上,威压由地界与构筑承担,不靠无限加码。
-        </p>
       </div>
 
       <!-- 积余:卡境不浪费 -->
@@ -79,6 +76,14 @@
           唯「渡劫→真仙」是脱去凡尘的大跃(约 ×100);此后破界入神、归返混沌亦各跃一档。
         </p>
       </div>
+
+      <!-- 突破与天劫:难度落在哪里,说清楚 -->
+      <div class="card-ink px-3 py-2">
+        <p class="text-[10px] text-ink-faint">突破与天劫</p>
+        <ul class="mt-1 space-y-1">
+          <li v-for="line in PROGRESSION_NOTES.breakthrough" :key="line" class="text-ink-soft">· {{ line }}</li>
+        </ul>
+      </div>
     </div>
     <template #footer>
       <button class="btn-seal w-full" @click="$emit('close')">知道了</button>
@@ -97,11 +102,8 @@ import {
     PROGRESSION_NOTES
 } from '@/data/progressionDoc'
 import { formatGN } from '@/utils/format'
-import { REALMS } from '@/data/realms'
-import { computed } from 'vue'
 
   defineProps<{ open: boolean }>()
   defineEmits<{ close: [] }>()
 
-  const tribulationCapRealm = computed(() => REALMS[PROGRESSION_NOTES.tribulationCapMajor]?.name ?? '渡劫')
 </script>

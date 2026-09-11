@@ -28,7 +28,7 @@ import {
   TRIBULATION_DIFFICULTY_CAP_MAJOR,
   UPGRADE_DUST_GROWTH
 } from './constants'
-import { LIFESPAN_WORLDS, WORLDS, WORLD_BREAK_MAJOR } from './realms'
+import { LIFESPAN_WORLDS, REALMS, WORLDS, WORLD_BREAK_MAJOR } from './realms'
 
 export interface ProgressionAxis {
   id: string
@@ -123,5 +123,12 @@ export const PROGRESSION_NOTES = {
     '仙界五境取道教仙阶:真仙、玄仙、金仙、太乙、大罗',
     '神界四境取网文常用神阶:神人、神将、神王、神帝',
     '混沌海三境取道家宇宙论:混沌真灵、混沌神魔、混沌道祖'
+  ],
+  breakthrough: [
+    '小层的突破成功率不随境界无限下降 —— 那是惩罚,不是难度;难度体现在修为需求与天劫上',
+    `大关须渡天劫:成败看劫型与你的解法空间(护持/续航/抗性/爆发),天劫难度在「${
+      REALMS[WORLD_BREAK_MAJOR]!.name
+    }」处封顶`,
+    '突破失败损失部分修为(可被「护道」类词条减免),但已积余的部分仍留在账上'
   ]
 }
