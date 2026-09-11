@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 67,
+  "round": 68,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:10:02+00:00",
+  "updated_at": "2026-09-11T17:12:16+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3404,6 +3404,31 @@
       "source": "src/core/progressionDoc.spec.ts 术数四门 6 例(逐项对照 DIVINATION_COST/CHANGING_TIERS/MANSION_EVENT_LUCK/各模块条数);故障注入:写死悟道点 3、星象加成 12% 各自变红(commit 0819196)",
       "summary": "说明页上的每个数字都能追到模块真值,改常数忘改文案会红",
       "confidence": 0.9
+    },
+    "TASK-045": {
+      "id": "TASK-045",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:12:13+00:00",
+      "updated_at": "2026-09-11T17:12:16+00:00",
+      "touched_round": 67,
+      "category": "dx",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "界域志六门齐了之后页面过长,按天界长卷成法分册"
+    },
+    "CHG-087": {
+      "id": "CHG-087",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:12:13+00:00",
+      "updated_at": "2026-09-11T17:12:13+00:00",
+      "touched_round": 67,
+      "commit": 9594635,
+      "summary": "界域志分册(InkTabs 六册)+ 分册契约 3 例"
     }
   },
   "edges": [
@@ -4733,6 +4758,12 @@
       "to": "TASK-044",
       "type": "implements",
       "created_at": "2026-09-11T17:09:57+00:00"
+    },
+    {
+      "from": "CHG-087",
+      "to": "TASK-045",
+      "type": "implements",
+      "created_at": "2026-09-11T17:12:16+00:00"
     }
   ]
 }
