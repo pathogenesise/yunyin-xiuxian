@@ -151,6 +151,34 @@
       </div>
     </section>
 
+    <!-- 星象:二十八宿值日,利一方界域 -->
+    <SectionTitle title="星象" hint="二十八宿值日,分野为读、四象为用" />
+    <section class="card-ink px-4 py-3">
+      <p class="font-kai text-[13px] leading-relaxed text-ink">{{ mansionLine }}</p>
+      <p class="mt-1 text-[11px] leading-relaxed text-ink-faint">
+        分野依《晋书·天文志》(诸家小异)只作来历读 —— 游戏里的地界不是九州。
+        管用的是下面这条**游戏约定**:四象配四界(东配人间、南配仙、西配神、北配混沌),
+        值日之宿所属之象,所配界域今日际遇更易(乘在际遇概率上 +{{ Math.round(MANSION_EVENT_LUCK * 100) }}%),他处不加。
+      </p>
+      <p class="mt-1.5 text-[11px] text-azure">
+        今日利 <span class="text-gold-ink">{{ favoredWorldName }}</span> —— 与天时不同:天时是全境之气,星象只利一方。
+      </p>
+      <button class="mt-2 w-full text-left text-[10px] text-azure" @click="showAllMansions = !showAllMansions">
+        {{ showAllMansions ? '收起二十八宿' : `展开查看 ${MANSIONS.length} 宿 →` }}
+      </button>
+      <div v-if="showAllMansions" class="mt-2 divide-y divide-ink/6">
+        <template v-for="img in IMAGES" :key="img.id">
+          <p class="pt-2 text-[10px] text-ink-ghost">{{ img.direction }}方 {{ img.name }} · 所配{{ worldName(img.world) }}</p>
+          <div v-for="m in mansionsOf(img.id)" :key="m.name" class="flex items-baseline gap-2 py-1.5">
+            <span class="w-12 shrink-0 font-kai text-[13px] text-ink">{{ m.name }}</span>
+            <span class="w-20 shrink-0 text-[10px] text-ink-faint">{{ m.fullName }}</span>
+            <span class="w-12 shrink-0 text-[10px] text-ink-ghost">{{ m.domain }}</span>
+            <span class="min-w-0 text-[11px] leading-relaxed text-ink-soft">{{ m.good }}</span>
+          </div>
+        </template>
+      </div>
+    </section>
+
     <SectionTitle title="待续" hint="已列入路线、尚未实装的经典门类" />
     <section class="card-ink divide-y divide-ink/7 px-4">
       <div v-for="p in PLANNED_SCHOOLS" :key="p.name" class="flex items-start gap-2 py-2.5">
@@ -176,6 +204,10 @@
   import { askDivination } from '@/core/divinationService'
   import { STARS } from '@/data/ziwei'
   import { fateLordLine } from '@/core/fate'
+  import { IMAGES, MANSIONS, type ImageId } from '@/data/xiangxiu'
+  import { MANSION_EVENT_LUCK, favoredWorld, todayMansion, todayMansionLine } from '@/core/astronomy'
+  import { worldDef } from '@/data/realms'
+  import type { WorldId } from '@/types'
   import { modsText } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
 
@@ -223,6 +255,17 @@
       starNames: p.stars.map(s => `${s.name}(${s.nature})`).join('、')
     }))
   )
+
+  // 星象:值日之宿与所利界域(由游戏日派生,随心跳刷新)
+  const showAllMansions = ref(false)
+  const mansionLine = computed(() => todayMansionLine())
+  const favoredWorldName = computed(() => worldDef(favoredWorld(todayMansion())).name)
+  function worldName(id: WorldId): string {
+    return worldDef(id).name
+  }
+  function mansionsOf(image: ImageId) {
+    return MANSIONS.filter(m => m.image === image)
+  }
 
   const worldRows = computed(() =>
     WORLDS.map(w => ({

@@ -93,9 +93,10 @@ describe('典籍志 · 未实装门类如实标注', () => {
     }
   })
 
-  it('实装了就得从待续里出来:周易与紫微已在,不再挂着「未实装」', () => {
+  it('实装了就得从待续里出来:周易、紫微与星象已在,不再挂着「未实装」', () => {
     expect(PLANNED_SCHOOLS.some(p => p.name.includes('周易'))).toBe(false)
     expect(PLANNED_SCHOOLS.some(p => p.name.includes('紫微'))).toBe(false)
+    expect(PLANNED_SCHOOLS.some(p => p.name.includes('星象'))).toBe(false)
     expect(TRIGRAMS.length).toBe(8)
     expect(HEXAGRAMS.length).toBe(64)
   })

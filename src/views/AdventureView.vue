@@ -20,6 +20,11 @@
       </RouterLink>
 
       <SectionTitle title="历练" hint="行万里路,炼一颗心" />
+      <p class="text-[10px] leading-relaxed text-violet-ink">
+        今日星象:{{ mansionLine }} —— 利
+        <span class="text-gold-ink">{{ favoredWorldName }}</span>
+        ,在其地历练际遇更易(他处不加)。
+      </p>
       <p v-if="player.suppressedRegions.length > 0" class="text-[10px] text-gold-ink">
         镇压收益中 {{ player.suppressedRegions.length }} 处 —— 与历练互不冲突,可同时收取;一次只能历练一处。
       </p>
@@ -183,6 +188,8 @@
   import { REGIONS, regionDef, DANGER_NAMES } from '@/data/regions'
   import { worldOf, type WorldDef } from '@/data/realms'
   import SectionTitle from '@/components/common/SectionTitle.vue'
+  import { todayMansion, favoredWorld, todayMansionLine } from '@/core/astronomy'
+  import { worldDef } from '@/data/realms'
   import { canEnterRegion, entryBlockReason, worldView } from '@/core/mortalWorldService'
   import { REALMS } from '@/data/realms'
   import { EXPLORE_MODES } from '@/data/constants'
@@ -212,6 +219,10 @@
     const view = worldView(w, id => id)
     return view.title
   })
+
+  /** 今日星象:值日之宿所利界域,由此知今日该往哪一片地界走 */
+  const mansionLine = computed(() => todayMansionLine())
+  const favoredWorldName = computed(() => worldDef(favoredWorld(todayMansion())).name)
 
   /**
    * 从本世之界页带回来的地界 —— 直接打开出行方式弹窗。

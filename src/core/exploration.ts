@@ -7,6 +7,7 @@ import { add, gnZero } from '@/utils/gnum'
 import { enemyDef } from '@/data/enemies'
 import { regionDef, REGIONS } from '@/data/regions'
 import { EVENT_AUTO_RESOLVE_SECONDS, EXPLORE_BATTLE_INTERVAL, EXPLORE_EVENT_CHANCE, EXPLORE_MODES } from '@/data/constants'
+import { mansionEventLuck } from './astronomy'
 import { makeEnemySnap, resolveCombat } from './combat'
 import { mergeRules } from './gauntlet'
 import { lifeTrialRules } from './lifeTrialService'
@@ -355,7 +356,8 @@ export function tickExploration(now: number): void {
   if (now >= s.nextBattleAt) {
     const region = regionDef(s.regionId)
     if (!region) return
-    const eventLuck = modOf(player.finalStats.mods, 'eventLuck')
+    // 际遇概率:自身福缘 + 今日星象(值日宿所配界域之地,际遇更易)
+    const eventLuck = modOf(player.finalStats.mods, 'eventLuck') + mansionEventLuck(region.id)
     if (rng.chance(EXPLORE_EVENT_CHANCE * (1 + eventLuck))) {
       // 事件标签同样走本世内容
       const ev = pickEventFor({ ...region, eventTags: [...placeContent(region.id).eventTags] })
