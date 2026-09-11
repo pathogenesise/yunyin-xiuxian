@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 15,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T02:07:06+00:00",
+  "updated_at": "2026-09-11T02:28:14+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1376,10 +1376,10 @@
     "ISS-027": {
       "id": "ISS-027",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T00:51:14+00:00",
-      "updated_at": "2026-09-11T00:51:14+00:00",
+      "updated_at": "2026-09-11T02:13:49+00:00",
       "touched_round": 15,
       "summary": "天时(weather)战斗/渡劫词条仅定义未生效——赤阳/月蚀/雷鸣三种天时对 combat/loot/渡劫零影响,lingyu 也只在线生效离线无",
       "severity": 0.55,
@@ -1389,10 +1389,10 @@
     "TASK-025": {
       "id": "TASK-025",
       "type": "task",
-      "status": "active",
-      "version": 3,
+      "status": "resolved",
+      "version": 5,
       "created_at": "2026-09-11T00:52:47+00:00",
-      "updated_at": "2026-09-11T01:05:56+00:00",
+      "updated_at": "2026-09-11T02:15:12+00:00",
       "touched_round": 15,
       "summary": "天时机制接线:把 weather.mods 并入 finalStats 的 mod 源(combat/loot/渡劫共享),tribulationMult 接入 waveDamage 结算与预览,离线同样吃天气",
       "category": "correctness",
@@ -1400,9 +1400,7 @@
       "confidence": 0.9,
       "effort": 3,
       "priority_score": 6.5,
-      "impact": "五天气中三种(赤阳/月蚀/雷鸣)零战斗作用,lingyu 离线失效——'描述即承诺'未兑现,且被两处 spec 断言的渡劫难度(+8%)从未进结算",
-      "lock_owner": "yunyin-session",
-      "lock_until": "2026-09-11T01:50:56+00:00"
+      "impact": "五天气中三种(赤阳/月蚀/雷鸣)零战斗作用,lingyu 离线失效——'描述即承诺'未兑现,且被两处 spec 断言的渡劫难度(+8%)从未进结算"
     },
     "HYP-004": {
       "id": "HYP-004",
@@ -1411,7 +1409,7 @@
       "version": 1,
       "created_at": "2026-09-11T00:59:44+00:00",
       "updated_at": "2026-09-11T00:59:44+00:00",
-      "touched_round": 14,
+      "touched_round": 15,
       "confidence": 0.9,
       "summary": "天时词条未接线根因:weather 设计为'环境 mod 源',但从未被并入 finalStats.modSources(engine 只手动接 cultivationSpeed/qiRegen),导致 combat/loot/渡劫读 finalStats.mods 时拿不到天气;tribulationMult 则根本没有对应消费点",
       "detail": "evidence EV-010:weather.ts desc 承诺战斗/渡劫效果,spec 断言 tribulationMult>1,但 player.ts:149-159 的 modSources 无天气、tribulationDecision.waveDamage/traceTribulation/runTribulation 无 tribulationMult 消费"
@@ -1431,13 +1429,43 @@
       "id": "CHG-030",
       "type": "change",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-11T02:06:10+00:00",
-      "updated_at": "2026-09-11T02:06:10+00:00",
+      "updated_at": "2026-09-11T02:11:32+00:00",
       "touched_round": 15,
-      "commit": "HEAD",
+      "commit": "4f32c3a",
       "summary": "天时机制接线:weather.mods 并入 finalStats.modSources(战斗/掉落/渡劫全链路生效),tribulationMult 接入 waveDamage 预览+结算同源,离线不再丢天时加成",
       "detail": "player.ts 新增 weatherMods computed 并入 finalStats/celestialStats;engine.ts 移除手动 weatherCult/weatherQi;tribulationDecision waveDamage/traceTribulation/buildTribulationPlan/currentTribulationPlan 透传 weatherMult;breakthrough.runTribulation 同乘数;离线经 cultPerSec/qiRegenPerSec 自动吃天时;spec 补齐 7 条接线断言"
+    },
+    "EV-011": {
+      "id": "EV-011",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:13:01+00:00",
+      "updated_at": "2026-09-11T02:13:01+00:00",
+      "touched_round": 15,
+      "source": "4f32c3a + weather.spec.ts + offlineCap.spec.ts",
+      "summary": "天时接线验证:weather.mods 已并入 finalStats.modSources,赤阳/月蚀/雷鸣词条在 finalStats.mods 可见;tribulationMult 使 waveDamage 按倍率放大,预览(currentTribulationPlan)与结算(runTribulation)共用同乘数;离线短窗结算修为增益随灵雨 +10%(toNum 差值 1.1x)",
+      "detail": "7 条新断言 + 全量 1006 测试通过,type-check/lint 全绿——HYP-004'天气从未入 modSources'的根因判定成立",
+      "confidence": 1.0
+    },
+    "TASK-026": {
+      "id": "TASK-026",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-11T02:18:18+00:00",
+      "updated_at": "2026-09-11T02:28:14+00:00",
+      "touched_round": 15,
+      "summary": "regionRecallFor 传错 suppressedAt:UI 展示'镇压后稳定多久'误用最近战斗时间 stats.lastUpdateAt,应从 player.suppressedSince[regionId] 取(与 suppress.ts 同一次 deriveProsperity 调用正确传参对齐)",
+      "category": "correctness",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1,
+      "priority_score": 1.5,
+      "lock_owner": "yunyin-session",
+      "lock_until": "2026-09-11T02:58:14+00:00"
     }
   },
   "edges": [
@@ -1963,6 +1991,12 @@
       "to": "TASK-025",
       "type": "implements",
       "created_at": "2026-09-11T02:07:06+00:00"
+    },
+    {
+      "from": "EV-011",
+      "to": "HYP-004",
+      "type": "validates",
+      "created_at": "2026-09-11T02:13:49+00:00"
     }
   ]
 }

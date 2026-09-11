@@ -187,7 +187,9 @@ export function regionRecallFor(regionId: string): RegionRecall {
   return deriveProsperity({
     totalWins: stats?.totalFights ?? 0,
     hasSuppressed: player.suppressedRegions.includes(regionId),
-    suppressedAt: stats?.lastUpdateAt,
+    // 「镇压后稳定多久」的起点是镇压时刻,suppressedSince;不能拿最近战斗时间 lastUpdateAt 充数
+    // —— 否则镇压后继续刷战,`since` 会随战斗一路前移,「此地已稳定 N 小时」越算越短
+    suppressedAt: player.suppressedSince[regionId],
     lastActivityAt: stats?.lastUpdateAt ?? now,
     now
   })
