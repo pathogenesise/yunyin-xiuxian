@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 33,
+  "round": 34,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:37:41+00:00",
+  "updated_at": "2026-09-11T14:40:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 32,
+      "touched_round": 33,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -2243,6 +2243,41 @@
       "touched_round": 32,
       "source": "故障注入:q_hundundaozu 改回 major 19 → 「第20个大境界没有主线节点」红;恢复后 110 files / 1055 tests 绿",
       "summary": "新审计可被打红,证明其能拦住主线再次半途而废",
+      "confidence": 1.0
+    },
+    "ISS-043": {
+      "id": "ISS-043",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T14:40:20+00:00",
+      "updated_at": "2026-09-11T14:40:21+00:00",
+      "touched_round": 33,
+      "summary": "扩界最核心的结构(4 界域 21 境的划分、仙界门槛常量、0-9 冻结契约)此前没有任何专门结构守卫;若 WORLDS 出现空隙/重叠、或 WORLD_BREAK_MAJOR 漂移、或 0-9 序号被改动,现有审计只会间接、局部地暴露",
+      "severity": 0.5,
+      "confidence": 1.0
+    },
+    "CHG-048": {
+      "id": "CHG-048",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:40:20+00:00",
+      "updated_at": "2026-09-11T14:40:20+00:00",
+      "touched_round": 33,
+      "summary": "新增 realms.spec:界域真划分(有序/无缝/无重叠)、0-9 冻结契约、WORLD_BREAK_MAJOR=仙界起点=真仙=REBIRTH_REFERENCE_MAJOR、飞升无劫/每界有劫、越界钳制;登记进分类报告",
+      "commit": "79a2f22"
+    },
+    "EV-025": {
+      "id": "EV-025",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:40:20+00:00",
+      "updated_at": "2026-09-11T14:40:20+00:00",
+      "touched_round": 33,
+      "source": "故障注入:WORLD_BREAK_MAJOR=10 → 两条断言红;恢复后 111 files / 1061 tests 全绿;分类报告 111/111 spec 无漏算",
+      "summary": "结构守卫可被打红,且分类报告不再漏算任何 spec",
       "confidence": 1.0
     }
   },
@@ -3123,6 +3158,18 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T14:37:41+00:00"
+    },
+    {
+      "from": "CHG-048",
+      "to": "ISS-043",
+      "type": "resolves",
+      "created_at": "2026-09-11T14:40:21+00:00"
+    },
+    {
+      "from": "EV-025",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:40:21+00:00"
     }
   ]
 }
