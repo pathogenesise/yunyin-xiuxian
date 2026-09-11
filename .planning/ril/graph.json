@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 77,
+  "round": 78,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:49:14+00:00",
+  "updated_at": "2026-09-11T17:53:43+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 76,
+      "touched_round": 77,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 16,
+      "touched_round": 77,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -3797,6 +3797,53 @@
       "source": "连跑 5 次 secretRealm.spec + 3 次全量 vitest 全绿;用例已改成固定状态逐条验(×2 自带、随机回合上限并入、×2×0.5 回落 ×1、三层更凶)(commit 2bb044f)",
       "summary": "随机相关断言改为隔离验证后不再时红时绿;同时钉住规则合并为乘区",
       "confidence": 0.9
+    },
+    "ISS-056": {
+      "id": "ISS-056",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:53:34+00:00",
+      "updated_at": "2026-09-11T17:53:39+00:00",
+      "touched_round": 77,
+      "summary": "机缘(ft_)被 pickEventFor 选中后 EventDialog 打不开:eventDef 只搜 EVENTS 表,查不到 FORTUNE_EVENTS;弹窗不开 → 会话卡到超时,自动结算同样查不到 → 玩家静默丢掉一次机缘(2% 概率)",
+      "severity": 0.55,
+      "confidence": 0.95
+    },
+    "ISS-057": {
+      "id": "ISS-057",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:53:34+00:00",
+      "updated_at": "2026-09-11T17:53:39+00:00",
+      "touched_round": 77,
+      "summary": "两处『活得却看不见』:灵兽性格(贪宝/谨慎)效果一直在生效但界面从不显示,Phase 31 S4 的『选伙伴而非只看数值』未兑现;装备共鸣(铁壁/星斗)机制进战斗但玩家看不到件数与效果",
+      "severity": 0.35,
+      "confidence": 0.9
+    },
+    "CHG-097": {
+      "id": "CHG-097",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:53:39+00:00",
+      "updated_at": "2026-09-11T17:53:39+00:00",
+      "touched_round": 77,
+      "commit": "b7f5dd4",
+      "summary": "eventDef 同查 EVENT+FORTUNE;灵兽性格与装备共鸣接进界面"
+    },
+    "EV-056": {
+      "id": "EV-056",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:53:43+00:00",
+      "updated_at": "2026-09-11T17:53:43+00:00",
+      "touched_round": 77,
+      "source": "fortune.spec「凡是能被 pickEventFor 选中的事件,eventDef 都查得到」+ 机缘回查一条;故障注入把 eventDef 改回只搜 EVENTS 两条例刻红;灵兽/共鸣可见性由源码级接线断言与界面文案承担(commit b7f5dd4)",
+      "summary": "查表覆盖两张事件表;两处机制不再是黑箱",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -5282,6 +5329,30 @@
       "to": "HYP-015",
       "type": "validates",
       "created_at": "2026-09-11T17:49:14+00:00"
+    },
+    {
+      "from": "CHG-097",
+      "to": "ISS-056",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:53:39+00:00"
+    },
+    {
+      "from": "CHG-097",
+      "to": "ISS-057",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:53:39+00:00"
+    },
+    {
+      "from": "ISS-056",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:53:39+00:00"
+    },
+    {
+      "from": "ISS-057",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:53:39+00:00"
     }
   ]
 }
