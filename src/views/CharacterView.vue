@@ -54,12 +54,18 @@
         <div v-if="modRows.length" class="ink-divider my-2.5" />
         <div class="grid grid-cols-2 gap-x-4 gap-y-1">
           <p v-for="row in modRows" :key="row.label" class="flex justify-between text-[11px]">
-            <span class="text-ink-faint">{{ row.label }}</span>
+            <span class="text-ink-faint">
+              {{ row.label }}
+              <span v-if="row.capped" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
+            </span>
             <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
               {{ row.value > 0 ? '+' : '' }}{{ formatPercent(row.value) }}
             </span>
           </p>
         </div>
+        <p v-if="softCappedNotes.length" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">
+          标「软」者已达软上限:{{ softCappedNotes.join('、') }}。极限堆叠到此后收益递减,不是面板被削。
+        </p>
       </div>
     </section>
 
@@ -279,6 +285,7 @@
           </p>
         </div>
         <p class="mt-2 text-[11px] text-ink-faint">共历 {{ bond.shared }} 次</p>
+        <p v-if="responseLine" class="mt-1 text-[11px] text-ink-faint">她开的口,你历次回应:{{ responseLine }}</p>
 
         <p class="mt-3 text-[11px] leading-relaxed text-ink-soft">她所求:{{ bondDef.pursuit }}</p>
         <p class="mt-0.5 text-[11px] leading-relaxed text-ink-faint">她不越的线:{{ bondDef.taboo }}</p>
@@ -409,7 +416,9 @@
   import { prepareReincarnation, MANUAL_REBIRTH_MIN_MAJOR } from '@/core/reincarnation'
   import { detectBuild } from '@/core/buildDetect'
   import { useLoadoutsStore } from '@/stores/loadouts'
-  import { modOf } from '@/core/statsCalc'
+  import { isSoftCapped, modOf } from '@/core/statsCalc'
+  import { SOFT_CAPS } from '@/data/constants'
+  import { RESPONSE_NAMES } from '@/data/bondIntent'
   import { fruitMarginalInfo } from '@/core/resourceGuidance'
   import { branchCodex, materialCodex } from '@/ui/codex'
   import { mentorVerdict, mentorChoices } from '@/core/mentorService'
@@ -443,13 +452,30 @@
     'critDamage',
     'damageBonus',
     'damageReduction',
+    'dodgeRate',
+    'shieldOnStart',
     'luck',
     'explorationSpeed',
     'dropRate'
   ]
 
   const modRows = computed(() =>
-    MOD_KEYS.map(k => ({ label: STAT_NAMES[k], value: modOf(stats.value.mods, k) })).filter(x => x.value !== 0)
+    MOD_KEYS.map(k => ({
+      key: k,
+      label: STAT_NAMES[k],
+      value: modOf(stats.value.mods, k),
+      capped: isSoftCapped(stats.value.mods, k)
+    })).filter(x => x.value !== 0)
+  )
+
+  /**
+   * 软上限从来不是暗改:越过之后超出部分按折扣计入,
+   * 折扣率取自 SOFT_CAPS 本体,不在这里手抄"折半"(各键并非同一个数)
+   */
+  const softCappedNotes = computed(() =>
+    modRows.value
+      .filter(r => r.capped)
+      .map(r => `${r.label}(超出按 ${Math.round((SOFT_CAPS[r.key]?.diminish ?? 1) * 100)}% 计入)`)
   )
 
   const build = computed(() => detectBuild(stats.value.mods))
@@ -518,6 +544,11 @@
 
   /** 她主动提出的事(34.1);三种回应,忽略不等于回绝 */
   const herIntent = computed(() => pendingIntent())
+  /** 她记得你怎么答的 —— 回应名取自 bondIntent,视图不另写一份 */
+  const responseLine = computed(() => {
+    const rs = bond.value?.intent?.responses ?? []
+    return rs.length ? rs.map(r => RESPONSE_NAMES[r]).join(' · ') : ''
+  })
   const INTENT_CHOICES = [
     { id: 'accept' as const, label: '与她同去' },
     { id: 'refuse' as const, label: '婉言谢绝' },

@@ -19,7 +19,7 @@ const CATEGORIES = [
   { name: 'Combat      战斗规则', match: ['combat.spec', 'highTierSmoke', 'ironwall', 'bossAudit', 'bossPhaseAudit', 'exploration.spec'] },
   {
     name: 'Balance     流派与生态',
-    match: ['buildSim', 'buildSearch', 'buildDetect', 'buildAdvisor', 'powerRating', 'equipSet', 'gongfaBranch', 'softCapAudit', 'linggenAffinity', 'linggenRole']
+    match: ['buildSim', 'buildSearch', 'buildDetect', 'buildAdvisor', 'powerRating', 'equipSet', 'gongfaBranch', 'softCapAudit', 'softCapVisibility', 'linggenAffinity', 'linggenRole']
   },
   { name: 'Progression 成长曲线', match: ['realms.spec', 'realmBanking', 'classics', 'progressionDoc', 'progressionSim', 'breakthrough', 'inflationAudit', 'samsaraAudit', 'daoFruitCurve', 'saveCalibration', 'rebirthRoi', 'deepCultivationRoi', 'contentGateAudit', 'shallowRebirthGains', 'narrowingImpact', 'impactSurface', 'compoundingAudit', 'daoFruitRoles', 'fruitOutlets', 'lifeTrialService', 'trialMotivation', 'motivationType', 'mortalWorldGen', 'mortalIdentity', 'mortalGate', 'mortalRouteAccess', 'overviewNecessity', 'contentTakeover', 'bossUnique', 'worldNaming', 'worldSemantics', 'player.rebirth'] },
   { name: 'Economy     资源经济', match: ['economySim', 'lootSim', 'loot.spec', 'petLuck', 'pillValue', 'veinEconomyAudit', 'veinVisibility', 'resourceGuidance', 'offlineCap', 'veinService', 'qiRepair'] },
