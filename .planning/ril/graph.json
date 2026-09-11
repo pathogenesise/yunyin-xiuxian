@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 78,
+  "round": 79,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:53:43+00:00",
+  "updated_at": "2026-09-11T18:07:44+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3759,7 +3759,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:45:05+00:00",
       "updated_at": "2026-09-11T17:45:05+00:00",
-      "touched_round": 75,
+      "touched_round": 78,
       "confidence": 0.85,
       "summary": "『骨架空转』可以用一条判据提前发现:凡有持久化状态的功能,必须存在非 spec 的入口调用(writer/action 在 views/components 里被调用),否则就是声明在前实现没跟"
     },
@@ -3844,6 +3844,66 @@
       "source": "fortune.spec「凡是能被 pickEventFor 选中的事件,eventDef 都查得到」+ 机缘回查一条;故障注入把 eventDef 改回只搜 EVENTS 两条例刻红;灵兽/共鸣可见性由源码级接线断言与界面文案承担(commit b7f5dd4)",
       "summary": "查表覆盖两张事件表;两处机制不再是黑箱",
       "confidence": 0.9
+    },
+    "ISS-058": {
+      "id": "ISS-058",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T18:07:31+00:00",
+      "updated_at": "2026-09-11T18:07:36+00:00",
+      "touched_round": 78,
+      "summary": "三处『账上有、玩家看不到』:道果说明(daoFruitDialog/shouldShowFruitTutorial)从未调用,首次凝道果无任何解释;技艺(DAO_NAMES/skillStageName)一直影响成丹却界面无踪影;道侣 sparks/triggers 内部记账界面不显示",
+      "severity": 0.35,
+      "confidence": 0.9
+    },
+    "TASK-049": {
+      "id": "TASK-049",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:07:31+00:00",
+      "updated_at": "2026-09-11T18:07:31+00:00",
+      "touched_round": 78,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.7,
+      "effort": 5,
+      "summary": "道侣陨落(daoluService.fall / ending perished / 界面「已殁」)仍无触发路径:需要一句产品判断 —— 什么情境下她该死、玩家能否阻止。在此之前它留在 SPEC_ONLY_ALLOWLIST 里如实标注,不假装存在"
+    },
+    "CHG-098": {
+      "id": "CHG-098",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:07:36+00:00",
+      "updated_at": "2026-09-11T18:07:36+00:00",
+      "touched_round": 78,
+      "commit": "a4ed486",
+      "summary": "三处可见性接线(道果说明/技艺栏/道侣因果)+ 删除 10 处死导出 + deadExportAudit 增『骨架空转』判据"
+    },
+    "EV-057": {
+      "id": "EV-057",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:07:41+00:00",
+      "updated_at": "2026-09-11T18:07:41+00:00",
+      "touched_round": 78,
+      "source": "deadExportAudit 新增判据跑通(5 例全绿);合成注入:往 secretRealm 加一个只被 spec 用的 skeletonProbe,立刻被点名;另用真实清单校准过两次判据(传递可达与_import 计使用都会误报,均已修正);三处接线由界面源码与用例各自钉住(commit a4ed486)",
+      "summary": "骨架空转有了可执行的判据;三处『机制活着界面不说』补齐",
+      "confidence": 0.9
+    },
+    "HYP-018": {
+      "id": "HYP-018",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:07:41+00:00",
+      "updated_at": "2026-09-11T18:07:41+00:00",
+      "touched_round": 78,
+      "confidence": 0.85,
+      "summary": "『骨架空转』(有状态/逻辑/用例、无运行时接线)可以靠一条判据持续发现:运行时模块里只被 spec 用到的导出;但模块边界必须具名维护,自动传递判据会被审计模块污染"
     }
   },
   "edges": [
@@ -5353,6 +5413,30 @@
       "to": "COMP-010",
       "type": "located_in",
       "created_at": "2026-09-11T17:53:39+00:00"
+    },
+    {
+      "from": "CHG-098",
+      "to": "ISS-058",
+      "type": "resolves",
+      "created_at": "2026-09-11T18:07:36+00:00"
+    },
+    {
+      "from": "TASK-049",
+      "to": "ISS-058",
+      "type": "addresses",
+      "created_at": "2026-09-11T18:07:36+00:00"
+    },
+    {
+      "from": "EV-057",
+      "to": "HYP-018",
+      "type": "validates",
+      "created_at": "2026-09-11T18:07:44+00:00"
+    },
+    {
+      "from": "EV-057",
+      "to": "HYP-017",
+      "type": "validates",
+      "created_at": "2026-09-11T18:07:44+00:00"
     }
   ]
 }
