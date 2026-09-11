@@ -12,6 +12,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { settleOffline } from './offline'
+import { studyTick } from './loreService'
+import { useLoreStore } from '@/stores/lore'
 import { useGameStore } from '@/stores/game'
 import { usePlayerStore } from '@/stores/player'
 import { useDongfuStore } from '@/stores/dongfu'
@@ -155,6 +157,59 @@ describe('离线结算同源吃天时(ISS-027 续)', () => {
     }
     for (const line of summary.notes) expect(line).not.toContain('NaN')
     for (const e of summary.equipment) expect(e.name).not.toContain('NaN')
+  })
+
+  /**
+   * 「比率」体检的第二处与第三处:洞府产出与藏经阁钻研同样走 effSec(= 时长 × 0.9)。
+   * 与修为那条同理 —— 只看"有没有产出"看不出折扣是否被某处吞掉或被重复施加。
+   * 做法:同一份状态跑两遍,一遍走离线结算,一遍直接调在线函数并传 effSec,比对读数。
+   */
+  it('洞府与藏经阁的离线折扣与在线同源:进度读数等于「直接传 effSec」那一遍', () => {
+    /**
+     * 为什么比 frac/studyFrac 而不比资源总额:离线结算里的 track('offlineClaims')
+     * 会触发成就奖励(其中就有灵草/玄铁这类),总额因此天然高于"纯产出"那一遍 ——
+     * 那是设计,不是折扣被吞。洞府的 frac 与藏经阁的 studyFrac 只由这条产线写,
+     * 拿它们比才真正隔离出「折扣口径是否同源」。
+     */
+    // 取一个除不尽的时长:整份产出会被 floor 进资源,余数才留在 frac 上 ——
+    // 而余数正是这条产线的指纹(整数时长下 frac 恒为 0,断言会失去意义)
+    const gapHours = 0.37
+    const setup = (): void => {
+      setActivePinia(createPinia())
+      const game = useGameStore()
+      const player = usePlayerStore()
+      const dongfu = useDongfuStore()
+      const lore = useLoreStore()
+      game.markStarted()
+      player.major = 9
+      dongfu.levels.field = 3
+      dongfu.levels.library = 2
+      lore.recipeLore = { p_jvqidan: 0.2 }
+      game.lastActiveAt = Date.now() - gapHours * 3600 * 1000
+    }
+    const readFrac = (): { herb: number; ore: number; wudao: number; study: number } => ({
+      herb: useDongfuStore().frac.herb,
+      ore: useDongfuStore().frac.ore,
+      wudao: useDongfuStore().frac.wudao,
+      study: useLoreStore().studyFrac
+    })
+
+    setup()
+    settleOffline(Date.now())
+    const offline = readFrac()
+
+    setup()
+    const capSec = Math.min(gapHours * 3600, useDongfuStore().offlineCapHours * 3600)
+    const effSec = capSec * OFFLINE_EFFICIENCY
+    useDongfuStore().produce(effSec)
+    studyTick(effSec)
+    const direct = readFrac()
+
+    expect(offline.herb, `灵草进度:离线 ${offline.herb} vs 直接 ${direct.herb}`).toBeCloseTo(direct.herb, 6)
+    expect(offline.ore).toBeCloseTo(direct.ore, 6)
+    expect(offline.wudao).toBeCloseTo(direct.wudao, 6)
+    expect(offline.study, '藏经阁钻研进度:离线与直接传 effSec 应一致').toBeCloseTo(direct.study, 6)
+    expect(offline.herb, '进度不该为 0,否则断言形同虚设').toBeGreaterThan(0)
   })
 
   /**
