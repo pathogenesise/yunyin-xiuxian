@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 24,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T08:23:59+00:00",
+  "updated_at": "2026-09-11T13:38:10+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1829,11 +1829,11 @@
     "TASK-032": {
       "id": "TASK-032",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-11T08:22:14+00:00",
-      "updated_at": "2026-09-11T08:22:14+00:00",
-      "touched_round": 23,
+      "updated_at": "2026-09-11T13:38:10+00:00",
+      "touched_round": 24,
       "summary": "goal.ts 剩余两类低优先级目标未实现:material(材料不足→采集XX) 与 equipment(装备槽有空位→寻法器)——阈值未定,宁缺毋滥暂不硬塞,设计阈值后即可接(复用资源/装备槽状态)",
       "category": "core-feature",
       "severity": 0.3,
@@ -1844,14 +1844,25 @@
     "ISS-036": {
       "id": "ISS-036",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T08:23:30+00:00",
-      "updated_at": "2026-09-11T08:23:30+00:00",
-      "touched_round": 23,
+      "updated_at": "2026-09-11T13:38:10+00:00",
+      "touched_round": 24,
       "summary": "修行目标低优先级两类缺口:material(材料不足→采集XX)与 equipment(装备槽有空位→寻法器)在 goal.ts 无实现(阈值未定宁缺毋滥),新手与无 Build 期指引维度仍偏窄",
       "severity": 0.3,
       "confidence": 0.8
+    },
+    "CHG-036": {
+      "id": "CHG-036",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T13:38:07+00:00",
+      "updated_at": "2026-09-11T13:38:07+00:00",
+      "touched_round": 24,
+      "summary": "goal.ts 接入 material/equipment 两类目标:灵草低于10指最高已通关地界采集,实体装备槽有空位指首个空槽;测试覆盖阈值/进度/不硬塞边界",
+      "commit": "7763e5d"
     }
   },
   "edges": [
@@ -2575,6 +2586,18 @@
       "to": "COMP-011",
       "type": "located_in",
       "created_at": "2026-09-11T08:23:30+00:00"
+    },
+    {
+      "from": "CHG-036",
+      "to": "TASK-032",
+      "type": "implements",
+      "created_at": "2026-09-11T13:38:10+00:00"
+    },
+    {
+      "from": "CHG-036",
+      "to": "ISS-036",
+      "type": "resolves",
+      "created_at": "2026-09-11T13:38:10+00:00"
     }
   ]
 }
