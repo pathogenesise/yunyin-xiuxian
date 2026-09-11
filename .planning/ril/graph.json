@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 21,
+  "round": 22,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T06:28:57+00:00",
+  "updated_at": "2026-09-11T07:56:12+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 13,
+      "touched_round": 21,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1197,11 +1197,11 @@
     "TASK-024": {
       "id": "TASK-024",
       "type": "task",
-      "status": "stale",
-      "version": 2,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-10T14:50:40+00:00",
-      "updated_at": "2026-09-10T16:03:22+00:00",
-      "touched_round": 14,
+      "updated_at": "2026-09-11T07:55:50+00:00",
+      "touched_round": 21,
       "category": "core-feature",
       "severity": 0.4,
       "confidence": 0.6,
@@ -1234,10 +1234,10 @@
     "ISS-024": {
       "id": "ISS-024",
       "type": "issue",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-10T15:04:39+00:00",
-      "updated_at": "2026-09-11T06:28:57+00:00",
+      "updated_at": "2026-09-11T07:55:27+00:00",
       "touched_round": 21,
       "severity": 0.4,
       "confidence": 0.7,
@@ -1355,7 +1355,7 @@
       "version": 1,
       "created_at": "2026-09-10T16:02:48+00:00",
       "updated_at": "2026-09-10T16:02:48+00:00",
-      "touched_round": 14,
+      "touched_round": 21,
       "summary": "闭关(TASK-024)判定为『设计未定』暂缓:与连胜/突破准备(数据完备只缺接线)不同,闭关连 retreat buff 定义都没有,入口与『禁探索』也没落过 UI/逻辑;强行接线等于从零设计一套新玩法(数值+入口+约束)。记入图谱待产品定 mex",
       "rationale": "写完本批 Phase 28 其余全部接线后,闭关是唯一剩余的死功能;差别在于它没有『可兑现的既有设计』可依,贸然造一套与封包期产品意图未必相符",
       "alternatives_rejected": "照 5 分钟 +150% 原样造 buff 并硬塞 UI(数值未审、入口未定,造出与产品意图可能相悖的机制)"
@@ -1683,6 +1683,52 @@
       "touched_round": 20,
       "commit": 5044717,
       "summary": "loot capChance:afterWin 全部概率输入钳到 [0,1],TASK-030 闭环"
+    },
+    "CHG-033": {
+      "id": "CHG-033",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T07:54:26+00:00",
+      "updated_at": "2026-09-11T07:54:26+00:00",
+      "touched_round": 21,
+      "summary": "闭关三件接线:① buffs.ts 注册 retreat(300s/cultivationSpeed+1.5=5分钟/+150%) ② CultivationView 闭关参悟卡(入口+倒计时) ③ exploration.startExploration 闭关禁令 + startRetreat 探索中互斥;isRetreating/getRetreatRemainingSec 改以持久化 buff 为唯一真相源(重载后闭关状态/倒计时依旧可信)",
+      "commit": "c1609b4"
+    },
+    "CHG-034": {
+      "id": "CHG-034",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T07:54:26+00:00",
+      "updated_at": "2026-09-11T07:54:26+00:00",
+      "touched_round": 21,
+      "summary": "修 mortalRouteAccess 回归测试偶发失败:ensureMortalWorld 世界种子未播种(Date.now),qingyun/luoxia 同时被抽进路线时 outside=undefined;改为动态挑一处路线外地界显式入解锁链,断言语义不变、测试确定性化(基线8次1败复现)",
+      "commit": "c1609b4"
+    },
+    "ISS-033": {
+      "id": "ISS-033",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T07:54:32+00:00",
+      "updated_at": "2026-09-11T07:55:27+00:00",
+      "touched_round": 21,
+      "summary": "mortalRouteAccess.spec '回归:路线之外的地界仍要能走' 偶发失败(基线复现 1/8~1/5):ensureMortalWorld 种子=Date.now()%1000003 未播种、路线随机,qingyun 与 luoxia 同时被抽进路线时 outside 取到 undefined,startExploration 落回 !region 提前返 false",
+      "severity": 0.3,
+      "confidence": 1.0
+    },
+    "DEC-013": {
+      "id": "DEC-013",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T07:54:32+00:00",
+      "updated_at": "2026-09-11T07:54:32+00:00",
+      "touched_round": 21,
+      "summary": "DEC-011 判'设计未定'前提已被推翻:round21 设计清单 + 本轮代码核实确认闭关设计 100% 钉死在代码注释与数据里(5分钟/+150%/禁探索、shortRetreat 曲线·中期自由选择不做强制衰减),缺的三件(buff 注册/UI 入口/禁令消费)是机械接线而非新玩法设计;接线完成、108 文件测试全绿",
+      "rationale": "设计清单齐全后,闭关不再是无既有设计可依的死功能;强行等着产品定夺会持续空耗一个已完全规格化的机制,接线完全可回滚",
+      "alternatives_rejected": "1)继续依 DEC-011 搁置已规格化功能待产品定夺(功能继续死);2)把 shortRetreat 曲线接成硬性衰减门(与自身注释'不做强制衰减'相悖,属凭空造机制)"
     }
   },
   "edges": [
@@ -2328,6 +2374,42 @@
       "to": "ISS-030",
       "type": "resolves",
       "created_at": "2026-09-11T06:25:42+00:00"
+    },
+    {
+      "from": "CHG-033",
+      "to": "ISS-024",
+      "type": "resolves",
+      "created_at": "2026-09-11T07:55:26+00:00"
+    },
+    {
+      "from": "CHG-033",
+      "to": "TASK-024",
+      "type": "implements",
+      "created_at": "2026-09-11T07:55:26+00:00"
+    },
+    {
+      "from": "CHG-034",
+      "to": "ISS-033",
+      "type": "resolves",
+      "created_at": "2026-09-11T07:55:26+00:00"
+    },
+    {
+      "from": "ISS-033",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T07:55:26+00:00"
+    },
+    {
+      "from": "DEC-013",
+      "to": "DEC-011",
+      "type": "supersedes",
+      "created_at": "2026-09-11T07:55:26+00:00"
+    },
+    {
+      "from": "DEC-013",
+      "to": "TASK-024",
+      "type": "governs",
+      "created_at": "2026-09-11T07:55:26+00:00"
     }
   ]
 }
