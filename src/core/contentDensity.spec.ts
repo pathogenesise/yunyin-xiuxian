@@ -23,6 +23,7 @@ import { REGIONS } from '@/data/regions'
 import { ENEMIES } from '@/data/enemies'
 import { GONGFA } from '@/data/gongfa'
 import { PILLS } from '@/data/pills'
+import { pillFamily, pillGainSecAt } from '@/core/pillValue'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
 import { ARTIFACTS, ARTIFACT_MAX_SLOTS } from '@/data/artifacts'
 import { SECRET_REALMS } from '@/data/secretRealms'
@@ -58,6 +59,39 @@ describe('内容密度 · 每一境都得有新东西', () => {
       if (!GONGFA.some(g => g.minRealm === m)) empty.push(`${m} ${REALMS[m]!.name}`)
     }
     expect(empty, `这些境界没有任何新功法可参悟:${empty.join('、')}`).toEqual([])
+  })
+
+  it('每一境也都有自己的丹 —— 与「每境都有新功法」同一条理由', () => {
+    // 丹药是消费侧的新鲜感:到了这一境,炉子里/掉落里该有一样是这一境才有的。
+    // 此前神王(16)、混沌神魔(19)、混沌道祖(20)三境一味本境丹都没有。
+    const empty: string[] = []
+    for (let m = 0; m <= MAX_MAJOR; m++) {
+      if (!PILLS.some(p => p.minRealm === m)) empty.push(`${m} ${REALMS[m]!.name}`)
+    }
+    expect(empty, `这些境界没有任何本境丹药:${empty.join('、')}`).toEqual([])
+  })
+
+  it('丹方越晚越强:同族同线里,门槛更高的那一味药力不更低', () => {
+    // 法则 B 只比品质高低;同品质的几味之间若后面的反而更弱,玩家会看到
+    // 「我到了更高境界,拿到的丹还不如从前」——故这里再按门槛比一遍。
+    const TIMED = ['exp', 'qi', 'lifespan', 'wudao', 'tempo'] as const
+    for (const fam of TIMED) {
+      for (const line of ['craft', 'drop'] as const) {
+        const group = PILLS.filter(p => pillFamily(p) === fam && (p.recipe ? 'craft' : 'drop') === line).sort(
+          (a, b) => a.minRealm - b.minRealm
+        )
+        for (let i = 1; i < group.length; i++) {
+          const prev = group[i - 1]!
+          const cur = group[i]!
+          // 统一到两者的较高门槛折算,免得比出的是境界差
+          const at = Math.max(prev.minRealm, cur.minRealm)
+          expect(
+            pillGainSecAt(cur, at),
+            `${cur.name}(境${cur.minRealm})比更早的 ${prev.name}(境${prev.minRealm})还弱`
+          ).toBeGreaterThanOrEqual(pillGainSecAt(prev, at) - 1e-9)
+        }
+      }
+    }
   })
 
   it('每一境都有地界可去,且地界里有人可打', () => {

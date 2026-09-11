@@ -1,5 +1,5 @@
 /**
- * 丹药库 —— 47 味。
+ * 丹药库 —— 50 味。
  *
  * ## 定价法则(Phase 32.6 丹药价值审计)
  *
@@ -250,6 +250,22 @@ export const PILLS: PillDef[] = [
   p('p_daoyuan', '道源丹', 'divine', 18, '一炉道源,吞服者直窥大道', {
     instant: { expReqPct: 0.55 },
     recipe: { herb: 460, stoneBase: 1400 },
+    alchemyLevel: 10
+  }),
+  /** 混沌两境与神王境的补位:此前这三境一味本境丹都没有(见 contentDensity 的「每境一味」判据) */
+  p('p_shenwu', '神悟丹', 'divine', 16, '一炉神悟,胜过百年面壁', {
+    instant: { wudao: 100 },
+    recipe: { herb: 420, stoneBase: 1200 },
+    alchemyLevel: 10
+  }),
+  p('p_hunyuan', '混元丹', 'divine', 19, '混元一炉,吞之如再开一次天地', {
+    instant: { expReqPct: 0.62 },
+    recipe: { herb: 490, stoneBase: 1550 },
+    alchemyLevel: 10
+  }),
+  p('p_daozu', '道祖丹', 'divine', 20, '万道之祖留下的方子,一炉只出三枚', {
+    instant: { wudao: 150 },
+    recipe: { herb: 520, stoneBase: 1700 },
     alchemyLevel: 10
   }),
   /** 寿元线自万寿金丹(地品 1000)向上;掉落线顶端(蟠桃 500)始终在可炼线之下(法则 H) */
