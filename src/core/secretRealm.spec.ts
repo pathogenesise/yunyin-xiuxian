@@ -15,7 +15,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { gn } from '@/utils/gnum'
+import { gn, toNum } from '@/utils/gnum'
 import { SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
@@ -32,6 +32,7 @@ import {
   fightSecretLayer,
   realmUnlock,
   secretFightRules,
+  secretLayerFoe,
   tierOfMajor
 } from './secretRealm'
 
@@ -266,5 +267,50 @@ describe('秘境 · 两阶(凡境灵石 / 天界道源)', () => {
     const celestial = SECRET_REALMS.find(r => r.gate === 'celestial')!
     expect(entryCostText(mortal, 9)).toContain('灵石')
     expect(entryCostText(celestial, 9)).toContain('道源')
+  })
+})
+
+describe('秘境 · 敌人按玩家缩放(与远征/试炼同法)', () => {
+  /**
+   * 副本敌若按层级绝对值生成,一个刚飞升、尚未换装的真仙会撞上 tier 21 的绝对数值 ——
+   * 付了道源,两场被逐出。故这里钉「玩家相对」口径:敌我力量比值由敌人自身倍率决定,
+   * 不随境界陡增(同一名裸装玩家,真仙与神人两处秘境应当同量级)。
+   */
+  const state = { realmId: 'sr_xingchen', enteredAt: 0, layer: 1, wins: 0, losses: 0, spoils: [], rules: [], carriedHpPct: 1, finished: false }
+
+  it('敌我比值由敌人倍率决定,不随境界陡增', () => {
+    const player = usePlayerStore()
+    const ratioAt = (major: number): number => {
+      player.major = major
+      const foe = secretLayerFoe(state)
+      return toNum(foe.snap.attack) / toNum(player.finalStats.attack)
+    }
+    const r9 = ratioAt(9)
+    const r14 = ratioAt(14)
+    expect(Number.isFinite(r9) && Number.isFinite(r14)).toBe(true)
+    expect(r9).toBeGreaterThan(0)
+    expect(Math.max(r9, r14) / Math.min(r9, r14), '两界敌我比值量级不同 —— 敌人还在按层级绝对值生成').toBeLessThan(3)
+  })
+
+  it('敌人倍率有上界:裸装玩家吃力是设计,但不该出现「绝对数值墙」', () => {
+    // 裸装(无装备无功法)去打秘境本就该吃亏;这里钉的是"吃亏有上限":
+    // 敌人攻击不超过玩家的 5 倍,且结算文案始终有效 —— 而不是按层级绝对值碾压。
+    const player = usePlayerStore()
+    for (const major of [3, 9, 14, 20]) {
+      player.major = major
+      const foe = secretLayerFoe({ ...state, layer: SECRET_LAYERS })
+      const ratio = toNum(foe.snap.attack) / toNum(player.finalStats.attack)
+      expect(ratio, `major ${major} 的秘境敌人攻击是玩家的 ${ratio.toFixed(1)} 倍`).toBeLessThan(5)
+      expect(Number.isFinite(toNum(foe.snap.maxHp))).toBe(true)
+    }
+    // 真打一场也要有可读结果(不崩、不空)
+    player.major = 9
+    ready(9)
+    useEndgameStore().addDaoSource(100) // 天界秘境付的是道源
+    expect(enterSecretRealm('sr_xingchen').ok).toBe(true)
+    const r = fightSecretLayer()
+    expect(r).not.toBeNull()
+    expect(r!.lines.length).toBeGreaterThan(0)
+    for (const line of r!.lines) expect(line).not.toContain('NaN')
   })
 })

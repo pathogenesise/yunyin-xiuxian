@@ -14,6 +14,9 @@ import { enemyDef } from '@/data/enemies'
 import { toNum } from '@/utils/gnum'
 import { useResourcesStore } from '@/stores/resources'
 import { usePlayerStore } from '@/stores/player'
+import { useEndgameStore } from '@/stores/endgame'
+import { settleSuppressedRegions } from './suppress'
+import { enterSecretRealm, entryCostOf, fightSecretLayer, availableRealms } from './secretRealm'
 
 /** 仙界/神界/混沌海各取两处,覆盖同层正区与第二处地界 */
 const HIGH_REGIONS = ['yunhai', 'zhexian', 'jinyuan', 'shenjihuang', 'guji', 'hongmengbenyuan', 'wudaoya'] as const
@@ -59,5 +62,67 @@ describe('高界冒烟 · 敌人快照与掉落结算', () => {
       expect(toNum(player.exp), `${region.name} 修为未增加`).toBeGreaterThan(expBefore)
       expect(Number.isFinite(toNum(resources.spiritStone))).toBe(true)
     }
+  })
+})
+
+/**
+ * 后期还有两条只在百万级数值下才暴露的产线:镇压产出与天界秘境。
+ * 它们的共同风险是「数值大到一个程度后出现 NaN / 负值 / 空掉落池」——
+ * 数据审计看不出来,只有真跑。
+ */
+describe('高界冒烟 · 镇压产出与天界秘境', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('镇压神界/混沌海的地界:产出有限、非负、材料名目有效', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    // 一处神界 + 一处混沌海,各守 6 小时(避开 72h 复苏判定)
+    const ids = ['shenjihuang', 'hongmengbenyuan']
+    for (const id of ids) {
+      player.suppressRegion(id)
+      player.suppressQualified.push(id)
+    }
+    const before = toNum(resources.spiritStone)
+    const out = settleSuppressedRegions(6 * 3600)
+    expect(out, '镇压产出不该为空').not.toBeNull()
+    expect(Number.isFinite(toNum(out!.stone))).toBe(true)
+    expect(toNum(out!.stone)).toBeGreaterThan(0)
+    expect(toNum(resources.spiritStone)).toBeGreaterThan(before)
+    for (const r of out!.resources) {
+      expect(['herb', 'ore', 'page', 'dust', 'wudao']).toContain(r.id)
+      expect(Number.isFinite(r.amount), `${r.name} 产出非有限值`).toBe(true)
+      expect(r.amount).toBeGreaterThan(0)
+    }
+    expect(Number.isFinite(out!.recycledDust)).toBe(true)
+  })
+
+  it('天界秘境:付道源、三层走完、战利有限且真的到手', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    const endgame = useEndgameStore()
+    player.major = 9
+    endgame.daoPath = 'sword'
+    endgame.addDaoSource(500)
+    const def = availableRealms('celestial')[0]!
+    const cost = entryCostOf(def, 9)
+    expect(cost.kind).toBe('daoSource')
+    const before = endgame.daoSource
+    expect(enterSecretRealm(def.id).ok).toBe(true)
+    expect(endgame.daoSource).toBe(before - (cost.kind === 'daoSource' ? cost.daoSource : 0))
+
+    const stoneBefore = toNum(resources.spiritStone)
+    let guard = 0
+    while (guard < 10) {
+      const r = fightSecretLayer()
+      if (!r) break
+      guard += 1
+      for (const line of r.lines) expect(line).not.toContain('NaN')
+    }
+    expect(Number.isFinite(toNum(resources.spiritStone))).toBe(true)
+    // 打到底(通关或被逐出)一定发生过结算;若通关则灵石必增
+    expect(guard).toBeGreaterThan(0)
+    expect(toNum(resources.spiritStone)).toBeGreaterThanOrEqual(stoneBefore)
   })
 })

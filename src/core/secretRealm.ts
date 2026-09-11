@@ -8,18 +8,19 @@
  * 玩家进不去,player.secretRealm 永远是 null,而轮回清单还在交代它的去留。
  */
 import type { CombatantSnap, CombatRules, GNum } from '@/types'
+import type { WorldFoeShape } from '@/types'
 import { formatGN } from '@/utils/format'
 import { rng } from '@/utils/random'
 import { ENEMIES, enemyDef } from '@/data/enemies'
 import { REGIONS } from '@/data/regions'
 import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES, secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
-import { makeEnemySnap, resolveCombat } from './combat'
+import { resolveCombat } from './combat'
+import { mergeRules, worldFoeSnap } from './gauntlet'
 import { buildPlayerSnap } from './playerSnap'
 import { currentDaoRules } from './endgameService'
 import { stoneByTier } from './formulas'
 import { generateEquipment } from './equipGen'
 import { acquireEquipment } from './loot'
-import { mergeRules } from './gauntlet'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiStore } from '@/stores/ui'
@@ -153,6 +154,35 @@ export interface SecretLayerResult {
   lines: string[]
 }
 
+/**
+ * 本层的敌人 —— **按玩家缩放**,与远征/试炼同法(不是按层级绝对值)。
+ *
+ * 秘境是一次性副本,和远征/试炼同类;若照地界那样按 tier 绝对值生成,
+ * 一个刚飞升、还没来得及换装的真仙会撞上 tier 21 的绝对数值 —— 付了道源,
+ * 两场就被逐出。玩家相对口径才谈得上"这是给你的考验",而不是"你换装慢了"。
+ *
+ * 抽成对外函数是为了可测:用例直接看「敌我比值」,不必跑完整场战斗。
+ */
+export function secretLayerFoe(state: SecretRealmState, rand: typeof rng = rng): { snap: CombatantSnap; shape: WorldFoeShape } {
+  const player = usePlayerStore()
+  const tier = tierOfMajor(player.major)
+  const pool = ENEMIES.filter(e => e.tier <= tier && e.tier >= Math.max(1, tier - 3))
+  const foeDef = pool.length > 0 ? rand.pick(pool) : enemyDef(ENEMIES[0]!.id)!
+  const stats = player.finalStats
+  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
+  const shape: WorldFoeShape = {
+    name: foeDef.name,
+    icon: foeDef.icon,
+    atkR: foeDef.atkMult,
+    defR: foeDef.defMult,
+    hpR: foeDef.hpMult,
+    speed: foeDef.speed,
+    skills: foeDef.skills.map(sk => ({ ...sk })),
+    mods: foeDef.mods
+  }
+  return { snap: worldFoeSnap(shape, ref, 1 + 0.12 * (state.layer - 1)), shape }
+}
+
 /** 打一层 */
 export function fightSecretLayer(): SecretLayerResult | null {
   const player = usePlayerStore()
@@ -163,10 +193,8 @@ export function fightSecretLayer(): SecretLayerResult | null {
   const def = secretRealmDef(state.realmId)
   if (!def) return null
 
+  const { snap } = secretLayerFoe(state)
   const tier = tierOfMajor(player.major)
-  const pool = ENEMIES.filter(e => e.tier <= tier && e.tier >= Math.max(1, tier - 3))
-  const foeDef = pool.length > 0 ? rng.pick(pool) : enemyDef(ENEMIES[0]!.id)!
-  const snap = makeEnemySnap(foeDef, tier, 1 + 0.12 * (state.layer - 1))
   const playerSnap: CombatantSnap = buildPlayerSnap()
   const rules = { ...secretFightRules(state), playerStartHpPct: state.carriedHpPct }
   const result = resolveCombat(playerSnap, snap, rng, rules)
@@ -178,7 +206,7 @@ export function fightSecretLayer(): SecretLayerResult | null {
     resources.addStone(stone)
     const mat = 2 + state.layer
     resources.addSmall('herb', mat)
-    lines.push(`胜 ${foeDef.name} · 灵石 +${formatGN(stone)} · 灵草 +${mat}`)
+    lines.push(`胜 ${snap.name} · 灵石 +${formatGN(stone)} · 灵草 +${mat}`)
     const nextLayer = state.layer + 1
     if (nextLayer > SECRET_LAYERS) {
       // 通关:最终宝藏
@@ -202,7 +230,7 @@ export function fightSecretLayer(): SecretLayerResult | null {
   }
 
   const losses = state.losses + 1
-  lines.push(`不敌 ${foeDef.name} · 气血余 ${Math.round(result.playerHpPct * 100)}%`)
+  lines.push(`不敌 ${snap.name} · 气血余 ${Math.round(result.playerHpPct * 100)}%`)
   if (losses >= SECRET_MAX_LOSSES) {
     player.setSecretRealm(null)
     lines.push('连败两场,被逐出秘境')
