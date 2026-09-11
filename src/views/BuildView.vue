@@ -36,11 +36,33 @@
         <div class="mt-2.5 rounded-md bg-paper-deep/60 px-3 py-2">
           <p class="text-[10px] text-ink-faint">{{ cnNumber(powerRating.labels.length) }}维评级 —— 读的是形状,不是排名</p>
           <div class="mt-1 grid grid-cols-1 gap-0.5">
-            <p v-for="l in powerRating.labels" :key="l.key" class="flex items-center justify-between text-[11px]">
-              <span class="text-ink-soft">{{ l.name }}</span>
-              <span class="tabular tracking-widest text-gold-ink">{{ ratingStars(l.stars) }}</span>
-            </p>
+            <!-- 每维可点开:星级是结果,词条才是原因 -->
+            <button
+              v-for="l in powerRating.labels"
+              :key="l.key"
+              class="text-left active:opacity-60"
+              @click="toggleDim(l.key)"
+            >
+              <span class="flex items-center justify-between text-[11px]">
+                <span class="text-ink-soft">{{ l.name }}</span>
+                <span class="tabular tracking-widest text-gold-ink">{{ ratingStars(l.stars) }}</span>
+              </span>
+              <span v-if="dimKey === l.key" class="mt-1 block rounded-md bg-paper/70 px-2 py-1.5">
+                <span class="block text-[10px] text-ink-soft">
+                  {{ l.name }}得分 {{ l.score.toFixed(2) }} · 跨 {{ powerRating.thresholds[l.key].join(' / ') }} 逐级加星
+                </span>
+                <span v-for="t in l.terms" :key="t.label" class="mt-0.5 flex justify-between text-[10px]">
+                  <span class="text-ink-faint">{{ t.label }}</span>
+                  <span class="tabular text-azure">+{{ t.contribution.toFixed(2) }}</span>
+                </span>
+                <span v-if="!l.terms.length" class="block text-[10px] text-ink-ghost">这一维还没有词条撑着。</span>
+                <span class="mt-1 block text-[9px] leading-relaxed text-ink-ghost">
+                  贡献之和就是得分 —— 星级只看得分跨过哪一档。
+                </span>
+              </span>
+            </button>
           </div>
+          <p class="mt-1 text-[10px] text-ink-ghost">点一维看它由哪些词条凑出来。</p>
           <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
             同一星级的两个构筑谁更强,由环境与相性决定 —— 所以这里给的是形状,不是名次。
           </p>
@@ -164,7 +186,7 @@
   import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
   import { detectBuild, buildSources } from '@/core/buildDetect'
-  import { ratePower, ratingStars } from '@/core/powerRating'
+  import { ratePower, ratingStars, type PowerDimKey } from '@/core/powerRating'
   import { matchComboArt, COMBO_SECONDARY_MIN } from '@/data/comboArts'
   import { measureResilience, resilienceText } from '@/core/resilience'
   import { buildPlayerSnap } from '@/core/playerSnap'
@@ -185,6 +207,12 @@
   const build = computed(() => detectBuild(player.finalStats.mods))
   /** 五维评级:进攻/生存/身法/恢复/机制 —— 让玩家读懂构筑形状而非只盯战力总数 */
   const powerRating = computed(() => ratePower(player.finalStats))
+
+  /** 点开哪一维看它的来路 —— 与人物页属性明细同一条规矩:明细之和 = 那一维的得分 */
+  const dimKey = ref<PowerDimKey | null>(null)
+  function toggleDim(key: PowerDimKey): void {
+    dimKey.value = dimKey.value === key ? null : key
+  }
   const buildSourceNames = computed(() => (build.value ? buildSources(build.value.style) : []))
 
   /** 主副体系凑对时展示组合技(未达门槛也展示,作为构筑目标) */
