@@ -179,8 +179,32 @@
       </div>
     </section>
 
-    <SectionTitle title="待续" hint="已列入路线、尚未实装的经典门类" />
-    <section class="card-ink divide-y divide-ink/7 px-4">
+    <!-- 奇门:九宫八门,择门而入 -->
+    <SectionTitle title="奇门" hint="九宫八门,择门而入" />
+    <section class="card-ink px-4 py-3">
+      <p class="text-[11px] leading-relaxed text-ink-faint">
+        八门依洛书九宫排布:坎一北休、坤二西南死、震三东伤、巽四东南杜、中五无门、
+        乾六西北开、兑七西惊、艮八东北生、离九南景。
+        远征启程前可择一门入界 —— 不是与天道立契(那换的是道源),
+        择门改的是这一趟的**打法**:续航、抢攻、守拙或速决。
+      </p>
+      <div class="mt-2.5 divide-y divide-ink/6">
+        <div v-for="g in GATES" :key="g.id" class="flex items-start gap-2 py-2">
+          <span class="w-12 shrink-0 font-kai text-[13px]" :class="g.kind === '凶' ? 'text-cinnabar' : g.kind === '吉' ? 'text-jade' : 'text-ink-soft'">
+            {{ g.fullName }}
+          </span>
+          <span class="w-20 shrink-0 text-[10px] text-ink-faint tabular">{{ g.gua }}{{ g.direction }} · {{ g.palace }}宫 · {{ g.kind }}</span>
+          <span class="min-w-0 text-[11px] leading-relaxed text-ink-soft">{{ g.gist }}</span>
+        </div>
+      </div>
+      <p class="mt-2 text-[10px] leading-relaxed text-ink-ghost">
+        门的效果全部用既有的战斗规则表达,不另造字段 —— 不择门(走常道)时,规则与从前逐字相同。
+      </p>
+    </section>
+
+    <template v-if="PLANNED_SCHOOLS.length">
+      <SectionTitle title="待续" hint="已列入路线、尚未实装的经典门类" />
+      <section class="card-ink divide-y divide-ink/7 px-4">
       <div v-for="p in PLANNED_SCHOOLS" :key="p.name" class="flex items-start gap-2 py-2.5">
         <span class="w-[104px] shrink-0 font-kai text-[12px] text-ink-soft">{{ p.name }}</span>
         <span class="text-[11px] leading-relaxed text-ink-faint">{{ p.note }}</span>
@@ -188,7 +212,8 @@
       <p class="py-2.5 text-[10px] leading-relaxed text-ink-ghost">
         这里只列尚未动的门类,不写空话 —— 真接上之后,它们会带着自己的典籍与玩法搬进来。
       </p>
-    </section>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -205,6 +230,7 @@
   import { STARS } from '@/data/ziwei'
   import { fateLordLine } from '@/core/fate'
   import { IMAGES, MANSIONS, type ImageId } from '@/data/xiangxiu'
+  import { GATES } from '@/data/qimen'
   import { MANSION_EVENT_LUCK, favoredWorld, todayMansion, todayMansionLine } from '@/core/astronomy'
   import { worldDef } from '@/data/realms'
   import type { WorldId } from '@/types'

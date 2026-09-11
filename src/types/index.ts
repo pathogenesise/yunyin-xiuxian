@@ -824,6 +824,8 @@ export interface MarkReplay {
 export interface MarkContext {
   worldId?: string
   mutatorIds?: string[]
+  /** 当年入界所择之门(奇门遁甲;旧档缺失即未择门) */
+  gateId?: string
 }
 
 /** 道痕:一世修行的终局履历 */

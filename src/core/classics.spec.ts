@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { CLASSICS, PLANNED_SCHOOLS, classicDef, classicsForRealm } from '@/data/classics'
 import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
+import { GATES } from '@/data/qimen'
 import { REALMS } from '@/data/realms'
 
 const norm = (s: string): string => s.replace(/\s+/g, '')
@@ -85,20 +86,22 @@ describe('典籍志 · 与境界 lore 双向对得上', () => {
 
 describe('典籍志 · 未实装门类如实标注', () => {
   it('待续清单非空,且每条都注明未实装', () => {
-    // 清单会随实装变短 —— 故只要求"还剩什么就如实标什么",不设下限
-    expect(PLANNED_SCHOOLS.length).toBeGreaterThanOrEqual(1)
+    // 清单会随实装变短,四门全接上后**空着才是对的** —— 故不设下限,
+    // 只要求"还剩什么,就如实标什么";留空的栏目不许写空话凑数
     for (const p of PLANNED_SCHOOLS) {
       expect(p.name).toBeTruthy()
       expect(p.note, `${p.name} 未注明状态`).toContain('未实装')
     }
   })
 
-  it('实装了就得从待续里出来:周易、紫微与星象已在,不再挂着「未实装」', () => {
-    expect(PLANNED_SCHOOLS.some(p => p.name.includes('周易'))).toBe(false)
-    expect(PLANNED_SCHOOLS.some(p => p.name.includes('紫微'))).toBe(false)
-    expect(PLANNED_SCHOOLS.some(p => p.name.includes('星象'))).toBe(false)
+  it('实装了就得从待续里出来:四门俱在,待续清了账', () => {
+    for (const school of ['周易', '紫微', '星象', '奇门']) {
+      expect(PLANNED_SCHOOLS.some(p => p.name.includes(school)), `${school}仍挂在待续`).toBe(false)
+    }
+    expect(PLANNED_SCHOOLS, '四门皆已实装,待续清单该是空的').toEqual([])
     expect(TRIGRAMS.length).toBe(8)
     expect(HEXAGRAMS.length).toBe(64)
+    expect(GATES.length).toBe(8)
   })
 
   it('界域志真的把周易摊开了:八卦、六十四卦与问卦都在页面上', () => {

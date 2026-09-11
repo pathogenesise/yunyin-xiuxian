@@ -458,6 +458,38 @@
             </span>
           </button>
         </div>
+        <!-- 奇门遁甲:择门入界(免费,换的是打法,不碰道源倍数) -->
+        <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">
+          奇门 · 择门入界 —— 立契是与天道做交易,择门是选这一趟从哪一门进:免费,改的是打法。
+        </p>
+        <div class="mt-1.5 grid grid-cols-4 gap-1.5">
+          <button
+            class="rounded-md px-1 py-1.5 text-center text-[11px]"
+            :class="prepGate === null ? 'bg-jade/10 border border-jade/40 text-ink-soft' : 'bg-paper-deep/60 border border-transparent text-ink-faint'"
+            @click="prepGate = null"
+          >
+            常道
+          </button>
+          <button
+            v-for="g in GATES"
+            :key="g.id"
+            class="rounded-md px-1 py-1.5 text-center text-[11px]"
+            :class="prepGate === g.id ? 'bg-violet-ink/10 border border-violet-ink/40 text-ink' : 'bg-paper-deep/60 border border-transparent text-ink-faint'"
+            :title="`${g.fullName}(${g.kind}) · ${g.gua}${g.direction}${g.palace}宫 —— ${g.desc}`"
+            @click="prepGate = g.id"
+          >
+            <span class="font-kai text-[13px]">{{ g.name }}</span>
+            <span class="ml-0.5 text-[9px]" :class="g.kind === '凶' ? 'text-cinnabar/80' : g.kind === '吉' ? 'text-jade' : 'text-ink-ghost'">{{ g.kind }}</span>
+          </button>
+        </div>
+        <p v-if="selectedGate" class="mt-1.5 rounded-md bg-paper-deep/70 px-3 py-2 text-[10px] leading-relaxed text-ink-soft">
+          <span class="font-kai text-ink">{{ selectedGate.fullName }}</span>
+          <span class="text-ink-ghost"> · {{ selectedGate.gua }}{{ selectedGate.direction }}{{ selectedGate.palace }}宫 · {{ selectedGate.kind }}</span>
+          <br />
+          {{ selectedGate.desc }}
+          <br />
+          <span class="text-ink-faint">{{ selectedGate.gist }}</span>
+        </p>
         <!-- 天道赌约:整程预估(信息归玩家,答案也归玩家) -->
         <div v-if="prepForecast" class="mt-2.5 rounded-md bg-paper-deep/70 px-3 py-2">
           <p class="flex items-center justify-between text-[11px]">
@@ -657,6 +689,7 @@
   import { SOUL_SLOTS } from '@/data/souls'
   import { DAO_PATHS, CELESTIAL_WORLDS, TRIALS, FURNACE_RATES, DAO_SOURCE_PER_FRUIT, daoPathDef } from '@/data/endgame'
   import { PACTS, pactDef } from '@/data/pacts'
+  import { GATES, gateDef } from '@/data/qimen'
   import { MUTATORS, mutatorDef } from '@/data/mutators'
   import { legacyComparisons } from '@/core/compare'
   import { todayChallenge, undertakeDaily } from '@/core/dailyChallenge'
@@ -796,11 +829,16 @@
   // ---- 远征准备 ----
   const prepWorldId = ref<string | null>(null)
   const prepPact = ref<string | null>(null)
+  /** 奇门遁甲:所择之门(常道 = null) */
+  const prepGate = ref<string | null>(null)
+  const selectedGate = computed(() => (prepGate.value ? gateDef(prepGate.value) : undefined))
   const prepWorld = computed(() => (prepWorldId.value ? resolveWorld(prepWorldId.value) : null))
   const selectedPact = computed(() => (prepPact.value ? pactDef(prepPact.value) : undefined))
   const prepPreview = computed(() => (prepWorld.value ? previewFight(prepWorld.value.foes[0]!) : null))
   /** 天道赌约:整程预估(随契约选择实时重算) */
-  const prepForecast = computed(() => (prepWorldId.value ? forecastExpedition(prepWorldId.value, prepPact.value) : null))
+  const prepForecast = computed(() =>
+    prepWorldId.value ? forecastExpedition(prepWorldId.value, prepPact.value, prepGate.value) : null
+  )
 
   function openPrep(id: string): void {
     prepWorldId.value = id
@@ -848,7 +886,7 @@
   function depart(): void {
     if (!prepWorld.value) return
     const title = prepWorld.value.name
-    const outcome = startWorldExpedition(prepWorld.value.id, prepPact.value)
+    const outcome = startWorldExpedition(prepWorld.value.id, prepPact.value, prepGate.value)
     if (outcome) prepWorldId.value = null
     handleOutcome(outcome, title)
   }

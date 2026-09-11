@@ -16,6 +16,8 @@ export interface TrialRecord {
 export interface WorldRunState {
   worldId: string
   pactId: string | null
+  /** 奇门遁甲:此趟入界所择之门(未择为 null;见 data/qimen) */
+  gateId?: string | null
   /** 0..2 = 待选该层路线;3 = 待战界主 */
   layer: number
   /** 沿途节点累计的额外道源 */

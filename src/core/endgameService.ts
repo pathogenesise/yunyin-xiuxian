@@ -7,6 +7,7 @@ import { formatGN } from '@/utils/format'
 import { artifactDef } from '@/data/artifacts'
 import { pactDef } from '@/data/pacts'
 import { mutatorDef } from '@/data/mutators'
+import { gateDef } from '@/data/qimen'
 import { RULESET_VERSION, isStaleRuleset } from '@/data/ruleset'
 import {
   CELESTIAL_WORLDS,
@@ -201,10 +202,11 @@ export function snapFromReplay(name: string, r: NonNullable<DaoMark['replay']>):
 }
 
 /** 道痕的环境规则(道途按当年 + 目标规则 + 变数 + 契约):忆战与重写共用 */
-function markRules(
+/** 道痕当年的规则(道途 + 界/试炼 + 变数 + 契约 + 所择之门)—— 忆战/重写按此重打 */
+export function markRules(
   mark: DaoMark,
-  world: ReturnType<typeof celestialWorldDef>,
-  trial: ReturnType<typeof trialDef>
+  world?: ReturnType<typeof celestialWorldDef>,
+  trial?: ReturnType<typeof trialDef>
 ): CombatRules | undefined {
   const daoRules = mark.daoPathId ? daoPathDef(mark.daoPathId)?.rules : undefined
   let rules = mergeRules(daoRules, (world ?? trial)?.rules)
@@ -214,6 +216,8 @@ function markRules(
   }
   const pactId = mark.replay?.pactId
   if (pactId) rules = mergeRules(rules, pactDef(pactId)?.rules)
+  const gateId = mark.context?.gateId
+  if (gateId) rules = mergeRules(rules, gateDef(gateId)?.rules)
   return rules
 }
 

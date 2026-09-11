@@ -115,10 +115,13 @@ export const CLASSICS: ClassicDef[] = [
   }
 ]
 
-/** 已列入路线、尚未实装的门类(如实标注,不假装已有内容) */
-export const PLANNED_SCHOOLS: { name: string; note: string }[] = [
-  { name: '术数 · 奇门遁甲', note: '九宫八门,可作布阵与探索规则(未实装)' }
-]
+/**
+ * 已列入路线、尚未实装的门类(如实标注,不假装已有内容)。
+ *
+ * 空数组是**正常状态**:周易、紫微、星象、奇门四门接上之后,这里就该是空的 ——
+ * 待续清单不是必须留东西的栏目,空着才说明没有欠账。
+ */
+export const PLANNED_SCHOOLS: { name: string; note: string }[] = []
 
 const BY_ID = new Map(CLASSICS.map(c => [c.id, c]))
 

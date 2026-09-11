@@ -23,6 +23,7 @@ import { CHAINS } from '@/data/chains'
 import { TRIGRAMS } from '@/data/yijing'
 import { PALACES } from '@/data/ziwei'
 import { MANSIONS } from '@/data/xiangxiu'
+import { GATES } from '@/data/qimen'
 
 const SOURCES = import.meta.glob('../data/*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
@@ -41,7 +42,8 @@ const TABLES: { file: string; label: string; length: number }[] = [
   { file: 'chains.ts', label: '奇缘', length: CHAINS.length },
   { file: 'yijing.ts', label: '单卦', length: TRIGRAMS.length },
   { file: 'ziwei.ts', label: '宫', length: PALACES.length },
-  { file: 'xiangxiu.ts', label: '星宿', length: MANSIONS.length }
+  { file: 'xiangxiu.ts', label: '星宿', length: MANSIONS.length },
+  { file: 'qimen.ts', label: '门', length: GATES.length }
 ]
 
 describe('数据表头计数 · 与真实数组长度一致', () => {

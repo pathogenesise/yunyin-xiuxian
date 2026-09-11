@@ -22,6 +22,7 @@ import { BUILD_PROFILES, buildSnap } from './buildSim'
 import { SIM_REFERENCE } from './celestialSim'
 import { usePlayerStore } from '@/stores/player'
 import { useEndgameStore, type WorldRunState } from '@/stores/endgame'
+import { gateDef } from '@/data/qimen'
 import { useUiStore } from '@/stores/ui'
 
 /** 单场战果 */
@@ -85,10 +86,20 @@ function runSnap(run: WorldRunState): CombatantSnap {
   }
 }
 
-/** 本场合并规则(道途 + 世界 + 契约 + 节点) */
-function runRules(world: CelestialWorldDef, run: WorldRunState, node?: WorldRouteNode): CombatRules | undefined {
+/** 择门所得的行军规则(未择门则为空 —— 审计基线与从前逐字相同) */
+function gateRulesOf(gateId: string | null | undefined): CombatRules | undefined {
+  return gateId ? gateDef(gateId)?.rules : undefined
+}
+
+/**
+ * 这一场按什么规则打(道途 + 世界 + 契约 + 所择之门 + 节点)。
+ *
+ * 对外可见:预估(forecastExpedition)与实战(fightStep)都走它,
+ * 故"所见即所打"这条契约可以被直接钉住 —— 两边各写一份规则,迟早对不上。
+ */
+export function expeditionRules(world: CelestialWorldDef, run: WorldRunState, node?: WorldRouteNode): CombatRules | undefined {
   const pact = run.pactId ? pactDef(run.pactId) : undefined
-  return chainRules(currentDaoRules(), world.rules, pactRules(pact), node?.rules)
+  return chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(run.gateId), node?.rules)
 }
 
 /** 远征总场数(入界 + 三层 + 界主) */
@@ -116,7 +127,8 @@ function settle(run: WorldRunState, world: CelestialWorldDef, cleared: boolean, 
   } else {
     ui.toast(`${world.name}将你逐出天门`, 'warn')
   }
-  recordMark(world.id, world.name, cleared, run.totalRounds, run.pactId)
+  // 所择之门记进道痕环境:忆战/重写要按当年的门重打这一趟
+  recordMark(world.id, world.name, cleared, run.totalRounds, run.pactId, run.gateId ? { gateId: run.gateId } : undefined)
   endgame.worldRun = null
   return reward
 }
@@ -128,7 +140,7 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   const stats = player.finalStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
   const foe = worldFoeSnap(foeShape, ref)
-  const rules = runRules(world, run, node)
+  const rules = expeditionRules(world, run, node)
   const startCap = rules?.playerStartHpPct ?? 1
   const fightRules: CombatRules = { ...(rules ?? {}), playerStartHpPct: Math.min(startCap, run.carriedHpPct) }
   const result = resolveCombat(runSnap(run), foe, rng, fightRules)
@@ -167,7 +179,7 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
 }
 
 /** 启程:签契、扣道源、打入界战 */
-export function startWorldExpedition(worldId: string, pactId: string | null): StepOutcome | null {
+export function startWorldExpedition(worldId: string, pactId: string | null, gateId: string | null = null): StepOutcome | null {
   const endgame = useEndgameStore()
   const ui = useUiStore()
   const world = resolveWorld(worldId)
@@ -181,6 +193,7 @@ export function startWorldExpedition(worldId: string, pactId: string | null): St
     return null
   }
   const pact = pactId ? pactDef(pactId) : undefined
+  const gate = gateId ? gateDef(gateId) : undefined
   let sealedMods: StatMods | undefined
   if (pact?.special === 'sealCore') {
     const sealed = sealCoreMods()
@@ -194,10 +207,11 @@ export function startWorldExpedition(worldId: string, pactId: string | null): St
     ui.toast(`道源不足 ${world.entryCost}(天道熔炉可献祭闲置资财)`, 'warn')
     return null
   }
-  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact))
+  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(gate?.id))
   const run: WorldRunState = {
     worldId,
     pactId,
+    gateId: gate?.id ?? null,
     layer: 0,
     bonus: 0,
     rows: [],
@@ -207,6 +221,7 @@ export function startWorldExpedition(worldId: string, pactId: string | null): St
     sealedMods
   }
   if (pact) ui.toast(`你与天道立下「${pact.name}」`, 'info')
+  if (gate) ui.toast(`你自「${gate.fullName}」入界 —— ${gate.desc}`, 'info')
   return fightStep(run, world, world.foes[0]!)
 }
 
@@ -279,7 +294,7 @@ export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode): Fi
     return `【${sk.name}】${tag} · ${RATE_WORDS(sk.rate)} · 威力 ${sk.mult.toFixed(1)} 倍`
   })
   if (foeShape.mods?.dodgeRate) skillLines.push(`身法诡谲,闪避约 ${Math.round(foeShape.mods.dodgeRate * 100)}%`)
-  const rules = world && run ? runRules(world, run, node) : currentDaoRules()
+  const rules = world && run ? expeditionRules(world, run, node) : currentDaoRules()
   // 危险时点:限时 / 杀意渐涨 / 重击预警 / 生机稀薄
   const riskLines: string[] = []
   if (rules?.maxRounds !== undefined) riskLines.push(`天时仅 ${rules.maxRounds} 回合,拖延即败`)
@@ -409,11 +424,12 @@ export interface ExpeditionForecast {
  * 整程预估:玩家构筑 + 所选契约,对该世界的线性连战做小样本推演。
  * 只给分档与星级,不给精确数字——信息归玩家,答案也归玩家
  */
-export function forecastExpedition(worldId: string, pactId: string | null): ExpeditionForecast | null {
+export function forecastExpedition(worldId: string, pactId: string | null, gateId: string | null = null): ExpeditionForecast | null {
   const world = resolveWorld(worldId)
   if (!world) return null
   const pact = pactId ? pactDef(pactId) : undefined
-  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact))
+  // 预估须与真打同源:择了门就把门也算进去,否则玩家看到的胜算与实战不符
+  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(gateId))
   const opts = pact?.special === 'endHp80' ? { minHpAfterFight: 0.8 } : {}
   const seededRng = new RandomService(mulberry32(worldId.length * 1009 + (pactId?.length ?? 0) * 97 + world.name.length * 7))
 
