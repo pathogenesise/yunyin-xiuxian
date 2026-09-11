@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 94,
+  "round": 95,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T21:05:48+00:00",
+  "updated_at": "2026-09-11T21:16:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 77,
+      "touched_round": 94,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 93,
+      "touched_round": 94,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -4656,6 +4656,67 @@
       "touched_round": 93,
       "summary": "补四部功法(九霄渡劫经/太乙金华/大罗天章/神将兵符,各两条悟道分支),填上渡劫/太乙/大罗/神将四境的内容空白;新增 contentDensity.spec(5 例)并登记进分类报告",
       "commit": "b5fd09e"
+    },
+    "ISS-068": {
+      "id": "ISS-068",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:09:06+00:00",
+      "updated_at": "2026-09-11T21:16:14+00:00",
+      "touched_round": 94,
+      "summary": "高界的法宝凑不出取舍:法宝位有 2 个,而仙界/神界/混沌海各只给了 2 件法宝 —— 玩家把两件全带上即为最优,「选哪件」这个问题在高界根本不存在(人间界 20 件则是有取舍的)",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-060": {
+      "id": "TASK-060",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:09:08+00:00",
+      "updated_at": "2026-09-11T21:16:14+00:00",
+      "touched_round": 94,
+      "summary": "让高界的法宝成取舍:每界域补两件(攻/守/机制各一档),并加判据「一个界域的法宝件数必须多于法宝位数」",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.8,
+      "effort": 2
+    },
+    "HYP-027": {
+      "id": "HYP-027",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:09:09+00:00",
+      "updated_at": "2026-09-11T21:09:09+00:00",
+      "touched_round": 94,
+      "summary": "「有没有取舍」可以写成算术:可选项数必须大于槽位数(法宝件数 > 法宝位、灵脉上限之和 > 总容量)。这类判据比「内容够不够丰富」这种感觉判断可靠 —— 它不评价内容好坏,只在选择消失的那一刻变红",
+      "confidence": 0.75
+    },
+    "EV-074": {
+      "id": "EV-074",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:09:11+00:00",
+      "updated_at": "2026-09-11T21:09:11+00:00",
+      "touched_round": 94,
+      "summary": "contentDensity.spec 增第 6 例:每界域法宝件数 > ARTIFACT_MAX_SLOTS;两次故障注入(把仙界两件挪去神界 → 仙界剩 2 件;把槽位上限改成 4)各转红一次,报文点名「仙界 有 2 件法宝、2 个法宝位」;全量 132 文件 1330 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/contentDensity.spec.ts"
+    },
+    "CHG-118": {
+      "id": "CHG-118",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:16:09+00:00",
+      "updated_at": "2026-09-11T21:16:09+00:00",
+      "touched_round": 94,
+      "summary": "高界每界域补两件法宝(26→32):青锋仙剑/云纹仙印(仙界)、镇神印/神雷珠(神界)、混沌青莲/虚界梭(混沌海);contentDensity 增判据「法宝件数 > 法宝位数」",
+      "commit": Infinity
     }
   },
   "edges": [
@@ -6531,6 +6592,42 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T21:05:48+00:00"
+    },
+    {
+      "from": "ISS-068",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-11T21:16:09+00:00"
+    },
+    {
+      "from": "TASK-060",
+      "to": "ISS-068",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:16:09+00:00"
+    },
+    {
+      "from": "CHG-118",
+      "to": "TASK-060",
+      "type": "implements",
+      "created_at": "2026-09-11T21:16:09+00:00"
+    },
+    {
+      "from": "CHG-118",
+      "to": "ISS-068",
+      "type": "resolves",
+      "created_at": "2026-09-11T21:16:09+00:00"
+    },
+    {
+      "from": "EV-074",
+      "to": "HYP-027",
+      "type": "validates",
+      "created_at": "2026-09-11T21:16:10+00:00"
+    },
+    {
+      "from": "TASK-060",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:16:10+00:00"
     }
   ]
 }
