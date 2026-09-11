@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 26,
+  "round": 27,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:10:25+00:00",
+  "updated_at": "2026-09-11T14:17:36+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 25,
+      "touched_round": 26,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -1970,7 +1970,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T14:10:24+00:00",
-      "touched_round": 25,
+      "touched_round": 26,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
       "severity": 0.6,
@@ -2025,6 +2025,51 @@
       "severity": 0.5,
       "confidence": 0.7,
       "effort": 8
+    },
+    "CHG-039": {
+      "id": "CHG-039",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:17:36+00:00",
+      "updated_at": "2026-09-11T14:17:36+00:00",
+      "touched_round": 26,
+      "summary": "界域里程碑称号:真仙/神人/混沌道祖三级称号,由对应成就解锁(ruleUniverse 预算内)",
+      "commit": "a1b09d1"
+    },
+    "CHG-040": {
+      "id": "CHG-040",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:17:36+00:00",
+      "updated_at": "2026-09-11T14:17:36+00:00",
+      "touched_round": 26,
+      "summary": "界域装备与共鸣:装备模板 +27(每界 9 部位,minTier 23/28/31),平铺对齐人间界顶配不加战力;新增仙甲/神铠/混沌三套共鸣;套装占比审计改比例口径+可凑齐/定义存在两道门",
+      "commit": "77aa062"
+    },
+    "CHG-041": {
+      "id": "CHG-041",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:17:36+00:00",
+      "updated_at": "2026-09-11T14:17:36+00:00",
+      "touched_round": 26,
+      "summary": "界域法宝 +6:仙鼎/仙琴/神钟/神鞭/混沌开天斧/本源珠(minTier 23/28/31),补高界法宝名目与主动机制",
+      "commit": "eb51fb6"
+    },
+    "EV-019": {
+      "id": "EV-019",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:17:36+00:00",
+      "updated_at": "2026-09-11T14:17:36+00:00",
+      "touched_round": 26,
+      "source": "vitest run: 110 files / 1048 tests passed; equipSet 新增部件可凑齐与 set 定义校验; inflationAudit 战力来源占比经平铺对齐后回稳; ruleUniverse 预算门通过",
+      "summary": "高界装备/法宝不引入战力膨胀(占比审计回稳),且共鸣可触发、模板 set 全有定义",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -2814,6 +2859,30 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T14:10:24+00:00"
+    },
+    {
+      "from": "CHG-039",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:17:36+00:00"
+    },
+    {
+      "from": "CHG-040",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:17:36+00:00"
+    },
+    {
+      "from": "CHG-041",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:17:36+00:00"
+    },
+    {
+      "from": "EV-019",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:17:36+00:00"
     }
   ]
 }
