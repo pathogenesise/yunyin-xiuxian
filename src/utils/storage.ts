@@ -22,7 +22,15 @@ export const PERSISTED_STORES = [
   'settings',
   'loadouts',
   'endgame',
-  'lore'
+  'lore',
+  /**
+   * 节奏遥测(store id 是 pacingTelemetry,分片键取 'pacing')。
+   *
+   * 此前它不在清单里 —— 于是玩家点「清空存档」之后,这片遥测仍留在本机;
+   * 导出也不含它。清单是导出/导入/清档/损坏扫描的唯一范围,漏一个就等于
+   * 存档少一块(且没有任何提示)。审计 saveRoundTrip 现在从源码倒推这份清单。
+   */
+  'pacing'
 ] as const
 
 export function storageKey(storeId: string): string {
