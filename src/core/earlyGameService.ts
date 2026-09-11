@@ -4,6 +4,7 @@
 import { usePlayerStore } from '@/stores/player'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useResourcesStore } from '@/stores/resources'
+import { useAdventureStore } from '@/stores/adventure'
 import { useUiStore } from '@/stores/ui'
 import { usePacingTelemetry } from '@/stores/pacingTelemetry'
 import type { EnlightenmentEvent, EnlightenmentOption, CaveEvent } from '@/types'
@@ -23,7 +24,6 @@ function telemetry(): ReturnType<typeof usePacingTelemetry> {
 
 let enlightenmentEvent: EnlightenmentEvent | null = null
 let caveEvent: CaveEvent | null = null
-let retreatEndTime: number | null = null // 闭关结束时间戳
 let breakthroughPrepEndTime: number | null = null // 突破准备结束时间戳
 let breakthroughPrepBonus: number = 0 // 突破准备加成
 
@@ -104,28 +104,38 @@ export function dismissEnlightenment(): void {
   enlightenmentEvent = null
 }
 
-/** 开始闭关(5分钟,修炼+150%,禁止探索) */
+/**
+ * 开始闭关(5分钟,修炼+150%,禁止探索)。
+ *
+ * 真相源是持久化的 retreat buff 本身(时长由 buffs.ts 的 durationSec=300 承载):
+ * 模块计时器刷新即失,改成 buff 后闭关状态与剩余秒数在重载/离线后依旧可信。
+ * 探索途中不可闭关 —— 与 startExploration 的闭关禁令互斥,避免 +150% 叠加在历练上
+ */
 export function startRetreat(): boolean {
-  if (retreatEndTime && Date.now() < retreatEndTime) return false // 已在闭关
+  if (isRetreating()) return false // 已在闭关(幂等,不刷新时长)
+
+  const adventure = useAdventureStore()
+  if (adventure.session) {
+    useUiStore().toast('你正在历练途中,先了结眼下这一程', 'warn')
+    return false
+  }
 
   const cult = useCultivationStore()
-  const now = Date.now()
-  cult.addBuff('retreat', now)
-
-  retreatEndTime = Date.now() + 300000
+  cult.addBuff('retreat', Date.now())
   telemetry().record('retreat', 'modal', '开始闭关')
   return true
 }
 
-/** 获取当前闭关状态并遥测 */
+/** 当前是否在闭关中(以 buff 为真相源,过期即假,与 prune 时机无关) */
 export function isRetreating(): boolean {
-  if (!retreatEndTime) return false
-  const now = Date.now()
-  if (now > retreatEndTime) {
-    retreatEndTime = null
-    return false
-  }
-  return true
+  return getRetreatRemainingSec() > 0
+}
+
+/** 闭关剩余秒数(已过期或未闭关为 0) */
+export function getRetreatRemainingSec(at: number = Date.now()): number {
+  const inst = useCultivationStore().buffs.find(b => b.defId === 'retreat')
+  if (!inst) return 0
+  return Math.max(0, Math.ceil((inst.endsAt - at) / 1000))
 }
 
 /** 突破准备(静坐/服丹)——数值与药价全部取自 BREAKTHROUGH_PREP_OPTIONS,逻辑不持有第二份魔法数 */

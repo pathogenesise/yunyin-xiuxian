@@ -27,7 +27,7 @@ import { personalityEffects } from './petPersonality'
 // 连胜与宿敌各有一个 recordLoss,一个管连胜清空、一个管宿敌(败北阈值):
 // 前者来自 Phase 28 前期玩法(earlyGameService),后者来自世界记忆(worldMemory),
 // 这里都走别名,免得互相遮蔽
-import { recordWin as recordStreakWin, recordLoss as recordStreakLoss } from './earlyGameService'
+import { recordWin as recordStreakWin, recordLoss as recordStreakLoss, isRetreating } from './earlyGameService'
 import { currentRegionEvent, regionEventDef, rollRegionEvent } from './regionEvent'
 import { noteEnemy } from './loreService'
 import { noteTaboo } from './samsaraService'
@@ -62,6 +62,11 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   const ui = useUiStore()
   const region = regionDef(regionId)
   if (!region || player.dead) return false
+  // Phase 28 闭关禁令:闭关期间不得外出探索(与 startRetreat 的互斥守卫配对,双向互斥)
+  if (isRetreating()) {
+    ui.toast('你正在闭关静修,心无旁骛,暂勿外出历练', 'warn')
+    return false
+  }
   // 拒绝必须让玩家看见 —— 静默 return false 在界面上等同于「点了没反应」
   if (adventure.session) {
     ui.toast('你正在历练途中,先了结眼下这一程', 'warn')

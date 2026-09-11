@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
-import { gn, toNum } from '@/utils/gnum'
+import { useCultivationStore } from '@/stores/cultivation'
+import { useAdventureStore } from '@/stores/adventure'
+import { gn, gnZero, toNum } from '@/utils/gnum'
 import {
   dismissCaveEvent,
   dismissEnlightenment,
@@ -14,7 +16,10 @@ import {
   recordLoss,
   prepareBreakthrough,
   breakthroughPrepState,
-  consumeBreakthroughPrep
+  consumeBreakthroughPrep,
+  startRetreat,
+  isRetreating,
+  getRetreatRemainingSec
 } from './earlyGameService'
 import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
 
@@ -277,5 +282,56 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1) // 0.1 ≤ 0.25 → 触发
     expect(mayTriggerCaveEvent()).not.toBeNull()
     vi.restoreAllMocks()
+  })
+})
+
+describe('闭关(Phase 28 · 接线后:buff 注册/互斥守卫/buff 到期)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('startRetreat 注册 5 分钟闭关 buff,isRetreating 为真,剩余 300 秒', () => {
+    expect(startRetreat()).toBe(true)
+    const cult = useCultivationStore()
+    expect(cult.hasBuff('retreat')).toBe(true)
+    expect(isRetreating()).toBe(true)
+    expect(getRetreatRemainingSec()).toBe(300)
+  })
+
+  it('已在闭关时再次调用幂等返回 false,不刷新时长', () => {
+    startRetreat()
+    const cult = useCultivationStore()
+    const endsAtBefore = cult.buffs.find(b => b.defId === 'retreat')!.endsAt
+    expect(startRetreat()).toBe(false)
+    expect(cult.buffs.find(b => b.defId === 'retreat')!.endsAt).toBe(endsAtBefore)
+  })
+
+  it('探索途中不可闭关(互斥守卫,拒绝原因显式而非静默)', () => {
+    const now = Date.now()
+    useAdventureStore().setSession({
+      regionId: 'qingyun',
+      mode: 'normal',
+      startedAt: now,
+      endsAt: now + 60000,
+      nextBattleAt: now + 1000,
+      wins: 0,
+      losses: 0,
+      events: 0,
+      stoneGain: gnZero(),
+      expGain: gnZero(),
+      itemGain: 0
+    })
+    expect(startRetreat()).toBe(false)
+    expect(useCultivationStore().hasBuff('retreat')).toBe(false)
+  })
+
+  it('闭关 buff 到期后 isRetreating 转假、剩余秒数归零(持久化 buff 为唯一真相源)', () => {
+    startRetreat()
+    const cult = useCultivationStore()
+    // 模拟 5 分钟流逝:pruneBuffs 正是 engine 每帧清理过期 buff 的那一步
+    expect(cult.pruneBuffs(Date.now() + 301_000)).toBe(true)
+    expect(cult.hasBuff('retreat')).toBe(false)
+    expect(isRetreating()).toBe(false)
+    expect(getRetreatRemainingSec()).toBe(0)
   })
 })

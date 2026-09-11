@@ -12,7 +12,8 @@ import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
 import { gnZero } from '@/utils/gnum'
-import { tickExploration } from './exploration'
+import { tickExploration, startExploration } from './exploration'
+import { startRetreat } from './earlyGameService'
 
 /**
  * 与 petPersonality.EFFECTS 里的 cautious 值保持一致(见 petPersonality.spec)。
@@ -163,5 +164,22 @@ describe('连胜(TASK-022 接线 · runBattle 胜负驱动 player.winStreak)', (
     forgeSession(now)
     tickExploration(now)
     expect(player.winStreak).toBe(0)
+  })
+})
+
+describe('闭关禁令:闭关期间不得进入历练(Phase 28 接线后)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    protect.value = false
+    combatWin.value = false
+  })
+
+  it('startExploration 在闭关中被拒,不产生会话(拒绝原因显式而非静默)', () => {
+    const player = usePlayerStore()
+    player.initCharacter('闭关测试', { roots: [] } as never)
+    startRetreat()
+    expect(startExploration('qingyun', 'normal')).toBe(false)
+    expect(useAdventureStore().session).toBeNull()
+    expect(useCultivationStore().hasBuff('retreat')).toBe(true)
   })
 })

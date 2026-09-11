@@ -193,26 +193,21 @@ describe('路线可达性 · 旧存档与换界', () => {
 describe('路线可达性 · 本世路线是主线,不是唯一入口', () => {
   it('回归:路线之外的地界仍要能走 —— 玩家反馈「历练没法打了」', () => {
     const adventure = useAdventureStore()
-    // 旧解锁链正常:青云山麓已开
-    adventure.unlocked = ['qingyun']
-    adventure.cleared = []
     const w = ensureMortalWorld()!
     const inRoute = new Set(w.chain.map(p => p.fromId))
 
-    // 找一处已解锁、但不在本世路线里的地界
-    const outsider = adventure.unlocked.find(id => !inRoute.has(id))
-    if (!outsider) {
-      // 青云山麓恰好被抽进路线时换一处已解锁的
-      adventure.unlocked = [...adventure.unlocked, 'luoxia']
-    }
-    const outside = adventure.unlocked.find(id => !inRoute.has(id))!
-    expect(inRoute.has(outside)).toBe(false)
+    // 挑一处不在本世路线里的地界,显式放进旧解锁链。
+    // 原实现依赖 qingyun/luoxia 恰好在路线外 —— 世界种子是未播种的 Date.now(),
+    // 两处都被抽进路线时 outside 取到 undefined,startExploration 落回 !region 返 false(偶发失败)
+    const outside = REGIONS.find(r => !inRoute.has(r.id) && !adventure.unlocked.includes(r.id))!
+    adventure.unlocked = [outside.id]
+    expect(inRoute.has(outside.id)).toBe(false)
 
     // 曾经这里返回 false:本世之界一生成,诸界总览十四处全部点不动
-    expect(startExploration(outside, 'normal')).toBe(true)
+    expect(startExploration(outside.id, 'normal')).toBe(true)
     adventure.setSession(null)
     console.log(
-      `\n本世路线含 ${inRoute.size} 处;路线外的「${regionName(outside)}」仍可出发` +
+      `\n本世路线含 ${inRoute.size} 处;路线外的「${regionName(outside.id)}」仍可出发` +
         '\n—— 本世路线是主线,旧地图不该被它锁死'
     )
   })

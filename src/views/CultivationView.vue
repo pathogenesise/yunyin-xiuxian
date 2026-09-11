@@ -103,6 +103,18 @@
       </button>
     </div>
 
+    <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止探索(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
+    <div class="card-ink px-4 py-3">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] text-ink-soft">闭关参悟</span>
+        <span v-if="retreating" class="text-[10px] text-amber-ink tabular">闭关中 · {{ formatDuration(retreatRemaining) }}</span>
+      </div>
+      <p class="mt-0.5 text-[10px] text-ink-faint">静坐一炷香(5 分钟),修炼速度 +150%;闭关期间无法外出探索。</p>
+      <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full text-[11px]" @click="beginRetreat">
+        闭关 · 5分钟 修炼 +150%(期间无法探索)
+      </button>
+    </div>
+
     <!-- 状态 -->
     <section v-if="activeBuffs.length">
       <SectionTitle title="状态" />
@@ -200,7 +212,7 @@
   import { useInventoryStore } from '@/stores/inventory'
   import { useUiStore } from '@/stores/ui'
   import { attemptBreakthrough, breakthroughInfo } from '@/core/breakthrough'
-  import { prepareBreakthrough } from '@/core/earlyGameService'
+  import { prepareBreakthrough, startRetreat, isRetreating, getRetreatRemainingSec } from '@/core/earlyGameService'
   import { toNum } from '@/utils/gnum'
   import { currentTribulationPlan, verdictLabel, type TribulationPlan } from '@/core/tribulationDecision'
   import { reliefElements, rootElements } from '@/core/linggenAffinity'
@@ -242,6 +254,15 @@
       ui.toast(option === 'meditate' ? '你盘膝入定,静待调息完成' : '丹药入腹,气机已然蓄足', 'info')
     } else {
       ui.toast('灵石不足,无以备药', 'warn')
+    }
+  }
+
+  // Phase 28 闭关:状态与倒计时接 earlyGameService(buff 为真相源,重载后依旧可信)
+  const retreating = computed(() => isRetreating())
+  const retreatRemaining = computed(() => getRetreatRemainingSec(now.value)) // now 每秒刷新,倒计时走动
+  function beginRetreat(): void {
+    if (startRetreat()) {
+      ui.toast('你封洞闭关,心不外骛', 'info')
     }
   }
 

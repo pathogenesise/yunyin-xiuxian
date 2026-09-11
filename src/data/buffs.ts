@@ -51,7 +51,10 @@ export const BUFFS: BuffDef[] = [
   b('cave_array_qicap', '阵枢焕新', 'blessing', 600, '修复后的阵法运转如意,灵气上限提升 25%', { qiCapPct: 0.25 }, 'wind'),
   b('cave_garden_pet', '灵兽相随', 'blessing', 600, '安抚后的灵兽更尽心,灵兽效果提升 30%', { beastPct: 0.3 }, 'paw'),
   // 惩罚 buff:id 与 penalty.type 对齐(见 earlyGameService.chooseCaveOption)
-  b('cave_penalty_cultivationSpeed', '修炼倦怠', 'injury', 300, '强行吸纳伤了根基,修炼速度下降 15%', { cultivationSpeed: -0.15 }, 'skull')
+  b('cave_penalty_cultivationSpeed', '修炼倦怠', 'injury', 300, '强行吸纳伤了根基,修炼速度下降 15%', { cultivationSpeed: -0.15 }, 'skull'),
+  // ---- Phase 28 闭关:5 分钟 +150% 修炼、期间禁止探索。
+  // durationSec=300 必须与 earlyGameService.startRetreat 的 5 分钟口径一致(同一真相源=buff 本身) ----
+  b('retreat', '闭关', 'blessing', 300, '闭关静修,修炼速度提升 150%,期间无法外出探索', { cultivationSpeed: 1.5 }, 'mountain')
 ]
 
 const BY_ID = new Map(BUFFS.map(x => [x.id, x]))
