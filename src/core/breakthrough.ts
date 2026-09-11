@@ -189,6 +189,8 @@ export function attemptBreakthrough(): BreakthroughView | null {
     const world = crossedWorld ? worldOf(player.major) : null
     if (world) recordMilestone(`first_${world.id}`)
     const baseMessage = `境界跃迁,天地翻覆。${realm.desc}。寿元增至 ${player.lifespanMax} 载。`
+    // 大关进阶时附上这一境的出处(可解释性:境界名不是随手堆的字)
+    const loreLine = `——「${realm.basis}」${realm.lore}`
     view = {
       success: true,
       fromLabel,
@@ -198,8 +200,8 @@ export function attemptBreakthrough(): BreakthroughView | null {
       message: !info.isMajor
         ? '灵台清明,经脉拓宽,修为更上一层。'
         : world
-          ? `天地改换,山河重立。你踏入${world.name}——${world.desc}。${realm.desc},寿元增至 ${player.lifespanMax} 载。`
-          : baseMessage
+          ? `天地改换,山河重立。你踏入${world.name}——${world.desc}。${realm.desc},寿元增至 ${player.lifespanMax} 载。${loreLine}`
+          : `${baseMessage}${loreLine}`
     }
   } else {
     const mods = player.finalStats.mods

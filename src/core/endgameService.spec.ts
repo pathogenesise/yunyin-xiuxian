@@ -129,5 +129,7 @@ describe('真仙终局服务', () => {
     expect(player.realm.name).toBe('真仙')
     expect(endgame.milestones.some(m => m.id === 'first_immortal')).toBe(true)
     expect(view?.message).toContain('仙界')
+    // 大关进阶时附上该境出处(可解释性):真仙取道教仙阶
+    expect(view?.message).toContain('道教仙阶')
   })
 })
