@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 54,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:46:10+00:00",
+  "updated_at": "2026-09-11T15:46:16+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 50,
+      "touched_round": 54,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -2664,7 +2664,7 @@
       "version": 1,
       "created_at": "2026-09-11T15:46:10+00:00",
       "updated_at": "2026-09-11T15:46:10+00:00",
-      "touched_round": 53,
+      "touched_round": 54,
       "summary": "界域智识独立成栏(界域志,/codex):境界名/界域/典籍/来路集中一处,供玩家了解中国传统道教·佛教·道家·丹道经典;并按产品方向预留 周易八卦/紫微斗数/奇门遁甲/星象 四门「待续」(如实标注未实装)",
       "rationale": "用户提出把界域总览与境界做成单独栏目、承载传统经典;分散在各页面的 lore 难以承载这一诉求,单独成栏既可读也可持续扩写。内容以原典大意为准、网文一脉单列不攀经书",
       "alternatives_rejected": "1)继续把 lore 塞在修行页:页面承载不了,也不便扩写;2)直接虚构周易/紫微内容:未实装就该标注,不造假"
@@ -2676,7 +2676,7 @@
       "version": 1,
       "created_at": "2026-09-11T15:46:10+00:00",
       "updated_at": "2026-09-11T15:46:10+00:00",
-      "touched_round": 53,
+      "touched_round": 54,
       "summary": "界域志落地:data/classics.ts(11 部典籍 + 待续四门)、RealmCodexView、路由 /codex、底部第六栏与修行页入口、classics.spec 双向校验 lore↔典籍",
       "commit": "723b145"
     },
@@ -2687,10 +2687,24 @@
       "version": 1,
       "created_at": "2026-09-11T15:46:10+00:00",
       "updated_at": "2026-09-11T15:46:10+00:00",
-      "touched_round": 53,
+      "touched_round": 54,
       "source": "故障注入:金丹 lore 的《悟真篇》改成不存在的书名 → lore↔典籍校验即红;恢复后 117 files / 1102 tests 绿,构建产出 RealmCodexView chunk",
       "summary": "典籍与境界 lore 的一致性有可打红的守卫",
       "confidence": 1.0
+    },
+    "TASK-037": {
+      "id": "TASK-037",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:46:16+00:00",
+      "updated_at": "2026-09-11T15:46:16+00:00",
+      "touched_round": 54,
+      "category": "core-feature",
+      "summary": "界域志续写:按 DEC-017 引入 周易八卦/紫微斗数/奇门遁甲/星象 等经典门类(典籍条目 + 对应玩法/词条/事件),把「待续」清单如实转成内容",
+      "severity": 0.5,
+      "confidence": 0.6,
+      "effort": 8
     }
   },
   "edges": [
@@ -3744,6 +3758,24 @@
       "to": "ISS-047",
       "type": "resolves",
       "created_at": "2026-09-11T15:38:22+00:00"
+    },
+    {
+      "from": "CHG-068",
+      "to": "TASK-037",
+      "type": "implements",
+      "created_at": "2026-09-11T15:46:16+00:00"
+    },
+    {
+      "from": "DEC-017",
+      "to": "TASK-037",
+      "type": "governs",
+      "created_at": "2026-09-11T15:46:16+00:00"
+    },
+    {
+      "from": "EV-035",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T15:46:16+00:00"
     }
   ]
 }
