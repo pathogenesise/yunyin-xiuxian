@@ -1,4 +1,4 @@
-/** 功法库 —— 主修 15 / 辅修 16 / 秘术 11 */
+/** 功法库 —— 主修 17 / 辅修 17 / 秘术 12 */
 import type { GongfaDef, GongfaType, QualityId, StatMods } from '@/types'
 
 function g(
@@ -160,6 +160,17 @@ export const GONGFA: GongfaDef[] = [
     { cultivationSpeed: 0.3, attackPct: 0.12, defensePct: 0.12, maxHpPct: 0.12 },
     { cultivationSpeed: 0.04, attackPct: 0.015, defensePct: 0.015 },
     { element: 'chaos', skill: { name: '混沌一击', mult: 2.8, rate: 0.25 } }
+  ),
+  g(
+    'm_dujie',
+    '九霄渡劫经',
+    'main',
+    'heaven',
+    8,
+    '引九霄雷气淬身,劫数亦成道基',
+    { cultivationSpeed: 0.3, attackPct: 0.16, tribulationResist: 0.18 },
+    { cultivationSpeed: 0.04, attackPct: 0.018 },
+    { element: 'thunder', skill: { name: '九霄雷劫', mult: 3.0, rate: 0.26 } }
   ),
   // ---- 辅修功法 ----
   g('s_tuna', '龟灵吐纳术', 'sub', 'mortal', 0, '一吐一纳,绵绵不绝', { cultivationSpeed: 0.06 }, { cultivationSpeed: 0.012 }),
@@ -361,6 +372,26 @@ export const GONGFA: GongfaDef[] = [
     { luck: 0.035, eventLuck: 0.045, dropRate: 0.03 }
   ),
   g(
+    'x_taiyi',
+    '太乙金华',
+    'secret',
+    'immortal',
+    12,
+    '回光守中,神气合于一处',
+    { cultivationSpeed: 0.3, qiRegen: 0.2 },
+    { cultivationSpeed: 0.06, qiRegen: 0.04 }
+  ),
+  g(
+    'm_daluo',
+    '大罗天章',
+    'main',
+    'immortal',
+    13,
+    '大罗天上,万法归真',
+    { attackPct: 0.26, maxHpPct: 0.2, damageReduction: 0.08 },
+    { attackPct: 0.028, maxHpPct: 0.02 }
+  ),
+  g(
     'm_shenxiao',
     '神霄九变',
     'main',
@@ -370,6 +401,16 @@ export const GONGFA: GongfaDef[] = [
     { cultivationSpeed: 0.4, attackPct: 0.2, defensePct: 0.16, maxHpPct: 0.16 },
     { cultivationSpeed: 0.05, attackPct: 0.022, defensePct: 0.017 },
     { element: 'thunder', skill: { name: '神霄神雷', mult: 3.4, rate: 0.26 } }
+  ),
+  g(
+    's_shenjiang',
+    '神将兵符',
+    'sub',
+    'divine',
+    15,
+    '执神兵以行天罚,进退皆合军律',
+    { attackPct: 0.26, defensePct: 0.22, critRate: 0.04 },
+    { attackPct: 0.028, defensePct: 0.022 }
   ),
   g(
     's_shenlianti',

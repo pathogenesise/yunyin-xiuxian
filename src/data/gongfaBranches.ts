@@ -259,7 +259,23 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('x_shenji', 'b_shenji_yan', '验天', '行止皆数,福地自现', { dropRate: 0.2, explorationSpeed: 0.25, luck: 0.1 }),
   // 秘术:道音玄章
   b('x_daoyin', 'b_daoyin_ming', '明道', '道音入耳,修行不辍', { cultivationSpeed: 0.3, qiRegen: 0.28, breakthroughRate: 0.06 }),
-  b('x_daoyin', 'b_daoyin_wu', '悟道', '闻音悟道,一日千里', { cultivationSpeed: 0.28, expGain: 0.28, luck: 0.12 })
+  b('x_daoyin', 'b_daoyin_wu', '悟道', '闻音悟道,一日千里', { cultivationSpeed: 0.28, expGain: 0.28, luck: 0.12 }),
+
+  // ---- 渡劫:九霄渡劫经(人间界末,补该境空白) ----
+  b('m_dujie', 'b_dujie_lei', '雷罚', '雷气入杀,劫雷加身', { attackPct: 0.2, damageBonus: 0.05 }),
+  b('m_dujie', 'b_dujie_cui', '淬体', '以雷淬骨,劫火不伤', { maxHpPct: 0.2, damageReduction: 0.1 }),
+
+  // ---- 太乙:太乙金华(仙界,补该境空白) ----
+  b('x_taiyi', 'b_taiyi_shou', '守中', '守中致虚,道心更明', { cultivationSpeed: 0.3, breakthroughRate: 0.05 }),
+  b('x_taiyi', 'b_taiyi_guang', '回光', '回光照物,机缘自明', { luck: 0.15, eventLuck: 0.15, qiRegen: 0.2 }),
+
+  // ---- 大罗:大罗天章(仙界,补该境空白) ----
+  b('m_daluo', 'b_daluo_zhen', '归真', '万法归真,一击破妄', { attackPct: 0.3, damageBonus: 0.1 }),
+  b('m_daluo', 'b_daluo_zhang', '天章', '天章护体,动静如法', { maxHpPct: 0.3, dodgeRate: 0.12 }),
+
+  // ---- 神将:神将兵符(神界,补该境空白) ----
+  b('s_shenjiang', 'b_shenjiang_fa', '天罚', '受符行刑,攻势更烈', { attackPct: 0.3, critRate: 0.08, damageBonus: 0.15 }),
+  b('s_shenjiang', 'b_shenjiang_zhen', '军律', '结阵自守,受击愈稳', { defensePct: 0.3, damageReduction: 0.15, maxHpPct: 0.3 })
 ]
 
 const BY_ID = new Map(GONGFA_BRANCHES.map(b => [b.id, b]))
