@@ -63,11 +63,6 @@ export function pickChainStageEvent(major: number, rand: RandomService = rng): E
   return rand.pick(pending).event
 }
 
-/** 某条奇缘走完了几程(0 = 未起;等于 stages.length 即已了) */
-export function chainStageOf(chainId: string): number {
-  return usePlayerStore().eventChains[chainId] ?? 0
-}
-
 /** 奇缘录:已起了头的缘(未起的不列,免得把往后的路先说破) */
 export interface ChainProgress {
   id: string

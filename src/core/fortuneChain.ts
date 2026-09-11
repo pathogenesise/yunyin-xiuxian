@@ -20,10 +20,6 @@ export function recordFortuneChoice(fortuneId: string, choice: FortuneChoice): v
 }
 
 /** 该机缘曾作何选择(未遇过 = undefined) */
-export function fortuneChoice(fortuneId: string): FortuneChoice | undefined {
-  return usePlayerStore().fortuneChoices[fortuneId]
-}
-
 /**
  * 师承顺水:根据机缘记忆,推荐最契合的师承
  * 剑痕取 → 剑修;丹方取 → 丹修;秘术取 → 阵修;妖兽认主 → 猎修

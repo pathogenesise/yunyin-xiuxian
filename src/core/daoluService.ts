@@ -27,7 +27,6 @@ import {
   type DaoluDef,
   STAGE_GATES,
   daoluDef,
-  gateOf,
   stageIndex
 } from '@/data/daolu'
 import {
@@ -283,7 +282,7 @@ export function archiveBond(): BondRecord | null {
   return { daoluId: b.daoluId, name: def?.name ?? b.daoluId, stage: b.stage, ending, shared: b.shared }
 }
 
-export { DAOLU, daoluDef, gateOf, stageIndex }
+export { DAOLU, daoluDef, stageIndex }
 
 // ============ 共同事件(Phase 33.9) ============
 
@@ -426,11 +425,6 @@ export function chooseBondEvent(eventId: string, choiceId: string): ChoiceResult
     player.setBond({ ...after, departed: true })
   }
   return { text: out.text, left, reaction }
-}
-
-/** 她是否已离开(离开后关系冻结,但履历仍记这一段) */
-export function hasDeparted(): boolean {
-  return currentBond()?.departed === true
 }
 
 // ============ 她自己的意图(Phase 34.1) ============

@@ -328,50 +328,6 @@ export function rewriteMark(mark: DaoMark): ExpeditionResult | null {
   }
 }
 
-/** 远征特殊世界(旧线性模式,Phase 21 起由 core/expedition.ts 的路线远征取代;保留给模拟器基线) */
-export function challengeWorld(worldId: string): ExpeditionResult | null {
-  const endgame = useEndgameStore()
-  const player = usePlayerStore()
-  const ui = useUiStore()
-  const world = celestialWorldDef(worldId)
-  if (!world || !endgameUnlocked()) return null
-  if (!endgame.daoPath) {
-    ui.toast('先择道途,方可踏天', 'warn')
-    return null
-  }
-  if (!endgame.spendDaoSource(world.entryCost)) {
-    ui.toast(`道源不足 ${world.entryCost}(天道熔炉可献祭闲置资财)`, 'warn')
-    return null
-  }
-  const stats = player.celestialStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const depth = celestialDepthScale(stats.mods)
-  const foes = []
-  for (let i = 0; i < world.fights - 1; i += 1) {
-    foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, depth))
-  }
-  foes.push(worldFoeSnap(world.guardian, ref, 1, depth))
-  const rules = mergeRules(currentDaoRules(), world.rules)
-  const report = runGauntlet(buildPlayerSnap(true), foes, rules, world.healBetweenPct, rng)
-
-  let reward = 0
-  if (report.cleared) {
-    reward = world.rewardDaoSource
-    endgame.addDaoSource(reward)
-    endgame.recordWorldClear(world.id)
-    ui.toast(`你踏破${world.name}!道源 +${reward}`, 'rare')
-  } else {
-    ui.toast(`${world.name}将你逐出天门(第 ${report.fightsWon + 1} 战失利)`, 'warn')
-  }
-  recordMark(world.id, world.name, report.cleared, report.totalRounds)
-  return {
-    title: world.name,
-    report,
-    rewardDaoSource: reward,
-    markText: report.cleared ? `${world.fights} 战全捷,共 ${report.totalRounds} 回合` : `止步第 ${report.fightsWon + 1} 战`
-  }
-}
-
 /** 天道试炼(极限 Build 挑战,记录最少总回合;剑意/杀意逐胜叠层同样生效) */
 export function challengeTrial(trialId: string): ExpeditionResult | null {
   const endgame = useEndgameStore()

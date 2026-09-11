@@ -85,13 +85,4 @@ export const STARS: StarDef[] = [
   { id: 'pojun', name: '破军', nature: '破旧', gist: '破而后立,主开路与开创。', mods: { speed: 0.02, damageBonus: 0.02 } }
 ]
 
-const PALACE_BY_ID = new Map(PALACES.map(p => [p.id, p]))
-const STAR_BY_ID = new Map(STARS.map(s => [s.id, s]))
 
-export function palaceDef(id: PalaceId): PalaceDef | undefined {
-  return PALACE_BY_ID.get(id)
-}
-
-export function starDef(id: string): StarDef | undefined {
-  return STAR_BY_ID.get(id)
-}

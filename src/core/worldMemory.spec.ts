@@ -20,9 +20,7 @@ import {
   STABLE_WINS,
   FLOURISH_WINS,
   AFTERMATH_CHANCE,
-  REVIVE_AFTER_HOURS,
-  emptyNemeses,
-  emptyEventMemories
+  REVIVE_AFTER_HOURS
 } from './worldMemory'
 import { usePlayerStore } from '@/stores/player'
 import type { NemesisRecord } from '@/types'
@@ -133,7 +131,7 @@ describe('S2 宿敌记忆', () => {
   })
 
   it('败北不足 3 次不成宿敌', () => {
-    let list = emptyNemeses()
+    let list: NemesisRecord[] = []
     for (let i = 0; i < 2; i++) {
       const r = recordLoss(list, 'e_wolf', '赤目野狼', 'qingyun', Date.now())
       list = r.list
@@ -143,7 +141,7 @@ describe('S2 宿敌记忆', () => {
   })
 
   it('第 3 次败北标记宿敌', () => {
-    let list: NemesisRecord[] = emptyNemeses()
+    let list: NemesisRecord[] = []
     let flag = false
     for (let i = 0; i < NEMESIS_THRESHOLD; i++) {
       const r = recordLoss(list, 'e_wolfking', '独角妖狼', 'qingyun', Date.now())
@@ -155,7 +153,7 @@ describe('S2 宿敌记忆', () => {
   })
 
   it('雪耻后不再是宿敌', () => {
-    let list = emptyNemeses()
+    let list: NemesisRecord[] = []
     for (let i = 0; i < NEMESIS_THRESHOLD; i++) {
       list = recordLoss(list, 'e_icejiao', '玄冰蛟', 'hantan', Date.now()).list
     }
@@ -166,7 +164,7 @@ describe('S2 宿敌记忆', () => {
   })
 
   it('同敌多次败北累加,不新增条目', () => {
-    let list = emptyNemeses()
+    let list: NemesisRecord[] = []
     for (let i = 0; i < 5; i++) {
       list = recordLoss(list, 'e_bwking', '黑风妖王', 'heifeng', Date.now()).list
     }
@@ -177,17 +175,17 @@ describe('S2 宿敌记忆', () => {
 
 describe('S3 事件余波', () => {
   it('未完成事件不触发余波', () => {
-    expect(shouldTriggerAftermath(emptyEventMemories(), 'ev_jade_slip', 0.1)).toBe(false)
+    expect(shouldTriggerAftermath({}, 'ev_jade_slip', 0.1)).toBe(false)
   })
 
   it('完成过事件:小概率触发', () => {
-    const mem = recordEvent(emptyEventMemories(), 'ev_jade_slip', 0, Date.now())
+    const mem = recordEvent({}, 'ev_jade_slip', 0, Date.now())
     expect(shouldTriggerAftermath(mem, 'ev_jade_slip', AFTERMATH_CHANCE - 0.01)).toBe(true)
     expect(shouldTriggerAftermath(mem, 'ev_jade_slip', AFTERMATH_CHANCE + 0.01)).toBe(false)
   })
 
   it('记忆累加次数与最近选择', () => {
-    let mem = recordEvent(emptyEventMemories(), 'ev_merchant', 1, Date.now() - 1000)
+    let mem = recordEvent({}, 'ev_merchant', 1, Date.now() - 1000)
     mem = recordEvent(mem, 'ev_merchant', 2, Date.now())
     expect(mem.ev_merchant?.times).toBe(2)
     expect(mem.ev_merchant?.lastChoiceIdx).toBe(2)

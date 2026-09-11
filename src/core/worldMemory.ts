@@ -105,11 +105,6 @@ function makeNemesis(enemyId: string, enemyName: string, regionId: string, now: 
   return { enemyId, enemyName, regionId, lossCount: 1, lastLossAt: now }
 }
 
-/** 默认宿敌存储(用于世界记忆 store 的初始值) */
-export function emptyNemeses(): NemesisRecord[] {
-  return []
-}
-
 /** 记录一次败北:更新宿敌计数,新增或累加 */
 export function recordLoss(
   nemeses: NemesisRecord[],
@@ -149,11 +144,6 @@ export function markAvenged(nemeses: NemesisRecord[], enemyId: string, now: numb
 
 /** 再次遭遇已完成事件时,触发「余波」文案的概率 */
 export const AFTERMATH_CHANCE = 0.2
-
-/** 默认事件记忆 */
-export function emptyEventMemories(): Record<string, EventMemory> {
-  return {}
-}
 
 /** 记录事件已完成:更新计数与最近选择 */
 export function recordEvent(

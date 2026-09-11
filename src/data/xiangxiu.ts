@@ -81,12 +81,6 @@ export const MANSIONS: MansionDef[] = [
 ]
 
 const IMAGE_BY_ID = new Map(IMAGES.map(i => [i.id, i]))
-const MANSION_BY_NAME = new Map(MANSIONS.map(m => [m.name, m]))
-
 export function imageDef(id: ImageId): ImageDef | undefined {
   return IMAGE_BY_ID.get(id)
-}
-
-export function mansionDef(name: string): MansionDef | undefined {
-  return MANSION_BY_NAME.get(name)
 }

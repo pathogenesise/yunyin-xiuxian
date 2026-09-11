@@ -9,7 +9,7 @@
  * 游戏内没有生辰 —— 此处按灵根与轮回归属安星,取的是十二宫与十四主星的象义。
  */
 import type { LinggenProfile, StatMods } from '@/types'
-import { PALACES, STARS, palaceDef, starDef, type PalaceDef, type StarDef } from '@/data/ziwei'
+import { PALACES, STARS, type PalaceDef, type StarDef } from '@/data/ziwei'
 import { mulberry32 } from '@/utils/random'
 import { mergeMods } from './statsCalc'
 
@@ -76,4 +76,3 @@ export function fateLordLine(chart: FateChart): string {
   return `命宫落${names} —— ${mine.stars[0]!.gist}`
 }
 
-export { palaceDef, starDef }

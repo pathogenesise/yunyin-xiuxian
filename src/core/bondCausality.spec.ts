@@ -122,18 +122,23 @@ describe('因果可感知 · 现状', () => {
     )
   })
 
-  it('内部确实记着原因,但玩家看不到', () => {
+  it('内部记着原因,界面上也确实能看到(本轮补上了这条展示)', () => {
     // sparks 逐条记录了催生意图的经历序列
     console.log('\n内部记录的经历类型:')
     for (const [k, v] of Object.entries(SPARK_NAMES)) {
       console.log(`  ${v.padEnd(24)} ${SPARK_WEIGHT[k as keyof typeof SPARK_WEIGHT] > 0 ? '+' : ''}${SPARK_WEIGHT[k as keyof typeof SPARK_WEIGHT]}`)
     }
-    // 但界面里没有任何一处呈现它
-    expect(VIEW).not.toMatch(/sparks/)
+    /**
+     * 曾经这里断言的是「界面不含 sparks」—— 那条缺口本轮补上了:
+     * 道侣弹窗里「她开的口」下面多了一行「因何而起」(SPARK_NAMES)。
+     * 于是本条从"记录缺口"改成"钉住接口":记录的因,界面上必须真看得到。
+     */
+    expect(VIEW, '界面应呈现 sparks 与 SPARK_NAMES').toMatch(/sparks/)
+    expect(VIEW).toMatch(/SPARK_NAMES/)
     expect(VIEW).not.toMatch(/ripeness/)
     console.log(
-      '\n界面不含 sparks / ripeness —— 内部有账,玩家无从查阅。' +
-        '\n「代码里有原因」不等于「玩家能感知原因」'
+      '\n界面已呈现 sparks(因何而起),仍不含 ripeness(酝酿度)——' +
+        '\n前者是玩家该知道的因果,后者是引擎内部的账。'
     )
   })
 })

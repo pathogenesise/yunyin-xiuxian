@@ -299,6 +299,8 @@
           <div class="mt-4 border-t border-ink/10 pt-3">
             <p class="text-[12px] leading-relaxed text-gold-ink">{{ herIntent.line }}</p>
             <p class="mt-1 text-[10px] text-ink-faint">她所求:{{ herIntent.wish }}</p>
+            <!-- 意图由经历催生,不是凭空的:把「因何而起」摆出来 -->
+            <p v-if="herIntentSparks" class="text-[10px] text-ink-ghost">因何而起:{{ herIntentSparks }}</p>
             <div class="mt-2.5 flex gap-2">
               <button
                 v-for="r in INTENT_CHOICES"
@@ -316,6 +318,7 @@
         <template v-if="pendingEvent && !bond.fallen && !bond.departed">
           <div class="mt-4 border-t border-ink/10 pt-3">
             <p class="font-kai text-[13px] tracking-widest text-ink">{{ pendingEvent.title }}</p>
+            <p class="text-[10px] text-ink-ghost">因何而来:{{ pendingEventTriggers }}</p>
             <p class="mt-1 text-[11px] leading-relaxed text-ink-soft">{{ pendingEvent.text }}</p>
             <p class="mt-1.5 text-[11px] text-azure">{{ pendingEvent.herWish }}</p>
             <p class="text-[10px] text-ink-faint">{{ pendingEvent.herLimit }}</p>
@@ -418,7 +421,8 @@
   import { useLoadoutsStore } from '@/stores/loadouts'
   import { isSoftCapped, modOf } from '@/core/statsCalc'
   import { SOFT_CAPS } from '@/data/constants'
-  import { RESPONSE_NAMES } from '@/data/bondIntent'
+  import { RESPONSE_NAMES, SPARK_NAMES } from '@/data/bondIntent'
+  import { TRIGGER_NAMES } from '@/data/bondEvents'
   import { fruitMarginalInfo } from '@/core/resourceGuidance'
   import { branchCodex, materialCodex } from '@/ui/codex'
   import { mentorVerdict, mentorChoices } from '@/core/mentorService'
@@ -531,6 +535,10 @@
    * 现在事件在历练途中就已发生,弹窗只是去看它
    */
   const pendingEvent = computed(() => pendingBondEvent())
+  /** 这件事因何而来(触发名取自 bondEvents,不在视图里手写) */
+  const pendingEventTriggers = computed(() =>
+    (pendingEvent.value?.triggers ?? []).map(t => TRIGGER_NAMES[t]).filter(Boolean).join('、')
+  )
   const lastEventText = ref('')
   const herLine = computed(() => (pendingEvent.value ? herStance(pendingEvent.value) : null))
   watch(bondDialog, open => {
@@ -544,6 +552,11 @@
 
   /** 她主动提出的事(34.1);三种回应,忽略不等于回绝 */
   const herIntent = computed(() => pendingIntent())
+  /** 这份心意因何而起(经历名取自 bondIntent) */
+  const herIntentSparks = computed(() => {
+    const sparks = herIntent.value?.sparks ?? []
+    return [...new Set(sparks)].map(s => SPARK_NAMES[s]).join('、')
+  })
   /** 她记得你怎么答的 —— 回应名取自 bondIntent,视图不另写一份 */
   const responseLine = computed(() => {
     const rs = bond.value?.intent?.responses ?? []

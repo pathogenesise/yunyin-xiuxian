@@ -32,7 +32,6 @@ import {
   archiveBond,
   chooseBondEvent,
   currentBond,
-  hasDeparted,
   herStance,
   meet,
   playerLean,
@@ -225,7 +224,7 @@ describe('共同事件 · 四:她有自己的意志', () => {
     bondTo('dl_qingli', 'confidant')
     const r = chooseBondEvent('be_depart', 'part_ways')!
     expect(r.left).toBe(true)
-    expect(hasDeparted()).toBe(true)
+    expect(currentBond()?.departed).toBe(true)
     console.log(`\n「${r.text}」`)
     // 冻结:此后推进无效
     const before = currentBond()!
@@ -310,7 +309,7 @@ describe('共同事件 · 边界', () => {
     expect(offerBondEvent('enterPlace')).toBeNull()
     expect(pendingBondEvent()).toBeNull()
     expect(chooseBondEvent('be_relic', 'take_recipe')).toBeNull()
-    expect(hasDeparted()).toBe(false)
+    expect(currentBond()?.departed ?? false).toBe(false)
   })
 
   it('leanFromCounters 在行为量过少时不妄下判断', () => {

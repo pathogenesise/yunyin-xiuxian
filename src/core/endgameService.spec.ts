@@ -4,7 +4,8 @@ import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useEndgameStore } from '@/stores/endgame'
 import { FURNACE_RATES, DAO_SOURCE_PER_FRUIT } from '@/data/endgame'
-import { challengeWorld, chooseDaoPath, condenseDaoFruit, currentDaoRules, endgameUnlocked, furnaceConvert } from './endgameService'
+import { chooseDaoPath, condenseDaoFruit, currentDaoRules, endgameUnlocked, furnaceConvert } from './endgameService'
+import { resolveWorld, startWorldExpedition } from './expedition'
 import { attemptBreakthrough } from './breakthrough'
 
 function ascend(): void {
@@ -21,7 +22,8 @@ describe('真仙终局服务', () => {
   it('未至真仙不得踏天', () => {
     expect(endgameUnlocked()).toBe(false)
     expect(chooseDaoPath('sword')).toBe(false)
-    expect(challengeWorld('chiyan')).toBeNull()
+    // 旧线性入口 challengeWorld 已删(Phase 21 起由路线远征取代),这里改为钉现役入口的同一道闸
+    expect(startWorldExpedition('chiyan', null)).toBeNull()
   })
 
   it('道途一生一诺,规则随身', () => {
@@ -55,29 +57,26 @@ describe('真仙终局服务', () => {
     expect(condenseDaoFruit()).toBe(false) // 道源不足
   })
 
-  it('远征世界:扣道源、出战报、留道痕', () => {
+  it('入界即扣道源、开出一场入界战(结算与留痕由路线远征自己管)', () => {
     ascend()
     const endgame = useEndgameStore()
     chooseDaoPath('slaughter')
     endgame.addDaoSource(20)
-    const result = challengeWorld('chiyan')
+    const world = resolveWorld('chiyan')!
+    const before = endgame.daoSource
+    const result = startWorldExpedition('chiyan', null)
     expect(result).not.toBeNull()
-    expect(result!.report.rows.length).toBeGreaterThan(0)
-    expect(endgame.marks.length).toBe(1)
-    expect(endgame.marks[0]!.daoPathId).toBe('slaughter')
-    // 道源已扣(无论胜负);胜则有赏
-    if (result!.report.cleared) {
-      expect(endgame.daoSource).toBe(60)
-    } else {
-      expect(endgame.daoSource).toBe(0)
-    }
+    expect(result!.row.foeName.length).toBeGreaterThan(0)
+    // 入界战有胜有败:胜则 run 在途,败则当场落痕并清空 run —— 两条路都算"进过界"
+    expect(endgame.worldRun?.worldId ?? endgame.marks.at(-1)?.targetId).toBe('chiyan')
+    expect(endgame.daoSource).toBe(before - world.entryCost)
   })
 
   it('未择道途不可远征', () => {
     ascend()
     const endgame = useEndgameStore()
     endgame.addDaoSource(50)
-    expect(challengeWorld('chiyan')).toBeNull()
+    expect(startWorldExpedition('chiyan', null)).toBeNull()
     expect(endgame.daoSource).toBe(50) // 未扣费
   })
 

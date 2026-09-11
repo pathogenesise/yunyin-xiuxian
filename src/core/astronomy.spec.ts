@@ -13,7 +13,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { IMAGES, MANSIONS, mansionDef } from '@/data/xiangxiu'
+import { IMAGES, MANSIONS } from '@/data/xiangxiu'
 import { REGIONS, regionDef } from '@/data/regions'
 import { worldOf } from '@/data/realms'
 import { useGameStore } from '@/stores/game'
@@ -40,8 +40,8 @@ describe('二十八宿 · 数据', () => {
       expect(m.domain.length, `${m.name} 缺分野`).toBeGreaterThan(0)
       expect(m.good.length, `${m.name} 缺所宜`).toBeGreaterThan(2)
     }
-    expect(mansionDef('角')?.fullName).toBe('角木蛟')
-    expect(mansionDef('轸')?.image).toBe('zhuque')
+    expect(MANSIONS.find(m => m.name === '角')?.fullName).toBe('角木蛟')
+    expect(MANSIONS.find(m => m.name === '轸')?.image).toBe('zhuque')
   })
 
   it('四象配四界,一个不漏', () => {

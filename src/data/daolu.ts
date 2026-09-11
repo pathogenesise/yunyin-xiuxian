@@ -318,9 +318,6 @@ export const STAGE_GATES: readonly StageGate[] = [
   { stage: 'daolv', fate: 80, trust: 75, accord: 65, shared: 4, desc: '结为道侣' }
 ]
 
-export function gateOf(stage: BondStage): StageGate | undefined {
-  return STAGE_GATES.find(g => g.stage === stage)
-}
 
 /** 关系结局 —— 一世走完之后留下的那句话 */
 export type BondEnding =

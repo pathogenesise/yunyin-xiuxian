@@ -36,6 +36,10 @@
           </p>
           <p class="mt-0.5 text-[11px] leading-relaxed text-ink-soft">{{ cell.def.desc }}</p>
           <p class="mt-1 text-[11px] leading-relaxed text-ink-faint">{{ cell.def.lore }}</p>
+          <!-- 此境所据何典:把「境界 → 原典」这条来路直接摆在该境底下 -->
+          <p v-if="classicsOf(cell.def.id).length" class="mt-1 text-[10px] text-ink-faint">
+            所据:{{ classicsOf(cell.def.id).map(c => `《${c.title}》`).join(' ') }}
+          </p>
         </div>
       </div>
     </section>
@@ -236,7 +240,7 @@
   import { useGameStore } from '@/stores/game'
   import { useUiStore } from '@/stores/ui'
   import { REALMS, WORLDS, realmDef } from '@/data/realms'
-  import { CLASSICS, PLANNED_SCHOOLS } from '@/data/classics'
+  import { CLASSICS, PLANNED_SCHOOLS, classicsForRealm } from '@/data/classics'
   import { HEXAGRAMS, TRIGRAMS, trigramDef } from '@/data/yijing'
   import { DIVINATION_COST, drawLines, readingCounsel, readingFromState } from '@/core/divination'
   import { askDivination } from '@/core/divinationService'
@@ -329,5 +333,10 @@
   function realmName(id: string): string {
     const idx = REALMS.findIndex(r => r.id === id)
     return idx >= 0 ? realmDef(idx).name : id
+  }
+
+  /** 此境所据的原典(来自典籍表,不在视图里手写) */
+  function classicsOf(realmId: string) {
+    return classicsForRealm(realmId)
   }
 </script>

@@ -21,7 +21,6 @@ import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
 import { REGIONS } from '@/data/regions'
 import {
   chainProgressRows,
-  chainStageOf,
   pendingChainStages,
   pickEventFor,
   regionEventPoolFor,
@@ -94,7 +93,7 @@ describe('奇缘 · 结一程才轮到下一程', () => {
   it('解了哪一程,那条缘才往前一程', () => {
     const first = chainOfEvent('old_man_stone_1')!
     resolveEventChoice(eventDef(first.chain.stages[0]!)!, 0, 1)
-    expect(chainStageOf('old_man_stone')).toBe(1)
+    expect(chainProgressRows().find(c => c.id === 'old_man_stone')?.stage).toBe(1)
     const pending = pendingChainStages(1)
     const mine = pending.find(p => p.chainId === 'old_man_stone')!
     expect(mine.stage).toBe(1)
@@ -106,7 +105,7 @@ describe('奇缘 · 结一程才轮到下一程', () => {
   it('走到尽头:不再有待走的程,录上标为已了', () => {
     const chain = CHAINS.find(c => c.id === 'sword_in_lake')!
     chain.stages.forEach(id => resolveEventChoice(eventDef(id)!, 0, 1))
-    expect(chainStageOf('sword_in_lake')).toBe(chain.stages.length)
+    expect(chainProgressRows().find(r => r.id === 'sword_in_lake')?.stage).toBe(chain.stages.length)
     expect(pendingChainStages(9).some(p => p.chainId === 'sword_in_lake')).toBe(false)
     const row = chainProgressRows().find(r => r.id === 'sword_in_lake')!
     expect(row.finished).toBe(true)
@@ -117,7 +116,7 @@ describe('奇缘 · 结一程才轮到下一程', () => {
     const idx = ev.choices.findIndex(ch => ch.endsChain)
     expect(idx, '灵狐第一程应有「断缘」选项').toBeGreaterThanOrEqual(0)
     resolveEventChoice(ev, idx, 1)
-    expect(chainStageOf('wounded_fox')).toBe(3)
+    expect(chainProgressRows().find(r => r.id === 'wounded_fox')?.stage).toBe(3)
     expect(pendingChainStages(9).some(p => p.chainId === 'wounded_fox')).toBe(false)
   })
 })

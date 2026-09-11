@@ -570,7 +570,7 @@
         <div class="py-2.5">
           <div class="flex items-center justify-between">
             <span class="text-[12px] text-ink-soft">道源凝道果(跨世保留)</span>
-            <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="condenseDaoFruit()">
+            <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="doCondense()">
               {{ DAO_SOURCE_PER_FRUIT }} 道源 → 道果 +1
             </button>
           </div>
@@ -625,6 +625,25 @@
     </BaseModal>
 
     <!-- 天道已变:旧纪道痕为何不能按老眼光看 -->
+    <!-- 首次凝道果:把「跨世保留的到底是什么」讲一次 -->
+    <BaseModal :open="fruitDialogOpen" title="道果" @close="fruitDialogOpen = false">
+      <div class="space-y-2.5 text-[12px] leading-relaxed">
+        <p class="text-ink-soft">{{ fruitDialog.intro }}</p>
+        <div>
+          <p class="font-kai text-[12px] tracking-wider text-ink">用途</p>
+          <p class="text-ink-faint">{{ fruitDialog.usages.join(' · ') }}</p>
+        </div>
+        <div>
+          <p class="font-kai text-[12px] tracking-wider text-ink">来处</p>
+          <p class="text-ink-faint">{{ fruitDialog.gains.join(' · ') }}</p>
+        </div>
+        <p class="border-l-2 border-violet-ink/60 pl-2 text-[11px] text-violet-ink">{{ fruitDialog.lifecycle }}</p>
+      </div>
+      <template #footer>
+        <button class="btn-seal w-full" @click="fruitDialogOpen = false">知道了</button>
+      </template>
+    </BaseModal>
+
     <BaseModal :open="eraOpen" title="天道已变" @close="eraOpen = false">
       <p v-if="eraMark" class="text-[11px] leading-relaxed text-ink-soft">
         此战录于规则纪元 <span class="tabular text-cinnabar">{{ eraMark.ruleset }}</span>,今为
@@ -741,7 +760,10 @@
   import GameIcon from '@/components/common/GameIcon.vue'
   import {
     daoSourceDialog,
+    daoFruitDialog,
     fruitMarginalInfo,
+    markFruitTutorialSeen,
+    shouldShowFruitTutorial,
     shouldShowEndgameTutorial,
     markEndgameTutorialSeen,
     markResourceDialogSeen
@@ -790,6 +812,24 @@
   }
 
   const currentDao = computed(() => (endgame.daoPath ? daoPathDef(endgame.daoPath) : undefined))
+
+  /**
+   * 凝道果 —— 首次成功时把「道果是什么」讲一次。
+   *
+   * shouldShowFruitTutorial / daoFruitDialog 写好了却无人调用:
+   * 玩家第一次凝出道果(整套轮回经济的核心货币)时,没有任何解释。
+   */
+  const fruitDialogOpen = ref(false)
+  const fruitDialog = computed(() => daoFruitDialog())
+  function doCondense(): void {
+    const before = player.reincarnation.daoFruit
+    condenseDaoFruit()
+    if (player.reincarnation.daoFruit === before) return
+    if (shouldShowFruitTutorial()) {
+      fruitDialogOpen.value = true
+      markFruitTutorialSeen()
+    }
+  }
 
   // ---- 页签:长卷分册(远征在途时落在远征册) ----
   type CelTab = 'dao' | 'exped' | 'trial' | 'marks'

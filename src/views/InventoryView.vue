@@ -201,6 +201,18 @@
     <!-- 开炉炼丹 -->
     <BaseModal :open="craftOpen" title="开炉炼丹" wide @close="craftOpen = false">
       <p class="mb-2 text-[11px] text-ink-faint tabular">灵草 {{ resources.herb }} · 灵石 {{ formatGN(resources.spiritStone) }}</p>
+      <!-- 百工技艺:做得多就精。技艺一直在影响成丹,却从不显示 —— 玩家看不到自己在长 -->
+      <div v-if="skillRows.length" class="mb-2 rounded-md bg-paper-deep/60 px-3 py-2">
+        <p class="text-[10px] text-ink-faint">技艺(按道分,做得多就精)</p>
+        <div class="mt-1 space-y-0.5">
+          <p v-for="s in skillRows" :key="s.id" class="flex items-baseline gap-2 text-[11px]">
+            <span class="w-14 shrink-0 text-ink-faint">{{ s.daoName }}</span>
+            <span class="w-12 shrink-0 font-kai text-ink-soft">{{ s.name }}</span>
+            <span class="w-12 shrink-0" :class="s.stage === '生疏' ? 'text-ink-ghost' : 'text-jade'">{{ s.stage }}</span>
+            <span class="min-w-0 text-[10px] leading-relaxed text-ink-faint">{{ s.desc }}</span>
+          </p>
+        </div>
+      </div>
       <div v-if="recipes.length" class="max-h-64 space-y-2 overflow-y-auto">
         <div v-for="r in recipes" :key="r.def.id" class="card-ink px-3.5 py-2.5">
           <div class="flex items-center gap-3">
@@ -355,6 +367,8 @@
   import { decomposeByRanks, decomposeEquipment, artifactUpCost, upgradeArtifact } from '@/core/forge'
   import { keepVerdict } from '@/core/smartKeep'
   import { equipSetDef, setCounts, type EquipSetDef } from '@/core/equipSet'
+  import { useLoreStore } from '@/stores/lore'
+  import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
   import { formatGN, formatNum, formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import type { AnyStatKey, EquipSlot, GNum, PillDef } from '@/types'
@@ -370,6 +384,7 @@
   const player = usePlayerStore()
   const ui = useUiStore()
   const settings = useSettingsStore()
+  const lore = useLoreStore()
 
   type Tab = 'equip' | 'pill' | 'material' | 'artifact'
   const tab = ref<Tab>('equip')
@@ -464,6 +479,14 @@
           x.def !== undefined && x.cost !== null && x.able !== null
       )
       .sort((a, b) => a.able.rank - b.able.rank)
+  )
+
+  /** 技艺一览:名(DAO_NAMES 的道名 + 技艺名)、境地(skillStageName)、这项技艺管什么 */
+  const skillRows = computed(() =>
+    SKILLS.map(s => {
+      const lv = lore.skillLevel(s.id)
+      return { id: s.id, daoName: DAO_NAMES[s.dao], name: s.name, stage: skillStageName(lv), desc: s.desc }
+    })
   )
 
   /** 把握度配色:七成以上放心开炉,三成以下是在赌 */
