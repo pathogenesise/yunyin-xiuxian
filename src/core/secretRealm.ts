@@ -23,6 +23,7 @@ import { mergeRules } from './gauntlet'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiStore } from '@/stores/ui'
+import { useEndgameStore } from '@/stores/endgame'
 
 export interface SecretRealmState {
   /** 秘境定义 id */
@@ -51,21 +52,29 @@ export function tierOfMajor(major: number): number {
   return pool.length > 0 ? Math.max(...pool.map(r => r.tier)) : 1
 }
 
-/** 入口代价(灵石,按当前层级折算) */
-export function entryStoneCost(def: SecretRealmDef, major: number): GNum {
-  return stoneByTier(tierOfMajor(major), def.entryStone)
+/** 入口代价:凡境按当前层级折算灵石;天界是道源定额 */
+export function entryCostOf(def: SecretRealmDef, major: number): { kind: 'stone'; stone: GNum } | { kind: 'daoSource'; daoSource: number } {
+  return 'stone' in def.cost
+    ? { kind: 'stone', stone: stoneByTier(tierOfMajor(major), def.cost.stone) }
+    : { kind: 'daoSource', daoSource: def.cost.daoSource }
 }
 
-/** 是否有秘境可探(元婴起) */
-export function realmUnlock(): boolean {
-  const player = usePlayerStore()
-  return SECRET_REALMS.some(r => player.major >= r.minMajor)
+/** 代价的可读文案(界面直接用,不另写一份) */
+export function entryCostText(def: SecretRealmDef, major: number): string {
+  const c = entryCostOf(def, major)
+  return c.kind === 'stone' ? `灵石 ${formatGN(c.stone)}` : `道源 ${c.daoSource}`
 }
 
-/** 可以进的秘境(未达门槛的不列出) */
-export function availableRealms(): SecretRealmDef[] {
+/** 该册是否已开:至少有一处够格可入(凡境册元婴起,天界册真仙起) */
+export function realmUnlock(gate: SecretRealmDef['gate'] = 'mortal'): boolean {
   const player = usePlayerStore()
-  return SECRET_REALMS.filter(r => player.major >= r.minMajor)
+  return SECRET_REALMS.some(r => r.gate === gate && player.major >= r.minMajor)
+}
+
+/** 该册里可以进的秘境(未达门槛的不列出) */
+export function availableRealms(gate: SecretRealmDef['gate'] = 'mortal'): SecretRealmDef[] {
+  const player = usePlayerStore()
+  return SECRET_REALMS.filter(r => r.gate === gate && player.major >= r.minMajor)
 }
 
 /** 当前秘境(无则 null) */
@@ -78,21 +87,29 @@ export interface EnterResult {
   reason?: string
 }
 
-/** 进秘境:验门槛、付灵石、掷规则、落状态 */
+/** 进秘境:验门槛、付代价(灵石或道源)、掷规则、落状态 */
 export function enterSecretRealm(defId: string): EnterResult {
   const player = usePlayerStore()
   const resources = useResourcesStore()
+  const endgame = useEndgameStore()
   const ui = useUiStore()
   const def = secretRealmDef(defId)
   if (!def) return { ok: false, reason: '此境不存在' }
   if (player.major < def.minMajor) return { ok: false, reason: `${def.name}需更高境界` }
   if (player.secretRealm) return { ok: false, reason: '已在秘境之中' }
-  const cost = entryStoneCost(def, player.major)
-  if (!resources.hasStone(cost)) {
-    ui.toast(`灵石不足 ${formatGN(cost)}`, 'warn')
-    return { ok: false, reason: '灵石不足' }
+  const cost = entryCostOf(def, player.major)
+  if (cost.kind === 'stone') {
+    if (!resources.hasStone(cost.stone)) {
+      ui.toast(`灵石不足 ${formatGN(cost.stone)}`, 'warn')
+      return { ok: false, reason: '灵石不足' }
+    }
+    resources.spendStone(cost.stone)
+  } else {
+    if (!endgame.spendDaoSource(cost.daoSource)) {
+      ui.toast(`道源不足 ${cost.daoSource}`, 'warn')
+      return { ok: false, reason: '道源不足' }
+    }
   }
-  resources.spendStone(cost)
   // 随机规则 1~2 条,不重复
   const n = rng.int(1, 2)
   const pool = [...SECRET_RULES]

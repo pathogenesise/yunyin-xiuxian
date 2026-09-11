@@ -37,10 +37,12 @@ export interface SecretRealmDef {
   id: string
   name: string
   desc: string
-  /** 可进入的最低大境界(元婴 = 3 起) */
+  /** 在哪一册出现:凡境秘境挂在历练页,天界秘境挂在试炼册 */
+  gate: 'mortal' | 'celestial'
+  /** 可进入的最低大境界(凡境元婴 = 3,天界真仙 = 9) */
   minMajor: number
-  /** 入口代价:灵石,按玩家当前地界层级折算 */
-  entryStone: number
+  /** 入口代价:凡境按地界层级折算灵石;天界用道源(与远征/试炼同一种终局资粮) */
+  cost: { stone: number } | { daoSource: number }
   /** 本境自带的规则(进入即生效,与随机规则叠加) */
   rules: CombatRules
   /** 层间回血比例(负数为损血) */
@@ -50,44 +52,71 @@ export interface SecretRealmDef {
 }
 
 /**
- * 固定三处秘境 —— 门槛与代价都写在这张表上,改口径只改这里。
+ * 秘境目录 —— 门槛与代价都写在这张表上,改口径只改这里。
  *
  * ⚠ 入口经济:Phase 31 原稿把它们定在「元婴门槛 + 道源代价」上,而道源是
  * 真仙之后才有的资源 —— 元婴玩家付不出,等于进不去(见 RIL TASK-031/DEC-014)。
- * 现按既定的 minMajor(=3)取灵石代价,使其在门槛境界就能真的走进去;
- * 若日后要改成「真仙终局版」,把 minMajor 改 9、把 entryStone 换成道源代价即可,
- * 玩法循环一行不用动。
+ *
+ * 产品口径是「都做」,故分两阶:**凡境秘境**保留 minMajor=3 与灵石代价,
+ * 让门槛境界就能真的走进去;**天界秘境**是新增的一阶,minMajor=9、道源代价,
+ * 与远征/试炼并列 —— 同一套玩法循环,换门槛与货币,不多写一行战斗代码。
  */
 export const SECRET_REALMS: SecretRealmDef[] = [
   {
     id: 'sr_kurong',
+    gate: 'mortal',
     name: '枯荣古境',
     desc: '草木枯而复荣。治疗极盛,但每层之末要留一成气血给这片土地。',
     minMajor: 3,
-    entryStone: 40,
+    cost: { stone: 40 },
     rules: { healMult: 2 },
     healBetweenPct: -0.1,
     rewardMult: 1.2
   },
   {
     id: 'sr_jianzhong',
+    gate: 'mortal',
     name: '剑冢幻境',
     desc: '万剑横空。出手极重,防守极薄。',
     minMajor: 3,
-    entryStone: 60,
+    cost: { stone: 60 },
     rules: { playerAtkMult: 1.3, playerExtraMods: { defensePct: -0.2 } },
     healBetweenPct: 0.5,
     rewardMult: 1.3
   },
   {
     id: 'sr_kuye',
+    gate: 'mortal',
     name: '苦海渡舟',
     desc: '一叶渡苦海。回气极慢,但彼岸的东西格外丰厚。',
     minMajor: 4,
-    entryStone: 80,
+    cost: { stone: 80 },
     rules: {},
     healBetweenPct: 0.3,
     rewardMult: 1.5
+  },
+  // ---- 天界秘境:真仙起,道源代价,与远征/试炼并列 ----
+  {
+    id: 'sr_xingchen',
+    gate: 'celestial',
+    name: '星辰古殿',
+    desc: '殿中星轨自行流转。敌势愈盛,天赐亦厚;三层之末,殿心封着一物。',
+    minMajor: 9,
+    cost: { daoSource: 30 },
+    rules: { enemyAtkMult: 1.15 },
+    healBetweenPct: 0.4,
+    rewardMult: 1.4
+  },
+  {
+    id: 'sr_guixu',
+    gate: 'celestial',
+    name: '归墟之眼',
+    desc: '万流归墟,视之如渊。此地最凶,也最肥 —— 入者未必能再睁眼。',
+    minMajor: 9,
+    cost: { daoSource: 50 },
+    rules: { playerAtkMult: 1.25, enemyHpMult: 1.2, maxRounds: 25 },
+    healBetweenPct: 0.25,
+    rewardMult: 1.8
   }
 ]
 

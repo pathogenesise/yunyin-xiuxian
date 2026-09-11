@@ -1,9 +1,9 @@
 <template>
-  <!-- 秘境:元婴起可探。一次性内容,出则散;与历练互不冲突 -->
+  <!-- 秘境:一次性内容,出则散。凡境册元婴起(灵石),天界册真仙起(道源) -->
   <section v-if="unlocked" class="card-ink px-4 py-3">
     <p class="flex items-center gap-2">
       <span class="font-kai text-[14px] tracking-[0.2em] text-ink">秘境</span>
-      <span class="chip-ink !text-[9px]">一次性 · 三层 · 出则散</span>
+      <span class="chip-ink !text-[9px]">{{ gate === 'celestial' ? '天界秘境' : '凡境秘境' }} · 三层 · 出则散</span>
       <span v-if="state" class="ml-auto text-[10px] tabular text-gold-ink">第 {{ state.layer }}/{{ SECRET_LAYERS }} 层</span>
     </p>
 
@@ -35,7 +35,7 @@
           <span class="flex items-baseline gap-2">
             <span class="font-kai text-[13px] text-ink">{{ r.name }}</span>
             <span class="text-[10px] tabular" :class="canPay(r) ? 'text-ink-faint' : 'text-cinnabar/80'">
-              灵石 {{ formatGN(entryStoneCost(r, player.major)) }}
+              {{ entryCostText(r, player.major) }}
             </span>
             <span class="ml-auto text-[10px] text-azure">入 境 →</span>
           </span>
@@ -52,7 +52,7 @@
   import { usePlayerStore } from '@/stores/player'
   import { useResourcesStore } from '@/stores/resources'
   import { useUiStore } from '@/stores/ui'
-  import { formatGN } from '@/utils/format'
+  import { useEndgameStore } from '@/stores/endgame'
   import { secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
   import {
     SECRET_LAYERS,
@@ -60,7 +60,8 @@
     availableRealms,
     currentRealm,
     enterSecretRealm,
-    entryStoneCost,
+    entryCostOf,
+    entryCostText,
     fightSecretLayer,
     realmUnlock
   } from '@/core/secretRealm'
@@ -69,13 +70,17 @@
   const resources = useResourcesStore()
   const ui = useUiStore()
 
-  const unlocked = computed(() => realmUnlock())
+  const props = withDefaults(defineProps<{ gate?: 'mortal' | 'celestial' }>(), { gate: 'mortal' })
+  const endgame = useEndgameStore()
+
+  const unlocked = computed(() => realmUnlock(props.gate))
   const state = computed(() => currentRealm())
-  const list = computed(() => availableRealms())
+  const list = computed(() => availableRealms(props.gate))
   const def = computed<SecretRealmDef | undefined>(() => (state.value ? secretRealmDef(state.value.realmId) : undefined))
 
   function canPay(r: SecretRealmDef): boolean {
-    return resources.hasStone(entryStoneCost(r, player.major))
+    const c = entryCostOf(r, player.major)
+    return c.kind === 'stone' ? resources.hasStone(c.stone) : endgame.daoSource >= c.daoSource
   }
 
   function enter(id: string): void {

@@ -295,6 +295,9 @@
 
         <!-- 天道挑战书:玩家定规则,天道定难度与赏格 -->
         <section>
+          <!-- 天界秘境:真仙起,道源代价,与远征/试炼并列的一阶一次性内容 -->
+          <SecretRealmCard gate="celestial" />
+
           <SectionTitle title="天道挑战书" hint="你定规则,天道定赏" />
           <div class="card-ink mt-2 px-4 py-3">
             <p class="text-[11px] text-ink-faint">选界 · 叠变数(至多三条)· 立契 · 命名。赏格由天道实测难度定价,无从作弊。</p>
@@ -757,6 +760,7 @@
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import GauntletPanel from '@/components/celestial/GauntletPanel.vue'
+  import SecretRealmCard from '@/components/adventure/SecretRealmCard.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import {
     daoSourceDialog,

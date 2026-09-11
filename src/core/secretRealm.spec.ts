@@ -19,6 +19,7 @@ import { gn } from '@/utils/gnum'
 import { SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
+import { useEndgameStore } from '@/stores/endgame'
 import {
   SECRET_LAYERS,
   SECRET_MAX_LOSSES,
@@ -26,7 +27,8 @@ import {
   availableRealms,
   currentRealm,
   enterSecretRealm,
-  entryStoneCost,
+  entryCostOf,
+  entryCostText,
   fightSecretLayer,
   realmUnlock,
   secretFightRules,
@@ -61,7 +63,7 @@ describe('秘境 · 进得去', () => {
     expect(enterSecretRealm(def.id).ok).toBe(false)
     expect(currentRealm()).toBeNull()
 
-    resources.addStone(entryStoneCost(def, 3))
+    resources.addStone((entryCostOf(def, 3) as { kind: 'stone'; stone: ReturnType<typeof gn> }).stone)
     const before = resources.spiritStone.m
     expect(enterSecretRealm(def.id).ok).toBe(true)
     expect(currentRealm()?.realmId).toBe(def.id)
@@ -80,7 +82,7 @@ describe('秘境 · 进得去', () => {
   it('入口代价按地界层级折算 —— 高境界不是只贵一点', () => {
     const def = SECRET_REALMS[0]!
     expect(tierOfMajor(3)).toBeGreaterThan(0)
-    expect(entryStoneCost(def, 9).m).toBeGreaterThan(entryStoneCost(def, 3).m)
+    expect((entryCostOf(def, 9) as { stone: { m: number } }).stone.m).toBeGreaterThan((entryCostOf(def, 3) as { stone: { m: number } }).stone.m)
   })
 })
 
@@ -226,5 +228,43 @@ describe('秘境 · 推得动、出得来', () => {
     expect(corpus).toContain('enterSecretRealm(')
     expect(corpus).toContain('fightSecretLayer(')
     expect(corpus).toContain('abandonRealm(')
+  })
+})
+
+describe('秘境 · 两阶(凡境灵石 / 天界道源)', () => {
+  it('凡境册真仙前就有,天界册要真仙(≥9)', () => {
+    const player = usePlayerStore()
+    player.major = 3
+    expect(realmUnlock('mortal')).toBe(true)
+    expect(realmUnlock('celestial')).toBe(false)
+    expect(availableRealms('celestial')).toEqual([])
+    player.major = 9
+    expect(realmUnlock('celestial')).toBe(true)
+    expect(availableRealms('celestial').length).toBeGreaterThanOrEqual(2)
+    // 两册互不串门
+    expect(availableRealms('mortal').every(r => r.gate === 'mortal')).toBe(true)
+    expect(availableRealms('celestial').every(r => r.gate === 'celestial')).toBe(true)
+  })
+
+  it('天界秘境付的是道源:够则扣,不够则拒绝', () => {
+    const player = usePlayerStore()
+    const endgame = useEndgameStore()
+    player.major = 9
+    const def = availableRealms('celestial')[0]!
+    expect(enterSecretRealm(def.id).ok).toBe(false)
+    expect(currentRealm()).toBeNull()
+
+    endgame.addDaoSource(100)
+    const before = endgame.daoSource
+    expect(enterSecretRealm(def.id).ok).toBe(true)
+    const cost = entryCostOf(def, 9) as { kind: 'daoSource'; daoSource: number }
+    expect(endgame.daoSource).toBe(before - cost.daoSource)
+  })
+
+  it('代价文案与货币一致(界面上不手写)', () => {
+    const mortal = SECRET_REALMS.find(r => r.gate === 'mortal')!
+    const celestial = SECRET_REALMS.find(r => r.gate === 'celestial')!
+    expect(entryCostText(mortal, 9)).toContain('灵石')
+    expect(entryCostText(celestial, 9)).toContain('道源')
   })
 })

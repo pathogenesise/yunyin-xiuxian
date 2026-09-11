@@ -64,9 +64,14 @@ describe('联动审计 · ③秘境区别于特殊世界', () => {
     for (const s of SECRET_REALMS) {
       // Phase 34.9:原稿写的是「元婴门槛 + 道源代价」——道源真仙才有,元婴付不出,
       // 等于进不去。现按既定的 minMajor 取灵石代价(见 data/secretRealms 的 ⚠ 注)
-      expect(s.entryStone).toBeGreaterThan(0)
-      expect(s.entryStone).toBeLessThan(100)
-      expect(s.minMajor).toBeGreaterThanOrEqual(3)
+      // Phase 34.10:产品口径「都做」→ 分两阶:凡境(minMajor 3,灵石)与天界(minMajor 9,道源)
+      if (s.gate === 'mortal') {
+        expect('stone' in s.cost).toBe(true)
+        expect(s.minMajor).toBeGreaterThanOrEqual(3)
+      } else {
+        expect('daoSource' in s.cost).toBe(true)
+        expect(s.minMajor).toBeGreaterThanOrEqual(9)
+      }
     }
     expect(SECRET_REALMS.length).toBeGreaterThanOrEqual(3)
   })
