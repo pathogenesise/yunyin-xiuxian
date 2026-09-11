@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 86,
+  "round": 87,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:45:44+00:00",
+  "updated_at": "2026-09-11T19:49:29+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -4241,9 +4241,46 @@
       "version": 1,
       "created_at": "2026-09-11T19:45:44+00:00",
       "updated_at": "2026-09-11T19:45:44+00:00",
-      "touched_round": 85,
+      "touched_round": 86,
       "confidence": 0.85,
       "summary": "『数值体检』要比『有没有增长』更细一层:凡有折扣/倍率/封顶的产线,都应断言其**比率**(增益 ÷ 期望),因为高界量级下 clamp 与精度丢失只体现在比率上"
+    },
+    "CHG-110": {
+      "id": "CHG-110",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:49:25+00:00",
+      "updated_at": "2026-09-11T19:49:25+00:00",
+      "touched_round": 86,
+      "commit": "c37fac0",
+      "summary": "离线折扣覆盖率补到洞府/藏经阁:比进度指纹(frac/studyFrac)而非资源总额(总额含成就奖励干扰)"
+    },
+    "EV-066": {
+      "id": "EV-066",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:49:25+00:00",
+      "updated_at": "2026-09-11T19:49:25+00:00",
+      "touched_round": 86,
+      "source": "offlineCap.spec 新用例:同一状态两遍(离线 vs 直接传 effSec),洞府 frac ×3 与藏经阁 studyFrac 一致且非零;故障注入把 produce(effSec) 改 capSec → 报 0.66 vs 0.994(commit c37fac0)",
+      "summary": "折扣口径在三处产线(修为/洞府/藏经阁)都被比率为据地钉住;比总额会被成就奖励污染,故改用进度指纹",
+      "confidence": 0.9
+    },
+    "TASK-053": {
+      "id": "TASK-053",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:49:29+00:00",
+      "updated_at": "2026-09-11T19:49:29+00:00",
+      "touched_round": 86,
+      "category": "test-quality",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2,
+      "summary": "离线折扣覆盖率:修为/洞府/藏经阁三处已用比率断言钉住(比进度指纹,不比总额)"
     }
   },
   "edges": [
@@ -5903,6 +5940,18 @@
       "to": "HYP-021",
       "type": "validates",
       "created_at": "2026-09-11T19:45:44+00:00"
+    },
+    {
+      "from": "CHG-110",
+      "to": "TASK-053",
+      "type": "implements",
+      "created_at": "2026-09-11T19:49:29+00:00"
+    },
+    {
+      "from": "EV-066",
+      "to": "HYP-021",
+      "type": "validates",
+      "created_at": "2026-09-11T19:49:29+00:00"
     }
   ]
 }
