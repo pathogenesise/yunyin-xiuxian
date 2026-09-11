@@ -13,7 +13,11 @@ export const TITLES: TitleDef[] = [
   { id: 'ti_baolian', name: '百炼成钢', desc: '强化装备百次', mods: { defensePct: 0.06 } },
   { id: 'ti_danwang', name: '丹道圣手', desc: '炼丹百炉不辍', mods: { alchemyYield: 0.1 } },
   { id: 'ti_zhuanshi', name: '轮回行者', desc: '历经一次轮回', mods: { cultivationSpeed: 0.05, expGain: 0.05 } },
-  { id: 'ti_changsheng', name: '万古长生', desc: '寿元逾万载', mods: { lifespanPct: 0.1 } }
+  { id: 'ti_changsheng', name: '万古长生', desc: '寿元逾万载', mods: { lifespanPct: 0.1 } },
+  // ---- 界域里程碑称号(扩界)----
+  { id: 'ti_zhenxian', name: '得证仙位', desc: '飞升仙界,证得真仙', mods: { cultivationSpeed: 0.06, qiRegen: 0.06 } },
+  { id: 'ti_shenren', name: '神域之主', desc: '破界入神,位列神人', mods: { attackPct: 0.06, maxHpPct: 0.05 } },
+  { id: 'ti_daozu', name: '万道之祖', desc: '证道混沌道祖,与混沌同寿', mods: { cultivationSpeed: 0.08, breakthroughRate: 0.015 } }
 ]
 
 const BY_ID = new Map(TITLES.map(x => [x.id, x]))
