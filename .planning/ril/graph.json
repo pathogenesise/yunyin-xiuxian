@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 59,
+  "round": 60,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:27:57+00:00",
+  "updated_at": "2026-09-11T16:33:01+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2866,11 +2866,11 @@
     "HYP-006": {
       "id": "HYP-006",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T16:26:24+00:00",
-      "updated_at": "2026-09-11T16:26:24+00:00",
-      "touched_round": 58,
+      "updated_at": "2026-09-11T16:33:01+00:00",
+      "touched_round": 59,
       "confidence": 0.95,
       "summary": "奇遇连锁是声明式空壳:earlyGame.ts 的 CHAIN_EVENT_IDS 列了 5 条链(自注 2~3 阶段),但 events 数据里这 5 个 id 零命中;player.eventChains 只有 advanceEventChain 写、无任何读点(除死导出);player.rebirth.spec 仍断言转世继承它"
     },
@@ -2889,11 +2889,11 @@
     "ISS-048": {
       "id": "ISS-048",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T16:26:27+00:00",
-      "updated_at": "2026-09-11T16:26:27+00:00",
-      "touched_round": 58,
+      "updated_at": "2026-09-11T16:32:58+00:00",
+      "touched_round": 59,
       "summary": "奇遇连锁宣而不实:旧版注释承诺「青石上的老者 3 阶段」等多段奇遇,玩家一次也遇不到;转世继承清单把 eventChains 列为「世界记得你的选择」,继承的却是一份永远为空的状态",
       "severity": 0.5,
       "confidence": 0.95
@@ -2901,11 +2901,11 @@
     "TASK-041": {
       "id": "TASK-041",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T16:26:29+00:00",
-      "updated_at": "2026-09-11T16:26:29+00:00",
-      "touched_round": 58,
+      "updated_at": "2026-09-11T16:32:58+00:00",
+      "touched_round": 59,
       "category": "core-feature",
       "severity": 0.5,
       "confidence": 0.95,
@@ -2960,6 +2960,17 @@
         "只在评审规范里写一条约定(没有能把人拦下来的机制)",
         "一律删除所有无人引用的导出(会误杀审计骨架与未实装机制的种子)"
       ]
+    },
+    "CHG-077": {
+      "id": "CHG-077",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:32:56+00:00",
+      "updated_at": "2026-09-11T16:32:56+00:00",
+      "touched_round": 59,
+      "commit": "a7d090c",
+      "summary": "奇遇连锁实装:5 条缘 12 程 + 池外契约 + 奇缘录"
     }
   },
   "edges": [
@@ -4127,6 +4138,18 @@
       "to": "TASK-041",
       "type": "governs",
       "created_at": "2026-09-11T16:27:57+00:00"
+    },
+    {
+      "from": "CHG-077",
+      "to": "TASK-041",
+      "type": "implements",
+      "created_at": "2026-09-11T16:32:58+00:00"
+    },
+    {
+      "from": "CHG-077",
+      "to": "ISS-048",
+      "type": "resolves",
+      "created_at": "2026-09-11T16:32:58+00:00"
     }
   ]
 }
