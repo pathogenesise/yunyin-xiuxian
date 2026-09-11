@@ -206,11 +206,6 @@ export function regionRecallFor(regionId: string): RegionRecall {
   })
 }
 
-/** 今日是否已在某区域带罪血战(供 AdventureView 显示「宿敌」标注) */
-export function nemesisFor(nemeses: NemesisRecord[], enemyId: string): NemesisRecord | undefined {
-  return nemeses.find(n => n.enemyId === enemyId)
-}
-
 // ============ 宿敌残魂(Phase 31.4)============
 
 /** 残魂再现概率(低,3%) */

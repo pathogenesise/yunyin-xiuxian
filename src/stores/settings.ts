@@ -16,10 +16,9 @@ export const useSettingsStore = defineStore(
     const battleSpeed = ref<1 | 2 | 4>(1)
     /** 一键分解勾选的品质 rank 列表(持久化,免得每次重勾) */
     const decomposeRanks = ref<number[]>([0, 1])
-    /** 智能收纳(Phase 26):行囊自动去留规则 */
-    const smartKeep = ref({
+    /** 智能收纳(Phase 26):行囊自动去留规则(字段口径见 SmartKeepConfig,不另抄一份) */
+    const smartKeep = ref<import('@/core/smartKeep').SmartKeepConfig>({
       enabled: false,
-      /** 达到此品质 rank 一律保留 */
       minQuality: 3,
       keepCoreAffix: true,
       keepComboPiece: true

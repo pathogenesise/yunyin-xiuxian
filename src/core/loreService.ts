@@ -195,10 +195,6 @@ export function studyBlueprint(id: string, amount: number): number {
   return useLoreStore().addBlueprintMastery(id, amount)
 }
 
-export function gainSkill(id: SkillId, exp: number): void {
-  useLoreStore().addSkillExp(id, exp)
-}
-
 /**
  * 藏经阁此刻翻得到的方子 —— 按阶位从低到高,先易后难。
  *

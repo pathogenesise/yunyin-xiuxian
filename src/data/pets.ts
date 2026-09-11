@@ -3,8 +3,6 @@
  * 让玩家选伙伴而非只看数值 */
 import type { PetDef } from '@/types'
 
-export type PetPersonality = 'greedy' | 'steady' | 'fierce' | 'cautious'
-
 export const PETS: PetDef[] = [
   {
     id: 'pet_qingyu',

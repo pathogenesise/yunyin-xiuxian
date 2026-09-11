@@ -58,9 +58,6 @@ export interface CaveEvent {
   expiresAt: number
 }
 
-/** 灵兽陪行功能类型 */
-export type BeastCompanionType = 'event' | 'safety' | 'loot'
-
 /** 突破准备选项 */
 export interface BreakthroughPrepOption {
   id: string
@@ -504,9 +501,7 @@ export interface EventDef {
 }
 
 // ============ 资源 ============
-export type BigResourceId = 'spiritStone'
 export type SmallResourceId = 'wudao' | 'herb' | 'ore' | 'page' | 'dust'
-export type ResourceId = BigResourceId | SmallResourceId
 
 // ============ 洞府建筑 ============
 export type BuildingId = 'mansion' | 'array' | 'alchemy' | 'forge' | 'field' | 'library' | 'beast'
@@ -544,6 +539,9 @@ export interface TitleDef {
   mods: StatMods
 }
 
+/** 灵兽性格 —— 定义在此处(petPersonality 行为表与 PETS 数据同源,不再各写一份联合类型) */
+export type PetPersonality = 'greedy' | 'steady' | 'fierce' | 'cautious'
+
 export interface PetDef {
   id: string
   name: string
@@ -552,7 +550,7 @@ export interface PetDef {
   quality: QualityId
   mods: StatMods
   /** Phase 31.0 S4:灵兽性格(贪宝/慢稳/好战/谨慎),影响探索行为倾向 */
-  personality: 'greedy' | 'steady' | 'fierce' | 'cautious'
+  personality: PetPersonality
 }
 
 // ============ 成就 / 任务 ============

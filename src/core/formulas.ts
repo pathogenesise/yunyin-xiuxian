@@ -62,9 +62,6 @@ export function tierMajor(tier: number): number {
   return TIER_MAJOR[Math.max(0, Math.min(TIER_MAJOR.length - 1, tier - 1))]!
 }
 
-/** 区域层级总数 */
-export const REGION_TIER_MAX = TIER_MAJOR.length
-
 /**
  * 大境界 → 成长指数(把 major 拆成「人间界内」与「跨界之后」两段)。
  * 人间界沿用旧曲线,跨界后用平坦的 LATE_* 曲线(见 constants 注释)。

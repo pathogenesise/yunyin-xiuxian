@@ -203,18 +203,6 @@ export function consumeBreakthroughPrep(): number {
   return s.bonus
 }
 
-/** 检查是否在突破准备中 */
-export function isPreparingBreakthrough(): boolean {
-  return breakthroughPrepEndTime !== null && Date.now() < breakthroughPrepEndTime
-}
-
-/** 获取突破准备剩余时间(秒) */
-export function getBreakthroughPrepRemaining(): number {
-  if (!breakthroughPrepEndTime) return 0
-  const remaining = Math.max(0, breakthroughPrepEndTime - Date.now())
-  return Math.ceil(remaining / 1000)
-}
-
 /** 记录连胜 */
 export function recordWin(): void {
   const player = usePlayerStore()

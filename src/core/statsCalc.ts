@@ -3,7 +3,7 @@
  * 纯函数:输入快照,输出最终属性
  */
 import type { AnyStatKey, FinalStats, GNum, StatMods } from '@/types'
-import { add, gnZero, mulN } from '@/utils/gnum'
+import { add, mulN } from '@/utils/gnum'
 import {
   DAO_FRUIT_COMBAT_BONUS,
   DAO_FRUIT_CULT_BONUS,
@@ -99,10 +99,6 @@ export function modDepth(mods: StatMods): number {
 
 export function modOf(mods: StatMods, key: AnyStatKey): number {
   return mods[key] ?? 0
-}
-
-export function emptyFlats(): StatsInput['equipFlats'] {
-  return { attack: gnZero(), defense: gnZero(), maxHp: gnZero() }
 }
 
 /** 有效道果:超过一定数量后收益递减,避免多周目变成无限加速器 */

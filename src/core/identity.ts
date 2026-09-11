@@ -152,10 +152,6 @@ export const RECORD_DEFS: { id: string; name: string; unit: string; better: 'min
   { id: 'best_custom', name: '挑战书最高赏格', unit: '道源', better: 'max' }
 ]
 
-export function recordDef(id: string): (typeof RECORD_DEFS)[number] | undefined {
-  return RECORD_DEFS.find(r => r.id === id)
-}
-
 /** 破界纪录打点(远征/重写共用):最快、最险、最厚 */
 export function trackClearRecords(worldName: string, totalRounds: number, pactId: string | null, reward: number): void {
   const endgame = useEndgameStore()

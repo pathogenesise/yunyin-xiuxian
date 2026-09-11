@@ -151,7 +151,13 @@ export const CAVE_EVENT_POOL = {
   ]
 }
 
-/** 奇遇连锁事件ID列表(标记哪些事件是连锁的) */
+/**
+ * 奇遇连锁事件ID列表(标记哪些事件是连锁的)。
+ *
+ * 注意:这五条链**尚未实装** —— events 数据里还没有这五个 id 的条目,
+ * eventChains 也只写不读。写在这里的是待建清单,不是已实现的内容;
+ * 实装/摘除的取舍见 RIL TASK-041,名单与 deadExportAudit 的豁免同进同出。
+ */
 export const CHAIN_EVENT_IDS = [
   'old_man_stone', // 青石上的老者(3阶段)
   'sword_in_lake', // 湖中剑影(2阶段)

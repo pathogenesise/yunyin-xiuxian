@@ -76,7 +76,7 @@ export const usePlayerStore = defineStore(
     const bond = ref<import('@/core/daoluService').BondState | null>(null)
 
     // Phase 28 前期玩法状态
-    const eventChains = ref<Record<string, number>>({}) // 奇遇连锁进度
+    const eventChains = ref<import('@/types').EventChainState>({}) // 奇遇连锁进度(链路实装见 RIL)
     const winStreak = ref(0) // 当前连胜数
     const lastCaveEventDay = ref(0) // 上次洞府巡游日期
 
