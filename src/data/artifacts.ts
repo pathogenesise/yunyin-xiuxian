@@ -277,6 +277,86 @@ export const ARTIFACTS: ArtifactDef[] = [
     4,
     { type: 'heal', pctMaxHp: 0.4 },
     'star'
+  ),
+
+  // ============ 仙界及以上法宝(tier 21+)============
+  f(
+    'af_xianding',
+    '仙鼎',
+    'immortal',
+    23,
+    '一鼎仙火不熄,药气缭绕可愈百伤',
+    { maxHpPct: 0.06, qiRegen: 0.06 },
+    '仙火回春',
+    '每 4 回合仙火护主,回复 15% 生命',
+    4,
+    { type: 'heal', pctMaxHp: 0.15 },
+    'flask'
+  ),
+  f(
+    'af_xianqin',
+    '仙琴',
+    'immortal',
+    23,
+    '琴音出则万籁寂,敌势为之一挫',
+    { attackPct: 0.06, luck: 0.04 },
+    '摄心',
+    '每 4 回合琴音摄神,敌人伤害降低 15%',
+    4,
+    { type: 'weaken', pct: 0.15 },
+    'scroll'
+  ),
+  f(
+    'af_shenzhong',
+    '神钟',
+    'divine',
+    28,
+    '钟声一响,神域同震',
+    { defensePct: 0.07, damageReduction: 0.04 },
+    '神钟护体',
+    '每 4 回合神钟自成壁垒,获得 14% 生命护盾',
+    4,
+    { type: 'shield', pctMaxHp: 0.14 },
+    'bell'
+  ),
+  f(
+    'af_shenbian',
+    '神鞭',
+    'divine',
+    28,
+    '一鞭抽落星辰,余响三日不绝',
+    { attackPct: 0.07, speed: 0.05 },
+    '裂星',
+    '每 3 回合挥鞭劈落,造成 240% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.4 },
+    'wand'
+  ),
+  f(
+    'af_hundunfu',
+    '混沌开天斧',
+    'divine',
+    31,
+    '一切尚未开始时,它便在此',
+    { attackPct: 0.08, armorPen: 0.06 },
+    '开天',
+    '每 3 回合开天一击,造成 280% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.8 },
+    'axe'
+  ),
+  f(
+    'af_benyuanzhu',
+    '本源珠',
+    'divine',
+    31,
+    '珠中一界,自成生灭',
+    { cultivationSpeed: 0.08, maxHpPct: 0.06 },
+    '本源滋养',
+    '每 4 回合本源涌动,回复 18% 生命',
+    4,
+    { type: 'heal', pctMaxHp: 0.18 },
+    'gem'
   )
 ]
 
