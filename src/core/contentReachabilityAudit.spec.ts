@@ -32,6 +32,8 @@ import { ENEMIES } from '@/data/enemies'
 import { REGIONS } from '@/data/regions'
 import { GONGFA } from '@/data/gongfa'
 import { EVENTS } from '@/data/events'
+import { ARTIFACTS } from '@/data/artifacts'
+import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
 import { REALMS, MAX_MAJOR } from '@/data/realms'
 import { DAO_NAMES, SKILL_IDS, recipeCraft, skillDef, type SkillDef, type SkillId } from '@/data/crafting'
 import { ELEMENT_AFFINITY } from '@/data/linggenAffinity'
@@ -168,6 +170,27 @@ describe('内容可达性 · 事件点名发放的灵兽', () => {
     // 扩界新增的四只神兽都必须有可重复/必得的来源
     for (const id of ['pet_yinglong', 'pet_qilin', 'pet_kunpeng', 'pet_taotie']) {
       expect(grantable.has(id), `${id} 没有任何可重复或必得的发放路径`).toBe(true)
+    }
+  })
+})
+
+describe('内容可达性 · 法宝与装备模板', () => {
+  /** 掉落池按「minTier ≤ 当前层级」过滤,故 minTier 一旦高于最高区域层级,该件永不掉落 */
+  const MAX_REGION_TIER = Math.max(...REGIONS.map(r => r.tier))
+
+  it('每一件法宝都有可达的掉落层级', () => {
+    for (const a of ARTIFACTS) {
+      expect(a.minTier, `法宝「${a.name}」minTier=${a.minTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
+        MAX_REGION_TIER
+      )
+    }
+  })
+
+  it('每一件装备模板都有可达的掉落层级', () => {
+    for (const t of EQUIPMENT_TEMPLATES) {
+      expect(t.minTier, `装备「${t.name}」minTier=${t.minTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
+        MAX_REGION_TIER
+      )
     }
   })
 })
