@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 61,
+  "round": 62,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:41:38+00:00",
+  "updated_at": "2026-09-11T16:46:04+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2696,12 +2696,12 @@
       "id": "TASK-037",
       "type": "task",
       "status": "active",
-      "version": 2,
+      "version": 3,
       "created_at": "2026-09-11T15:46:16+00:00",
-      "updated_at": "2026-09-11T16:41:35+00:00",
-      "touched_round": 60,
+      "updated_at": "2026-09-11T16:46:04+00:00",
+      "touched_round": 61,
       "category": "core-feature",
-      "summary": "界域志续写(周易已实装):余 紫微斗数/奇门遁甲/星象分野 三门,各自需典籍条目 + 用得上的一层玩法(依 DEC-021:要么真进属性/规则/事件,要么继续如实标未实装)",
+      "summary": "界域志续写(周易+紫微已实装):余 奇门遁甲(九宫八门→布阵/探索)与 星象分野(二十八宿→天时/地域)两门,依 DEC-021 需真进属性/规则/事件",
       "severity": 0.5,
       "confidence": 0.6,
       "effort": 8
@@ -3054,6 +3054,66 @@
       "summary": "全量并行跑测试时,savePersistence『读己所写:尚未落盘也能立刻读回最新值』出现过一次红(未捕获断言原文);此后单跑与连续 4 次全量均绿,未能复现 —— 疑似并行负载下的偶发,不可当已修",
       "severity": 0.2,
       "confidence": 0.3
+    },
+    "CHG-080": {
+      "id": "CHG-080",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:45:51+00:00",
+      "updated_at": "2026-09-11T16:45:51+00:00",
+      "touched_round": 61,
+      "commit": "23c7abd",
+      "summary": "紫微命格:十二宫十四星,按灵根与转世安星并并入属性;界域志紫微门"
+    },
+    "EV-041": {
+      "id": "EV-041",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:45:53+00:00",
+      "updated_at": "2026-09-11T16:45:53+00:00",
+      "touched_round": 61,
+      "source": "src/core/fate.spec.ts(11 例:十四星不重不漏/一世一算/转世重排/命格并入 finalStats)与 commit 23c7abd;同时 weather.spec/loot.petLuck.spec 的绝对值断言改为来源贡献断言",
+      "summary": "命格为常驻底层时会扰动一切绝对数值断言——已按来源拆分,并证明命格真进属性",
+      "confidence": 0.9
+    },
+    "HYP-008": {
+      "id": "HYP-008",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:45:58+00:00",
+      "updated_at": "2026-09-11T16:45:58+00:00",
+      "touched_round": 61,
+      "confidence": 0.85,
+      "summary": "常驻底色(命格这类一世不变的加成)可以并入最终属性而不破坏既有审计:只要涉及最终属性的断言按来源拆分(钉某源贡献了多少),不钉绝对总数"
+    },
+    "COMP-013": {
+      "id": "COMP-013",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:45:58+00:00",
+      "updated_at": "2026-09-11T16:45:58+00:00",
+      "touched_round": 61,
+      "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
+    },
+    "DEC-022": {
+      "id": "DEC-022",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:46:02+00:00",
+      "updated_at": "2026-09-11T16:46:02+00:00",
+      "touched_round": 61,
+      "summary": "最终属性的断言按来源拆分:凡校验某个 mod 源(天时/灵兽性格/命格…)是否接上,一律断言「该源贡献了多少」,不断言绝对总数 —— 总数会被后续常驻源污染",
+      "rationale": "本轮加命格底色时,weather.spec 与 loot.petLuck.spec 共 7 例因断言绝对数值而红;按来源拆分后契约更强(还能顺带发现重复计入),且后续再加常驻源不会再假红",
+      "alternatives_rejected": [
+        "把命格做成 opt-in(承命/逆命)以避开断言:多一层状态与界面,为一门底色不值得)",
+        "不加命格属性只留文本:违 DEC-021(术数门必须用得上)",
+        "每次加常驻源就改所有相关断言为新的绝对数:契约越改越脆"
+      ]
     }
   },
   "edges": [
@@ -4269,6 +4329,24 @@
       "to": "COMP-001",
       "type": "located_in",
       "created_at": "2026-09-11T16:41:35+00:00"
+    },
+    {
+      "from": "CHG-080",
+      "to": "TASK-037",
+      "type": "implements",
+      "created_at": "2026-09-11T16:45:53+00:00"
+    },
+    {
+      "from": "EV-041",
+      "to": "HYP-008",
+      "type": "validates",
+      "created_at": "2026-09-11T16:45:58+00:00"
+    },
+    {
+      "from": "DEC-022",
+      "to": "COMP-013",
+      "type": "governs",
+      "created_at": "2026-09-11T16:46:02+00:00"
     }
   ]
 }
