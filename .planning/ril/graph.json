@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 25,
+  "round": 26,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:03:17+00:00",
+  "updated_at": "2026-09-11T14:10:25+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1966,10 +1966,10 @@
     "TASK-035": {
       "id": "TASK-035",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
-      "updated_at": "2026-09-11T14:03:14+00:00",
+      "updated_at": "2026-09-11T14:10:24+00:00",
       "touched_round": 25,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
@@ -1988,6 +1988,43 @@
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
+    },
+    "CHG-038": {
+      "id": "CHG-038",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:10:24+00:00",
+      "updated_at": "2026-09-11T14:10:24+00:00",
+      "touched_round": 25,
+      "summary": "界域差异化第二轮:天时按界域分池(仙界/神界/混沌海各3种新天象,人间界不变)、机缘+6(仅界域标签出现,配遗产回声)、飞升/破界三节点叙事与跨世节点、区域解锁链可达性审计",
+      "commit": "a640249"
+    },
+    "EV-018": {
+      "id": "EV-018",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:10:24+00:00",
+      "updated_at": "2026-09-11T14:10:24+00:00",
+      "touched_round": 25,
+      "source": "vitest run: 110 files / 1046 tests passed; weather.spec 新增界域天象 4 例; fortuneWorldGate 4 例; contentReachability 解锁链 2 例",
+      "summary": "界域天象/机缘/解锁链三类审计全绿,全量测试无回归",
+      "confidence": 1.0
+    },
+    "TASK-036": {
+      "id": "TASK-036",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:10:24+00:00",
+      "updated_at": "2026-09-11T14:10:24+00:00",
+      "touched_round": 25,
+      "category": "core-feature",
+      "summary": "为 12 个新境界补第二区域:目前每新境仅 1 区位(区域 32 处),可加密至每境 2 处并各配独有机制/事件,进一步降低同质",
+      "severity": 0.5,
+      "confidence": 0.7,
+      "effort": 8
     }
   },
   "edges": [
@@ -2759,6 +2796,24 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T14:03:17+00:00"
+    },
+    {
+      "from": "CHG-038",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:10:24+00:00"
+    },
+    {
+      "from": "EV-018",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:10:24+00:00"
+    },
+    {
+      "from": "TASK-036",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T14:10:24+00:00"
     }
   ]
 }
