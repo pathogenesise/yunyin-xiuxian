@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 54,
+  "round": 55,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:46:16+00:00",
+  "updated_at": "2026-09-11T15:56:04+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 22,
+      "touched_round": 54,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 54,
+      "touched_round": 55,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -2705,6 +2705,55 @@
       "severity": 0.5,
       "confidence": 0.6,
       "effort": 8
+    },
+    "DEC-018": {
+      "id": "DEC-018",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:55:57+00:00",
+      "updated_at": "2026-09-11T15:55:57+00:00",
+      "touched_round": 54,
+      "summary": "镇压资格取得即永久(DEC-018):资格一次性取得、随世界记忆跨世保留;收取收益只是开关(与资格分离)。历练一次只一处(既有单会话),镇压收益可多处并存(既有列表)。首次达成自动转收益,此后由玩家自由切换,不再自动接管",
+      "rationale": "玩家诉求:镇压过的不必再镇压,可自由选择历练或收益;历练只能一个,收益可同时若干。原实现把「资格」与「取收益」混在一起,停取后再战会被自动接管,玩家无法选择继续历练",
+      "alternatives_rejected": "1)保留自动接管,仅给 UI 加开关:取胜即被接管,开关形同虚设;2)资格随停取失效:等于又要重新打满二十场,与诉求相悖"
+    },
+    "CHG-069": {
+      "id": "CHG-069",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:55:57+00:00",
+      "updated_at": "2026-09-11T15:55:57+00:00",
+      "touched_round": 55,
+      "summary": "镇压资格与收益开关分离:player 增 suppressQualified + markSuppressQualified + 存档修复;exploration 首次自动接管、此后不接管;AdventureView 增「转为镇压收益/停取收益」与收益处数汇总;suppress/exploration 共 5 例新测试",
+      "commit": "cbfbb96"
+    },
+    "EV-036": {
+      "id": "EV-036",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:55:57+00:00",
+      "updated_at": "2026-09-11T15:55:57+00:00",
+      "touched_round": 55,
+      "source": "故障注入:去掉 exploration 里的资格判定 → 「已取得资格后不该再被自动接管」红;恢复后 118 files / 1111 tests 绿",
+      "summary": "「首次自动、此后自由」有可打红的行为守卫",
+      "confidence": 1.0
+    },
+    "TASK-038": {
+      "id": "TASK-038",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:55:57+00:00",
+      "updated_at": "2026-09-11T15:55:57+00:00",
+      "touched_round": 55,
+      "category": "core-feature",
+      "summary": "死导出清扫(余 15 项):ARCHETYPE_BY_ECOLOGY/RESPONSE_NAMES/RULESET_CHANGELOG/choiceAnalysis(analyzeChoices+valueGap)/clearMortalWorld/emptyFlats/isSoftCapped/gainSkill/getBreakthroughPrepRemaining/getEventChainStage/isChainEvent/isPreparingBreakthrough/nemesisFor/recordDef —— 逐个判断「接线」还是「删除」",
+      "severity": 0.3,
+      "confidence": 0.8,
+      "effort": 4
     }
   },
   "edges": [
@@ -3776,6 +3825,24 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T15:46:16+00:00"
+    },
+    {
+      "from": "DEC-018",
+      "to": "COMP-006",
+      "type": "governs",
+      "created_at": "2026-09-11T15:55:57+00:00"
+    },
+    {
+      "from": "CHG-069",
+      "to": "TASK-038",
+      "type": "implements",
+      "created_at": "2026-09-11T15:56:03+00:00"
+    },
+    {
+      "from": "EV-036",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T15:56:04+00:00"
     }
   ]
 }
