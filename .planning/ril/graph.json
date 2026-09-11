@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 70,
+  "round": 71,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:24:38+00:00",
+  "updated_at": "2026-09-11T17:27:40+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3518,9 +3518,46 @@
       "version": 1,
       "created_at": "2026-09-11T17:24:38+00:00",
       "updated_at": "2026-09-11T17:24:38+00:00",
-      "touched_round": 69,
+      "touched_round": 70,
       "confidence": 0.85,
       "summary": "坏档韧性可以靠一条通用红线守住:对每个持久化分片的每个字段灌 undefined,再跑 sanitize 并求值所有计算属性 —— 只跑 sanitize 不够,白屏发生在渲染期读 computed"
+    },
+    "CHG-090": {
+      "id": "CHG-090",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:27:34+00:00",
+      "updated_at": "2026-09-11T17:27:34+00:00",
+      "touched_round": 70,
+      "commit": "b664689",
+      "summary": "saveShape 下沉元素/值校验(asArray 默认滤空、asRecordOf 滤烂值);补齐 cultivation/inventory/endgame 三处"
+    },
+    "EV-050": {
+      "id": "EV-050",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:27:34+00:00",
+      "updated_at": "2026-09-11T17:27:34+00:00",
+      "touched_round": 70,
+      "source": "storeResilience.spec 恶意值一组(12 分片 × 每字段 × 12 种恶意值);故障注入:trialRecords 换回 asRecord 立刻报 Cannot read properties of null (reading 'clears')(commit b664689)",
+      "summary": "『形状对、内容是垃圾』这一类也能被红线批量拦住,不再逐个白屏才发现",
+      "confidence": 0.85
+    },
+    "TASK-046": {
+      "id": "TASK-046",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:27:37+00:00",
+      "updated_at": "2026-09-11T17:27:39+00:00",
+      "touched_round": 70,
+      "category": "stability",
+      "severity": 0.5,
+      "confidence": 0.85,
+      "effort": 2,
+      "summary": "坏档韧性第二轮:数组/记录内垃圾元素的批量防护(asArray 滤空 + asRecordOf 滤烂值)"
     }
   },
   "edges": [
@@ -4892,6 +4929,18 @@
       "to": "HYP-014",
       "type": "validates",
       "created_at": "2026-09-11T17:24:38+00:00"
+    },
+    {
+      "from": "CHG-090",
+      "to": "TASK-046",
+      "type": "implements",
+      "created_at": "2026-09-11T17:27:39+00:00"
+    },
+    {
+      "from": "EV-050",
+      "to": "HYP-014",
+      "type": "validates",
+      "created_at": "2026-09-11T17:27:40+00:00"
     }
   ]
 }
