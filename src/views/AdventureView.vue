@@ -19,6 +19,8 @@
         <span class="shrink-0 text-[11px] text-azure">观 象 →</span>
       </RouterLink>
 
+      <SecretRealmCard />
+
       <SectionTitle title="历练" hint="行万里路,炼一颗心" />
       <p class="text-[10px] leading-relaxed text-violet-ink">
         今日星象:{{ mansionLine }} —— 利
@@ -188,6 +190,7 @@
   import { REGIONS, regionDef, DANGER_NAMES } from '@/data/regions'
   import { worldOf, type WorldDef } from '@/data/realms'
   import SectionTitle from '@/components/common/SectionTitle.vue'
+  import SecretRealmCard from '@/components/adventure/SecretRealmCard.vue'
   import { todayMansion, favoredWorld, todayMansionLine } from '@/core/astronomy'
   import { worldDef } from '@/data/realms'
   import { canEnterRegion, entryBlockReason, worldView } from '@/core/mortalWorldService'

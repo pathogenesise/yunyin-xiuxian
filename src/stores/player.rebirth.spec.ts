@@ -15,7 +15,17 @@ import type { SecretRealmState } from '@/core/secretRealm'
 function seedPlayer(p: ReturnType<typeof usePlayerStore>): void {
   p.winStreak = 7
   p.lastCaveEventDay = 5
-  p.secretRealm = { realmId: 'sr_kurong', enteredAt: 1, layer: 2, wins: 5, losses: 0, spoils: [], rules: [], finished: false } as SecretRealmState
+  p.secretRealm = {
+    realmId: 'sr_kurong',
+    enteredAt: 1,
+    layer: 2,
+    wins: 5,
+    losses: 0,
+    spoils: [],
+    rules: [],
+    carriedHpPct: 1,
+    finished: false
+  } as SecretRealmState
   p.regionEvent = { regionId: 'qingyun', eventId: 'ev_raiders', endsAt: 9e15 } as never
   // 跨世记忆:全保留
   p.suppressedRegions = ['qingyun']

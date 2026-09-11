@@ -1,44 +1,185 @@
+/* eslint-disable no-console -- 秘境是过程性验收,打印层间推进 */
 /**
- * Phase 31.0 S3:短期秘境 —— 一次性内容容器
+ * 短期秘境验收(Phase 34.9)
+ *
+ * Phase 31 留下了骨架:状态与目录都在,却没有任何入口 —— 玩家进不去,
+ * player.secretRealm 永远是 null,而轮回清单还交代着它的去留(与奇遇连锁同一种病)。
+ *
+ * 本轮把玩法接上,故这里钉四件事:
+ *   一 进得去:门槛、代价、一次性(已在秘境中不许再进);
+ *   二 规则是真的:随机规则与秘境自带规则必须落到既有 CombatRules 上,不是纯文本;
+ *   三 推得动:三层递进,层间按本境规则回血/损血;败两次被逐出;
+ *   四 出得来:通关给宝藏并清空状态;放弃也清空,但已得战利不退。
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { createSecretRealm, currentRealm, abandonRealm, realmUnlock, secretRealmDef, SECRET_REALMS } from './secretRealm'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { gn } from '@/utils/gnum'
+import { SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
 import { usePlayerStore } from '@/stores/player'
+import { useResourcesStore } from '@/stores/resources'
+import {
+  SECRET_LAYERS,
+  SECRET_MAX_LOSSES,
+  abandonRealm,
+  availableRealms,
+  currentRealm,
+  enterSecretRealm,
+  entryStoneCost,
+  fightSecretLayer,
+  realmUnlock,
+  secretFightRules,
+  tierOfMajor
+} from './secretRealm'
 
-describe('短期秘境(secretRealm)', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-  })
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
 
-  it('元婴(≥3)起可探索', () => {
+/** 备好一个够格又有钱的玩家 */
+function ready(major = 3): void {
+  usePlayerStore().major = major
+  useResourcesStore().addStone(gn(1_000_000_000))
+}
+
+describe('秘境 · 进得去', () => {
+  it('元婴(≥3)起有秘境可探,金丹之前没有', () => {
     const player = usePlayerStore()
-    player.$patch({ major: 2 } as never)
+    player.major = 2
     expect(realmUnlock()).toBe(false)
-    player.$patch({ major: 3 } as never)
+    expect(availableRealms()).toEqual([])
+    player.major = 3
     expect(realmUnlock()).toBe(true)
+    expect(availableRealms().length).toBeGreaterThanOrEqual(2)
   })
 
-  it('进入秘境:生成随机规则(1~2 条,不重复),写入 store', () => {
-    const st = createSecretRealm()
-    expect(st.rules.length).toBeGreaterThanOrEqual(1)
-    expect(st.rules.length).toBeLessThanOrEqual(2)
-    expect(new Set(st.rules).size).toBe(st.rules.length)
-    expect(currentRealm()?.realmId).toBe(st.realmId)
-    expect(st.layer).toBe(1)
+  it('进入要付灵石;付不出则拒绝且不落状态', () => {
+    const resources = useResourcesStore()
+    usePlayerStore().major = 3
+    const def = SECRET_REALMS[0]!
+    expect(enterSecretRealm(def.id).ok).toBe(false)
+    expect(currentRealm()).toBeNull()
+
+    resources.addStone(entryStoneCost(def, 3))
+    const before = resources.spiritStone.m
+    expect(enterSecretRealm(def.id).ok).toBe(true)
+    expect(currentRealm()?.realmId).toBe(def.id)
+    expect(resources.spiritStone.m).toBeLessThan(before)
   })
 
-  it('离开秘境:状态清空', () => {
-    createSecretRealm()
+  it('秘境是一次性的:已在其中不许再进;门槛不够的进不去', () => {
+    ready(3)
+    expect(enterSecretRealm('sr_kurong').ok).toBe(true)
+    expect(enterSecretRealm('sr_kurong').ok).toBe(false)
+    abandonRealm()
+    expect(enterSecretRealm('sr_kuye').ok).toBe(false) // 门槛 4
+    expect(enterSecretRealm('nope').ok).toBe(false)
+  })
+
+  it('入口代价按地界层级折算 —— 高境界不是只贵一点', () => {
+    const def = SECRET_REALMS[0]!
+    expect(tierOfMajor(3)).toBeGreaterThan(0)
+    expect(entryStoneCost(def, 9).m).toBeGreaterThan(entryStoneCost(def, 3).m)
+  })
+})
+
+describe('秘境 · 规则是真的', () => {
+  it('规则池里每条都能落到既有的战斗规则上(不是纯文本)', () => {
+    expect(SECRET_RULES.length).toBeGreaterThanOrEqual(5)
+    for (const r of SECRET_RULES) {
+      expect(r.text.length).toBeGreaterThan(1)
+      expect(Object.keys(r.rules).length, `${r.text} 没有任何可生效的规则`).toBeGreaterThan(0)
+    }
+  })
+
+  it('进入时掷 1~2 条随机规则,不重复', () => {
+    for (let i = 0; i < 20; i += 1) {
+      setActivePinia(createPinia())
+      ready(3)
+      enterSecretRealm('sr_kurong')
+      const st = currentRealm()!
+      expect(st.rules.length).toBeGreaterThanOrEqual(1)
+      expect(st.rules.length).toBeLessThanOrEqual(2)
+      expect(new Set(st.rules).size).toBe(st.rules.length)
+      for (const text of st.rules) expect(SECRET_RULES.some(r => r.text === text)).toBe(true)
+    }
+  })
+
+  it('本境规则与层数递进都并进战斗:枯荣古境治疗翻倍、三层更凶', () => {
+    ready(3)
+    enterSecretRealm('sr_kurong')
+    const st = currentRealm()!
+    const rules = secretFightRules(st)
+    expect(rules.healMult ?? 0).toBeGreaterThanOrEqual(2)
+    const l1 = secretFightRules(st, 1)
+    const l3 = secretFightRules(st, SECRET_LAYERS)
+    expect(l3.enemyAtkMult!).toBeGreaterThan(l1.enemyAtkMult!)
+    expect(l3.enemyHpMult!).toBeGreaterThan(l1.enemyHpMult!)
+  })
+})
+
+describe('秘境 · 推得动、出得来', () => {
+  it('一直打到结束:状态必被清空,且结算次数有限', () => {
+    ready(3)
+    enterSecretRealm('sr_kurong')
+    let guard = 0
+    let cleared = false
+    while (currentRealm() && guard < 20) {
+      const r = fightSecretLayer()
+      expect(r).not.toBeNull()
+      if (r!.cleared) cleared = true
+      guard += 1
+    }
+    expect(guard).toBeLessThan(20)
+    expect(currentRealm()).toBeNull()
+    console.log(`\n秘境 ${cleared ? '通关' : '被逐出'} · 共 ${guard} 次结算`)
+  })
+
+  it('层间按本境规则变法:枯荣古境每层之末损血', () => {
+    ready(3)
+    enterSecretRealm('sr_kurong')
+    expect(currentRealm()!.carriedHpPct).toBe(1)
+    fightSecretLayer()
+    const st = currentRealm()
+    if (st) {
+      expect(st.carriedHpPct).toBeLessThan(1)
+      expect(st.carriedHpPct).toBeGreaterThan(0)
+    }
+  })
+
+  it('败满两次被逐出,状态清空', () => {
+    ready(3)
+    enterSecretRealm('sr_kurong')
+    const st = currentRealm()!
+    usePlayerStore().setSecretRealm({ ...st, carriedHpPct: 0.05 })
+    let results = 0
+    while (currentRealm() && results < 10) {
+      fightSecretLayer()
+      results += 1
+    }
+    expect(currentRealm()).toBeNull()
+    expect(SECRET_MAX_LOSSES).toBe(2)
+  })
+
+  it('放弃即出,状态清空(已得战利不退)', () => {
+    ready(3)
+    enterSecretRealm('sr_kurong')
     abandonRealm()
     expect(currentRealm()).toBeNull()
   })
 
-  it('秘境目录:三处,各有入口代价(道源)', () => {
-    expect(SECRET_REALMS.length).toBe(3)
-    for (const s of SECRET_REALMS) {
-      expect(s.entryCost).toBeGreaterThan(0)
-      expect(secretRealmDef(s.id)?.name).toBe(s.name)
-    }
+  it('秘境有非 spec 的入口 —— 骨架之所以叫骨架,就是因为没人接它', () => {
+    // 这条正是本轮之前缺的那一环:core 里一切齐备,却没有一处 UI 调它
+    const files = [resolve(__dirname, '../components/adventure/SecretRealmCard.vue'), resolve(__dirname, '../views/AdventureView.vue')]
+    const corpus = files
+      .map(f => readFileSync(f, 'utf8'))
+      .join('\n')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+    expect(corpus).toContain('enterSecretRealm(')
+    expect(corpus).toContain('fightSecretLayer(')
+    expect(corpus).toContain('abandonRealm(')
   })
 })

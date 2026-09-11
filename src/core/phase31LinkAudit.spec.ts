@@ -60,9 +60,13 @@ describe('联动审计 · ③秘境区别于特殊世界', () => {
     }
   })
 
-  it('秘境入口代价小(40~80),远低于特殊世界(道源大额)', () => {
+  it('秘境入口代价是灵石(基础 40~80,按层级折算),与终局的道源经济分开', () => {
     for (const s of SECRET_REALMS) {
-      expect(s.entryCost).toBeLessThan(100)
+      // Phase 34.9:原稿写的是「元婴门槛 + 道源代价」——道源真仙才有,元婴付不出,
+      // 等于进不去。现按既定的 minMajor 取灵石代价(见 data/secretRealms 的 ⚠ 注)
+      expect(s.entryStone).toBeGreaterThan(0)
+      expect(s.entryStone).toBeLessThan(100)
+      expect(s.minMajor).toBeGreaterThanOrEqual(3)
     }
     expect(SECRET_REALMS.length).toBeGreaterThanOrEqual(3)
   })
