@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 83,
+  "round": 84,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:31:00+00:00",
+  "updated_at": "2026-09-11T19:37:57+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 61,
+      "touched_round": 83,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -4117,6 +4117,41 @@
       "source": "ui-smoke.mjs 两轮实测:默认模式 9 页 43 次点击、--late 后期夹具 45 次点击,均无 pageerror(commit 12c92ae);后期夹具已确认能进神人境、看到天界与秘境",
       "summary": "点击级冒烟覆盖到终局界面且未发现运行时异常;后期模式因真实模拟而慢,已在脚本头注明",
       "confidence": 0.8
+    },
+    "ISS-060": {
+      "id": "ISS-060",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:37:47+00:00",
+      "updated_at": "2026-09-11T19:37:52+00:00",
+      "touched_round": 83,
+      "summary": "扩界后半段(神界/混沌海 11 境)从未被平衡断言覆盖:contentCoverageAudit 算到 MAX_MAJOR,但断言只看金丹/炼虚/渡劫/真仙;那一半只被打印,顶区战力比跑飞也无人管",
+      "severity": 0.4,
+      "confidence": 0.9
+    },
+    "CHG-107": {
+      "id": "CHG-107",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:37:48+00:00",
+      "updated_at": "2026-09-11T19:37:48+00:00",
+      "touched_round": 83,
+      "commit": "8a19f84",
+      "summary": "inflationAudit 补全程上界守卫(有限数 + 顶区战力比 <12x);ui-smoke 补正文数字泄漏检查"
+    },
+    "EV-063": {
+      "id": "EV-063",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:37:52+00:00",
+      "updated_at": "2026-09-11T19:37:52+00:00",
+      "touched_round": 83,
+      "source": "后期夹具实测读数:真仙起常规/极限档区域 100% 压制(顶区 5.8x/7.2x),随缘档自神人起 100%,末两境 95%;九页正文无 NaN/Infinity/undefined(commit 8a19f84)",
+      "summary": "后期平衡口径被量出来了:区域碾压是设计结果,主战场在天界;上界已由新守卫钉住",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -5728,6 +5763,18 @@
       "to": "HYP-019",
       "type": "validates",
       "created_at": "2026-09-11T19:31:00+00:00"
+    },
+    {
+      "from": "CHG-107",
+      "to": "ISS-060",
+      "type": "resolves",
+      "created_at": "2026-09-11T19:37:52+00:00"
+    },
+    {
+      "from": "ISS-060",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-11T19:37:52+00:00"
     }
   ]
 }
