@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 43,
+  "round": 44,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:08:49+00:00",
+  "updated_at": "2026-09-11T15:11:25+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1956,7 +1956,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T15:08:49+00:00",
-      "touched_round": 42,
+      "touched_round": 43,
       "category": "core-feature",
       "summary": "界外长尾节奏实测调优:扩界后真仙→混沌道祖约 58x 真仙耗时(progressionSim 口径),需在真实存档口径上验证四界是否符合放置节奏并可调 LATE_* 常数",
       "severity": 0.5,
@@ -2462,6 +2462,17 @@
       "source": "vitest run: 113 files / 1077 tests passed(realms/realmBanking/progressionSim 新增用例);故障注入:lore 置空→红;progressionSim 打印 真仙→道祖 ×75.8 耗时",
       "summary": "指数复利与积余行为有可执行证据,命名出处完整性可被打红",
       "confidence": 1.0
+    },
+    "CHG-058": {
+      "id": "CHG-058",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:11:25+00:00",
+      "updated_at": "2026-09-11T15:11:25+00:00",
+      "touched_round": 43,
+      "summary": "灵气疗伤(修复):负伤/心魔时耗灵气(标称容量×35%,随境界指数增长)立刻平复;修行页入口;qiRepair.spec 四类断言;登记分类报告",
+      "commit": "562b262"
     }
   },
   "edges": [
@@ -3443,6 +3454,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T15:08:49+00:00"
+    },
+    {
+      "from": "CHG-058",
+      "to": "TASK-034",
+      "type": "implements",
+      "created_at": "2026-09-11T15:11:25+00:00"
     }
   ]
 }
