@@ -14,35 +14,113 @@
  */
 import { describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia, type Store } from 'pinia'
-import { usePlayerStore } from '@/stores/player'
-import { useResourcesStore } from '@/stores/resources'
-import { useDongfuStore } from '@/stores/dongfu'
-import { useLoreStore } from '@/stores/lore'
-import { useCultivationStore } from '@/stores/cultivation'
-import { useInventoryStore } from '@/stores/inventory'
-import { useQuestsStore } from '@/stores/quests'
-import { useAdventureStore } from '@/stores/adventure'
-import { useEndgameStore } from '@/stores/endgame'
-import { useLoadoutsStore } from '@/stores/loadouts'
-import { useSettingsStore } from '@/stores/settings'
-import { useGameStore } from '@/stores/game'
 import type { BondState } from '@/core/daoluService'
+import { usePlayerStore } from '@/stores/player'
+import { useAdventureStore } from '@/stores/adventure'
+import { usePacingTelemetry } from '@/stores/pacingTelemetry'
 
-/** 有 sanitize 的 store:名字 → 取 store 的函数 */
-const STORES: { name: string; use: () => Store & { sanitize: () => void } }[] = [
-  { name: 'player', use: usePlayerStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'resources', use: useResourcesStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'dongfu', use: useDongfuStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'lore', use: useLoreStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'cultivation', use: useCultivationStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'inventory', use: useInventoryStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'quests', use: useQuestsStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'adventure', use: useAdventureStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'endgame', use: useEndgameStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'loadouts', use: useLoadoutsStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'settings', use: useSettingsStore as unknown as () => Store & { sanitize: () => void } },
-  { name: 'game', use: useGameStore as unknown as () => Store & { sanitize: () => void } }
-]
+/**
+ * store 清单**从源码倒推**,不再手写。
+ *
+ * 手写清单的失效方式总是静默的:新加一个持久化 store、忘了往这张表里补一行,
+ * 坏档用例就少测一片,而测试照旧全绿。pacingTelemetry 正是这么漏掉的 ——
+ * 它落了盘、却没有 sanitize,record() 直接对可能为 null 的 events 调 slice。
+ *
+ * 故这里分两步取清单:
+ *   一 用 ?raw 读每个 store 源码,凡调过 persistConfig('x') 的都是持久化 store;
+ *   二 用整模块取它的 useXxxStore 导出 —— 对不上就说明命名变了(也当红)。
+ */
+const STORE_SRC = import.meta.glob('../stores/*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const STORE_MODULES = import.meta.glob('../stores/*.ts', { eager: true }) as Record<string, Record<string, unknown>>
+
+interface StoreEntry {
+  name: string
+  file: string
+  /** 该分片的存档键(persistConfig 的实参) */
+  slice: string
+  use: () => Store & { sanitize?: () => void }
+}
+
+function persistedStores(): StoreEntry[] {
+  const out: StoreEntry[] = []
+  for (const [file, src] of Object.entries(STORE_SRC)) {
+    if (file.endsWith('.spec.ts')) continue
+    const slice = /persistConfig\(\s*'([a-zA-Z]+)'\s*\)/.exec(src)?.[1]
+    if (!slice) continue
+    const mod = STORE_MODULES[file]
+    out.push({ name: file.split('/').pop()!.replace('.ts', ''), file, slice, use: storeExportOf(mod ?? {}) })
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/**
+ * 从模块里找出「取 store」的那个导出。
+ *
+ * 命名不统一(usePlayerStore / usePacingTelemetry / useUiStore),故不靠正则碰运气:
+ * 凡 useXxx 开头的函数都试着调一次,能返回带 $id 的 pinia store 就是它。
+ */
+function storeExportOf(mod: Record<string, unknown>): () => Store & { sanitize?: () => void } {
+  for (const [name, value] of Object.entries(mod)) {
+    if (typeof value !== 'function' || !/^use[A-Z]/.test(name)) continue
+    try {
+      setActivePinia(createPinia())
+      const store = (value as () => Store)()
+      if (store && typeof store === 'object' && typeof store.$id === 'string') {
+        return value as () => Store & { sanitize?: () => void }
+      }
+    } catch {
+      // 不是 store 的 composable,跳过
+    }
+  }
+  return () => ({ $id: '' }) as unknown as Store & { sanitize?: () => void }
+}
+
+const PERSISTED = persistedStores()
+
+/** 有 sanitize 的那些 —— 韧性用例按这份清单跑 */
+const STORES = PERSISTED.filter(s => {
+  setActivePinia(createPinia())
+  return typeof s.use().sanitize === 'function'
+}).map(s => ({ name: s.name, use: s.use as () => Store & { sanitize: () => void } }))
+
+describe('坏档韧性 · 清单从源码倒推', () => {
+  it('每个持久化 store 都取得到,且都写了 sanitize', () => {
+    expect(PERSISTED.length, '一个持久化 store 都没扫到,断言形同虚设').toBeGreaterThan(8)
+    for (const s of PERSISTED) {
+      setActivePinia(createPinia())
+      const store = s.use()
+      expect(store.$id, `${s.file} 里找不到 store 导出(导出名是否改过?)`).toBeTruthy()
+      expect(
+        typeof store.sanitize,
+        `${s.file} 落了盘却没有 sanitize —— 这一片坏档时没人兜(用例也永远测不到它)`
+      ).toBe('function')
+    }
+  })
+
+  it('清单与存档分片对得上:每个持久化 store 的键都真在存档范围里', () => {
+    for (const s of PERSISTED) {
+      expect(s.slice, `${s.file} 的分片键没解析出来`).toMatch(/^[a-zA-Z]+$/)
+    }
+    const keys = PERSISTED.map(s => s.slice).sort()
+    expect(new Set(keys).size, `两个 store 共用同一个分片键:${keys.join('、')}`).toBe(keys.length)
+  })
+
+  it('遥测:events 被写坏后,sanitize 修形,record 仍能继续记', () => {
+    // 这条是这轮补 sanitize 的动机:record() 直接对 events 调 slice,
+    // 分片被写坏(null / 数组里塞 null)时,任何一次互动记录都会抛错
+    setActivePinia(createPinia())
+    const t = usePacingTelemetry()
+    t.$patch({
+      events: [{ type: 'x', kind: 'modal', label: '好的那条', at: 1 }, null, { at: 'x' }, { type: 'y', kind: '乱写' }] as never,
+      enabled: 'yes' as never
+    })
+    t.sanitize()
+    expect(t.events.map(e => e.label), '只该留下形状完整的那条').toEqual(['好的那条'])
+    expect(t.enabled).toBe(true)
+    t.record('enlightenment', 'modal', '顿悟')
+    expect(t.events.length, '修形之后仍要能继续记录').toBe(2)
+  })
+})
 
 describe('坏档韧性 · 每个字段被抹掉后 sanitize 都要跑得完', () => {
   for (const { name, use } of STORES) {
