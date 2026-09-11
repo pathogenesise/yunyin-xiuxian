@@ -370,9 +370,21 @@ export interface ChoiceResult {
   text: string
   /** 她是否因此离开 */
   left: boolean
+  /** 她是否因此殒落(只有「共命之险」那条路会走到这里) */
+  perished?: boolean
   /** 三维实际变化,供界面显示「她的反应」而非裸数字 */
   reaction: 'closer' | 'neutral' | 'strained' | 'broken'
 }
+
+/**
+ * 共命之险的门槛:信任与契合都够深,才谈得上「一起蹚过去」。
+ *
+ * 这不是随机判定 —— 死不死取决于你俩此前攒下了什么,而且玩家看得见:
+ * 选项 label 里已写明「她未必撑得住」,另有两条不会死人的路可选。
+ * 这是本项目对「不可逆后果」的一贯口径:可以重,但必须是你选的、且事先说清。
+ */
+export const PERIL_SAFE_TRUST = 55
+export const PERIL_SAFE_ACCORD = 45
 
 /**
  * 玩家做出选择。
@@ -407,6 +419,16 @@ export function chooseBondEvent(eventId: string, choiceId: string): ChoiceResult
   if (ch.crossesTaboo) sparkIntent('crossed')
 
   const after = player.bond!
+  // 共命之险:关系够深则同生,不够则她殒落(唯一会死人的一条路,且玩家事先被 warning 过)
+  if (ch.peril && !(after.trust >= PERIL_SAFE_TRUST && after.accord >= PERIL_SAFE_ACCORD)) {
+    fall()
+    return {
+      text: `${out.text}——可你回头时,劫云里已经没有第二个人了。`,
+      left: false,
+      perished: true,
+      reaction: 'broken'
+    }
+  }
   let left = false
   // 她离开:选项直接导致,或信任与契合双双崩塌
   if (out.leaves || (after.trust < 15 && after.accord < 20)) {

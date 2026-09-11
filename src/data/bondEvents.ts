@@ -48,6 +48,8 @@ export type ConflictKind =
   | 'pursuit'
   /** 共同承担:她救你要折损自己 */
   | 'sacrifice'
+  /** 共命之险:两个人只够一个人先走 */
+  | 'mortal'
 
 /** 一个选项对三维的影响 —— 由「与她是谁相合与否」决定,不是固定数值 */
 export interface BondOutcome {
@@ -77,6 +79,12 @@ export interface BondChoice {
   supportsHer?: boolean
   /** 是否有风险 */
   risky?: boolean
+  /**
+   * 是否「共命之险」:选了它,她的生死取决于你俩此刻的关系够不够深
+   * (由 daoluService 判定:信任与契合都够则同生,不够则她殒落)。
+   * 只有这一条路会死人 —— 而且必须在 label 里写出代价。
+   */
+  peril?: boolean
   outcome: Omit<BondOutcome, 'text'> & { text: string }
 }
 
@@ -138,7 +146,7 @@ function c(
   label: string,
   lean: DaoLean | null,
   outcome: BondChoice['outcome'],
-  opts: Partial<Pick<BondChoice, 'crossesTaboo' | 'supportsHer' | 'risky'>> = {}
+  opts: Partial<Pick<BondChoice, 'crossesTaboo' | 'supportsHer' | 'risky' | 'peril'>> = {}
 ): BondChoice {
   return { id, label, lean, outcome, ...opts }
 }
@@ -383,6 +391,42 @@ export const BOND_EVENTS: BondEventDef[] = [
         trust: -10,
         accord: -6,
         text: '她把丹给了你,也把这句话记下了。此后她待你客气了许多。'
+      })
+    ]
+  },
+  {
+    id: 'be_jie',
+    kind: 'mortal',
+    title: '共劫',
+    text: '这一劫来得比你们预料的早。退路已经断了,两个人只够一个人先走 —— 或者,一起从中间蹚过去。',
+    herWish: '她说:「一起走吧。」语气很平,像在说一件已经想好的事。',
+    herLimit: '她不怕死,但她怕拖累别人;你若把她推开,她会记很久',
+    minStageIndex: 4,
+    triggers: ['nearDeath', 'bossDefeated'],
+    choices: [
+      c(
+        'share',
+        '与她同担此劫(她未必撑得住)',
+        null,
+        {
+          fate: 8,
+          trust: 6,
+          accord: 8,
+          text: '两道身影一同撞进劫云里。'
+        },
+        { risky: true, peril: true, supportsHer: true }
+      ),
+      c('shield', '替她挡下这一击', 'longevity', {
+        fate: 10,
+        trust: 18,
+        accord: 10,
+        text: '你把她按在身后,自己迎了上去。她没有说话,只是把你的名字念了一遍。'
+      }),
+      c('send', '让她先走', null, {
+        fate: 2,
+        trust: -12,
+        accord: -6,
+        text: '她被推向生路,回头看你那一眼,你后来想了很多年。'
       })
     ]
   }

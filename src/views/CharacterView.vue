@@ -328,9 +328,11 @@
                 v-for="ch in pendingEvent.choices"
                 :key="ch.id"
                 class="card-ink w-full px-3 py-2 text-left text-[12px] text-ink-soft active:scale-99"
+                :class="{ '!border-cinnabar/50 text-cinnabar': ch.peril, '!border-gold-ink/40': ch.risky && !ch.peril }"
                 @click="pickChoice(ch.id)"
               >
                 {{ ch.label }}
+                <span v-if="ch.peril" class="ml-1 text-[10px] text-cinnabar/80">〔共命之险〕</span>
               </button>
             </div>
           </div>

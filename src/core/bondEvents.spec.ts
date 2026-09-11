@@ -28,6 +28,8 @@ import {
 } from '@/data/bondEvents'
 import { daoluDef, stageIndex as stageIdxOf } from '@/data/daolu'
 import {
+  PERIL_SAFE_ACCORD,
+  PERIL_SAFE_TRUST,
   advanceBond,
   archiveBond,
   chooseBondEvent,
@@ -36,7 +38,8 @@ import {
   meet,
   playerLean,
   offerBondEvent,
-  pendingBondEvent
+  pendingBondEvent,
+  pendingIntent
 } from './daoluService'
 import { usePlayerStore } from '@/stores/player'
 import { useQuestsStore } from '@/stores/quests'
@@ -321,5 +324,76 @@ describe('共同事件 · 边界', () => {
   it('sheDecidesNow 对无表态事件返回 null', () => {
     const ev = BOND_EVENTS.find(e => !e.sheDecides)!
     expect(sheDecidesNow(ev, { trust: 0, accord: 0 }, 'cautious')).toBeNull()
+  })
+})
+
+/**
+ * 共命之险(Phase 34.11)—— 唯一会死人的一条路
+ *
+ * 口径:不可逆的后果必须(一)由玩家选择、(二)事先写明、(三)另有活路。
+ * 故这条测试同时钉三件事:低关系会真的殒落;高关系同生;其余两条路永不致死。
+ */
+describe('共同事件 · 共命之险', () => {
+  const PERIL_EVENT = 'be_jie'
+  const PERIL_CHOICE = 'share'
+
+  function meetAt(trust: number, accord: number): void {
+    setActivePinia(createPinia())
+    const player = usePlayerStore()
+    meet('dl_qingli')
+    // 直接摆好关系(事件门槛要 stage ≥ 4,即 confidant)
+    player.setBond({
+      ...player.bond!,
+      stage: 'confidant',
+      fate: 60,
+      trust,
+      accord,
+      shared: 4,
+      opportunities: 20,
+      nextEventAt: 0,
+      pendingEventId: PERIL_EVENT
+    })
+  }
+
+  it('选项自带警示:label 里写明她未必撑得住,且另有两条活路', () => {
+    const ev = BOND_EVENTS.find(e => e.id === PERIL_EVENT)!
+    const peril = ev.choices.find(c => c.id === PERIL_CHOICE)!
+    expect(peril.peril).toBe(true)
+    expect(peril.label, '不可逆选项必须在标签上写明代价').toContain('未必撑得住')
+    expect(ev.choices.filter(c => !c.peril).length, '必须另有不必拼命的选项').toBeGreaterThanOrEqual(2)
+    // 只有这一条路带 peril —— 别的共同事件不许偷偷要命
+    for (const other of BOND_EVENTS) {
+      if (other.id === PERIL_EVENT) continue
+      expect(other.choices.some(c => c.peril), `${other.id} 不该有致命选项`).toBe(false)
+    }
+  })
+
+  it('关系不够深就真的殒落:fallen + perished,且她此后不再有后续', () => {
+    meetAt(30, 20)
+    const r = chooseBondEvent(PERIL_EVENT, PERIL_CHOICE)!
+    expect(r.perished).toBe(true)
+    const player = usePlayerStore()
+    expect(player.bond?.fallen).toBe(true)
+    // 殒落之后:不再有事件、不再有意图
+    expect(pendingBondEvent()).toBeNull()
+    expect(pendingIntent()).toBeNull()
+  })
+
+  it('关系够深则同生:信任与契合都过线就不死人', () => {
+    meetAt(PERIL_SAFE_TRUST + 5, PERIL_SAFE_ACCORD + 5)
+    const r = chooseBondEvent(PERIL_EVENT, PERIL_CHOICE)!
+    expect(r.perished).toBeUndefined()
+    expect(usePlayerStore().bond?.fallen).toBe(false)
+    console.log(`\n共命之险:信任 ${PERIL_SAFE_TRUST}+ 且契合 ${PERIL_SAFE_ACCORD}+ 才过得去`)
+  })
+
+  it('另外两条路永不致死(哪怕关系极差)', () => {
+    for (const id of ['shield', 'send']) {
+      meetAt(5, 5)
+      const r = chooseBondEvent(PERIL_EVENT, id)
+      expect(r, `${id} 应当能选`).not.toBeNull()
+      expect(r!.perished).toBeUndefined()
+      expect(usePlayerStore().bond?.fallen, `${id} 不该致死`).toBe(false)
+    }
   })
 })
