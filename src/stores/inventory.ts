@@ -8,6 +8,7 @@ import { resolveEquipStats } from '@/core/equipGen'
 import { mergeMods } from '@/core/statsCalc'
 import { artifactDef, ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
 import { BAG_CAPACITY } from '@/data/constants'
+import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
 
 export const useInventoryStore = defineStore(
   'inventory',
@@ -18,6 +19,15 @@ export const useInventoryStore = defineStore(
     const artifacts = ref<ArtifactOwned[]>([])
     /** 已祭炼的法宝(元婴起可佩两件) */
     const equippedArtifacts = ref<string[]>([])
+
+    /** 存档修复:行囊/丹药/法宝被写坏时,装备合计与图鉴会在渲染期抛错 */
+    function sanitize(): void {
+      items.value = asArray<EquipmentInstance>(items.value)
+      equipped.value = asRecord<string>(equipped.value)
+      pills.value = asNumberRecord(pills.value, 0)
+      artifacts.value = asArray<ArtifactOwned>(artifacts.value)
+      equippedArtifacts.value = asStringArray(equippedArtifacts.value)
+    }
 
     const equippedUids = computed(() => new Set(Object.values(equipped.value).filter(Boolean) as string[]))
 
@@ -159,7 +169,8 @@ export const useInventoryStore = defineStore(
       spendPill,
       addArtifact,
       levelUpArtifact,
-      toggleArtifact
+      toggleArtifact,
+      sanitize
     }
   },
   { persist: persistConfig('inventory') }

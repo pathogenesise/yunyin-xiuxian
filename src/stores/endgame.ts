@@ -5,6 +5,7 @@ import type { CelestialWorldDef, DaoMark, DaoPathId, StatMods } from '@/types'
 import { persistConfig } from '@/utils/storage'
 import { mergeMods } from '@/core/statsCalc'
 import { SOUL_SLOTS, soulMods as soulModsOf, type SoulInstance } from '@/data/souls'
+import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecord, asStringArray } from '@/utils/saveShape'
 
 export interface TrialRecord {
   clears: number
@@ -62,6 +63,26 @@ export const useEndgameStore = defineStore(
     const souls = ref<SoulInstance[]>([])
     const equippedSouls = ref<string[]>([])
     const soulTutorialSeen = ref(false)
+
+    /**
+     * 存档修复:道痕/器魂/纪录表被写坏会让天界页在渲染期抛错。
+     * (activeSouls 已有一层防御读取,但那是补丁;这里把形状一次修平)
+     */
+    function sanitize(): void {
+      daoPath.value = typeof daoPath.value === 'string' ? daoPath.value : null
+      daoSource.value = asFiniteNumber(daoSource.value, 0, 0)
+      worldClears.value = asNumberRecord(worldClears.value, 0)
+      trialRecords.value = asRecord(trialRecords.value)
+      marks.value = asArray<DaoMark>(marks.value)
+      worldRun.value = asObjectOrNull<WorldRunState>(worldRun.value)
+      voidWorld.value = asObjectOrNull<CelestialWorldDef>(voidWorld.value)
+      dailyDoneDay.value =
+        typeof dailyDoneDay.value === 'number' && Number.isFinite(dailyDoneDay.value) ? dailyDoneDay.value : null
+      milestones.value = asArray(milestones.value)
+      records.value = asRecord(records.value)
+      souls.value = asArray(souls.value)
+      equippedSouls.value = asStringArray(equippedSouls.value)
+    }
 
     /** 已装配器魂(过滤掉已不存在的 uid) */
     const activeSouls = computed<SoulInstance[]>(() => {
@@ -203,7 +224,8 @@ export const useEndgameStore = defineStore(
       markDailyDone,
       addMilestone,
       updateRecord,
-      onRebirth
+      onRebirth,
+      sanitize
     }
   },
   { persist: persistConfig('endgame') }

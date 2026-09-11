@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { EquipSlot } from '@/types'
 import { persistConfig } from '@/utils/storage'
+import { asArray } from '@/utils/saveShape'
 
 export interface Loadout {
   id: string
@@ -24,6 +25,11 @@ export const useLoadoutsStore = defineStore(
   () => {
     const list = ref<Loadout[]>([])
 
+    /** 存档修复:配装列表被写坏时,配装页会在渲染期抛错 */
+    function sanitize(): void {
+      list.value = asArray<Loadout>(list.value).filter(l => l !== null && typeof l === 'object' && typeof l.id === 'string')
+    }
+
     function add(loadout: Loadout): boolean {
       if (list.value.length >= MAX_LOADOUTS) return false
       list.value = [...list.value, loadout]
@@ -34,7 +40,7 @@ export const useLoadoutsStore = defineStore(
       list.value = list.value.filter(l => l.id !== id)
     }
 
-    return { list, add, remove }
+    return { list, add, remove, sanitize }
   },
   { persist: persistConfig('loadouts') }
 )

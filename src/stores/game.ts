@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { persistConfig, SAVE_VERSION } from '@/utils/storage'
 import { CREATE_REROLL_LIMIT } from '@/data/constants'
 import type { LinggenProfile } from '@/types'
+import { asFiniteNumber, asObjectOrNull } from '@/utils/saveShape'
 
 export const useGameStore = defineStore(
   'game',
@@ -19,6 +20,15 @@ export const useGameStore = defineStore(
     const createRerolls = ref(CREATE_REROLL_LIMIT)
     /** 当前摆在建号页上的那副牌;null 表示尚未开掷 */
     const createProfile = ref<LinggenProfile | null>(null)
+
+    /** 存档修复:时间戳/时长被写坏会让离线结算与展示算出 NaN */
+    function sanitize(): void {
+      createdAt.value = asFiniteNumber(createdAt.value, 0, 0)
+      lastActiveAt.value = asFiniteNumber(lastActiveAt.value, 0, 0)
+      totalPlaySec.value = asFiniteNumber(totalPlaySec.value, 0, 0)
+      createRerolls.value = Math.max(0, Math.floor(asFiniteNumber(createRerolls.value, CREATE_REROLL_LIMIT, 0)))
+      createProfile.value = asObjectOrNull<LinggenProfile>(createProfile.value)
+    }
 
     /** 记下当前掷出的灵根(不扣次数,扣次数由 spendCreateReroll 负责) */
     function setCreateProfile(profile: LinggenProfile): void {
@@ -65,7 +75,8 @@ export const useGameStore = defineStore(
       resetCreateDraft,
       markStarted,
       stampActive,
-      addPlayTime
+      addPlayTime,
+      sanitize
     }
   },
   { persist: persistConfig('game') }

@@ -42,6 +42,11 @@ import { useAdventureStore } from '@/stores/adventure'
 import { useGameStore } from '@/stores/game'
 import { useLoreStore } from '@/stores/lore'
 import { useUiStore } from '@/stores/ui'
+import { useInventoryStore } from '@/stores/inventory'
+import { useQuestsStore } from '@/stores/quests'
+import { useEndgameStore } from '@/stores/endgame'
+import { useLoadoutsStore } from '@/stores/loadouts'
+import { useSettingsStore } from '@/stores/settings'
 
 /**
  * 结算离线收益
@@ -239,10 +244,24 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   return summary
 }
 
-/** 保证 GNum 字段在结算前有效(损坏兜底) */
+/**
+ * 读档兜底:把各 store 的形状修回可用值。
+ *
+ * 从前只有 player/resources/lore/dongfu 四处 —— 其余八个分片若被写坏,
+ * 会在**渲染期**抛出(如 cultivation.gongfaBranch 为 null 时的 Object.entries),
+ * 玩家看到的是白屏。见 storeResilience.spec:逐个字段灌 undefined 的红线。
+ */
 export function sanitizeOfflineInputs(): void {
   usePlayerStore().sanitize()
   useResourcesStore().sanitize()
   useLoreStore().sanitize()
   useDongfuStore().sanitize() // 洞府等级非法会把离线封顶小时算成 NaN,收益全线 NaN
+  useCultivationStore().sanitize()
+  useInventoryStore().sanitize()
+  useQuestsStore().sanitize()
+  useAdventureStore().sanitize()
+  useEndgameStore().sanitize()
+  useLoadoutsStore().sanitize()
+  useSettingsStore().sanitize()
+  useGameStore().sanitize()
 }

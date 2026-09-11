@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { persistConfig } from '@/utils/storage'
+import { asArray, asFiniteNumber, asRecord } from '@/utils/saveShape'
 
 export const useSettingsStore = defineStore(
   'settings',
@@ -28,7 +29,36 @@ export const useSettingsStore = defineStore(
     /** 主题:跟随系统 / 日间 / 夜间 */
     const theme = ref<'auto' | 'light' | 'dark'>('auto')
 
-    return { sfxOn, musicOn, musicVol, sfxVol, reduceMotion, battleSpeed, decomposeRanks, smartKeep, privacyAccepted, theme }
+    /** 存档修复:设置项被写坏会让音量/战斗速度算出 NaN,或让主题类名失效 */
+    function sanitize(): void {
+      // 音量是 0~100 的整数,不是 0~1 —— 别照搬比例类的写法
+      musicVol.value = Math.min(100, asFiniteNumber(musicVol.value, 50, 0))
+      sfxVol.value = Math.min(100, asFiniteNumber(sfxVol.value, 70, 0))
+      if (![1, 2, 4].includes(battleSpeed.value)) battleSpeed.value = 1
+      if (!['auto', 'light', 'dark'].includes(theme.value)) theme.value = 'auto'
+      decomposeRanks.value = asArray<number>(decomposeRanks.value).filter(n => typeof n === 'number' && Number.isFinite(n))
+      const sk = asRecord<unknown>(smartKeep.value)
+      smartKeep.value = {
+        enabled: sk.enabled === true,
+        minQuality: Math.floor(asFiniteNumber(sk.minQuality, 3, 0)),
+        keepCoreAffix: sk.keepCoreAffix !== false,
+        keepComboPiece: sk.keepComboPiece !== false
+      }
+    }
+
+    return {
+      sfxOn,
+      musicOn,
+      musicVol,
+      sfxVol,
+      reduceMotion,
+      battleSpeed,
+      decomposeRanks,
+      smartKeep,
+      privacyAccepted,
+      theme,
+      sanitize
+    }
   },
   { persist: persistConfig('settings') }
 )

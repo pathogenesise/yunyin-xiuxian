@@ -458,8 +458,6 @@ export const usePlayerStore = defineStore(
       // Phase 32.5:旧存档没有宿慧/履历/命题三项,按转世次数折算补齐,不让老玩家凭空掉档
       const r = reincarnation.value
       const count = Number.isFinite(r?.count) ? Math.max(0, r.count) : 0
-      // 旧存档没有「镇压资格」一栏:已有的镇压区域视为已取得资格,不让老玩家掉档
-      if (!Array.isArray(suppressQualified.value)) suppressQualified.value = []
       // 旧存档没有卦象一栏(Phase 34.3);形状不对的直接作废,不让坏数据进属性汇总
       if (divination.value) {
         const d = divination.value
@@ -479,6 +477,13 @@ export const usePlayerStore = defineStore(
       }
       // 旧存档没有顿悟冷却一栏(Phase 34.6):0 = 从未顿悟,合法
       if (!Number.isFinite(enlightenmentAt.value) || enlightenmentAt.value < 0) enlightenmentAt.value = 0
+      /**
+       * 数组类字段先补形,再谈内容 —— 存档可能被改坏、写坏或在旧版本里根本没有这一栏。
+       * 此前只挡了 suppressQualified,没挡 suppressedRegions,于是坏档会在
+       * `for...of` 上直接抛出,玩家看到的是白屏而不是「回到云隐山下」。
+       */
+      if (!Array.isArray(suppressedRegions.value)) suppressedRegions.value = []
+      if (!Array.isArray(suppressQualified.value)) suppressQualified.value = []
       for (const id of suppressedRegions.value) {
         if (!suppressQualified.value.includes(id)) suppressQualified.value.push(id)
       }

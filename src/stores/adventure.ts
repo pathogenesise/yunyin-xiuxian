@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import type { AdventureSession, CombatResult } from '@/types'
 import { persistConfig } from '@/utils/storage'
 import { regionDef } from '@/data/regions'
+import { asFiniteNumber, asObjectOrNull, asRecord, asStringArray } from '@/utils/saveShape'
 
 export interface LastBattleView {
   enemyName: string
@@ -42,6 +43,21 @@ export const useAdventureStore = defineStore(
     const lastBattle = ref<LastBattleView | null>(null)
     /** Phase 30.9 世界记忆:已完成事件的结果记录 */
     const eventMemories = ref<Record<string, import('@/types').EventMemory>>({})
+
+    /** 存档修复:历练会话/解锁表/事件记忆被写坏会让历练页在渲染期抛错 */
+    function sanitize(): void {
+      unlocked.value = asStringArray(unlocked.value)
+      if (unlocked.value.length === 0) unlocked.value = ['qingyun']
+      mortalCleared.value = asStringArray(mortalCleared.value)
+      cleared.value = asStringArray(cleared.value)
+      session.value = asObjectOrNull<AdventureSession>(session.value)
+      pendingEventId.value = typeof pendingEventId.value === 'string' ? pendingEventId.value : null
+      pendingEventSince.value = asFiniteNumber(pendingEventSince.value, 0, 0)
+      seenOnceEvents.value = asStringArray(seenOnceEvents.value)
+      lastBattle.value = asObjectOrNull<LastBattleView>(lastBattle.value)
+      eventMemories.value = asRecord(eventMemories.value)
+      mortalWorld.value = asObjectOrNull(mortalWorld.value)
+    }
 
     const sessionActive = computed(() => session.value !== null)
     const currentRegion = computed(() => (session.value ? regionDef(session.value.regionId) : undefined))
@@ -110,7 +126,8 @@ export const useAdventureStore = defineStore(
       markCleared,
       setPendingEvent,
       markEventSeen,
-      recordBattle
+      recordBattle,
+      sanitize
     }
   },
   { persist: persistConfig('adventure') }

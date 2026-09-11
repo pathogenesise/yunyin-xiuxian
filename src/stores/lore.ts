@@ -137,6 +137,17 @@ export const useLoreStore = defineStore(
 
     /** 存档修复:补齐新增技艺键、夹紧越界值 */
     function sanitize(): void {
+      /**
+       * 先补形再夹值:存档可能缺栏(旧版本)或被写坏。
+       * 此前只有 enemyLore/enemySeen 用了 `?? {}`,其余几张表直接进 Object.entries ——
+       * 一旦缺栏就是 "Cannot convert undefined or null to object",读档即白屏。
+       * (见 storeResilience.spec:逐个字段灌 undefined 的坏档韧性红线)
+       */
+      if (!skillExp.value || typeof skillExp.value !== 'object') skillExp.value = emptySkillExp()
+      if (!materialLore.value || typeof materialLore.value !== 'object') materialLore.value = {}
+      if (!materialSeen.value || typeof materialSeen.value !== 'object') materialSeen.value = {}
+      if (!recipeLore.value || typeof recipeLore.value !== 'object') recipeLore.value = {}
+      if (!blueprintLore.value || typeof blueprintLore.value !== 'object') blueprintLore.value = {}
       const fixedExp: Record<string, number> = {}
       for (const id of SKILL_IDS) {
         const v = skillExp.value[id]

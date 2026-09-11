@@ -7,6 +7,7 @@ import { gongfaDef } from '@/data/gongfa'
 import { buffDef } from '@/data/buffs'
 import { gongfaBranchDef } from '@/data/gongfaBranches'
 import { mergeMods } from '@/core/statsCalc'
+import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
 
 /** 功法在某等级下的属性 */
 export function gongfaModsAt(id: string, level: number): StatMods {
@@ -34,6 +35,22 @@ export const useCultivationStore = defineStore(
     const buffs = ref<BuffInstance[]>([])
     /** Phase 31 A3:功法悟道分支(gongfaId → branchId,满级后择一) */
     const gongfaBranch = ref<Record<string, string>>({})
+
+    /**
+     * 存档修复:功法表/分支表被写坏时,属性汇总会在渲染期 Object.entries(null) 抛错。
+     * 形状不对就修回可用值 —— 见 utils/saveShape 与 storeResilience.spec。
+     */
+    function sanitize(): void {
+      const fixedLearned: Record<string, number> = {}
+      for (const [id, lv] of Object.entries(asNumberRecord(learned.value, 0))) {
+        if (lv > 0) fixedLearned[id] = Math.floor(lv)
+      }
+      learned.value = fixedLearned
+      if (typeof mainGongfa.value !== 'string' || !fixedLearned[mainGongfa.value]) mainGongfa.value = null
+      subGongfa.value = asStringArray(subGongfa.value).filter(id => fixedLearned[id] !== undefined)
+      buffs.value = asArray(buffs.value)
+      gongfaBranch.value = asRecord<string>(gongfaBranch.value)
+    }
 
     const gongfaMods = computed<StatMods>(() => {
       const sources: StatMods[] = []
@@ -153,7 +170,8 @@ export const useCultivationStore = defineStore(
       hasBuff,
       pruneBuffs,
       clearNegativeBuffs,
-      chooseBranch
+      chooseBranch,
+      sanitize
     }
   },
   { persist: persistConfig('cultivation') }
