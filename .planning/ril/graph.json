@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 48,
+  "round": 49,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:20:55+00:00",
+  "updated_at": "2026-09-11T15:23:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1956,7 +1956,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T15:08:49+00:00",
-      "touched_round": 47,
+      "touched_round": 48,
       "category": "core-feature",
       "summary": "界外长尾节奏实测调优:扩界后真仙→混沌道祖约 58x 真仙耗时(progressionSim 口径),需在真实存档口径上验证四界是否符合放置节奏并可调 LATE_* 常数",
       "severity": 0.5,
@@ -2529,6 +2529,17 @@
       "touched_round": 47,
       "summary": "寿元公式化:LIFESPAN_WORLDS(人间界150×3.0 / 仙界1e8×3.2 / 神界1e11×4.5 / 混沌海5e13×4.5)+ lifespanOf(major);REALMS 不再手填;渡劫→真仙为唯一大跃 ×101.6;数值体系弹窗补寿元一块;审计对表复核",
       "commit": "ab4fd44"
+    },
+    "CHG-063": {
+      "id": "CHG-063",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:23:04+00:00",
+      "updated_at": "2026-09-11T15:23:04+00:00",
+      "touched_round": 48,
+      "summary": "出处与天劫口径上前台:大关进阶叙事附该境「出处类别+出自」;数值体系弹窗补天劫封顶说明;endgameService.spec 断言飞升文案含出处",
+      "commit": "83ab707"
     }
   },
   "edges": [
@@ -3546,6 +3557,12 @@
       "to": "TASK-034",
       "type": "implements",
       "created_at": "2026-09-11T15:20:55+00:00"
+    },
+    {
+      "from": "CHG-063",
+      "to": "TASK-034",
+      "type": "implements",
+      "created_at": "2026-09-11T15:23:05+00:00"
     }
   ]
 }
