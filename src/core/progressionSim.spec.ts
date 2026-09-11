@@ -1,9 +1,22 @@
 /* eslint-disable no-console -- 模拟器体检报告的正式输出(bun run test:report 依赖) */
 import { describe, expect, it } from 'vitest'
 import { REALMS, WORLD_BREAK_MAJOR, MAX_MAJOR } from '@/data/realms'
-import { firstLifeMilestones, hoursToReach, multiLifeTable, secondsForMajor } from './progressionSim'
+import {
+  BUILDING_CULT_CAP,
+  DEFAULT_ASSUMPTIONS,
+  cultMultParts,
+  firstLifeMilestones,
+  hoursToReach,
+  multiLifeTable,
+  secondsForMajor
+} from './progressionSim'
 import { expRequirement, qiCap } from './formulas'
 import { toNum } from '@/utils/gnum'
+import { GONGFA } from '@/data/gongfa'
+import { gongfaModsAt } from '@/stores/cultivation'
+import { GONGFA_BRANCHES } from '@/data/gongfaBranches'
+import { BUILDINGS } from '@/data/buildings'
+import { AFFIXES } from '@/data/affixes'
 
 const fmt = (h: number): string => (h < 1 ? `${(h * 60).toFixed(1)}分` : h < 48 ? `${h.toFixed(1)}时` : `${(h / 24).toFixed(1)}天`)
 
@@ -120,5 +133,91 @@ describe('数值曲线审计(Phase 14)', () => {
     expect(accel100 / accel50).toBeLessThan(accel50 / accel20)
     // 第 100 世到元婴依旧不能是瞬间(> 3 分钟)
     expect(table[3]!.toYuanying).toBeGreaterThan(0.05)
+  })
+})
+
+/**
+ * 模型假设 · 每一分都得真实凑得出
+ *
+ * 模拟器给的是「节奏基准」,故它假设的 kit 不能是玩家拼不出来的东西 ——
+ * 否则它算出的耗时是纸上数字,拿它当设计基准就会一路偏下去。
+ *
+ * 这件事是在核对时真发现的:模型把洞府建筑按 Math.min(1.2, 0.1+0.09m) 估,
+ * 而建筑表满级合计只有 76%(洞府 4 级 ×4% + 聚灵阵 20 级 ×3%)—— 高界凭空多了
+ * 44 个百分点。方向与「真实约为估算的 1.5~3 倍」一致,所以一直没被看出来。
+ *
+ * 故障注入:把 estimateCultMult 里那一项改回写死的 1.2,本条立刻红。
+ */
+describe('模型假设 · 每一分都得真实凑得出', () => {
+  /** 某功法满级时的修炼速度加成 */
+  const cultOf = (id: string): number => {
+    const def = GONGFA.find(g => g.id === id)!
+    return gongfaModsAt(id, def.maxLevel).cultivationSpeed ?? 0
+  }
+  /** 满级 + 选一条最利于修速的悟道分支(分支各功法只能选一条) */
+  const cultWithBranch = (id: string): number => {
+    const branches = GONGFA_BRANCHES.filter(b => b.gongfaId === id).map(b => b.mods.cultivationSpeed ?? 0)
+    return cultOf(id) + Math.max(0, ...branches)
+  }
+
+  it('模型拆出来的每一项,都不超过真实内容能给的上限', () => {
+    // 建筑满级合计(洞府 4×4% + 聚灵阵 20×3%)与藏经阁(辅修槽位依据)
+    expect(BUILDING_CULT_CAP).toBeCloseTo(0.76, 6)
+    const libraryMax = BUILDINGS.find(b => b.id === 'library')?.maxLevel ?? 20
+    const subSlotCap = 1 + Math.floor(libraryMax / 3)
+    const bestAffix = Math.max(...AFFIXES.filter(a => a.key === 'cultivationSpeed').map(a => a.max)) / 100
+
+    for (let m = WORLD_BREAK_MAJOR; m <= MAX_MAJOR; m++) {
+      const parts = cultMultParts(m, 0)
+      const part = (name: string): number => parts.find(p => p.name === name)?.value ?? 0
+      const usable = GONGFA.filter(g => g.minRealm <= m)
+      const bestMain = Math.max(0, ...usable.filter(g => g.type === 'main').map(g => cultWithBranch(g.id)))
+      const bestSubs = usable
+        .filter(g => g.type !== 'main')
+        .map(g => cultWithBranch(g.id))
+        .sort((a, b) => b - a)
+        .slice(0, subSlotCap)
+        .reduce((s, v) => s + v, 0)
+
+      expect(part('洞府'), `境界 ${m}:模型假设洞府给 ${part('洞府').toFixed(2)},建筑表满级只有 ${BUILDING_CULT_CAP}`)
+        .toBeLessThanOrEqual(BUILDING_CULT_CAP + 1e-9)
+      expect(part('功法') + part('辅修'), `境界 ${m}:模型假设功法+辅修给 ${(part('功法') + part('辅修')).toFixed(2)},真实最多凑 ${(bestMain + bestSubs).toFixed(2)}`)
+        .toBeLessThanOrEqual(bestMain + bestSubs + 1e-9)
+      expect(part('装备'), `境界 ${m}:模型假设装备给 ${part('装备').toFixed(2)},六部位各一条顶级修速词条只有 ${(6 * bestAffix).toFixed(2)}`)
+        .toBeLessThanOrEqual(6 * bestAffix + 1e-9)
+      // 灵根那一项是「典型值」而非顶配:生成器的顶配远高于它
+      expect(part('灵根'), '典型灵根不该按顶配算').toBeLessThan(3)
+    }
+  })
+
+  it('功法与辅修那一项不超过该境可凑出的功法合计(模型还漏算了秘术与分支,只会更保守)', () => {
+    const subSlotCap = 1 + Math.floor((BUILDINGS.find(b => b.id === 'library')?.maxLevel ?? 20) / 3)
+    for (let m = WORLD_BREAK_MAJOR; m <= MAX_MAJOR; m++) {
+      const usable = GONGFA.filter(g => g.minRealm <= m)
+      const bestMain = Math.max(0, ...usable.filter(g => g.type === 'main').map(g => cultWithBranch(g.id)))
+      // 辅修栏不挑类型(秘术也能占,见 cultivation.toggleSub),故候选是「除主修之外的全部」
+      const bestSubs = usable
+        .filter(g => g.type !== 'main')
+        .map(g => cultWithBranch(g.id))
+        .sort((a, b) => b - a)
+        .slice(0, subSlotCap)
+        .reduce((s, v) => s + v, 0)
+      const assumed = 0.12 + 0.055 * m + (0.06 + 0.05 * m)
+      expect(assumed, `境界 ${m}:模型假设功法给 ${assumed.toFixed(2)},真实最多凑 ${(bestMain + bestSubs).toFixed(2)}`)
+        .toBeLessThanOrEqual(bestMain + bestSubs + 1e-9)
+    }
+  })
+
+  it('装备那一项不超过六个部位各出一条修速词条能给的量', () => {
+    const bestAffix = Math.max(...AFFIXES.filter(a => a.key === 'cultivationSpeed').map(a => a.max)) / 100
+    expect(bestAffix, '词条表里没有修炼速度词条,这项假设无从校准').toBeGreaterThan(0)
+    const assumed = 0.05 + 0.03 * MAX_MAJOR
+    expect(assumed, `模型假设装备给 ${assumed.toFixed(2)},六部位各一条顶级修速词条只有 ${(6 * bestAffix).toFixed(2)}`)
+      .toBeLessThanOrEqual(6 * bestAffix + 1e-9)
+  })
+
+  it('灵根那一项取的是典型值而非顶配 —— 顶配远高于它', () => {
+    expect(DEFAULT_ASSUMPTIONS.linggenMult).toBeGreaterThan(1)
+    expect(DEFAULT_ASSUMPTIONS.linggenMult, '典型灵根不该按顶配算').toBeLessThan(3)
   })
 })

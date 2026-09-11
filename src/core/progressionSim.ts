@@ -7,6 +7,20 @@ import { toNum } from '@/utils/gnum'
 import { DAO_FRUIT_CULT_BONUS, SUB_LEVELS } from '@/data/constants'
 import { baseCultPerSec, daoFruitGain, expRequirement } from './formulas'
 import { effectiveDaoFruit } from './statsCalc'
+import { BUILDINGS } from '@/data/buildings'
+
+/**
+ * 洞府建筑能给多少修炼速度 —— **从建筑表算,不手写**。
+ *
+ * 这里原本写死 Math.min(1.2, 0.1 + 0.09 * major):模型以为高界建筑能提供 120%,
+ * 而建筑表满级合计只有 76%(洞府 4 级 ×4% + 聚灵阵 20 级 ×3%)。于是模型在高界
+ * 高估了修速、低估了耗时 —— 方向与「真实约为估算的 1.5~3 倍」一致,故一直没人发现;
+ * 但一个能算出「玩家凑不出的加成」的模型,不该继续当基准。
+ */
+export const BUILDING_CULT_CAP = BUILDINGS.reduce(
+  (sum, b) => sum + (typeof b.mods === 'function' ? (b.mods(b.maxLevel).cultivationSpeed ?? 0) : 0),
+  0
+)
 
 export interface SimAssumptions {
   /** 灵根修行倍率(典型值 1.6) */
@@ -22,13 +36,26 @@ export const DEFAULT_ASSUMPTIONS: SimAssumptions = { linggenMult: 1.6, talentCul
  * 功法换代 / 辅修 / 装备词条 / 洞府建筑均随境界水涨船高
  */
 export function estimateCultMult(major: number, daoFruit: number, a: SimAssumptions = DEFAULT_ASSUMPTIONS): number {
-  const gongfa = 0.12 + 0.055 * major
-  const subGongfa = 0.06 + 0.05 * major
-  const equip = 0.05 + 0.03 * major
-  const building = Math.min(1.2, 0.1 + 0.09 * major)
-  const qiRich = 0.15
-  const fruit = effectiveDaoFruit(daoFruit) * DAO_FRUIT_CULT_BONUS
-  return 1 + (a.linggenMult - 1) + a.talentCultBonus + gongfa + subGongfa + equip + building + qiRich + fruit
+  return 1 + cultMultParts(major, daoFruit, a).reduce((s, p) => s + p.value, 0)
+}
+
+/** 模型假设的修速加成,拆成一条条 —— 每一项都要能被真实内容覆盖 */
+export interface CultPart {
+  name: string
+  value: number
+}
+
+export function cultMultParts(major: number, daoFruit: number, a: SimAssumptions = DEFAULT_ASSUMPTIONS): CultPart[] {
+  return [
+    { name: '灵根', value: a.linggenMult - 1 },
+    { name: '天赋', value: a.talentCultBonus },
+    { name: '功法', value: 0.12 + 0.055 * major },
+    { name: '辅修', value: 0.06 + 0.05 * major },
+    { name: '装备', value: 0.05 + 0.03 * major },
+    { name: '洞府', value: Math.min(BUILDING_CULT_CAP, 0.1 + 0.09 * major) },
+    { name: '灵气充盈', value: 0.15 },
+    { name: '道果', value: effectiveDaoFruit(daoFruit) * DAO_FRUIT_CULT_BONUS }
+  ].filter(p => p.value !== 0)
 }
 
 /** 修满一个大境界(一层到圆满)所需秒数 */
