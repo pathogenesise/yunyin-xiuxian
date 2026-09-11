@@ -21,8 +21,14 @@
 
       <SectionTitle title="历练" hint="行万里路,炼一颗心" />
       <div class="space-y-2.5">
+        <template v-for="group in groupedRows" :key="group.world.id">
+          <div class="flex items-center gap-2 pt-1">
+            <span class="font-kai text-[11px] tracking-[0.3em] text-ink-soft">{{ group.world.name }}</span>
+            <span class="h-px grow bg-ink/10" />
+            <span class="text-[10px] text-ink-ghost">{{ group.rows.length }} 处</span>
+          </div>
         <div
-          v-for="row in visibleRows"
+          v-for="row in group.rows"
           :key="row.def.id"
           class="card-ink px-4 py-3"
           :class="{ 'opacity-70': !row.canEnter, '!border-gold-ink/30 bg-gold-ink/5': row.suppressed }"
@@ -99,6 +105,7 @@
             </span>
           </div>
         </div>
+        </template>
       </div>
     </template>
 
@@ -160,6 +167,7 @@
   import { usePlayerStore } from '@/stores/player'
   import { useUiStore } from '@/stores/ui'
   import { REGIONS, regionDef, DANGER_NAMES } from '@/data/regions'
+  import { worldOf, type WorldDef } from '@/data/realms'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import { canEnterRegion, entryBlockReason, worldView } from '@/core/mortalWorldService'
   import { REALMS } from '@/data/realms'
@@ -258,6 +266,18 @@
     const rows = regionRows.value
     const firstLocked = rows.findIndex(r => !r.unlocked && !r.canEnter)
     return firstLocked < 0 ? rows : rows.slice(0, firstLocked + 1)
+  })
+
+  /** 按界域分组展示:人间界/仙界/神界/混沌海的历练地界各自成段,便于在高界导航 */
+  const groupedRows = computed(() => {
+    const groups: { world: WorldDef; rows: typeof regionRows.value }[] = []
+    for (const row of visibleRows.value) {
+      const world = worldOf(row.def.minRealm)
+      const hit = groups.find(g => g.world.id === world.id)
+      if (hit) hit.rows.push(row)
+      else groups.push({ world, rows: [row] })
+    }
+    return groups
   })
 
   function chooseMode(region: RegionDef): void {
