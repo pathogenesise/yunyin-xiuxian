@@ -84,7 +84,44 @@ export const EQUIPMENT_TEMPLATES: EquipmentTemplate[] = [
   t('tl_wulei', '五雷符', 'talisman', 9, { maxHp: 25, attack: 3 }, '五雷正法,鬼魅辟易', { fixedMods: { damageBonus: 0.05 } }),
   t('tl_jinguang', '金光符', 'talisman', 12, { maxHp: 30 }, '金光护体,万邪不侵', { fixedMods: { damageReduction: 0.05 } }),
   t('tl_taiyi', '太乙符', 'talisman', 15, { maxHp: 35 }, '太乙救苦,起死回生', { fixedMods: { regenPerRound: 0.015 } }),
-  t('tl_dadao', '大道符', 'talisman', 18, { maxHp: 40 }, '符纹即道纹,观之可悟道', { fixedMods: { cultivationSpeed: 0.08 } })
+  t('tl_dadao', '大道符', 'talisman', 18, { maxHp: 40 }, '符纹即道纹,观之可悟道', { fixedMods: { cultivationSpeed: 0.08 } }),
+
+  // ============ 仙界(tier 21-25)============
+  // 各部位各一件,minTier 取本界中段——生成器按「最接近当前层级」取样,
+  // 于是仙人掉落的东西,从此有自己的名目,而不是把人间界的顶配一路带上天。
+  // 平铺基数刻意与人间界顶配(鸿蒙剑/混沌天衣等)对齐:高界装备给的是名目与机制,
+  // 不是同一层级下白送的一档数值——否则战力来源会悄悄从「境界+构筑」滑回「刷装备」
+  t('w_xianjun', '仙钧剑', 'weapon', 23, { attack: 20 }, '仙钧之气所铸,一剑分阴阳', { fixedMods: { damageBonus: 0.1 }, set: 's_xianjia' }),
+  t('h_yuxu', '御虚冠', 'head', 23, { defense: 8, maxHp: 32 }, '冠上虚影流转,神念出窍亦不迷', { fixedMods: { cultivationSpeed: 0.06 }, set: 's_xianjia' }),
+  t('b_yunjin', '云锦仙袍', 'body', 23, { defense: 14, maxHp: 62 }, '云锦织就,风过不沾尘', { fixedMods: { dodgeRate: 0.04 }, set: 's_xianjia' }),
+  t('wr_xianlin', '仙鳞腕甲', 'wrist', 23, { attack: 6, defense: 6 }, '应龙脱鳞所制,坚而有灵', { fixedMods: { attackPct: 0.05 } }),
+  t('bl_suiyu', '碎玉仙绦', 'belt', 23, { defense: 6, maxHp: 46 }, '万千仙玉碎而复合,束之如渊', { fixedMods: { maxHpPct: 0.06 } }),
+  t('bt_xianyun', '踏云履', 'boots', 23, { defense: 7, maxHp: 26 }, '足不沾地,行于云上', { fixedMods: { explorationSpeed: 0.12 } }),
+  t('n_xingmang', '星芒仙坠', 'necklace', 23, { maxHp: 45 }, '一颗小星坠在颈间,夜夜微光', { fixedMods: { qiRegen: 0.1 } }),
+  t('r_xianji', '仙机戒', 'ring', 23, { attack: 7, maxHp: 20 }, '仙机流转,掐指知凶吉', { fixedMods: { luck: 0.06 } }),
+  t('tl_xianzhuan', '仙篆', 'talisman', 23, { maxHp: 40 }, '一枚古仙篆,朱砂至今未褪', { fixedMods: { breakthroughRate: 0.03 } }),
+
+  // ============ 神界(tier 26-29)============
+  t('w_shenge', '神戈', 'weapon', 28, { attack: 20 }, '神戈所指,众神俯首', { fixedMods: { armorPen: 0.1 }, set: 's_shenjia' }),
+  t('h_shenmian', '神冕', 'head', 28, { defense: 8, maxHp: 32 }, '神冕加身,言出法随', { fixedMods: { damageReduction: 0.05 }, set: 's_shenjia' }),
+  t('b_shenkai', '神铠', 'body', 28, { defense: 14, maxHp: 62 }, '神金锻造,神域之火亦不能熔', { fixedMods: { damageReduction: 0.08 }, set: 's_shenjia' }),
+  t('wr_shenbi', '神臂环', 'wrist', 28, { attack: 6, defense: 6 }, '神环缠臂,举手有千钧之力', { fixedMods: { counterRate: 0.08 } }),
+  t('bl_faze', '法则带', 'belt', 28, { defense: 6, maxHp: 46 }, '一条法则凝成的带,系则不坠', { fixedMods: { shieldOnStart: 0.1 } }),
+  t('bt_shenxing', '神行靴', 'boots', 28, { defense: 7, maxHp: 26 }, '踏地生雷,万里一瞬', { fixedMods: { speed: 0.08 } }),
+  t('n_shenxin', '神心坠', 'necklace', 28, { maxHp: 45 }, '一神陨落之心,至今犹温', { fixedMods: { maxHpPct: 0.08 } }),
+  t('r_shenquan', '神权戒', 'ring', 28, { attack: 7, maxHp: 20 }, '戴上它,你便握有一分神权', { fixedMods: { attackPct: 0.06 } }),
+  t('tl_shenzhao', '神诏', 'talisman', 28, { maxHp: 40 }, '一纸神诏,天地共遵', { fixedMods: { breakthroughRate: 0.035 } }),
+
+  // ============ 混沌海(tier 30-32)============
+  t('w_kaifu', '开天斧', 'weapon', 31, { attack: 20 }, '开天辟地的那一柄,余威万古不散', { fixedMods: { damageBonus: 0.12 }, set: 's_hundunjia' }),
+  t('h_hundunguan', '混沌冠', 'head', 31, { defense: 8, maxHp: 32 }, '冠中浑沌未分,一念可开', { fixedMods: { cultivationSpeed: 0.08 }, set: 's_hundunjia' }),
+  t('b_hundunyi', '混沌玄衣', 'body', 31, { defense: 14, maxHp: 62 }, '玄衣如虚,刀兵加身如入无物', { fixedMods: { damageReduction: 0.1 }, set: 's_hundunjia' }),
+  t('wr_hundunhuan', '混沌环', 'wrist', 31, { attack: 6, defense: 6 }, '环内自成一界,盈虚不定', { fixedMods: { attackPct: 0.06 } }),
+  t('bl_daoyun', '道韵绦', 'belt', 31, { defense: 6, maxHp: 46 }, '一绦道韵,系住将散的本源', { fixedMods: { maxHpPct: 0.09 } }),
+  t('bt_wuji', '无极履', 'boots', 31, { defense: 7, maxHp: 26 }, '履下无路,却处处是路', { fixedMods: { dodgeRate: 0.06 } }),
+  t('n_benyuan', '本源坠', 'necklace', 31, { maxHp: 45 }, '一滴本源凝成的坠,望之如望万界之初', { fixedMods: { qiRegen: 0.14 } }),
+  t('r_hundun', '混沌戒', 'ring', 31, { attack: 7, maxHp: 20 }, '戒指内里,是一方尚未演化的天地', { fixedMods: { luck: 0.08 } }),
+  t('tl_daowen', '道文符', 'talisman', 31, { maxHp: 40 }, '符上是比道更早的那一笔', { fixedMods: { cultivationSpeed: 0.1 } })
 ]
 
 const BY_ID = new Map(EQUIPMENT_TEMPLATES.map(x => [x.id, x]))

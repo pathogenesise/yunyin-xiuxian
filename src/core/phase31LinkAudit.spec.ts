@@ -69,10 +69,13 @@ describe('联动审计 · ③秘境区别于特殊世界', () => {
 })
 
 describe('联动审计 · ④共鸣非最优套装化', () => {
-  it('套装装备仅少数(铁壁 3 件/星斗 2 件),散件仍是大头', () => {
+  it('套装装备仅占少数,散件仍是大头', () => {
     const setCount = EQUIPMENT_TEMPLATES.filter(t => t.set).length
-    // 50 件模板中,套装件 ≤ 10(散件空间保持)
-    expect(setCount).toBeLessThanOrEqual(10)
+    // 判据是「比例」而非某个历史数字:扩界后模板池从 50 增到 77,
+    // 套装件(铁壁3/星斗2 + 三界各 3)随之增加,但散件仍须占绝对多数
+    const ratio = setCount / EQUIPMENT_TEMPLATES.length
+    expect(ratio, `套装件占比 ${(ratio * 100).toFixed(0)}% 偏高`).toBeLessThanOrEqual(0.25)
+    expect(setCount).toBeLessThanOrEqual(15)
   })
 
   it('共鸣触发条件宽松(2 件即可),不强制 6 件收集', () => {
