@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 92,
+  "round": 93,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T20:37:12+00:00",
+  "updated_at": "2026-09-11T20:50:45+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -736,7 +736,7 @@
       "version": 1,
       "created_at": "2026-09-10T04:53:34+00:00",
       "updated_at": "2026-09-10T04:53:34+00:00",
-      "touched_round": 90,
+      "touched_round": 92,
       "summary": "洞府建筑系统(data/buildings + stores/dongfu + buildingService:等级闸门、离线收益上限、品类上限)"
     },
     "TASK-010": {
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 91,
+      "touched_round": 92,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -4534,6 +4534,67 @@
       "touched_round": 91,
       "summary": "cnNumber 工具 + 11 处页面数量改为从来源表数(REALMS/WORLDS/HEXAGRAMS/TRIGRAMS/PALACES/STARS/MANSIONS/GATES/SECRET_LAYERS/EXPEDITION_*/MUTATION_FIGHTS/powerRating/PROFILE_MIN_MARKS);洛书排布句与四象配四界由数据推出;法宝位与远征层号收成单一来源",
       "commit": "2bc0a93"
+    },
+    "ISS-066": {
+      "id": "ISS-066",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:41:08+00:00",
+      "updated_at": "2026-09-11T20:50:45+00:00",
+      "touched_round": 92,
+      "summary": "手写的门槛与容量:灵脉卡自陈「主脉 70 点/副脉 30 点/总容量 100」(constants 里三条都有)、天道「可行流派 x/6」(构筑流派数)、生态健康度的多样性分母写死 6、进阶说明写「渡劫→真仙约 ×100」而寿元表算出来是 ×102 —— 这一类数字抄的是另一张表,而那张表最常被调",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-058": {
+      "id": "TASK-058",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:41:11+00:00",
+      "updated_at": "2026-09-11T20:50:45+00:00",
+      "touched_round": 92,
+      "summary": "门槛与容量对账:容量常数、流派分母、大跃倍数一律读来源;并加红线钉住「全部脉投满 > 总容量」这类算术事实(文案说的取舍必须真成立)",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.8,
+      "effort": 2
+    },
+    "HYP-025": {
+      "id": "HYP-025",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:41:11+00:00",
+      "updated_at": "2026-09-11T20:41:11+00:00",
+      "touched_round": 92,
+      "summary": "文案里的数字有两类来源:一类是「数出来」(表长度,内容增长时才变),另一类是「抄过来」(容量/门槛/倍率,调数值时就变)。后者更该接线,但它的正确形态不只是接线 —— 还要把文案断言的那条**算术事实**一起断言(「不能全部点满」= 全部脉上限之和 > 总容量),否则接线只保证数字一致,不保证说法仍然成立",
+      "confidence": 0.75
+    },
+    "EV-072": {
+      "id": "EV-072",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:41:13+00:00",
+      "updated_at": "2026-09-11T20:41:13+00:00",
+      "touched_round": 92,
+      "summary": "dataTextAudit 增「手写的门槛与容量」4 条断言:灵脉卡三常数接线且 70/30/100 字面量消失、「不能全部点满」的算术事实(70+30×3=160>100)、可行流派分母读 BUILD_PROFILES.length(界面与生态健康度同源)、渡劫→真仙大跃读 ascensionLeap() 且值 =102;三次故障注入(灵脉卡复用 70 点、说明复用 约 ×100、健康度复用 / 6)各转红一次,恢复即复绿;全量 131 文件 1324 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/dataTextAudit.spec.ts"
+    },
+    "CHG-116": {
+      "id": "CHG-116",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:50:40+00:00",
+      "updated_at": "2026-09-11T20:50:40+00:00",
+      "touched_round": 92,
+      "summary": "灵脉卡自陈读三条容量常数;天道三处可行流派分母读 BUILD_PROFILES.length(生态健康度同源);新增 realms.ascensionLeap() 由寿元曲线推出飞升大跃倍数,说明文案从手写 ×100 改为 ×102",
+      "commit": "7d6f49a"
     }
   },
   "edges": [
@@ -6331,6 +6392,42 @@
       "to": "HYP-024",
       "type": "validates",
       "created_at": "2026-09-11T20:37:10+00:00"
+    },
+    {
+      "from": "ISS-066",
+      "to": "COMP-007",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:50:40+00:00"
+    },
+    {
+      "from": "ISS-066",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:50:40+00:00"
+    },
+    {
+      "from": "TASK-058",
+      "to": "ISS-066",
+      "type": "addresses",
+      "created_at": "2026-09-11T20:50:40+00:00"
+    },
+    {
+      "from": "CHG-116",
+      "to": "TASK-058",
+      "type": "implements",
+      "created_at": "2026-09-11T20:50:40+00:00"
+    },
+    {
+      "from": "CHG-116",
+      "to": "ISS-066",
+      "type": "resolves",
+      "created_at": "2026-09-11T20:50:40+00:00"
+    },
+    {
+      "from": "EV-072",
+      "to": "HYP-025",
+      "type": "validates",
+      "created_at": "2026-09-11T20:50:40+00:00"
     }
   ]
 }
