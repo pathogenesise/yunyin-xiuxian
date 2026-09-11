@@ -108,12 +108,6 @@ export function markFruitTutorialSeen(): void {
   useEndgameStore().daoFruitTutorialSeen = true
 }
 
-/** 首次获得道源(用于 S6 埋点判断:提示"道源能干什么") */
-export function firstDaoSourceHint(now: number): void {
-  // 道源>0 且从未提示过:无害,只做埋点;提示融合在获得 toast 里
-  void now
-}
-
 // ---------- S6 行为埋点(轻量) ----------
 
 export interface ResourceCognitionStats {

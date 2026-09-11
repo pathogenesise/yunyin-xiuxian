@@ -6,7 +6,7 @@
  * 属性那一份仍在(道果与天赋照旧),但它已不再是玩家转世的理由。
  */
 import { rng } from '@/utils/random'
-import { TALENTS, talentDef } from '@/data/talents'
+import { TALENTS } from '@/data/talents'
 import { REBIRTH_GONGFA_LEVEL_DIV, TALENT_DRAW_DIV } from '@/data/constants'
 import { lifeThemeDef } from '@/data/lifeThemes'
 import { nextStageAfter, stageAt } from '@/data/samsara'
@@ -236,8 +236,4 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   ui.toast('一梦轮回,你在云隐山下再度睁开双眼', 'rare')
   if (view.stageAdvanced) ui.toast(`宿慧渐厚,你已是「${view.stageName}」`, 'rare')
   if (recognized > 0) ui.toast(`睁眼之际,${recognized} 味灵材的名字自行浮上心头`, 'info')
-}
-
-export function talentName(id: string): string {
-  return talentDef(id)?.name ?? id
 }

@@ -23,13 +23,10 @@ import { GONGFA } from '@/data/gongfa'
 import { MORTAL_TIER_MAX, REGIONS } from '@/data/regions'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
 import { MAX_MAJOR } from '@/data/realms'
-import { enemyGearFactor, powerScale, powerScore, realmScale, REGION_TIER_MAX } from './formulas'
+import { enemyGearFactor, powerScale, powerScore, realmScale } from './formulas'
 import { generateEquipment, resolveEquipStats } from './equipGen'
 import { celestialDepthScale } from './gauntlet'
 import { computeFinalStats, mergeMods, modDepth } from './statsCalc'
-
-/** 区域层级总数(与 regions.ts 同步) */
-export const MAX_TIER = REGION_TIER_MAX
 
 /** 玩家同时佩戴的非法宝槽位 */
 const WEAR_SLOTS = ['weapon', 'head', 'body', 'wrist', 'belt', 'boots', 'necklace', 'ring', 'talisman'] as const

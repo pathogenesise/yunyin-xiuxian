@@ -19,7 +19,3 @@ const BY_ID = new Map<QualityId, QualityDef>(QUALITIES.map(q => [q.id, q]))
 export function qualityDef(id: QualityId): QualityDef {
   return BY_ID.get(id) ?? QUALITIES[0]!
 }
-
-export function qualityByRank(rank: number): QualityDef {
-  return QUALITIES[Math.max(0, Math.min(QUALITIES.length - 1, rank))]!
-}

@@ -128,7 +128,12 @@
         <p v-for="ph in lore.phases" :key="ph.at" class="mt-1 text-[11px] leading-relaxed text-cinnabar">
           · {{ ph.at }}时{{ ph.label }}
         </p>
-        <p v-if="lore.archetype" class="mt-1.5 text-[11px] leading-relaxed text-gold-ink">{{ lore.archetype }}</p>
+        <p v-if="lore.archetype" class="mt-1.5 text-[11px] leading-relaxed text-gold-ink">
+          <span v-if="lore.archetypeLabel" class="mr-1 rounded bg-gold-ink/12 px-1 py-0.5 text-[10px]">
+            {{ lore.archetypeLabel }}
+          </span>
+          {{ lore.archetype }}
+        </p>
         <p v-if="lore.hint" class="mt-1.5 text-[10px] text-ink-ghost">{{ lore.hint }}</p>
       </div>
       <!-- 战斗分析(战败自动展开;硬核数据供研究) -->

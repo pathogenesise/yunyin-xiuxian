@@ -89,9 +89,3 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ac('a_lifespan', '万古长生', '寿元上限超过一万载', { type: 'custom', key: 'lifespan10k' }, { titleId: 'ti_changsheng' }),
   ac('a_rich', '富可敌国', '持有灵石超过一百万', { type: 'custom', key: 'stone1m' }, { wudao: 30 })
 ]
-
-const BY_ID = new Map(ACHIEVEMENTS.map(x => [x.id, x]))
-
-export function achievementDef(id: string): AchievementDef | undefined {
-  return BY_ID.get(id)
-}

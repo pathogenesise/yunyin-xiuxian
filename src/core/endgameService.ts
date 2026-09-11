@@ -3,7 +3,6 @@
  */
 import type { ArtifactDef, CombatantSnap, CombatRules, DaoMark, DaoPathId } from '@/types'
 import { rng } from '@/utils/random'
-import { toNum } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { artifactDef } from '@/data/artifacts'
 import { pactDef } from '@/data/pacts'
@@ -421,4 +420,3 @@ export function challengeTrial(trialId: string): ExpeditionResult | null {
 }
 
 export { CELESTIAL_WORLDS, FURNACE_RATES, DAO_SOURCE_PER_FRUIT }
-export const furnaceStoneTierAmountNum = (): number => toNum(furnaceStoneCost())
