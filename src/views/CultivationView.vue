@@ -132,47 +132,6 @@
       </button>
     </div>
 
-    <!-- 界域总览(扩界):人间界/仙界/神界/混沌海,21 境一览,标出此刻位置 -->
-    <div class="card-ink px-4 py-3">
-      <div class="flex items-center justify-between">
-        <span class="text-[11px] text-ink-soft">界域总览</span>
-        <span class="text-[10px] text-ink-faint">{{ player.worldName }} · 第 {{ player.major + 1 }} / {{ REALMS.length }} 境</span>
-      </div>
-      <div class="mt-2 space-y-1.5">
-        <div v-for="row in worldRows" :key="row.world.id" class="flex items-start gap-2">
-          <span
-            class="w-12 shrink-0 pt-0.5 text-[10px] tracking-wide"
-            :class="player.major >= row.world.start ? 'text-ink-soft' : 'text-ink-ghost'"
-          >
-            {{ row.world.name }}
-          </span>
-          <div class="flex flex-wrap gap-1">
-            <span
-              v-for="cell in row.realms"
-              :key="cell.def.id"
-              class="rounded px-1.5 py-0.5 text-[10px]"
-              :class="
-                cell.index === player.major
-                  ? 'bg-cinnabar/15 font-medium text-cinnabar'
-                  : cell.index < player.major
-                    ? 'text-ink-soft'
-                    : 'text-ink-ghost'
-              "
-            >
-              {{ cell.def.name }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <p class="mt-2 text-[10px] leading-relaxed text-ink-faint">
-        人界九境之后便是仙界。渡劫飞升、破界入神、归返混沌——每一界的空气、天象与敌手都不相同。
-      </p>
-      <RouterLink to="/codex" class="mt-2 flex items-center justify-between text-[11px] text-azure active:opacity-70">
-        <span>界域志 · 每一境的来路与典籍</span>
-        <span>查阅 →</span>
-      </RouterLink>
-    </div>
-
     <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止探索(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
     <div class="card-ink px-4 py-3">
       <div class="flex items-center justify-between">
@@ -296,7 +255,6 @@
   import { canEnlighten as canEnlightenGongfa, gongfaBranchDef } from '@/data/gongfaBranches'
   import { buffDef } from '@/data/buffs'
   import { pillDef } from '@/data/pills'
-  import { REALMS, WORLDS } from '@/data/realms'
   import { COMPREHEND_PAGE_COST } from '@/data/constants'
   import { formatDuration, formatGN, formatNum, formatRate } from '@/utils/format'
   import { qualityDef } from '@/data/qualities'
@@ -351,14 +309,6 @@
 
   /** 灵气疗伤(修复)状态:负伤时才出现入口,代价随灵气容量指数增长 */
   const repair = computed(() => qiRepairView())
-
-  /** 界域总览:四界 21 境,按界域分组并标出所处位置 */
-  const worldRows = computed(() =>
-    WORLDS.map(w => ({
-      world: w,
-      realms: REALMS.map((def, index) => ({ def, index })).filter(c => c.index >= w.start && c.index <= w.end)
-    }))
-  )
 
   /** Phase 32.2 与此劫气机相应的灵根:判据取自 tribulationRelief,界面说的与结算做的同源 */
   const reliefRoots = computed(() =>

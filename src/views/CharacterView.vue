@@ -142,6 +142,15 @@
       <span class="text-[11px] text-ink-soft">展卷 →</span>
     </RouterLink>
 
+    <!-- 界域志:与修仙录同级 —— 一部写你,一部写这条路从哪来 -->
+    <RouterLink to="/codex" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
+      <span class="min-w-0 grow">
+        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">界域志</span>
+        <span class="block truncate text-[10px] text-ink-faint tabular">四界二十一境 · 每一境的来路与典籍</span>
+      </span>
+      <span class="text-[11px] text-ink-soft">查阅 →</span>
+    </RouterLink>
+
     <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-99" @click="rebirthOpen = true">
       <span class="min-w-0 grow">
         <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">轮 回</span>

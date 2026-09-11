@@ -4,7 +4,7 @@
     style="padding-bottom: env(safe-area-inset-bottom)"
   >
     <div class="ink-divider absolute -top-px inset-x-0" />
-    <div class="grid grid-cols-6">
+    <div class="grid grid-cols-5">
       <RouterLink
         v-for="tab in TABS"
         :key="tab.name"
@@ -31,7 +31,6 @@
     { name: 'home', label: '洞府', icon: 'mountain', to: '/' },
     { name: 'cultivation', label: '修炼', icon: 'flame', to: '/cultivation' },
     { name: 'adventure', label: '历练', icon: 'swords', to: '/adventure' },
-    { name: 'codex', label: '界域志', icon: 'scroll', to: '/codex' },
     { name: 'inventory', label: '背包', icon: 'backpack', to: '/inventory' },
     { name: 'character', label: '人物', icon: 'circle-user', to: '/character' }
   ] as const
