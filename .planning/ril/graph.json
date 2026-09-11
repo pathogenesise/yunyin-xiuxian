@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 15,
+  "round": 16,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T02:28:14+00:00",
+  "updated_at": "2026-09-11T02:43:53+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1453,19 +1453,100 @@
     "TASK-026": {
       "id": "TASK-026",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-11T02:18:18+00:00",
-      "updated_at": "2026-09-11T02:28:14+00:00",
+      "updated_at": "2026-09-11T02:36:20+00:00",
       "touched_round": 15,
       "summary": "regionRecallFor 传错 suppressedAt:UI 展示'镇压后稳定多久'误用最近战斗时间 stats.lastUpdateAt,应从 player.suppressedSince[regionId] 取(与 suppress.ts 同一次 deriveProsperity 调用正确传参对齐)",
       "category": "correctness",
       "severity": 0.2,
       "confidence": 0.9,
       "effort": 1,
-      "priority_score": 1.5,
-      "lock_owner": "yunyin-session",
-      "lock_until": "2026-09-11T02:58:14+00:00"
+      "priority_score": 1.5
+    },
+    "CHG-031": {
+      "id": "CHG-031",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:31:51+00:00",
+      "updated_at": "2026-09-11T02:31:51+00:00",
+      "touched_round": 15,
+      "commit": "a32541d",
+      "summary": "regionRecallFor 镇压时长起点改取 player.suppressedSince[regionId](与 suppress.ts 实结算同口径)",
+      "detail": "UI 展示层修复:此前误传 stats.lastUpdateAt,镇压后刷战使 since 前移;新增 worldMemory.spec 断言 since/suppressedAt=镇压时刻"
+    },
+    "ISS-028": {
+      "id": "ISS-028",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T02:33:18+00:00",
+      "updated_at": "2026-09-11T02:34:06+00:00",
+      "touched_round": 15,
+      "summary": "regionRecallFor(suppressedAt 口径错误)已由 TASK-026 修复——UI 侧镇压时长起点曾用最近战斗时间",
+      "severity": 0.2,
+      "confidence": 0.9
+    },
+    "EV-012": {
+      "id": "EV-012",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:33:18+00:00",
+      "updated_at": "2026-09-11T02:33:18+00:00",
+      "touched_round": 15,
+      "source": "worldMemory.spec.ts + a32541d",
+      "summary": "regionRecallFor since 回归断言:镇压 50h 前、最近战斗 1h 前,since/suppressedAt 正确=镇压时刻,而非战斗时刻",
+      "detail": "全量 1007 测试通过",
+      "confidence": 1.0
+    },
+    "ISS-029": {
+      "id": "ISS-029",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:39:23+00:00",
+      "updated_at": "2026-09-11T02:39:23+00:00",
+      "touched_round": 16,
+      "summary": "studyTick 吸收 studyFrac 时弃尾:临近完成的丹方(0.999)吃不完积累,加满后 studyFrac 归零吞掉超出的钻研",
+      "severity": 0.1,
+      "confidence": 0.7,
+      "detail": "loreService.ts:233-247 — addRecipeMastery clamp 到 1,studyFrac 整段清零不 spill 到次低方子,损失有上界(一期积累窗口)但属真实进度蒸发"
+    },
+    "ISS-030": {
+      "id": "ISS-030",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:40:31+00:00",
+      "updated_at": "2026-09-11T02:40:31+00:00",
+      "touched_round": 16,
+      "summary": "loot 概率未夹 [0,1]:afterWin 的法宝倍率(×6×luck)与 doubleDropRate 可乘出 >1(当前数据源距此极远,属余额锥形风险)",
+      "severity": 0.1,
+      "confidence": 0.5,
+      "detail": "loot.ts:141/193 rng.chance(p) p 未 clamp——>1 语义恒真,与 :175 装备位 clamp(0.9) 不一致;今日实际数据源不达此界"
+    },
+    "COMP-009": {
+      "id": "COMP-009",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:43:18+00:00",
+      "updated_at": "2026-09-11T02:43:18+00:00",
+      "touched_round": 16,
+      "summary": "藏经阁钻研/认知系统(loreService.ts + lore store)"
+    },
+    "COMP-010": {
+      "id": "COMP-010",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:43:18+00:00",
+      "updated_at": "2026-09-11T02:43:18+00:00",
+      "touched_round": 16,
+      "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     }
   },
   "edges": [
@@ -1997,6 +2078,36 @@
       "to": "HYP-004",
       "type": "validates",
       "created_at": "2026-09-11T02:13:49+00:00"
+    },
+    {
+      "from": "TASK-026",
+      "to": "ISS-028",
+      "type": "addresses",
+      "created_at": "2026-09-11T02:34:06+00:00"
+    },
+    {
+      "from": "CHG-031",
+      "to": "ISS-028",
+      "type": "resolves",
+      "created_at": "2026-09-11T02:34:06+00:00"
+    },
+    {
+      "from": "CHG-031",
+      "to": "TASK-026",
+      "type": "implements",
+      "created_at": "2026-09-11T02:34:06+00:00"
+    },
+    {
+      "from": "ISS-029",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-11T02:43:53+00:00"
+    },
+    {
+      "from": "ISS-030",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-11T02:43:53+00:00"
     }
   ]
 }
