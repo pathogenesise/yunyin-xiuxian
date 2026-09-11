@@ -264,7 +264,7 @@ export const STONE_TIER_GROWTH = 1.9
 /** 战斗修为奖励占当前需求比例 */
 export const BATTLE_EXP_REQ_PCT = 0.012
 
-// ============ 探索 ============
+// ============ 历练 ============
 export const EXPLORE_BATTLE_INTERVAL = 12
 export const EXPLORE_EVENT_CHANCE = 0.16
 /** 事件搁置超过该秒数后自动按默认选项处理 */

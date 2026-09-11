@@ -150,7 +150,7 @@
       <p v-else class="mt-16 text-center text-[12px] text-ink-ghost">
         尚无法宝随身
         <br />
-        <span class="text-[11px]">法宝多出自奇遇与强敌之手</span>
+        <span class="text-[11px]">法宝多出自际遇与强敌之手</span>
       </p>
       <p v-if="player.petId" class="mt-4 text-center text-[11px] text-ink-faint">灵兽相伴,可前往「人物」页查看</p>
     </template>

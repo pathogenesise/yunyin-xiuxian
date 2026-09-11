@@ -1,4 +1,4 @@
-/** 历练状态 —— 区域解锁 / 探索会话 / 待处理事件 / 最近战报 */
+/** 历练状态 —— 区域解锁 / 历练会话 / 待处理事件 / 最近战报 */
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { AdventureSession, CombatResult } from '@/types'
@@ -53,7 +53,7 @@ export const useAdventureStore = defineStore(
       session.value = asObjectOrNull<AdventureSession>(session.value)
       /**
        * 历练会话是引擎每 tick 都要读的活状态:endsAt/nextBattleAt 若为 NaN,
-       * 探索会永远不停(或立刻结束);regionId 认不得则整场都取不到区域。
+       * 历练会永远不停(或立刻结束);regionId 认不得则整场都取不到区域。
        * 故除形状外,值也要修 —— 认不得的区域直接结束会话,不硬撑。
        */
       if (session.value) {

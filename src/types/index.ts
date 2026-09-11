@@ -551,7 +551,7 @@ export interface PetDef {
   icon: string
   quality: QualityId
   mods: StatMods
-  /** Phase 31.0 S4:灵兽性格(贪宝/慢稳/好战/谨慎),影响探索行为倾向 */
+  /** Phase 31.0 S4:灵兽性格(贪宝/慢稳/好战/谨慎),影响历练行为倾向 */
   personality: PetPersonality
 }
 

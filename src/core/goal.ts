@@ -9,7 +9,7 @@
  * 类型:
  * - breakthrough  修为接近突破 → "尝试突破XX"
  * - equipment     装备槽有空位 → "寻一件XX法器"
- * - explore       区域未探索   → "深入XX"
+ * - explore       区域未涉足   → "深入XX"
  * - material      材料不足     → "采集XX"
  * - build         流派未成形   → "凑出XX流" (中期核心目标)
  */
@@ -86,7 +86,7 @@ export function generateCurrentGoal(player: ReturnType<typeof usePlayerStore>): 
     }
   }
 
-  // 4. 低优先级:探索/材料/装备(未探索且可入的地界向前,推前线推进永远优先;
+  // 4. 低优先级:历练/材料/装备(未涉足且可入的地界向前,推前线推进永远优先;
   //    材料与装备同门 —— 供应/装填补缺 —— 都只在"已通关过至少一地界"后才提示,
   //    免得开局就叠在 explore 上重复"去历练"。)
   const adventure = useAdventureStore()

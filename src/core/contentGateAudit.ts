@@ -119,7 +119,7 @@ export const CONTENT_GATES: ContentGate[] = [
   },
   {
     id: 'event',
-    name: '奇遇事件',
+    name: '际遇事件',
     kind: 'trigger',
     minMajor: 3,
     evidence:

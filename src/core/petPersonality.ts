@@ -1,12 +1,12 @@
 /**
  * 灵兽性格服务(Phase 31.0 S4)
  *
- * 灵兽不只是数值加成:性格决定探索时的行为倾向。
+ * 灵兽不只是数值加成:性格决定历练时的行为倾向。
  * 玩家选伙伴 = 选路线风格,而非单纯"哪个数值高"。
  *
  * 性格:
  *   greedy 贪宝 —— 更易遇稀有掉落/机缘,更易遇危险事件
- *   steady 慢稳 —— 探索更久,失败率下降
+ *   steady 慢稳 —— 历练更久,失败率下降
  *   fierce 好战 —— 战斗收益提高,更易走高危路线
  *   cautious 谨慎 —— 高闪避,少掉宝
  */
@@ -14,7 +14,7 @@ import type { PetDef } from '@/types'
 import { petDef } from '@/data/pets'
 
 export interface PetPersonalityEffects {
-  /** 探索时长倍率(steady 更久) */
+  /** 历练时长倍率(steady 更久) */
   exploreDurMult: number
   /** 危险率修正(fierce 更高) */
   dangerMult: number
@@ -52,7 +52,7 @@ export function personalityDesc(p: PetDef['personality']): string {
     case 'greedy':
       return '更容易发现稀有之物,但也会招来危险。'
     case 'steady':
-      return '探索更久更稳,失败率有所下降。'
+      return '历练更久更稳,失败率有所下降。'
     case 'fierce':
       return '战斗收益更高,但更容易走上险路。'
     case 'cautious':

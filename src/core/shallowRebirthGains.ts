@@ -8,7 +8,7 @@
  * **金丹轮回一世,到底能永久推进哪些东西?**
  *
  * 判据很简单:
- *   若只有道果 → 健康。玩家是在「刷资源」与「探索内容」之间做选择。
+ *   若只有道果 → 健康。玩家是在「刷资源」与「历练内容」之间做选择。
  *   若还能大量推进其他永久资产 → 浅轮回的收益面过宽,
  *     那才是「反复轮回却觉得没意义」的真正来源——
  *     因为什么都在涨,却没有一样是非深修不可的。
@@ -109,7 +109,7 @@ export const SHALLOW_GAINS: ShallowGainRow[] = [
     perLife: '日常行为持续推进',
     cap: null,
     livesToCap: null,
-    evidence: 'noteEnemy 走探索、studyRecipe 走藏经阁被动钻研;lore store 完全不重置,金丹世照样在长'
+    evidence: 'noteEnemy 走历练、studyRecipe 走藏经阁被动钻研;lore store 完全不重置,金丹世照样在长'
   },
   {
     id: 'achievements',

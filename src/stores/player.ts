@@ -439,7 +439,7 @@ export const usePlayerStore = defineStore(
       // 连胜/当日巡游属于「这一世」的当下进度;秘境是进行中的一次性内容
       // (其门槛 minMajor≥3 本就是境界限制,新世 major=0 理应推倒重来)。
       // 保留跨世:镇压/区域兴衰(「成长改变世界」的世界记忆,见 DEC-003)、
-      // 机缘选择记忆(fortuneChoices,「世界记得你的选择」)、奇遇连锁(eventChains)
+      // 机缘选择记忆(fortuneChoices,「世界记得你的选择」)、奇缘(eventChains)
       winStreak.value = 0
       lastCaveEventDay.value = 0
       secretRealm.value = null

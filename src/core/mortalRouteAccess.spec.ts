@@ -72,7 +72,7 @@ describe('路线可达性 · 新号', () => {
     for (let i = 1; i < w.chain.length; i += 1) {
       expect(canEnterNode(w.chain[i]!.nodeId)).toBe(false)
     }
-    console.log(`\n首段可进,其余 ${w.chain.length - 1} 段上锁 —— 探索顺序未被破坏`)
+    console.log(`\n首段可进,其余 ${w.chain.length - 1} 段上锁 —— 历练顺序未被破坏`)
   })
 
   it('推进是逐段的:通一段只开下一段', () => {

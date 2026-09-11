@@ -38,7 +38,7 @@ export interface RegionEventDef {
 export const REGION_EVENTS: RegionEventDef[] = [
   { id: 'yaochao', name: '妖潮', desc: '妖气翻涌,群妖躁动。多段敌人更多,掉落更丰,也更凶险。', rewardMult: 1.2, dangerMult: 1.15, eventMult: 1 },
   { id: 'lingmai', name: '灵脉暴动', desc: '地底灵脉喷薄,天地灵气大盛。', rewardMult: 1, dangerMult: 1, eventMult: 1 },
-  { id: 'gumu', name: '古墓开启', desc: '尘封古墓裂开一道缝隙,奇遇与凶险并存。', rewardMult: 1.15, dangerMult: 1.05, eventMult: 1.5 },
+  { id: 'gumu', name: '古墓开启', desc: '尘封古墓裂开一道缝隙,际遇与凶险并存。', rewardMult: 1.15, dangerMult: 1.05, eventMult: 1.5 },
   { id: 'shangdui', name: '商队遇袭', desc: '过路商队遭袭,遍地灵石遗落,亦有匪徒潜伏。', rewardMult: 1.25, dangerMult: 1.1, eventMult: 1 }
 ]
 

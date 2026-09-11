@@ -67,7 +67,7 @@ describe('修行目标(Phase 29)', () => {
     expect(goal.type).toBe('breakthrough')
   })
 
-  it('无临近突破、无 build → explore 目标(未探索且可入的地界)', () => {
+  it('无临近突破、无 build → explore 目标(未涉足且可入的地界)', () => {
     const player = usePlayerStore()
     player.initCharacter('目标', { roots: [] } as never)
     player.exp = gnZero()
@@ -81,7 +81,7 @@ describe('修行目标(Phase 29)', () => {
     const player = usePlayerStore()
     player.initCharacter('目标', { roots: [] } as never)
     player.exp = gnZero()
-    // 把所有已解锁地界都通关,探索目标消失
+    // 把所有已解锁地界都通关,历练目标消失
     useAdventureStore().cleared = [...useAdventureStore().unlocked]
     // 材料/装备也都不缺 → 没有可挤的建议就闭嘴
     useResourcesStore().herb = 12

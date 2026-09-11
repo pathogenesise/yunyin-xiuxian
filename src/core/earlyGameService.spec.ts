@@ -358,7 +358,7 @@ describe('闭关(Phase 28 · 接线后:buff 注册/互斥守卫/buff 到期)', (
     expect(cult.buffs.find(b => b.defId === 'retreat')!.endsAt).toBe(endsAtBefore)
   })
 
-  it('探索途中不可闭关(互斥守卫,拒绝原因显式而非静默)', () => {
+  it('历练途中不可闭关(互斥守卫,拒绝原因显式而非静默)', () => {
     const now = Date.now()
     useAdventureStore().setSession({
       regionId: 'qingyun',

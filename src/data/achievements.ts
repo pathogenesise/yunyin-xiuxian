@@ -65,8 +65,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // ---- 历练 ----
   ac('a_ex10', '行万里路', '完成 10 次历练', counter('explores', 10), { stoneTier: 30 }),
   ac('a_ex50', '踏遍山河', '完成 50 次历练', counter('explores', 50), { stoneTier: 80 }),
-  ac('a_ev20', '际遇非凡', '经历 20 次奇遇', counter('events', 20), { wudao: 15 }),
-  ac('a_ev100', '缘法自来', '经历 100 次奇遇', counter('events', 100), { wudao: 50 }),
+  ac('a_ev20', '际遇非凡', '经历 20 次际遇', counter('events', 20), { wudao: 15 }),
+  ac('a_ev100', '缘法自来', '经历 100 次际遇', counter('events', 100), { wudao: 50 }),
   // ---- 丹药 ----
   ac('a_pill20', '以药辅道', '服用 20 枚丹药', counter('pillsUsed', 20), { herb: 30 }),
   ac('a_pill100', '丹药如饭', '服用 100 枚丹药', counter('pillsUsed', 100), { herb: 100 }),

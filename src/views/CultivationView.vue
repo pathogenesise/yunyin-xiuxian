@@ -132,17 +132,17 @@
       </button>
     </div>
 
-    <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止探索(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
+    <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止历练(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
     <div class="card-ink px-4 py-3">
       <div class="flex items-center justify-between">
         <span class="text-[11px] text-ink-soft">闭关参悟</span>
         <span v-if="retreating" class="text-[10px] text-amber-ink tabular">闭关中 · {{ formatDuration(retreatRemaining) }}</span>
       </div>
       <p class="mt-0.5 text-[10px] text-ink-faint">
-        静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出探索。
+        静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出历练。
       </p>
       <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full text-[11px]" @click="beginRetreat">
-        闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%(期间无法探索)
+        闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%(期间无法历练)
       </button>
     </div>
 

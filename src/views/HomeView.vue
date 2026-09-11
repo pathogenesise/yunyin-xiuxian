@@ -106,7 +106,7 @@
     >
       <span class="min-w-0 flex-1">
         <span class="block font-kai text-[14px] tracking-widest text-ink">灵脉投资</span>
-        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">引地脉入洞府,择一主脉而修</span>
+        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">引灵脉入洞府,择一主脉而修</span>
       </span>
       <span class="shrink-0 text-[12px] text-ink-faint">›</span>
     </button>

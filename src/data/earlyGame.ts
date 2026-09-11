@@ -1,5 +1,5 @@
 /**
- * Phase 28 前期玩法数据 —— 悟道顿悟/突破准备/探索路线/洞府巡游
+ * Phase 28 前期玩法数据 —— 悟道顿悟/突破准备/历练路线/洞府巡游
  */
 import type { EnlightenmentOption, BreakthroughPrepOption } from '@/types'
 

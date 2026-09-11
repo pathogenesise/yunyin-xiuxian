@@ -1,5 +1,5 @@
 /**
- * 历练服务 —— 探索会话 / 遭遇循环 / 战斗与事件调度
+ * 历练服务 —— 历练会话 / 遭遇循环 / 战斗与事件调度
  */
 import type { AdventureSession, ExploreMode } from '@/types'
 import { rng } from '@/utils/random'
@@ -64,7 +64,7 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   const ui = useUiStore()
   const region = regionDef(regionId)
   if (!region || player.dead) return false
-  // Phase 28 闭关禁令:闭关期间不得外出探索(与 startRetreat 的互斥守卫配对,双向互斥)
+  // Phase 28 闭关禁令:闭关期间不得外出历练(与 startRetreat 的互斥守卫配对,双向互斥)
   if (isRetreating()) {
     ui.toast('你正在闭关静修,心无旁骛,暂勿外出历练', 'warn')
     return false
@@ -83,7 +83,7 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   const now = Date.now()
   const modeDef = EXPLORE_MODES[mode]
   const speed = 1 + modOf(player.finalStats.mods, 'explorationSpeed')
-  // Phase 31 S4:灵兽性格影响探索时长(慢稳更久)
+  // Phase 31 S4:灵兽性格影响历练时长(慢稳更久)
   const petEff = personalityEffects(player.petId)
   const durationSec = Math.round(modeDef.durationSec * petEff.exploreDurMult)
   const session: AdventureSession = {
@@ -341,7 +341,7 @@ export function exploreEventChance(regionId: string, mods: StatMods): number {
   return EXPLORE_EVENT_CHANCE * (1 + modOf(mods, 'eventLuck') + mansionEventLuck(regionId))
 }
 
-/** 每 Tick 推进探索(由引擎调用) */
+/** 每 Tick 推进历练(由引擎调用) */
 export function tickExploration(now: number): void {
   const adventure = useAdventureStore()
   const player = usePlayerStore()

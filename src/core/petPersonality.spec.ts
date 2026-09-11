@@ -22,7 +22,7 @@ describe('灵兽性格(personality)', () => {
     expect(cautious.lossReduction).toBeGreaterThan(fierce.lossReduction)
   })
 
-  it('慢稳探索更久', () => {
+  it('慢稳历练更久', () => {
     const steady = personalityEffects('pet_xuegui')
     expect(steady.exploreDurMult).toBeGreaterThan(1)
     expect(personalityEffects(null).exploreDurMult).toBe(1)

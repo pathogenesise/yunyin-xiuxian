@@ -1,5 +1,5 @@
 /** 灵兽 —— 事件与灵兽园获得,佩戴一只
- * Phase 31.0 S4:增加性格(personality)—— 探索时的行为倾向,
+ * Phase 31.0 S4:增加性格(personality)—— 历练时的行为倾向,
  * 让玩家选伙伴而非只看数值 */
 import type { PetDef } from '@/types'
 

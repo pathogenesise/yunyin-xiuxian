@@ -41,7 +41,7 @@
             </p>
             <p class="truncate text-[10px] text-ink-ghost">{{ row.def.desc }}</p>
             <p v-if="row.modText" class="text-[10px] text-azure tabular">{{ row.modText }}</p>
-            <!-- 性格是灵兽的"人味":它在探索里怎么表现,得让玩家看得见,而不是只看数值 -->
+            <!-- 性格是灵兽的"人味":它在历练里怎么表现,得让玩家看得见,而不是只看数值 -->
             <p class="text-[10px] text-violet-ink">
               {{ row.personalityName }} · <span class="text-ink-faint">{{ row.personalityDesc }}</span>
             </p>
@@ -54,7 +54,7 @@
       <p v-else class="mt-10 text-center text-[12px] text-ink-ghost">
         尚无灵兽相伴
         <br />
-        <span class="text-[11px]">灵兽多在历练奇遇中结缘</span>
+        <span class="text-[11px]">灵兽多在历练际遇中结缘</span>
       </p>
     </template>
   </div>

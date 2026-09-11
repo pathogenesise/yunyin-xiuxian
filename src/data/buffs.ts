@@ -27,7 +27,8 @@ export const BUFFS: BuffDef[] = [
     'skull'
   ),
   b('bless_qingfeng', '清风拂面', 'blessing', 900, '心旷神怡,修炼速度提升 20%', { cultivationSpeed: 0.2 }, 'wind'),
-  b('bless_jiyuan', '机缘加身', 'blessing', 1200, '气运提升 20%,奇遇概率提升 15%', { luck: 0.2, eventLuck: 0.15 }, 'star'),
+  // 名字里不带「机缘」:「机缘」已专属 ft_ 取/弃事件,这条祝福给的是气运与际遇概率
+  b('bless_jiyuan', '气运加身', 'blessing', 1200, '气运提升 20%,际遇概率提升 15%', { luck: 0.2, eventLuck: 0.15 }, 'star'),
   b('bless_daoyun', '道韵加身', 'blessing', 1800, '修炼速度提升 40%,战斗修为提升 20%', { cultivationSpeed: 0.4, expGain: 0.2 }, 'scroll'),
   b(
     'curse_xinmo',
@@ -53,9 +54,9 @@ export const BUFFS: BuffDef[] = [
   b('cave_garden_pet', '灵兽相随', 'blessing', 600, '安抚后的灵兽更尽心,灵兽效果提升 30%', { beastPct: 0.3 }, 'paw'),
   // 惩罚 buff:id 与 penalty.type 对齐(见 earlyGameService.chooseCaveOption)
   b('cave_penalty_cultivationSpeed', '修炼倦怠', 'injury', 300, '强行吸纳伤了根基,修炼速度下降 15%', { cultivationSpeed: -0.15 }, 'skull'),
-  // ---- Phase 28 闭关:5 分钟 +150% 修炼、期间禁止探索。
+  // ---- Phase 28 闭关:5 分钟 +150% 修炼、期间禁止历练。
   // durationSec=300 必须与 earlyGameService.startRetreat 的 5 分钟口径一致(同一真相源=buff 本身) ----
-  b('retreat', '闭关', 'blessing', 300, '闭关静修,修炼速度提升 150%,期间无法外出探索', { cultivationSpeed: 1.5 }, 'mountain'),
+  b('retreat', '闭关', 'blessing', 300, '闭关静修,修炼速度提升 150%,期间无法外出历练', { cultivationSpeed: 1.5 }, 'mountain'),
   // ---- 仙界及以上丹药增益(每 buff 仅一味丹产出,见 pillValue 法则 C) ----
   b('buff_xianli', '仙力加身', 'pill', 1200, '仙力贯体,攻击提升 35%,暴击伤害提升 30%', { attackPct: 0.35, critDamage: 0.3 }, 'sword'),
   b('buff_shenwei', '神威临世', 'pill', 1200, '神威加身,造成伤害提升 25%,受伤降低 12%', { damageBonus: 0.25, damageReduction: 0.12 }, 'crown'),

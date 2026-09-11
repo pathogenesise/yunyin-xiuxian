@@ -190,7 +190,7 @@ export const HERITAGE: HeritageRow[] = [
     id: 'veins',
     name: '灵脉投资',
     mode: 'reset',
-    detail: 'dongfu.resetForRebirth() 清空 veinPoints/veinMain —— 地脉投资是外物,每世从零重投(旧稿曾满投封顶后跨世保留)',
+    detail: 'dongfu.resetForRebirth() 清空 veinPoints/veinMain —— 灵脉投资是外物,每世从零重投(旧稿曾满投封顶后跨世保留)',
     kind: 'state',
     power: 'mid',
     compressesGrowth: false
@@ -261,7 +261,7 @@ export const HERITAGE: HeritageRow[] = [
   },
   {
     id: 'fortuneMemory',
-    name: '机缘与奇遇记忆',
+    name: '机缘与际遇记忆',
     mode: 'full',
     detail: 'fortuneChoices / eventChains / eventMemories 不清 —— 「世界记得你的选择」',
     kind: 'legacy',

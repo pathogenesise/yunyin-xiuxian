@@ -1,5 +1,5 @@
 /**
- * Phase 28 前期玩法服务 —— 悟道顿悟/突破准备/闭关/探索路线/连胜/洞府巡游/灵兽陪行
+ * Phase 28 前期玩法服务 —— 悟道顿悟/突破准备/闭关/历练路线/连胜/洞府巡游/灵兽陪行
  */
 import { usePlayerStore } from '@/stores/player'
 import { useGameStore } from '@/stores/game'
@@ -108,11 +108,11 @@ export function dismissEnlightenment(): void {
 }
 
 /**
- * 开始闭关(5分钟,修炼+150%,禁止探索)。
+ * 开始闭关(5分钟,修炼+150%,禁止历练)。
  *
  * 真相源是持久化的 retreat buff 本身(时长由 buffs.ts 的 durationSec=300 承载):
  * 模块计时器刷新即失,改成 buff 后闭关状态与剩余秒数在重载/离线后依旧可信。
- * 探索途中不可闭关 —— 与 startExploration 的闭关禁令互斥,避免 +150% 叠加在历练上
+ * 历练途中不可闭关 —— 与 startExploration 的闭关禁令互斥,避免 +150% 叠加在历练上
  */
 export function startRetreat(): boolean {
   if (isRetreating()) return false // 已在闭关(幂等,不刷新时长)

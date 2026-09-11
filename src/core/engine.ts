@@ -135,7 +135,7 @@ class GameEngine {
       dongfu.produce(dt)
       // Buff 过期
       cultivation.pruneBuffs(now)
-      // 探索推进
+        // 历练推进
       tickExploration(now)
       // Phase 28: 悟道顿悟触发(修炼时随机)
       mayTriggerEnlightenment()

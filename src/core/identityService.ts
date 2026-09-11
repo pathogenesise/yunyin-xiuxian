@@ -39,7 +39,7 @@ export interface IdentityTraits {
   adjectives: string[]
   /** 风险倾向(签名时取"勇"字表) */
   riskBias: 'gamble' | 'steady' | null
-  /** 总击杀 / 总探索 / 总突破(归一化问候) */
+  /** 总击杀 / 总历练 / 总突破(归一化问候) */
   counters: { kills: number; explores: number; breakthroughs: number }
 }
 

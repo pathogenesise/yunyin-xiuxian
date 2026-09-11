@@ -35,7 +35,7 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   lowHpReduction: '濒危减伤',
   breakRefund: '突破返还',
   doubleDropRate: '双倍战利',
-  eventLuck: '奇遇概率',
+  eventLuck: '际遇概率',
   tribulationResist: '御劫',
   comboRate: '连击',
   stunRate: '震慑',

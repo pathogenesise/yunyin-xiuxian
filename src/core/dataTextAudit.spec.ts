@@ -20,7 +20,7 @@ import { MUTATORS } from '@/data/mutators'
 import { SECRET_RULES } from '@/data/secretRealms'
 import { BUFFS } from '@/data/buffs'
 import { PACTS } from '@/data/pacts'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /** 文案里的百分比是否能在同一条目的数值里找到对应 */
@@ -163,5 +163,90 @@ describe('文案数值对账 · 视图不手抄数字', () => {
     expect(view, '闭关时长与加成应读 buff 定义').toContain("buffDef('retreat')")
     expect(view).not.toContain('5 分钟,修炼速度 +150%')
     expect(view).not.toContain('5分钟 修炼 +150%')
+  })
+})
+
+/**
+ * 术语一致性 —— 同一个东西只能有一个名字
+ *
+ * 起因:同一个"历练中偶遇的随机事件"在项目里有四个近义叫法——奇遇(词条名/成就文案)、
+ * 际遇(成就名)、机缘(ft_ 取弃事件)、奇缘(我后来接的连锁)。它们各自是**不同机制**,
+ * 但四个近义词并排出现时,玩家会把它们当成一件事(「奇遇概率」涨的是哪一类?)。
+ *
+ * 约定(写进判据,不再靠记性):
+ *   际遇 = 历练中偶遇的随机事件(eventLuck 词条、经历计数)
+ *   机缘 = 稀有的取/弃事件(ft_,界域志的机缘取弃)
+ *   奇缘 = 阶段性连锁(奇缘录)
+ * 另:vein 系统一律叫"灵脉"(不再混用"地脉")。
+ */
+describe('术语一致性 · 用户可见文本', () => {
+  /** 数据里的字符串字面量 + 视图模板(即玩家真正读得到的那部分) */
+  const userText = (): { file: string; text: string }[] => {
+    const out: { file: string; text: string }[] = []
+    const walk = (dir: string): void => {
+      for (const entry of readdirSync(resolve(__dirname, dir))) {
+        const rel = `${dir}/${entry}`
+        if (entry.endsWith('.spec.ts')) continue
+        const stat = statSync(resolve(__dirname, rel))
+        if (stat.isDirectory()) {
+          walk(rel)
+          continue
+        }
+        const src = readFileSync(resolve(__dirname, rel), 'utf8')
+        if (entry.endsWith('.vue')) {
+          // 只取模板(去掉注释)
+          out.push({ file: rel, text: src.split('</script>')[0]!.replace(/<!--[\s\S]*?-->/g, '') })
+        } else if (entry.endsWith('.ts')) {
+          const body = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+          out.push({ file: rel, text: [...body.matchAll(/'([^'\\\n]{2,})'/g)].map(m => m[1]!).join('\n') })
+        }
+      }
+    }
+    walk('../data')
+    walk('../views')
+    walk('../components')
+    walk('../ui') // 词条名表就在这儿(属性面板上的标签)
+    walk('../core') // toast 与区域事件文案也算玩家可见
+    return out
+  }
+
+  /** 允许保留的例外:这里的地脉说的是村子的风水脉,不是洞府灵脉系统 */
+  const ALLOWED = ['须惊动山下一整座村子的地脉']
+
+  it('随机事件一律叫「际遇」:用户可见文本里不再出现「奇遇」', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}奇遇.{0,16}/g)) {
+        if (ALLOWED.some(a => m[0].includes(a))) continue
+        hits.push(`${file} 「${m[0]}」`)
+      }
+    }
+    expect(hits, `「奇遇」应统一为「际遇」(奇缘=连锁、机缘=取弃事件,各留一名):\n${hits.join('\n')}`).toEqual([])
+  })
+
+  it('洞府灵脉一律叫「灵脉」:用户可见文本里不再出现用作系统名的「地脉」', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}地脉.{0,16}/g)) {
+        if (ALLOWED.some(a => m[0].includes(a))) continue
+        hits.push(`${file} 「${m[0]}」`)
+      }
+    }
+    expect(hits, `「地脉」应统一为「灵脉」:\n${hits.join('\n')}`).toEqual([])
+  })
+
+  it('历练一律叫「历练」:用户可见文本里不再用「探索」指代这件活动', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}探索.{0,16}/g)) hits.push(`${file} 「${m[0]}」`)
+    }
+    expect(hits, `「探索」应统一为「历练」:\n${hits.join('\n')}`).toEqual([])
+  })
+
+  it('三个词各指一件事:机缘/际遇/奇缘在用户可见文本里都真的在用', () => {
+    const all = userText().map(u => u.text).join('\n')
+    for (const term of ['机缘', '际遇', '奇缘']) {
+      expect(all, `${term} 一个例子都没有 —— 术语约定与内容脱节了`).toContain(term)
+    }
   })
 })

@@ -72,7 +72,7 @@ export const AFFIXES: AffixDef[] = [
   a('luck1', '福缘', 'luck', 2, 5, '气运提升 {v}%', 80, { slots: J }),
   a('luck2', '鸿运', 'luck', 5, 10, '气运提升 {v}%', 40, { slots: J, minRank: 3 }),
   a('luck3', '天眷', 'luck', 10, 15, '气运提升 {v}%', 12, { slots: J, minRank: 6 }),
-  // ---- 探索速度 ----
+  // ---- 历练速度 ----
   a('exp1', '疾行', 'explorationSpeed', 4, 8, '历练速度提升 {v}%', 80, { slots: ['boots', ...J] }),
   a('exp2', '御风', 'explorationSpeed', 8, 15, '历练速度提升 {v}%', 40, { slots: ['boots', ...J], minRank: 3 }),
   a('exp3', '缩地', 'explorationSpeed', 15, 25, '历练速度提升 {v}%', 12, { slots: ['boots', ...J], minRank: 6 }),
@@ -130,8 +130,8 @@ export const AFFIXES: AffixDef[] = [
   // ---- 特殊:双倍掉落 ----
   a('dd1', '丰饶', 'doubleDropRate', 5, 10, '{v}% 概率获得双倍战利品', 60, { slots: J }),
   a('dd2', '满载', 'doubleDropRate', 10, 20, '{v}% 概率获得双倍战利品', 25, { slots: J, minRank: 4 }),
-  // ---- 特殊:奇遇 ----
-  a('ev1', '奇遇', 'eventLuck', 5, 10, '历练事件概率提升 {v}%', 60, { slots: J }),
+  // ---- 特殊:际遇 ----
+  a('ev1', '际遇', 'eventLuck', 5, 10, '历练事件概率提升 {v}%', 60, { slots: J }),
   a('ev2', '仙缘', 'eventLuck', 10, 20, '历练事件概率提升 {v}%', 25, { slots: J, minRank: 4 }),
   // ---- 特殊:御雷 ----
   a('tb1', '御雷', 'tribulationResist', 5, 10, '天劫伤害降低 {v}%', 60, { slots: A }),

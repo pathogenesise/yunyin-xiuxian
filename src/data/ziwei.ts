@@ -48,7 +48,7 @@ export const PALACES: PalaceDef[] = [
   { id: 'zinv', name: '子女宫', domain: '生生与所养', channel: '灵兽', use: '灵兽与洞府所养' },
   { id: 'caibo', name: '财帛宫', domain: '财之所聚', channel: '财货', use: '灵石与掉落之丰' },
   { id: 'jie', name: '疾厄宫', domain: '身之强弱与所忌', channel: '道躯', use: '气血与抗劫' },
-  { id: 'qianyi', name: '迁移宫', domain: '行止与远游', channel: '行旅', use: '历练与探索之速' },
+  { id: 'qianyi', name: '迁移宫', domain: '行止与远游', channel: '行旅', use: '历练之速' },
   { id: 'jiaoyou', name: '交友宫', domain: '朋辈与部从', channel: '人脉', use: '际遇与机缘之数' },
   { id: 'guanlu', name: '官禄宫', domain: '功业与名位', channel: '征伐', use: '战阵攻伐之利' },
   { id: 'tianzhai', name: '田宅宫', domain: '所居与所积', channel: '洞府', use: '洞府产出与积蓄' },
