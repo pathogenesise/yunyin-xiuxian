@@ -14,8 +14,10 @@
  * - build         流派未成形   → "凑出XX流" (中期核心目标)
  */
 import { usePlayerStore } from '@/stores/player'
+import { useAdventureStore } from '@/stores/adventure'
 import { detectBuild } from './buildDetect'
 import { realmLabel } from '@/data/realms'
+import { REGIONS } from '@/data/regions'
 
 export type GoalType = 'breakthrough' | 'equipment' | 'explore' | 'material' | 'build'
 
@@ -65,6 +67,16 @@ export function generateCurrentGoal(player: ReturnType<typeof usePlayerStore>): 
     }
   }
 
-  // 4. 低优先级:探索/材料/装备(此处作为兜底)
+  // 4. 低优先级:探索/材料/装备(此处只做 explore —— 未探索且可入的地界向,
+  //    数据取自旧解锁链与路线;材料/装备阈值未定,宁缺毋滥,不硬塞建议)
+  const adventure = useAdventureStore()
+  const nextRegion = REGIONS.find(r => adventure.unlocked.includes(r.id) && !adventure.cleared.includes(r.id))
+  if (nextRegion) {
+    return {
+      type: 'explore',
+      text: `深入「${nextRegion.name}」`,
+      hint: '增长阅历,也寻些机缘与材料'
+    }
+  }
   return null
 }

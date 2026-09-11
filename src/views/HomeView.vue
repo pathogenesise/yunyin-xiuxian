@@ -37,6 +37,20 @@
       </div>
     </div>
 
+    <!-- Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页) -->
+    <div v-if="currentGoal" class="card-ink flex items-center gap-3 px-4 py-3">
+      <GameIcon name="scroll" :size="14" class="shrink-0 text-jade" />
+      <div class="min-w-0 flex-1">
+        <p class="flex items-baseline justify-between gap-2">
+          <span class="font-kai text-[13px] tracking-wider text-ink">{{ currentGoal.text }}</span>
+          <span v-if="currentGoal.progress !== undefined" class="shrink-0 text-[10px] text-ink-faint tabular">
+            {{ Math.round(currentGoal.progress * 100) }}%
+          </span>
+        </p>
+        <p v-if="currentGoal.hint" class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">{{ currentGoal.hint }}</p>
+      </div>
+    </div>
+
     <!-- 天界入口(真仙) -->
     <RouterLink
       v-if="player.major >= 9"
@@ -116,6 +130,7 @@
   import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
   import { VEIN_UNLOCK_MAJOR } from '@/data/constants'
   import { todayWeather } from '@/core/weather'
+  import { generateCurrentGoal, type Goal } from '@/core/goal'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import VeinInvestCard from '@/components/dongfu/VeinInvestCard.vue'
@@ -128,6 +143,9 @@
   const adventure = useAdventureStore()
   const cultivation = useCultivationStore()
   const quests = useQuestsStore()
+
+  // Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页)
+  const currentGoal = computed<Goal | null>(() => generateCurrentGoal(player))
 
   const statusText = computed(() => {
     if (player.dead) return '陨落'
