@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 20,
+  "round": 21,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T06:18:28+00:00",
+  "updated_at": "2026-09-11T06:25:42+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1518,10 +1518,10 @@
     "ISS-030": {
       "id": "ISS-030",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T02:40:31+00:00",
-      "updated_at": "2026-09-11T02:40:31+00:00",
+      "updated_at": "2026-09-11T06:25:42+00:00",
       "touched_round": 20,
       "summary": "loot 概率未夹 [0,1]:afterWin 的法宝倍率(×6×luck)与 doubleDropRate 可乘出 >1(当前数据源距此极远,属余额锥形风险)",
       "severity": 0.1,
@@ -1662,16 +1662,27 @@
     "TASK-030": {
       "id": "TASK-030",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T06:18:28+00:00",
-      "updated_at": "2026-09-11T06:18:28+00:00",
+      "updated_at": "2026-09-11T06:25:42+00:00",
       "touched_round": 20,
       "category": "correctness",
       "severity": 0.1,
       "confidence": 1.0,
       "effort": 1,
       "summary": "ISS-030 闭环:loot.ts 全部 rng.chance 概率输入经 capChance 钳到 [0,1](法宝×6×luck、doubleDropRate、书页/丹药倍率),与既有 equipChance Math.min(0.9,...) 对齐,防未来平衡数据把概率堆出界成'必然掉落'"
+    },
+    "CHANGE-034": {
+      "id": "CHANGE-034",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T06:25:42+00:00",
+      "updated_at": "2026-09-11T06:25:42+00:00",
+      "touched_round": 20,
+      "commit": 5044717,
+      "summary": "loot capChance:afterWin 全部概率输入钳到 [0,1],TASK-030 闭环"
     }
   },
   "edges": [
@@ -2305,6 +2316,18 @@
       "to": "ISS-030",
       "type": "addresses",
       "created_at": "2026-09-11T06:18:28+00:00"
+    },
+    {
+      "from": "CHANGE-034",
+      "to": "TASK-030",
+      "type": "implements",
+      "created_at": "2026-09-11T06:25:42+00:00"
+    },
+    {
+      "from": "CHANGE-034",
+      "to": "ISS-030",
+      "type": "resolves",
+      "created_at": "2026-09-11T06:25:42+00:00"
     }
   ]
 }
