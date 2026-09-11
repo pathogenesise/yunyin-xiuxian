@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 24,
+  "round": 25,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T13:38:10+00:00",
+  "updated_at": "2026-09-11T14:03:17+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1863,6 +1863,131 @@
       "touched_round": 24,
       "summary": "goal.ts 接入 material/equipment 两类目标:灵草低于10指最高已通关地界采集,实体装备槽有空位指首个空槽;测试覆盖阈值/进度/不硬塞边界",
       "commit": "7763e5d"
+    },
+    "DEC-015": {
+      "id": "DEC-015",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T13:47:04+00:00",
+      "updated_at": "2026-09-11T13:47:04+00:00",
+      "touched_round": 25,
+      "summary": "境界体系扩界:人间界9境(炼气→渡劫)保留,新增仙界5境(真仙·玄仙·金仙·太乙·大罗)、神界4境(神人·神将·神王·神帝)、混沌海3境(混沌真灵·混沌神魔·混沌道祖),共21大境界;每大境界仍九层+圆满",
+      "rationale": "玩家诉求:只到真仙太少,需人间界/仙界/神界/混沌海各若干境,并配套功法/丹药/机缘/事件/宠物等。既有0-9境曲线与内容索引全部保持不变(向后兼容存档),新界追加在其上;天界终局(道途/远征/试炼/熔炉)由『满级(真仙)』改锚到『入仙界(真仙)』这一具名门槛,使神界/混沌海成为其上的长线内容而非替代",
+      "alternatives_rejected": "1)直接把新境界插在现有境之间:破坏既有索引/存档/内容 gate;2)保持 3.46x/境的需求增速线性外推 21 境:终局耗时天文数字不可玩;3)只加境界不加跨界的每境成长重定(danger:power/time 失配引发膨胀)"
+    },
+    "TASK-033": {
+      "id": "TASK-033",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T13:47:07+00:00",
+      "updated_at": "2026-09-11T14:03:14+00:00",
+      "touched_round": 25,
+      "category": "core-feature",
+      "summary": "境界扩界落地:新增仙界/神界/混沌海 12 大境界及配套内容(区域/敌人/功法/丹药/灵兽/事件/成就),重定跨界成长节奏,天界终局门槛改锚",
+      "severity": 0.85,
+      "confidence": 0.9,
+      "effort": 8,
+      "priority_score": 6
+    },
+    "ISS-037": {
+      "id": "ISS-037",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T13:47:07+00:00",
+      "updated_at": "2026-09-11T14:03:14+00:00",
+      "touched_round": 25,
+      "summary": "现有境界体系只到真仙(10大境界),人间界之外无仙界/神界/混沌海,缺少高境界配套内容与长期目标",
+      "severity": 0.7,
+      "confidence": 1.0
+    },
+    "CHG-037": {
+      "id": "CHG-037",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:10+00:00",
+      "updated_at": "2026-09-11T14:03:10+00:00",
+      "touched_round": 25,
+      "summary": "境界扩界落地:REALMS 10→21(人间界0-8保留,新增仙界9-13/神界14-17/混沌海18-20)+RealmDef.world/WORLDS 界域;formulas 跨界平坦曲线;区域20→32、敌人60→96;功法+6(仙品/神品)及全部悟道分支;丹药+10(含3新增益 buff);灵兽+4神兽;奇遇事件+7;成就+11;终局门槛改锚 WORLD_BREAK_MAJOR(真仙);凡界路线生成限人间界池;轮回经济参照终点收敛到 REBIRTH_REFERENCE_MAJOR",
+      "commit": "077de33"
+    },
+    "HYP-005": {
+      "id": "HYP-005",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:10+00:00",
+      "updated_at": "2026-09-11T14:03:10+00:00",
+      "touched_round": 25,
+      "confidence": 0.85,
+      "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
+    },
+    "EV-016": {
+      "id": "EV-016",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:10+00:00",
+      "updated_at": "2026-09-11T14:03:10+00:00",
+      "touched_round": 25,
+      "source": "vitest run: 109 files / 1035 tests passed",
+      "summary": "全量测试全绿(含 inflationAudit/contentGateAudit/pillValue/gongfaBranch/bossAudit/bossPhaseAudit/progressionSim 等审计门)",
+      "confidence": 1.0
+    },
+    "EV-017": {
+      "id": "EV-017",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:10+00:00",
+      "updated_at": "2026-09-11T14:03:10+00:00",
+      "touched_round": 25,
+      "source": "vue-tsc -b + eslint src + vite build: clean",
+      "summary": "类型检查、lint、生产构建三关皆过",
+      "confidence": 1.0
+    },
+    "TASK-034": {
+      "id": "TASK-034",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:14+00:00",
+      "updated_at": "2026-09-11T14:03:14+00:00",
+      "touched_round": 25,
+      "category": "core-feature",
+      "summary": "界外长尾节奏实测调优:扩界后真仙→混沌道祖约 58x 真仙耗时(progressionSim 口径),需在真实存档口径上验证四界是否符合放置节奏并可调 LATE_* 常数",
+      "severity": 0.5,
+      "confidence": 0.5,
+      "effort": 5
+    },
+    "TASK-035": {
+      "id": "TASK-035",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:14+00:00",
+      "updated_at": "2026-09-11T14:03:14+00:00",
+      "touched_round": 25,
+      "category": "core-feature",
+      "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
+      "severity": 0.6,
+      "confidence": 0.7,
+      "effort": 6
+    },
+    "ISS-038": {
+      "id": "ISS-038",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:03:17+00:00",
+      "updated_at": "2026-09-11T14:03:17+00:00",
+      "touched_round": 25,
+      "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
+      "severity": 0.55,
+      "confidence": 0.7
     }
   },
   "edges": [
@@ -2598,6 +2723,42 @@
       "to": "ISS-036",
       "type": "resolves",
       "created_at": "2026-09-11T13:38:10+00:00"
+    },
+    {
+      "from": "CHG-037",
+      "to": "TASK-033",
+      "type": "implements",
+      "created_at": "2026-09-11T14:03:13+00:00"
+    },
+    {
+      "from": "CHG-037",
+      "to": "ISS-037",
+      "type": "resolves",
+      "created_at": "2026-09-11T14:03:13+00:00"
+    },
+    {
+      "from": "EV-016",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:03:13+00:00"
+    },
+    {
+      "from": "EV-017",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T14:03:13+00:00"
+    },
+    {
+      "from": "TASK-034",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T14:03:17+00:00"
+    },
+    {
+      "from": "TASK-035",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T14:03:17+00:00"
     }
   ]
 }
