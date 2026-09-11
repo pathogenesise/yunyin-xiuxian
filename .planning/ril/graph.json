@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 99,
+  "round": 100,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T22:21:56+00:00",
+  "updated_at": "2026-09-11T22:37:59+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 98,
+      "touched_round": 99,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -4974,6 +4974,67 @@
       "summary": "powerRating.spec 增 4 例:每维贡献之和=得分、明细无白板条目(0 不列出)、星级与面板给的分档同源、机制维点名成路与副系;两次故障注入(删掉进攻维的「破甲」term → 明细之和 1.025 ≠ 得分 1.185;把面板分档换成另一套而判定不变 → 星级与分档不符)各转红;无头实证:成路存档下点「进攻」展开得 +0.05/+0.04/+0.02 与得分 0.11 相符;全量 133 文件 1345 用例绿",
       "confidence": 0.9,
       "source": "src/core/powerRating.spec.ts"
+    },
+    "ISS-074": {
+      "id": "ISS-074",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:29:13+00:00",
+      "updated_at": "2026-09-11T22:37:59+00:00",
+      "touched_round": 99,
+      "summary": "存档分片清单是靠人记的:PERSISTED_STORES 决定导出/导入/清档/损坏扫描的范围,而 pacingTelemetry 早就 persistConfig('pacing') 落盘却从未登记 —— 玩家「清空存档」后这片遥测仍留在本机、导出也不含它,全程没有任何提示;另外导出→清档→导入这条路此前没有任何端到端验证",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-065": {
+      "id": "TASK-065",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:29:13+00:00",
+      "updated_at": "2026-09-11T22:37:59+00:00",
+      "touched_round": 99,
+      "summary": "把存档分片清单从源码倒推(凡 persistConfig 的必在清单、清单里的必在持久化),并补导出→清档→导入的往返一致性红线(逐片对账 + 重建 store 后关键状态仍在);顺手把漏登记的 pacing 补进清单",
+      "category": "robustness",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "HYP-032": {
+      "id": "HYP-032",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:29:17+00:00",
+      "updated_at": "2026-09-11T22:29:17+00:00",
+      "touched_round": 99,
+      "summary": "凡「清单决定范围」的地方(存档分片、清档、迁移、扫描),判断范围都不能靠人手维护 —— 必须从真实来源倒推(store 源码里的 persistConfig)。手写清单的失效方式总是静默的:新加的东西不在范围内,不报错、不提示,只是悄悄少一块;而往返一致性(导出→导入)是这类契约最直接的端到端验证",
+      "confidence": 0.85
+    },
+    "EV-079": {
+      "id": "EV-079",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:29:17+00:00",
+      "updated_at": "2026-09-11T22:29:17+00:00",
+      "touched_round": 99,
+      "summary": "saveRoundTrip.spec 4 例:从 src/stores/*.ts 倒推 persistConfig 清单并与 PERSISTED_STORES 双向比对、清档后清单内每键都消失、真 pinia+真持久化插件的导出→清档→导入逐片对账并重建 store 验状态、坏文本导入不污染现有存档;两次故障注入(删掉清单里的 pacing、让 applyImportPayload 改写分片)各转红;全量 134 文件 1349 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/saveRoundTrip.spec.ts"
+    },
+    "CHG-123": {
+      "id": "CHG-123",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:37:59+00:00",
+      "updated_at": "2026-09-11T22:37:59+00:00",
+      "touched_round": 99,
+      "summary": "PERSISTED_STORES 补上 pacing(节奏遥测分片);新增 saveRoundTrip.spec 4 例:从 store 源码倒推分片清单双向比对、清档清干净、真持久化插件下的导出→清档→导入逐片对账与状态回归、坏文本导入不污染;登记进分类报告",
+      "commit": "cdb3f97"
     }
   },
   "edges": [
@@ -7035,6 +7096,36 @@
       "to": "HYP-031",
       "type": "validates",
       "created_at": "2026-09-11T22:21:55+00:00"
+    },
+    {
+      "from": "ISS-074",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T22:37:59+00:00"
+    },
+    {
+      "from": "TASK-065",
+      "to": "ISS-074",
+      "type": "addresses",
+      "created_at": "2026-09-11T22:37:59+00:00"
+    },
+    {
+      "from": "CHG-123",
+      "to": "TASK-065",
+      "type": "implements",
+      "created_at": "2026-09-11T22:37:59+00:00"
+    },
+    {
+      "from": "CHG-123",
+      "to": "ISS-074",
+      "type": "resolves",
+      "created_at": "2026-09-11T22:37:59+00:00"
+    },
+    {
+      "from": "EV-079",
+      "to": "HYP-032",
+      "type": "validates",
+      "created_at": "2026-09-11T22:37:59+00:00"
     }
   ]
 }
