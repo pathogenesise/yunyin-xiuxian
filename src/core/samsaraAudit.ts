@@ -303,6 +303,70 @@ export const HERITAGE: HeritageRow[] = [
     kind: 'state',
     power: 'high',
     compressesGrowth: false
+  },
+  // ---- 补全(Phase 34.8):本轮新加的三处状态与一处身份,此前清单里没有 ----
+  {
+    id: 'divination',
+    name: '问卦所得之卦',
+    mode: 'reset',
+    detail: 'rebirth() 置 divination=null —— 卦是「此一时的时机」,不是「我是谁」',
+    kind: 'state',
+    power: 'low',
+    compressesGrowth: false
+  },
+  {
+    id: 'breakthroughPrep',
+    name: '突破准备(静坐/聚气丹)',
+    mode: 'reset',
+    detail: 'rebirth() 置 breakthroughPrep=null —— 下一世要重新备;未用完的一次性加成也不跨世',
+    kind: 'state',
+    power: 'low',
+    compressesGrowth: false
+  },
+  {
+    id: 'enlightenmentAt',
+    name: '悟道频次(顿悟冷却)',
+    mode: 'full',
+    detail: 'enlightenmentAt 不随转世清零 —— 它是频次闸不是本世进度;清了就能靠转世刷顿悟',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'name',
+    name: '姓名',
+    mode: 'full',
+    detail: 'rebirth() 不改 name —— 名与道号随神魂不灭',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'reincarnationCount',
+    name: '转世次数',
+    mode: 'full',
+    detail: 'reincarnation.count 只增不减 —— 每世道果与天赋的发放都按它计',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: true
+  },
+  {
+    id: 'lives',
+    name: '历世履历',
+    mode: 'full',
+    detail: 'confirmReincarnation 里 recordLife 逐世归档,只增不改(修仙录据此成书)',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'vow',
+    name: '本世命题',
+    mode: 'reset',
+    detail: 'beginLife() 每世重立;上一世的题只入履历与宿慧,不再参与本世结算',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
   }
 ]
 

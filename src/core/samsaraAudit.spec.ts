@@ -9,6 +9,10 @@
  * 遗产(知识、认知、履历、道果)该继承;状态(境界、肉身、资源、装备)该重建。
  */
 import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { usePlayerStore } from '@/stores/player'
 import {
   daoFruitAfterLives,
   FRUIT_PER_LIFE,
@@ -206,6 +210,80 @@ describe('轮回审计 · 继承清单最小完备', () => {
     const ids = new Set(HERITAGE.map(r => r.id))
     const missing = REQUIRED.filter(id => !ids.has(id))
     expect(missing, `这些系统未登记跨世去留:${missing.join('、')}`).toEqual([])
+  })
+
+  /**
+   * 上一条靠**手写清单**,所以新加的状态字段会悄悄漏过(divination / breakthroughPrep /
+   * enlightenmentAt 就是这样漏了整整一轮)。这条改成从存档实际字段倒推:
+   * player.$state 的每一个键,都必须能指到清单里的某一行(或登记为无需登记的例外)。
+   */
+  const STATE_KEY_ROWS: Record<string, string[]> = {
+    age: ['realm'],
+    bond: ['bonds'],
+    breakthroughPrep: ['breakthroughPrep'],
+    dead: ['realm'],
+    divination: ['divination'],
+    enlightenmentAt: ['enlightenmentAt'],
+    eventChains: ['fortuneMemory'],
+    exp: ['realm'],
+    fortuneChoices: ['fortuneMemory'],
+    lastCaveEventDay: ['streak'],
+    lifespanBonusYears: ['realm'],
+    linggen: ['linggen'],
+    major: ['realm'],
+    mentor: ['mentor'],
+    name: ['name'],
+    nemeses: ['suppress'],
+    petId: ['pet'],
+    regionEvent: ['regionEvent'],
+    regionStats: ['regions'],
+    regionWins: ['regions'],
+    // 轮回对象是一整套(次数/道果/天赋/宿慧/履历/命题/契/道友),由下面几行共同覆盖
+    reincarnation: ['reincarnationCount', 'daoFruit', 'talents', 'insight', 'lives', 'vow', 'trial', 'bonds'],
+    secretRealm: ['secretRealm'],
+    sub: ['realm'],
+    suppressQualified: ['suppress'],
+    suppressedRegions: ['suppress'],
+    suppressedSince: ['suppress'],
+    titleId: ['title'],
+    winStreak: ['streak']
+  }
+
+  /** 存档里有、但确实不需要跨世登记的行(写清理由,不许留空) */
+  const NO_ROW_NEEDED: Record<string, string> = {
+    // 例:player.$state 里没有任何"纯运行时且无跨世意义"的字段;将来若出现,登记在此并写明理由
+  }
+
+  it('存档里的每个字段都登记了跨世去留 —— 从 $state 倒推,不靠手写清单', () => {
+    setActivePinia(createPinia())
+    const keys = Object.keys(usePlayerStore().$state).sort()
+    expect(keys.length, '取不到 player 存档字段,断言形同虚设').toBeGreaterThan(20)
+    const unmapped = keys.filter(k => !(k in STATE_KEY_ROWS) && !(k in NO_ROW_NEEDED))
+    expect(
+      unmapped,
+      `这些存档字段没有跨世去留的结论:${unmapped.join('、')} —— 要么补 HERITAGE 一行,要么在此写明为何不用登记`
+    ).toEqual([])
+  })
+
+  it('映射指向的清单行真实存在;手写清单与倒推清单不打架', () => {
+    const ids = new Set(HERITAGE.map(r => r.id))
+    for (const [key, rows] of Object.entries(STATE_KEY_ROWS)) {
+      expect(rows.length, `${key} 没有指向任何清单行`).toBeGreaterThan(0)
+      for (const id of rows) expect(ids.has(id), `${key} 指向了不存在的行 ${id}`).toBe(true)
+    }
+    // 手写清单里的每一行,也应至少被某个字段或另一行的 detail 用到 ——
+    // 只要求"手写与倒推互相认得出来",不要求一一对应(有些行是组合概念)
+    const referenced = new Set(Object.values(STATE_KEY_ROWS).flat())
+    const orphanRows = HERITAGE.filter(r => !referenced.has(r.id) && !REQUIRED.includes(r.id))
+    expect(orphanRows.map(r => r.id), '这些清单行既不在手写清单,也没有字段指向').toEqual([])
+  })
+
+  it('轮回结算的交割清单直接渲染这张表,不另写一份', () => {
+    const src = readFileSync(resolve(__dirname, '../components/character/ReincarnationDialog.vue'), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+    expect(src, '结算弹窗没有接上继承表,玩家看到的与代码交割会分叉').toContain('heritageGroups()')
   })
 
   it('外物一律归零:装备/法宝/丹药/材料/灵兽/洞府/灵脉/区域/本世/秘境/事件/契约', () => {
