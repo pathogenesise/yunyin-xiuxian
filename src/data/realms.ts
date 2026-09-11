@@ -60,6 +60,18 @@ export function lifespanOf(major: number): number {
   return Math.round(cfg.base * Math.pow(cfg.growth, m - cfg.start))
 }
 
+/**
+ * 飞升大跃的倍数:渡劫(人间界末) → 真仙(仙界首)的寿元倍数。
+ *
+ * 说明文档里「约 ×N」的说法必须读这里 —— 手写过的 ×100 与数据里的 ×102
+ * 差了一档,而这种句子没人会去核。以后调寿元曲线,文案自己跟上。
+ */
+export function ascensionLeap(): number {
+  const mortal = WORLDS[0]!
+  const immortal = WORLDS[1]!
+  return Math.round(lifespanOf(immortal.start) / lifespanOf(mortal.end))
+}
+
 export const REALMS: RealmDef[] = [
   // ---- 人间界 ----
   { id: 'lianqi', name: '炼气', world: 'mortal', lifespanYears: lifespanOf(0), tribulation: false, desc: '引气入体,踏上仙途', lore: '起点取网文最常见的「炼气」——吐纳导引、引气入体,对应道家「服气」之说;凡人由此入道,故名。', basis: '内丹' },

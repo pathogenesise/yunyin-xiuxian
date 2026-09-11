@@ -2,9 +2,10 @@
  * 生态健康度(Phase 25)—— 把散落各处的平衡指标汇成一个可跨版本比较的仪表盘
  * 不替代红线断言;红线管「不许坏」,健康度管「趋势如何」
  */
+import { BUILD_PROFILES } from './buildSim'
 
 export interface HealthInput {
-  /** 各终局世界可行流派数(0~6) */
+  /** 各终局世界可行流派数(0~BUILD_PROFILES.length) */
   viablePerWorld: number[]
   /** 各世界 次优/最优 通率比(0~1,越高越不塌缩) */
   secondOverBest: number[]
@@ -35,7 +36,7 @@ const avg = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0)
 const clamp01 = (x: number): number => Math.max(0, Math.min(1, x))
 
 export function computeEcosystemHealth(input: HealthInput): HealthReport {
-  const diversity = clamp01(avg(input.viablePerWorld) / 6)
+  const diversity = clamp01(avg(input.viablePerWorld) / BUILD_PROFILES.length)
   const spread = clamp01(avg(input.secondOverBest))
   const universal = clamp01(1 - input.universalRate / 0.015)
   const trap = clamp01(1 - input.trapRate / 0.3)
@@ -43,7 +44,7 @@ export function computeEcosystemHealth(input: HealthInput): HealthReport {
   const synergy = clamp01(1 - Math.max(0, input.maxPairSynergy - 1) / 1.5)
 
   const parts: HealthPart[] = [
-    { name: 'Build 多样性', score: Math.round(diversity * 100), detail: `平均可行 ${avg(input.viablePerWorld).toFixed(1)}/6` },
+    { name: 'Build 多样性', score: Math.round(diversity * 100), detail: `平均可行 ${avg(input.viablePerWorld).toFixed(1)}/${BUILD_PROFILES.length}` },
     { name: '最优不独走', score: Math.round(spread * 100), detail: `次优/最优 ${Math.round(avg(input.secondOverBest) * 100)}%` },
     { name: '万金油抑制', score: Math.round(universal * 100), detail: `破墙率 ${(input.universalRate * 100).toFixed(1)}%(红线 1.5%)` },
     { name: '陷阱可控', score: Math.round(trap * 100), detail: `陷阱率 ${(input.trapRate * 100).toFixed(1)}%` },

@@ -235,7 +235,7 @@
           <div class="card-ink mt-2 px-4 py-3">
             <p class="flex items-center gap-2">
               <span class="font-kai text-[14px] tracking-widest text-ink">{{ dailyWorld?.name }}</span>
-              <span class="tabular text-[11px] text-ink-soft">{{ daily.verdict.difficulty }} · 可行 {{ daily.verdict.viable }}/6</span>
+              <span class="tabular text-[11px] text-ink-soft">{{ daily.verdict.difficulty }} · 可行 {{ daily.verdict.viable }}/{{ BUILD_PROFILES.length }}</span>
               <span class="ml-auto tabular text-[11px] text-gold-ink">赏 {{ daily.verdict.reward }}</span>
             </p>
             <p class="mt-1 flex flex-wrap gap-x-3 text-[10px] text-violet-ink">
@@ -355,7 +355,7 @@
               :class="challengeVerdict.ok ? 'bg-paper-deep/70' : 'bg-cinnabar/10'"
             >
               <p v-if="challengeVerdict.ok" class="flex items-center justify-between text-[11px]">
-                <span class="text-ink-soft">天道受此约:{{ challengeVerdict.difficulty }} · 可行流派 {{ challengeVerdict.viable }}/6</span>
+                <span class="text-ink-soft">天道受此约:{{ challengeVerdict.difficulty }} · 可行流派 {{ challengeVerdict.viable }}/{{ BUILD_PROFILES.length }}</span>
                 <span class="tabular text-gold-ink">赏 道源 {{ challengeVerdict.reward }}</span>
               </p>
               <p v-else class="text-[11px] text-cinnabar">{{ challengeVerdict.reason }}</p>
@@ -504,7 +504,7 @@
               当前构筑相性
               <span class="text-gold-ink">{{ prepForecast.stars }}</span>
             </span>
-            <span>预计可行流派 {{ prepForecast.viableStyles }}/6</span>
+            <span>预计可行流派 {{ prepForecast.viableStyles }}/{{ BUILD_PROFILES.length }}</span>
           </p>
         </div>
         <p v-if="prepPreview" class="mt-2 text-[10px] leading-relaxed text-violet-ink">
@@ -756,6 +756,7 @@
     type StepOutcome
   } from '@/core/expedition'
   import { detectBuild } from '@/core/buildDetect'
+  import { BUILD_PROFILES } from '@/core/buildSim'
   import { swordPurity } from '@/core/daoDepth'
   import {
     CHALLENGE_ENTRY_COST,

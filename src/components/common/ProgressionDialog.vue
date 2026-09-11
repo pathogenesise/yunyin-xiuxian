@@ -91,7 +91,7 @@
           </div>
         </div>
         <p class="mt-1.5 text-[10px] text-ink-faint">
-          唯「渡劫→真仙」是脱去凡尘的大跃(约 ×100);此后破界入神、归返混沌亦各跃一档。
+          唯「渡劫→真仙」是脱去凡尘的大跃(约 ×{{ ascensionLeap() }});此后破界入神、归返混沌亦各跃一档。
         </p>
       </div>
 
@@ -122,6 +122,7 @@ import {
     SORCERY_SUMMARY
 } from '@/data/progressionDoc'
 import { formatGN } from '@/utils/format'
+import { ascensionLeap } from '@/data/realms'
 
   defineProps<{ open: boolean }>()
   defineEmits<{ close: [] }>()

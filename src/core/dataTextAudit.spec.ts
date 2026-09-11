@@ -23,7 +23,10 @@ import { PACTS } from '@/data/pacts'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cnNumber } from '@/utils/format'
-import { REALMS, WORLDS } from '@/data/realms'
+import { REALMS, WORLDS, ascensionLeap } from '@/data/realms'
+import { VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY } from '@/data/constants'
+import { VEINS } from '@/data/veins'
+import { BUILD_PROFILES } from '@/core/buildSim'
 import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
 import { PALACES, STARS } from '@/data/ziwei'
 import { MANSIONS } from '@/data/xiangxiu'
@@ -271,6 +274,58 @@ describe('文案数值对账 · 视图不手抄数量', () => {
     const build = src('../views/BuildView.vue')
     expect(build).toContain('cnNumber(powerRating.labels.length)')
     expect(build).not.toContain('五维评级 ——')
+  })
+})
+
+/**
+ * 手写的门槛与容量 —— 数字的另一种写法:阿拉伯数字 + 单位。
+ *
+ * 「主脉可投 70 点」「可行流派 3/6」这类句子里的数字同样是抄的,只是长得不像
+ * 「二十一境」那样明显。它们抄的是**另一张表**(容量常数、构筑流派数),
+ * 而这张表正是最常被调的东西 —— 调完数值,句子还在说旧数。
+ */
+describe('文案数值对账 · 手写的门槛与容量', () => {
+  const src = (from: string): string =>
+    readFileSync(resolve(__dirname, from), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+
+  it('灵脉卡的自陈数字取自 constants(接线换的是算法,不是玩家看到的数)', () => {
+    expect(VEIN_MAIN_CAPACITY).toBe(70)
+    expect(VEIN_SIDE_CAP).toBe(30)
+    expect(VEIN_TOTAL_CAPACITY).toBe(100)
+    const card = src('../components/dongfu/VeinInvestCard.vue')
+    for (const ref of ['VEIN_MAIN_CAPACITY', 'VEIN_SIDE_CAP', 'VEIN_TOTAL_CAPACITY']) {
+      expect(card, `灵脉卡的自陈应读 ${ref}`).toContain(ref)
+    }
+    for (const hand of ['70 点', '30 点', '总容量 100']) {
+      expect(card, `手抄的「${hand}」应改成读常数`).not.toContain(hand)
+    }
+  })
+
+  it('「不能全部点满」是算术事实:全部脉的上限之和确实超过总容量', () => {
+    // 文案这么说,是因为投满所有脉需要的点数 > 总容量;若哪天不成立了,取舍就没了
+    const allIn = VEIN_MAIN_CAPACITY + VEIN_SIDE_CAP * (VEINS.length - 1)
+    expect(allIn, `共 ${VEINS.length} 条脉,投满需 ${allIn} 点,总容量 ${VEIN_TOTAL_CAPACITY}`)
+      .toBeGreaterThan(VEIN_TOTAL_CAPACITY)
+  })
+
+  it('「可行流派 x/N」的分母取自 BUILD_PROFILES(界面与生态健康度同源)', () => {
+    expect(BUILD_PROFILES.length).toBe(6)
+    const view = src('../views/CelestialView.vue')
+    expect(view, '分母应读构筑流派数').toContain('BUILD_PROFILES.length')
+    expect(view, '界面里的分母不该手写').not.toMatch(/\}\}\s*\/6\b/)
+    const health = src('./ecosystemHealth.ts')
+    expect(health, '健康度的多样性分母也读构筑流派数').toContain('BUILD_PROFILES.length')
+    expect(health).not.toMatch(/\/ ?6\b/)
+  })
+
+  it('「渡劫→真仙的大跃倍数」由寿元曲线推出(此前文案写 ×100,数据是 ×102)', () => {
+    expect(ascensionLeap()).toBe(102)
+    const dialog = src('../components/common/ProgressionDialog.vue')
+    expect(dialog, '大跃倍数应读 ascensionLeap()').toContain('ascensionLeap()')
+    expect(dialog, '手写的 约 ×100 与寿元表差了一档').not.toContain('约 ×100')
   })
 })
 
