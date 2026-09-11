@@ -16,6 +16,8 @@ import { useGameStore } from '@/stores/game'
 import { usePlayerStore } from '@/stores/player'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useUiStore } from '@/stores/ui'
+import { todayWeather } from './weather'
+import { toNum } from '@/utils/gnum'
 
 const GAP_HOURS = 60
 
@@ -61,5 +63,43 @@ describe('离线结算封顶一致性', () => {
     // 60h 封顶:stoneByTier(tier1, 150×60×0.98) ≈ 10584
     expect(stone).toBeGreaterThan(8000)
     expect(stone).toBeLessThan(13000)
+  })
+})
+
+describe('离线结算同源吃天时(ISS-027 续)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('灵雨日离线修炼速率高于清和日(天时并入 cultPerSec,离线不再掉加成)', () => {
+    // 找一个清和日(无修炼加成)与灵雨日(+10%),同一角色同一时长下对比
+    const game = useGameStore()
+    let lingyuDay = -1
+    let qingheDay = -1
+    for (let d = 0; d < 60; d += 1) {
+      game.$patch({ totalPlaySec: d * 86400 })
+      const id = todayWeather().id
+      if (id === 'lingyu' && lingyuDay < 0) lingyuDay = d
+      if (id === 'qinghe') qingheDay = d
+    }
+    expect(lingyuDay).toBeGreaterThanOrEqual(0)
+    expect(qingheDay).toBeGreaterThanOrEqual(0)
+
+    function offlineExpOnDay(day: number): number {
+      const g = useGameStore()
+      const p = usePlayerStore()
+      g.markStarted()
+      // 短离线(10s)只修一次修炼,修为远未触及 expReq 封顶,差值才可比
+      g.lastActiveAt = Date.now() - 10 * 1000
+      g.$patch({ totalPlaySec: day * 86400 })
+      p.initCharacter('离修', { roots: [] } as never)
+      const before = toNum(p.exp)
+      settleOffline(Date.now())
+      return toNum(p.exp) - before
+    }
+    const expLingyu = offlineExpOnDay(lingyuDay)
+    const expQinghe = offlineExpOnDay(qingheDay)
+    // 灵雨修炼 +10%:离线修为增益应显著高于无加成日(留余量,防修复方 double-count)
+    expect(expLingyu).toBeGreaterThan(expQinghe * 1.05)
   })
 })

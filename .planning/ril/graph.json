@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 14,
+  "round": 15,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-10T16:03:22+00:00",
+  "updated_at": "2026-09-11T02:07:06+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1359,6 +1359,85 @@
       "summary": "闭关(TASK-024)判定为『设计未定』暂缓:与连胜/突破准备(数据完备只缺接线)不同,闭关连 retreat buff 定义都没有,入口与『禁探索』也没落过 UI/逻辑;强行接线等于从零设计一套新玩法(数值+入口+约束)。记入图谱待产品定 mex",
       "rationale": "写完本批 Phase 28 其余全部接线后,闭关是唯一剩余的死功能;差别在于它没有『可兑现的既有设计』可依,贸然造一套与封包期产品意图未必相符",
       "alternatives_rejected": "照 5 分钟 +150% 原样造 buff 并硬塞 UI(数值未审、入口未定,造出与产品意图可能相悖的机制)"
+    },
+    "EV-010": {
+      "id": "EV-010",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T00:50:28+00:00",
+      "updated_at": "2026-09-11T00:50:28+00:00",
+      "touched_round": 14,
+      "source": "weather.ts:30-66 + engine.ts:128-136 + player.ts:144-164 + tribulationDecision.ts:169-188",
+      "summary": "天时战斗/渡劫词条只见于数据从未接线:仅 lingyu 的 cultivationSpeed/qiRegen 在 engine.advance 手动生效;chiyang(attackPct/damageBonus)、yueshi(luck/dropRate)、leiming(attackPct/tribulationResist)从未进入 finalStats.mods 或 combat/loot;leiming.tribulationMult=1.08 被 weather.spec:42 与 phase31LinkAudit.spec:86 断言为设计意图却无任何 waveDamage/traceTribulation/runTribulation 路径消费;离线 settleOffline 完全不看天气(连灵雨加成都没有)",
+      "detail": "weather.ts desc 承诺:赤阳火系伤害+15%、月蚀幸运/掉落、雷鸣突破更险(渡劫难度+8%)。finalStats 的 modSources(player.ts:149-159)不含天气;combat/loot 读 finalStats.mods,故三天气零效果。tribulationSuccessRate(审计基线)以固定种子不挑天气,runTribulation 与 buildTribulationPlan 均未乘 tribulationMult",
+      "confidence": 1.0
+    },
+    "ISS-027": {
+      "id": "ISS-027",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T00:51:14+00:00",
+      "updated_at": "2026-09-11T00:51:14+00:00",
+      "touched_round": 15,
+      "summary": "天时(weather)战斗/渡劫词条仅定义未生效——赤阳/月蚀/雷鸣三种天时对 combat/loot/渡劫零影响,lingyu 也只在线生效离线无",
+      "severity": 0.55,
+      "confidence": 0.9,
+      "detail": "设计意图被 weather.ts desc(火系伤害/幸运/渡劫难度)与两处 spec 断言(tribulationMult>1)锁定,但实现只把 cultivationSpeed/qiRegen 手动接进 engine.advance:①chiyang attackPct/damageBonus、yueshi luck/dropRate、leiming attackPct/tribulationResist 从未进 finalStats.mods;②tribulationMult 无消费方;③离线 settleOffline 彻底忽略天气。属于『描述即承诺』系列的机制未接线"
+    },
+    "TASK-025": {
+      "id": "TASK-025",
+      "type": "task",
+      "status": "active",
+      "version": 3,
+      "created_at": "2026-09-11T00:52:47+00:00",
+      "updated_at": "2026-09-11T01:05:56+00:00",
+      "touched_round": 15,
+      "summary": "天时机制接线:把 weather.mods 并入 finalStats 的 mod 源(combat/loot/渡劫共享),tribulationMult 接入 waveDamage 结算与预览,离线同样吃天气",
+      "category": "correctness",
+      "severity": 0.65,
+      "confidence": 0.9,
+      "effort": 3,
+      "priority_score": 6.5,
+      "impact": "五天气中三种(赤阳/月蚀/雷鸣)零战斗作用,lingyu 离线失效——'描述即承诺'未兑现,且被两处 spec 断言的渡劫难度(+8%)从未进结算",
+      "lock_owner": "yunyin-session",
+      "lock_until": "2026-09-11T01:50:56+00:00"
+    },
+    "HYP-004": {
+      "id": "HYP-004",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T00:59:44+00:00",
+      "updated_at": "2026-09-11T00:59:44+00:00",
+      "touched_round": 14,
+      "confidence": 0.9,
+      "summary": "天时词条未接线根因:weather 设计为'环境 mod 源',但从未被并入 finalStats.modSources(engine 只手动接 cultivationSpeed/qiRegen),导致 combat/loot/渡劫读 finalStats.mods 时拿不到天气;tribulationMult 则根本没有对应消费点",
+      "detail": "evidence EV-010:weather.ts desc 承诺战斗/渡劫效果,spec 断言 tribulationMult>1,但 player.ts:149-159 的 modSources 无天气、tribulationDecision.waveDamage/traceTribulation/runTribulation 无 tribulationMult 消费"
+    },
+    "COMP-008": {
+      "id": "COMP-008",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T01:01:24+00:00",
+      "updated_at": "2026-09-11T01:01:24+00:00",
+      "touched_round": 14,
+      "summary": "天时环境系统(weather.ts):每日确定性天气,designed 影响修炼/战斗/掉落/渡劫",
+      "detail": "产出:chiyang attackPct/damageBonus、yueshi luck/dropRate、leiming tribulationResist+attackPct、lingyu qiRegen/cultivationSpeed;唯一消费点 engine.advance(仅修炼/灵气)。"
+    },
+    "CHG-030": {
+      "id": "CHG-030",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T02:06:10+00:00",
+      "updated_at": "2026-09-11T02:06:10+00:00",
+      "touched_round": 15,
+      "commit": "HEAD",
+      "summary": "天时机制接线:weather.mods 并入 finalStats.modSources(战斗/掉落/渡劫全链路生效),tribulationMult 接入 waveDamage 预览+结算同源,离线不再丢天时加成",
+      "detail": "player.ts 新增 weatherMods computed 并入 finalStats/celestialStats;engine.ts 移除手动 weatherCult/weatherQi;tribulationDecision waveDamage/traceTribulation/buildTribulationPlan/currentTribulationPlan 透传 weatherMult;breakthrough.runTribulation 同乘数;离线经 cultPerSec/qiRegenPerSec 自动吃天时;spec 补齐 7 条接线断言"
     }
   },
   "edges": [
@@ -1853,6 +1932,37 @@
       "to": "TASK-024",
       "type": "governs",
       "created_at": "2026-09-10T16:03:22+00:00"
+    },
+    {
+      "from": "TASK-025",
+      "to": "ISS-027",
+      "type": "addresses",
+      "created_at": "2026-09-11T00:56:13+00:00",
+      "note": "接线 weather→finalStats mods + tribulationMult→waveDamage + 离线天气一致"
+    },
+    {
+      "from": "EV-010",
+      "to": "HYP-004",
+      "type": "validates",
+      "created_at": "2026-09-11T01:00:14+00:00"
+    },
+    {
+      "from": "ISS-027",
+      "to": "COMP-008",
+      "type": "located_in",
+      "created_at": "2026-09-11T01:01:24+00:00"
+    },
+    {
+      "from": "CHG-030",
+      "to": "ISS-027",
+      "type": "resolves",
+      "created_at": "2026-09-11T02:07:06+00:00"
+    },
+    {
+      "from": "CHG-030",
+      "to": "TASK-025",
+      "type": "implements",
+      "created_at": "2026-09-11T02:07:06+00:00"
     }
   ]
 }

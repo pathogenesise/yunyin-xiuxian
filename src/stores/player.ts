@@ -14,6 +14,7 @@ import { talentDef } from '@/data/talents'
 import { baseCultPerSec, baseQiRegen, expRequirement, qiCap } from '@/core/formulas'
 import { computeFinalStats, modOf } from '@/core/statsCalc'
 import { forgeSoul } from '@/core/gauntlet'
+import { todayWeather } from '@/core/weather'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
 import { useCultivationStore } from './cultivation'
@@ -134,6 +135,11 @@ export const usePlayerStore = defineStore(
       return scaled
     })
 
+    /** 当天天时(Phase 31 A1)作为环境 mod 源并入最终属性:
+     * 灵雨修炼/灵气、赤阳伤害、月蚀福缘/掉落、雷鸣攻伐/渡劫抗性 ——
+     * 战斗/掉落/渡劫均读 finalStats.mods,故并入即可全链路生效,无需各自接线 */
+    const weatherMods = computed<StatMods>(() => todayWeather().mods)
+
     const qiCapValue = computed(() => {
       // 聚灵阵(qiCapMult)与「修复阵法」类 buff(qiCapPct)都能抬高灵气上限
       const buffPct = 1 + modOf(cultivation.buffMods, 'qiCapPct')
@@ -155,6 +161,7 @@ export const usePlayerStore = defineStore(
           titleMods.value,
           mentorMods.value,
           petMods.value,
+          weatherMods.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -188,6 +195,7 @@ export const usePlayerStore = defineStore(
           titleMods.value,
           mentorMods.value,
           petMods.value,
+          weatherMods.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
