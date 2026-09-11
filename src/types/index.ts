@@ -329,7 +329,18 @@ export interface RealmDef {
   tribulation: boolean
   /** 该境界主题描述 */
   desc: string
+  /**
+   * 可解释性:这一境的命名出处与承接理由。
+   * 依次说明它取自哪一路数(内丹术 / 道教仙阶 / 佛教 / 道家宇宙论 / 网文常用),
+   * 以及它为何排在上一境之后 —— 境界名不是随手堆的字。
+   */
+  lore: string
+  /** 出处类别(便于审计与检索) */
+  basis: RealmBasis
 }
+
+/** 境界命名的主要出处类别 */
+export type RealmBasis = '内丹' | '佛道' | '道教仙阶' | '网文' | '道家本源'
 
 // ============ 敌人 ============
 export interface EnemySkill {

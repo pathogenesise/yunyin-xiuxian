@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { GNum, SmallResourceId } from '@/types'
 import { add, gn, gnZero, gte, subClamp } from '@/utils/gnum'
+import { QI_BANK_MULT } from '@/data/constants'
 import { persistConfig } from '@/utils/storage'
 
 export const useResourcesStore = defineStore(
@@ -49,7 +50,9 @@ export const useResourcesStore = defineStore(
     }
 
     function setQi(v: number, cap: number): void {
-      qi.value = Math.max(0, Math.min(cap, v))
+      // 灵气可「积余」到标称容量的 QI_BANK_MULT 倍:标称容量只是"满"的界线
+      // (灵气充盈加成、突破耗时皆以它为基准),不是硬顶 —— 卡境期间灵气继续累积
+      qi.value = Math.max(0, Math.min(cap * QI_BANK_MULT, v))
     }
 
     /** 存档修复:重建大数字段 */

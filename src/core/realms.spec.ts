@@ -90,4 +90,26 @@ describe('境界体系 · 结构', () => {
     expect(realmLabel(0, -1)).toContain(REALMS[0]!.name)
     expect(realmLabel(MAX_MAJOR, 999)).toContain(REALMS[MAX_MAJOR]!.name)
   })
+
+  // ---- 可解释性:境界名不是随手堆的字,每一境都要说得出出处与承接 ----
+
+  it('每一境都有可解释的命名出处(非空、够长)', () => {
+    for (const r of REALMS) {
+      expect(r.lore, `${r.name} 缺命名出处说明`).toBeTruthy()
+      expect(r.lore.length, `${r.name} 的出处说明过短`).toBeGreaterThanOrEqual(12)
+      expect(new Set(REALMS.map(x => x.lore)).size, '出处说明重复').toBe(REALMS.length)
+    }
+  })
+
+  it('界域与出处类别自洽:人界内丹/佛道、仙界道教仙阶、神界网文、混沌海道家本源', () => {
+    const allowed: Record<string, string[]> = {
+      mortal: ['内丹', '佛道'],
+      immortal: ['道教仙阶'],
+      god: ['网文', '道家本源'],
+      chaos: ['道家本源']
+    }
+    for (const r of REALMS) {
+      expect(allowed[r.world], `${r.name} 的出处「${r.basis}」与界域「${r.world}」不符`).toContain(r.basis)
+    }
+  })
 })

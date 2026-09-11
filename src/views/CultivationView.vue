@@ -7,11 +7,20 @@
         <p class="font-kai text-[30px] tracking-[0.3em] text-ink">{{ player.realm.name }}</p>
         <p class="mt-0.5 font-kai text-[14px] tracking-[0.4em] text-cinnabar">{{ player.subName }}</p>
         <p class="mt-1 text-[11px] text-ink-faint">{{ player.realm.desc }}</p>
+        <!-- 可解释性:这一境取自何处、因何承接(典籍 / 网文常用 / 道家本源) -->
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
+          「{{ player.realm.basis }}」{{ player.realm.lore }}
+        </p>
       </div>
       <div class="mt-4">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
           <span>修为 +{{ formatRate(player.cultPerSec) }}</span>
-          <span>{{ formatGN(player.exp) }} / {{ formatGN(player.expReq) }}</span>
+          <span>
+            {{ formatGN(player.expFull ? player.expReq : player.exp) }} / {{ formatGN(player.expReq) }}
+            <span v-if="player.expFull && player.expOverflow.m > 0" class="text-jade">
+              · 积 +{{ formatGN(player.expOverflow) }}
+            </span>
+          </span>
         </div>
         <div :class="player.expFull ? 'bar-charged' : ''">
           <ProgressBar :value="player.expProgress" color="var(--color-cinnabar)" :height="8" />
@@ -20,9 +29,18 @@
       <div class="mt-3">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
           <span>灵气 +{{ formatRate(player.qiRegenPerSec) }}</span>
-          <span>{{ formatNum(Math.floor(resources.qi)) }} / {{ formatNum(player.qiCapValue) }}</span>
+          <span>
+            {{ formatNum(Math.floor(Math.min(resources.qi, player.qiCapValue))) }} / {{ formatNum(player.qiCapValue) }}
+            <span v-if="resources.qi > player.qiCapValue" class="text-azure">
+              · 积 +{{ formatNum(Math.floor(resources.qi - player.qiCapValue)) }}
+            </span>
+          </span>
         </div>
-        <ProgressBar :value="resources.qi / Math.max(1, player.qiCapValue)" color="var(--color-azure)" :height="8" />
+        <ProgressBar
+          :value="Math.min(1, resources.qi / Math.max(1, player.qiCapValue))"
+          color="var(--color-azure)"
+          :height="8"
+        />
       </div>
 
       <div class="ink-divider my-4" />

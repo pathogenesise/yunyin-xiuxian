@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import { REALMS, WORLD_BREAK_MAJOR, MAX_MAJOR } from '@/data/realms'
 import { firstLifeMilestones, hoursToReach, multiLifeTable, secondsForMajor } from './progressionSim'
+import { expRequirement, qiCap } from './formulas'
+import { toNum } from '@/utils/gnum'
 
 const fmt = (h: number): string => (h < 1 ? `${(h * 60).toFixed(1)}分` : h < 48 ? `${h.toFixed(1)}时` : `${(h / 24).toFixed(1)}天`)
 
@@ -53,6 +55,20 @@ describe('数值曲线审计(Phase 14)', () => {
     )
     expect(toPeak / toZhenxian).toBeGreaterThan(2) // 四界确实是长线,不是几步就到
     expect(toPeak / toZhenxian).toBeLessThan(100) // 但有界,不至于数学上不可达
+  })
+
+  /**
+   * 「指数级」不能只是口头承诺。界外每一境,修为需求与灵气容量的环比都必须 ≥3 倍 ——
+   * 这是实打实的复利;而净耗时只按 ~1.25 倍增长(见上一条),两者分工明确:
+   * 数值按指数堆叠,阶梯仍可达。
+   */
+  it('界外需求与灵气都是指数复利(每境环比 ≥3 倍)', () => {
+    for (let m = WORLD_BREAK_MAJOR + 1; m <= MAX_MAJOR; m += 1) {
+      const expRatio = toNum(expRequirement(m, 0)) / toNum(expRequirement(m - 1, 0))
+      const qiRatio = qiCap(m, 0) / qiCap(m - 1, 0)
+      expect(expRatio, `${REALMS[m]!.name} 修为需求不是指数复利(环比 ${expRatio.toFixed(2)})`).toBeGreaterThan(3)
+      expect(qiRatio, `${REALMS[m]!.name} 灵气容量不是指数复利(环比 ${qiRatio.toFixed(2)})`).toBeGreaterThan(3)
+    }
   })
 
   it('多周目:转世加速但绝非无限加速器', () => {

@@ -44,20 +44,32 @@ export const CULT_SUB_SPEED_GROWTH = 1.06
  *
  * 人间界 0-9 号境界沿用上面 18 / 5.2 这套曲线(净耗时 ≈ ×3.46/境),
  * 若原样外推到 21 境,终局需求会变成天文数字,那 12 个新境界等同于不存在。
- * 因此跨界之后改用一套平缓得多的节奏:
+ * 界外仍走**指数复利**,只是把每境的需求基数换成 4.0、修炼/灵气基数换成 3.2:
  *
- *   净耗时/境   = LATE_EXP_GROWTH / LATE_CULT_SPEED_GROWTH = 1.8 / 1.5 = ×1.2
- *   战力/境     = LATE_COMBAT_GROWTH                       = ×1.2
+ *   修为需求/境 = LATE_EXP_GROWTH       = ×4.0   (指数复利:远超线性)
+ *   灵气上限/境 = LATE_QI_CAP_GROWTH    = ×4.0
+ *   灵气回复/境 = LATE_QI_REGEN_GROWTH  = ×3.2
+ *   战力/境     = LATE_COMBAT_GROWTH    = ×4.0
+ *   净耗时/境   = 4.0 / 3.2             = ×1.25  (见下行:与战力不对齐的只有它)
  *
- * 两者对齐,是为了让「每多花 1.2 倍时间,恰好多得 1.2 倍战力」——
- * 与人间界「耗时与内容同步」的治理口径一致,不在新界重新制造膨胀。
- * 仙/神/混沌三段的体量差异由各境道果与内容分布去承担,不再靠指数堆叠。
+ * 关键在最后一行的分工:需求与战力都按 ×4 指数堆叠(数值上是实打实的指数增长),
+ * 而净耗时只按 1.25 倍增长 —— 于是"每境更难的量级"是指数级的,但整条 21 境阶梯
+ * 仍落在可达范围。灵气同理(容量 ×4、回复 ×3.2),不会出现"容量涨得比回复快、
+ * 越到后面越存不满"的断层。
  */
-export const LATE_EXP_GROWTH = 1.8
-export const LATE_CULT_SPEED_GROWTH = 1.5
-export const LATE_COMBAT_GROWTH = 1.2
-export const LATE_QI_CAP_GROWTH = 2.2
-export const LATE_QI_REGEN_GROWTH = 2.0
+export const LATE_EXP_GROWTH = 4.0
+export const LATE_CULT_SPEED_GROWTH = 3.2
+export const LATE_COMBAT_GROWTH = 4.0
+export const LATE_QI_CAP_GROWTH = 4.0
+export const LATE_QI_REGEN_GROWTH = 3.2
+/**
+ * 灵气「积余」上限(相对标称容量的倍数)。
+ *
+ * 灵气不因卡境而白白溢出:即使一时突破不得,灵气也继续累积,可在标称容量之上
+ * 存到该倍数(用于连续尝试突破、平复伤势、供奉/修复等)。上界的灵气开销本就是
+ * 指数级的,固守一个标称容量会让「等待」变成纯粹的浪费。
+ */
+export const QI_BANK_MULT = 10
 /** 小境界数量(9 层 + 圆满) */
 export const SUB_LEVELS = 10
 

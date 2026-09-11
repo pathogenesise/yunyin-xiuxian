@@ -2,10 +2,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { FinalStats, GNum, LinggenProfile, StatMods } from '@/types'
-import { gn, gnMin, gnZero, add, gte, mulN, progress, subClamp } from '@/utils/gnum'
+import { gn, gnZero, add, gte, mulN, progress, subClamp } from '@/utils/gnum'
 import { persistConfig } from '@/utils/storage'
 import { realmDef, realmLabel, worldOf, SUB_NAMES, MAX_MAJOR } from '@/data/realms'
 import { SUB_LEVELS, START_AGE } from '@/data/constants'
+import { QI_BANK_MULT } from '@/data/constants'
 import { legacyInsightOf } from '@/data/samsara'
 import { titleDef } from '@/data/titles'
 import { petDef } from '@/data/pets'
@@ -112,6 +113,8 @@ export const usePlayerStore = defineStore(
     const expReq = computed(() => expRequirement(major.value, sub.value))
     const expProgress = computed(() => progress(exp.value, expReq.value))
     const expFull = computed(() => gte(exp.value, expReq.value))
+    /** 修为积余:越过当前突破需求的部分(卡境期间继续累积,突破时随境界带走) */
+    const expOverflow = computed(() => subClamp(exp.value, expReq.value))
     const isMajorStep = computed(() => sub.value >= SUB_LEVELS - 1)
     const atMaxRealm = computed(() => major.value >= MAX_MAJOR && sub.value >= SUB_LEVELS - 1)
 
@@ -148,6 +151,8 @@ export const usePlayerStore = defineStore(
       return Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult * buffPct)
     })
     const qiRich = computed(() => resources.qi >= qiCapValue.value * 0.5)
+    /** 灵气积余上限(标称容量 × 积余倍数):卡境期间灵气可存到此处 */
+    const qiBankCapValue = computed(() => qiCapValue.value * QI_BANK_MULT)
 
     const finalStats = computed<FinalStats>(() =>
       computeFinalStats({
@@ -231,9 +236,15 @@ export const usePlayerStore = defineStore(
       dead.value = false
     }
 
-    /** 增加修为,封顶于当前突破需求 */
+    /**
+     * 增加修为 —— **不封顶**。
+     *
+     * 修为是可累积的:卡在某一境(等突破、等灵气、渡劫失败)时,修为仍继续增长,
+     * 越过当前需求的部分存为「积余」。突破成功时只扣去当时的那一份需求,
+     * 积余带入下一境 —— 等待因此不是浪费,而是把后面的指数级开销先垫上。
+     */
     function gainExp(v: GNum): void {
-      exp.value = gnMin(add(exp.value, v), expReq.value)
+      exp.value = add(exp.value, v)
     }
 
     function loseExpPct(pct: number): void {
@@ -241,6 +252,8 @@ export const usePlayerStore = defineStore(
     }
 
     function advanceRealm(): void {
+      // 先记下「刚走完的这一境」的需求:突破只该扣这一份,积余随境界带走
+      const spent = expReq.value
       if (isMajorStep.value) {
         if (major.value < MAX_MAJOR) {
           major.value += 1
@@ -249,7 +262,7 @@ export const usePlayerStore = defineStore(
       } else {
         sub.value += 1
       }
-      exp.value = gnZero()
+      exp.value = subClamp(exp.value, spent)
     }
 
     function addAge(years: number): void {
@@ -519,9 +532,11 @@ export const usePlayerStore = defineStore(
       expReq,
       expProgress,
       expFull,
+      expOverflow,
       isMajorStep,
       atMaxRealm,
       qiCapValue,
+      qiBankCapValue,
       qiRich,
       finalStats,
       celestialStats,
