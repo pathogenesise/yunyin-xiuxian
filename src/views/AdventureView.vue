@@ -51,7 +51,7 @@
                 <span v-else-if="row.cleared" class="chip-ink border-jade/60 text-[9px] text-jade">已靖</span>
                 <!-- 世界记忆(Phase 30.9):区域兴衰状态 -->
                 <span
-                  v-if="!row.suppressed && row.recall.prosperity !== 'chaos'"
+                  v-if="row.recall.prosperity !== 'chaos'"
                   class="chip-ink text-[9px]"
                   :class="row.recall.prosperity === 'flourish' ? 'border-azure/60 text-azure' : 'border-jade/60 text-jade'"
                 >
@@ -85,6 +85,10 @@
             <div v-else-if="row.suppressed" class="shrink-0 text-right">
               <span class="block text-[11px] text-gold-ink">
                 自动产出中 · {{ rateText(row.def) }}
+              </span>
+              <!-- 守土之年:守得越久,兴衰越盛,产出随之上浮 -->
+              <span class="block text-[10px] text-ink-faint">
+                已守 {{ heldText(row.def.id) }} · {{ prosperityName(row.recall.prosperity) }}
               </span>
               <button
                 class="-ml-1.5 mt-0.5 rounded-md px-1.5 py-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
@@ -328,5 +332,13 @@
     const extra = suppressYield(r.id)
     const stone = `${formatGN(yieldPerHour)}灵石/时`
     return extra ? `${stone} · ${extra.name}${extra.perHour}/时` : stone
+  }
+
+  /** 已守时长(自镇压起算)—— 守得越久,兴衰越盛 */
+  function heldText(regionId: string): string {
+    const since = player.suppressedSince[regionId]
+    if (since === undefined) return '—'
+    const hours = Math.max(0, Math.floor((Date.now() - since) / 3_600_000))
+    return hours < 24 ? `${hours} 时` : `${Math.floor(hours / 24)} 日`
   }
 </script>

@@ -82,10 +82,41 @@ describe('S1 区域兴衰', () => {
     expect(prosperityName('flourish')).toBe('繁盛')
   })
 
-  it('镇压收益微调:繁盛=100%,稳定=99%,混乱=98%', () => {
+  it('守土之年:镇压后守满时长也能走到稳定/繁盛(不必先刷满胜场)', () => {
+    // 镇压后不再产出胜场,故「守多久」是另一条通往兴衰的路
+    const held7h = deriveProsperity({
+      totalWins: 0,
+      hasSuppressed: true,
+      suppressedAt: now - 7 * HOUR,
+      lastActivityAt: now,
+      now
+    })
+    expect(held7h.prosperity).toBe('stable')
+    const held25h = deriveProsperity({
+      totalWins: 0,
+      hasSuppressed: true,
+      suppressedAt: now - 25 * HOUR,
+      lastActivityAt: now,
+      now
+    })
+    expect(held25h.prosperity).toBe('flourish')
+    // 未镇压者再久也不算数
+    const notSuppressed = deriveProsperity({
+      totalWins: 0,
+      hasSuppressed: false,
+      suppressedAt: now - 100 * HOUR,
+      lastActivityAt: now,
+      now
+    })
+    expect(notSuppressed.prosperity).toBe('chaos')
+  })
+
+  it('镇压收益微调:繁盛 110% > 稳定 105% > 混乱 100%(仍属"轻")', () => {
     expect(prosperityYieldMult('flourish')).toBeGreaterThan(prosperityYieldMult('stable'))
     expect(prosperityYieldMult('stable')).toBeGreaterThan(prosperityYieldMult('chaos'))
-    expect(prosperityYieldMult('flourish')).toBe(1.0)
+    expect(prosperityYieldMult('flourish')).toBeCloseTo(1.1, 6)
+    expect(prosperityYieldMult('stable')).toBeCloseTo(1.05, 6)
+    expect(prosperityYieldMult('chaos')).toBeCloseTo(1.0, 6)
   })
 
   it('复苏判定:超过 72 小时无活动则复苏', () => {

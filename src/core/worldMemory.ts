@@ -17,6 +17,14 @@ import { usePlayerStore } from '@/stores/player'
 export const STABLE_WINS = 30
 /** 累计胜场达到多少进入繁盛 */
 export const FLOURISH_WINS = 80
+/**
+ * 守土之年:镇压后「守得住」本身也该算数。
+ *
+ * 镇压一落地,该地就不再产出胜场 —— 于是繁盛(80 胜)只能在镇压**之前**刷出来,
+ * 与「镇压后守多久」无关。这里补上时长一路:守满即成,不必先刷满。
+ */
+export const STABLE_HOURS = 6
+export const FLOURISH_HOURS = 24
 /** 无活动多长时间(小时)后,繁华短暂回落 */
 export const DECAY_HOURS = 48
 /** 镇压后无活动超过多少小时,区域开始复苏(自动解除镇压) */
@@ -39,12 +47,15 @@ interface RegionStateInput {
 /** 派生区域兴衰状态(纯函数,无副作用) */
 export function deriveProsperity(input: RegionStateInput): RegionRecall {
   const idleHours = (input.now - input.lastActivityAt) / 3600_000
+  // 守土时长:镇压后守了多久(与「打赢过多少场」是两条路)
+  const heldHours = input.suppressedAt !== undefined ? (input.now - input.suppressedAt) / 3600_000 : 0
   let prosperity: RegionProsperity = 'chaos'
-  // 镇压过才有资格谈「稳定/繁盛」;持续活动才可维持
+  // 镇压过才有资格谈「稳定/繁盛」;持续活动(或一直守着)才可维持
   if (input.hasSuppressed) {
-    if (input.totalWins >= FLOURISH_WINS && idleHours < DECAY_HOURS) {
+    const alive = idleHours < DECAY_HOURS
+    if (alive && (input.totalWins >= FLOURISH_WINS || heldHours >= FLOURISH_HOURS)) {
       prosperity = 'flourish'
-    } else if (input.totalWins >= STABLE_WINS && idleHours < DECAY_HOURS) {
+    } else if (alive && (input.totalWins >= STABLE_WINS || heldHours >= STABLE_HOURS)) {
       prosperity = 'stable'
     }
   }
@@ -69,18 +80,18 @@ export function prosperityName(p: RegionProsperity): string {
 
 /**
  * 区域繁荣度对「被动产出」的微调:
- * 镇压后的安定收益随繁荣度变化。繁盛=灵脉恢复+商旅(100%),
- * 长期无人=99%(下降 1%),复苏(重新镇压)=额外 2%。
- * 轻量设计:只影响镇压系数的微小百分比,不改变核心经济
+ * 镇压后的安定收益随繁荣度变化 —— 混乱 100% / 稳定 105% / 繁盛 110%。
+ * 守满一日由混乱走到繁盛,约 +10%:仍属"轻"(产出大头在层级与时长),
+ * 但"守得住"从此看得见回报,不再只是一个 ±2% 的装饰。
  */
 export function prosperityYieldMult(p: RegionProsperity): number {
   switch (p) {
     case 'flourish':
-      return 1.0
+      return 1.1
     case 'stable':
-      return 0.99
+      return 1.05
     default:
-      return 0.98
+      return 1.0
   }
 }
 
