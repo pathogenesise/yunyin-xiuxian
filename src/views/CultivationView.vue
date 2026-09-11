@@ -138,9 +138,11 @@
         <span class="text-[11px] text-ink-soft">闭关参悟</span>
         <span v-if="retreating" class="text-[10px] text-amber-ink tabular">闭关中 · {{ formatDuration(retreatRemaining) }}</span>
       </div>
-      <p class="mt-0.5 text-[10px] text-ink-faint">静坐一炷香(5 分钟),修炼速度 +150%;闭关期间无法外出探索。</p>
+      <p class="mt-0.5 text-[10px] text-ink-faint">
+        静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出探索。
+      </p>
       <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full text-[11px]" @click="beginRetreat">
-        闭关 · 5分钟 修炼 +150%(期间无法探索)
+        闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%(期间无法探索)
       </button>
     </div>
 
@@ -290,6 +292,13 @@
   // Phase 28 闭关:状态与倒计时接 earlyGameService(buff 为真相源,重载后依旧可信)
   const retreating = computed(() => isRetreating())
   const retreatRemaining = computed(() => getRetreatRemainingSec(now.value)) // now 每秒刷新,倒计时走动
+  /**
+   * 闭关的时长与加成取自 buffs.ts 的 retreat 本体(不在这里手抄 5 分钟 / +150%)。
+   * 之前注释写着"数值唯一来源 = buffs.ts",但文案里的数字是手打的 —— 改常数就会撒谎。
+   */
+  const retreatDef = buffDef('retreat')
+  const retreatMinutes = Math.round((retreatDef?.durationSec ?? 0) / 60)
+  const retreatPct = Math.round((retreatDef?.mods.cultivationSpeed ?? 0) * 100)
   function beginRetreat(): void {
     if (startRetreat()) {
       ui.toast('你封洞闭关,心不外骛', 'info')

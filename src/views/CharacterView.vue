@@ -194,7 +194,11 @@
         <span class="text-ink-soft">
           道果
           <span class="ml-1 text-[10px] text-violet-ink">【永久积累】</span>
-          <span class="block text-[10px] text-ink-faint">每枚:修行 +3%,道躯 +1.5%;转世保留</span>
+          <span class="block text-[10px] text-ink-faint">
+            每枚:修行 +{{ Math.round(DAO_FRUIT_CULT_BONUS * 100) }}%,道躯 +{{
+              Math.round(DAO_FRUIT_COMBAT_BONUS * 100)
+            }}%;转世保留
+          </span>
         </span>
         <span class="tabular font-kai text-[15px] text-cinnabar">{{ player.reincarnation.daoFruit }}</span>
       </p>
@@ -203,7 +207,7 @@
         有效收益
         <span class="text-gold-ink">{{ fruitInfo.effective.toFixed(0) }} 枚</span>
         (边际渐减)·
-        {{ fruitInfo.total > 0 ? `当前修行 +${Math.round(fruitInfo.effective * 3)}%` : '' }}
+        {{ fruitInfo.total > 0 ? `当前修行 +${Math.round(fruitInfo.effective * DAO_FRUIT_CULT_BONUS * 100)}%` : '' }}
       </p>
       <!-- 逆旅契:道果的第一个消费出口。花道果换一世逆境,回报只有履历 -->
       <p class="mt-2 flex items-center justify-between text-[12px]">
@@ -422,7 +426,7 @@
   import { detectBuild } from '@/core/buildDetect'
   import { useLoadoutsStore } from '@/stores/loadouts'
   import { isSoftCapped, modOf } from '@/core/statsCalc'
-  import { SOFT_CAPS } from '@/data/constants'
+  import { DAO_FRUIT_COMBAT_BONUS, DAO_FRUIT_CULT_BONUS, SOFT_CAPS } from '@/data/constants'
   import { RESPONSE_NAMES, SPARK_NAMES } from '@/data/bondIntent'
   import { TRIGGER_NAMES } from '@/data/bondEvents'
   import { fruitMarginalInfo } from '@/core/resourceGuidance'

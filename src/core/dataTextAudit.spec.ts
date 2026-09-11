@@ -20,6 +20,8 @@ import { MUTATORS } from '@/data/mutators'
 import { SECRET_RULES } from '@/data/secretRealms'
 import { BUFFS } from '@/data/buffs'
 import { PACTS } from '@/data/pacts'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 /** 文案里的百分比是否能在同一条目的数值里找到对应 */
 function percentBacked(percent: number, nums: number[]): boolean {
@@ -131,5 +133,35 @@ describe('文案数值对账 · 天道契约', () => {
       }
     }
     expect(checked).toBeGreaterThanOrEqual(4)
+  })
+})
+
+/**
+ * 视图文案也要对账 —— 这一类更难自动核:模板里的数字可能是常量、也可能来自别的表。
+ * 故只钉**已经确认过归属**的几处:它们曾经手抄过数字(注释还写着"唯一来源是 X",
+ * 数字却是手打的),改常数就会撒谎。判据 = 引用来源 + 不再出现那个字面量。
+ */
+describe('文案数值对账 · 视图不手抄数字', () => {
+  const src = (from: string): string =>
+    readFileSync(resolve(__dirname, from), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+
+  it('人物页的道果说明与边际收益都取自 DAO_FRUIT_* 常数', () => {
+    const view = src('../views/CharacterView.vue')
+    expect(view, '道果每枚加成应读常数').toContain('DAO_FRUIT_CULT_BONUS')
+    expect(view, '道躯加成应读常数').toContain('DAO_FRUIT_COMBAT_BONUS')
+    // 手抄过的两处字面量必须消失(改了常数却忘了改文案,正是这条要拦的)
+    expect(view).not.toContain('修行 +3%')
+    expect(view).not.toContain('道躯 +1.5%')
+    expect(view, '边际收益里的 ×3 也是手抄的,应改成常数').not.toMatch(/effective \* 3\b/)
+  })
+
+  it('修行页的闭关文案取自 buffs.ts 的 retreat 本体', () => {
+    const view = src('../views/CultivationView.vue')
+    expect(view, '闭关时长与加成应读 buff 定义').toContain("buffDef('retreat')")
+    expect(view).not.toContain('5 分钟,修炼速度 +150%')
+    expect(view).not.toContain('5分钟 修炼 +150%')
   })
 })
