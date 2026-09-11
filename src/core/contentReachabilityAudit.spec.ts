@@ -31,10 +31,14 @@ import { MATERIALS } from '@/data/materials'
 import { ENEMIES } from '@/data/enemies'
 import { REGIONS } from '@/data/regions'
 import { GONGFA } from '@/data/gongfa'
-import { EVENTS } from '@/data/events'
+import { EVENTS, FORTUNE_EVENTS } from '@/data/events'
 import { ARTIFACTS } from '@/data/artifacts'
+import { artifactDef } from '@/data/artifacts'
+import { buffDef } from '@/data/buffs'
+import { petDef } from '@/data/pets'
+import { gongfaDef } from '@/data/gongfa'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
-import { REALMS, MAX_MAJOR } from '@/data/realms'
+import { REALMS, MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { DAO_NAMES, SKILL_IDS, recipeCraft, skillDef, type SkillDef, type SkillId } from '@/data/crafting'
 import { ELEMENT_AFFINITY } from '@/data/linggenAffinity'
 import { gn } from '@/utils/gnum'
@@ -191,6 +195,60 @@ describe('内容可达性 · 法宝与装备模板', () => {
       expect(t.minTier, `装备「${t.name}」minTier=${t.minTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
         MAX_REGION_TIER
       )
+    }
+  })
+})
+
+describe('内容可达性 · 事件效果的引用完整性', () => {
+  /**
+   * 事件里点名发的东西若 id 写错,引擎不会报错 —— 它会静默改成「灵草 +10」之类的兜底。
+   * 玩家看到的是一句对不上的文案,数据里没有任何红。这条把每个点名的 id 都对一遍。
+   */
+  const ALL_EVENTS = [...EVENTS, ...FORTUNE_EVENTS]
+
+  it('事件点名的丹药/增益/灵兽/法宝/功法都真实存在', () => {
+    for (const ev of ALL_EVENTS) {
+      for (const ch of ev.choices) {
+        for (const o of ch.outcomes) {
+          for (const e of o.effects) {
+            if (e.type === 'pill' && e.id) expect(pillDef(e.id), `${ev.id}「${ev.title}」指向不存在的丹药 ${e.id}`).toBeDefined()
+            if (e.type === 'buff') expect(buffDef(e.id), `${ev.id}「${ev.title}」指向不存在的增益 ${e.id}`).toBeDefined()
+            if (e.type === 'pet' && e.id) expect(petDef(e.id), `${ev.id}「${ev.title}」指向不存在的灵兽 ${e.id}`).toBeDefined()
+            if (e.type === 'artifact' && e.id)
+              expect(artifactDef(e.id), `${ev.id}「${ev.title}」指向不存在的法宝 ${e.id}`).toBeDefined()
+            if (e.type === 'gongfa' && e.id) expect(gongfaDef(e.id), `${ev.id}「${ev.title}」指向不存在的功法 ${e.id}`).toBeDefined()
+          }
+        }
+      }
+    }
+  })
+})
+
+describe('内容可达性 · 高界丹药真能开炉', () => {
+  /**
+   * 丹药价值审计只算「该值多少」,没验过新界的方子能不能真的开出一炉。
+   * 方子清单缺料、rank 越界、材料池为空 —— 这些都在真开一炉时才现形。
+   */
+  it('仙界及以上每一张可炼丹方都能开炉(不因缺方/缺料中止)', () => {
+    setActivePinia(createPinia())
+    seedLoreIfNeeded()
+    const lore = useLoreStore()
+    const resources = useResourcesStore()
+    const player = usePlayerStore()
+    player.major = MAX_MAJOR
+    resources.addSmall('herb', 10_000_000)
+    // 高界丹方的灵石开销按层级折算(1.9^tier 量级),远高于元婴期的直觉数
+    resources.addStone(gn(1e40))
+
+    const highCraft = PILLS.filter(p => p.recipe && p.minRealm >= WORLD_BREAK_MAJOR)
+    expect(highCraft.length, '新界没有任何可炼丹方').toBeGreaterThan(0)
+
+    for (const p of highCraft) {
+      lore.addRecipeMastery(p.id, 1) // 先得方
+      // 技艺拉满,排除「练不出」的干扰 —— 这里只验流程不因缺料/越界而中止
+      for (const s of Object.keys(recipeCraft(p)!.skills) as SkillId[]) lore.addSkillExp(s, 50_000)
+      const out = craftPill(p.id)
+      expect(out.aborted, `${p.name} 开炉被中止(缺方或缺料)`).toBeFalsy()
     }
   })
 })
