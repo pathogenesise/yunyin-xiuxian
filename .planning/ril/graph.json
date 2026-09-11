@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 97,
+  "round": 98,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T21:48:37+00:00",
+  "updated_at": "2026-09-11T22:03:37+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 83,
+      "touched_round": 97,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -4839,6 +4839,67 @@
       "touched_round": 96,
       "summary": "写盘失败可见化:失败分片留队列+自动重试;subscribeSaveWriteFailure/saveWriteFailure 可订阅可读;App 弹提示、设置页显示红字警告、恢复报一声;layout-check 增「卡死存储后设置页必须说话」端到端场景;新增 3 例用例",
       "commit": "66e6a43"
+    },
+    "ISS-071": {
+      "id": "ISS-071",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:56:23+00:00",
+      "updated_at": "2026-09-11T22:03:37+00:00",
+      "touched_round": 97,
+      "summary": "属性面板只给结果不给来路:人物页写着「修炼速度 +73.1%」而玩家无从知道它由天时/命格/灵根/道果/功法各出多少 —— finalStats 只暴露一份合并后的 mods,各来源是匿名数组(modSources),面板即便想显示也拼不出能相加的明细",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "TASK-063": {
+      "id": "TASK-063",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:56:27+00:00",
+      "updated_at": "2026-09-11T22:03:37+00:00",
+      "touched_round": 97,
+      "summary": "属性可解释:finalStats 带一份具名来源明细(递减词条与软阈值的折算都摊回来源),人物页点任一属性行即可展开「来源明细」,并加红线「明细之和 = 面板值、每个键都有人认领、来源必须具名」",
+      "category": "core-feature",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 4
+    },
+    "HYP-030": {
+      "id": "HYP-030",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:56:27+00:00",
+      "updated_at": "2026-09-11T21:56:27+00:00",
+      "touched_round": 97,
+      "summary": "「玩家的疑问」可以变成一条可审计的等式:面板显示 X,那么用来解释 X 的那份明细必须逐键相加等于 X。凡合并过程里有非线性(递减词条按来源强弱打折、软阈值对合计折算),就必须把折算摊回来源 —— 否则「解释了」与「没解释」在玩家眼里一样,甚至更糟",
+      "confidence": 0.75
+    },
+    "EV-077": {
+      "id": "EV-077",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:56:30+00:00",
+      "updated_at": "2026-09-11T21:56:30+00:00",
+      "touched_round": 97,
+      "summary": "statBreakdown.spec 5 例:递减词条折回来源、软阈值同乘折算、真存档逐键「明细之和 = 面板值」、来源必须具名、道果拆成修炼(并入)与攻防血(另乘)两条;三次故障注入(软阈值不摊、删道果修炼行、把来源名改成「来源 1」)各转红;无头实证:点「修炼速度 +73.1%」展开得 天时+10/命格+5/灵根+30/道果+28.1,和即 73.1;全量 133 文件 1341 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/statBreakdown.spec.ts"
+    },
+    "CHG-121": {
+      "id": "CHG-121",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:03:37+00:00",
+      "updated_at": "2026-09-11T22:03:37+00:00",
+      "touched_round": 97,
+      "summary": "mergeModsDetailed 把递减/软阈值两道折算摊回来源;computeFinalStats 返回 breakdown(含灵根/道果/灵气三条与 onTop 标记);player store 给每个来源起名;人物页属性行可点开「来源明细」;新增 statBreakdown.spec 并登记进分类报告",
+      "commit": "e20cde8"
     }
   },
   "edges": [
@@ -6816,6 +6877,36 @@
       "to": "HYP-029",
       "type": "validates",
       "created_at": "2026-09-11T21:48:31+00:00"
+    },
+    {
+      "from": "ISS-071",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-11T22:03:37+00:00"
+    },
+    {
+      "from": "TASK-063",
+      "to": "ISS-071",
+      "type": "addresses",
+      "created_at": "2026-09-11T22:03:37+00:00"
+    },
+    {
+      "from": "CHG-121",
+      "to": "TASK-063",
+      "type": "implements",
+      "created_at": "2026-09-11T22:03:37+00:00"
+    },
+    {
+      "from": "CHG-121",
+      "to": "ISS-071",
+      "type": "resolves",
+      "created_at": "2026-09-11T22:03:37+00:00"
+    },
+    {
+      "from": "EV-077",
+      "to": "HYP-030",
+      "type": "validates",
+      "created_at": "2026-09-11T22:03:37+00:00"
     }
   ]
 }
