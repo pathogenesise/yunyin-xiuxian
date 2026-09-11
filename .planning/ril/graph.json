@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 87,
+  "round": 88,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:49:29+00:00",
+  "updated_at": "2026-09-11T19:53:10+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -4241,7 +4241,7 @@
       "version": 1,
       "created_at": "2026-09-11T19:45:44+00:00",
       "updated_at": "2026-09-11T19:45:44+00:00",
-      "touched_round": 86,
+      "touched_round": 87,
       "confidence": 0.85,
       "summary": "『数值体检』要比『有没有增长』更细一层:凡有折扣/倍率/封顶的产线,都应断言其**比率**(增益 ÷ 期望),因为高界量级下 clamp 与精度丢失只体现在比率上"
     },
@@ -4281,6 +4281,43 @@
       "confidence": 0.85,
       "effort": 2,
       "summary": "离线折扣覆盖率:修为/洞府/藏经阁三处已用比率断言钉住(比进度指纹,不比总额)"
+    },
+    "TASK-054": {
+      "id": "TASK-054",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:53:04+00:00",
+      "updated_at": "2026-09-11T19:53:10+00:00",
+      "touched_round": 87,
+      "category": "test-quality",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2,
+      "summary": "三处倍率的比率断言:秘境战利(倍率/层数/层级)、镇压时长线性、洞府等级线性;并抽出 secretLayerReward 纯函数作可测接缝"
+    },
+    "CHG-111": {
+      "id": "CHG-111",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:53:05+00:00",
+      "updated_at": "2026-09-11T19:53:05+00:00",
+      "touched_round": 87,
+      "commit": "c8a6537",
+      "summary": "ratio 体检覆盖三处倍率;删掉一条想当然的假不变量(高层薄层 vs 低层厚层)"
+    },
+    "EV-067": {
+      "id": "EV-067",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:53:10+00:00",
+      "updated_at": "2026-09-11T19:53:10+00:00",
+      "touched_round": 87,
+      "source": "secretRealm.spec(倍率/层数/层级三条)、suppress.spec(时长 3×)、dongfu.spec(等级 3×、零级不产出);故障注入三处各自变红(commit c8a6537)",
+      "summary": "三处倍率都可算得出对;floor 取整会让长时长的余数失去比例,故取短时长",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -5952,6 +5989,18 @@
       "to": "HYP-021",
       "type": "validates",
       "created_at": "2026-09-11T19:49:29+00:00"
+    },
+    {
+      "from": "CHG-111",
+      "to": "TASK-054",
+      "type": "implements",
+      "created_at": "2026-09-11T19:53:10+00:00"
+    },
+    {
+      "from": "EV-067",
+      "to": "HYP-021",
+      "type": "validates",
+      "created_at": "2026-09-11T19:53:10+00:00"
     }
   ]
 }
