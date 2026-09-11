@@ -7,7 +7,7 @@ import { formatGN } from '@/utils/format'
 import { artifactDef } from '@/data/artifacts'
 import { pactDef } from '@/data/pacts'
 import { mutatorDef } from '@/data/mutators'
-import { RULESET_VERSION } from '@/data/ruleset'
+import { RULESET_VERSION, isStaleRuleset } from '@/data/ruleset'
 import {
   CELESTIAL_WORLDS,
   celestialWorldDef,
@@ -253,7 +253,7 @@ export function replayMark(mark: DaoMark): ExpeditionResult | null {
   const target = (world ?? trial)!
   const rules = markRules(mark, world, trial)
   const report = runGauntlet(snap, foes, rules, 'healBetweenPct' in target ? target.healBetweenPct : 0.5, rng)
-  const era = mark.ruleset && mark.ruleset !== RULESET_VERSION ? `(此战录于规则纪元 ${mark.ruleset},今为 ${RULESET_VERSION},天道已变)` : ''
+  const era = isStaleRuleset(mark.ruleset) ? `(此战录于规则纪元 ${mark.ruleset},今为 ${RULESET_VERSION},天道已变)` : ''
   ui.toast(report.cleared ? '忆战功成——当年的你,如今依旧能赢' : '忆战未竟,当年之勇亦有时运', 'info')
   return {
     title: `忆战 · ${mark.targetName}`,

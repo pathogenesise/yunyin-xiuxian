@@ -371,6 +371,12 @@
         <!-- 道痕 -->
         <section>
           <SectionTitle title="道痕" :hint="`历代修行履历 · ${endgame.marks.length} 则`" />
+          <div class="mt-2 flex items-center justify-between px-1">
+            <p class="text-[10px] tabular text-ink-ghost">
+              规则纪元 {{ RULESET_VERSION }} · 天道共改过 {{ RULESET_CHANGELOG.length }} 次
+            </p>
+            <button class="font-kai text-[10px] text-azure active:scale-95" @click="openEra(null)">纪元变迁史 →</button>
+          </div>
           <!-- 今昔之比:与过去的自己对话 -->
           <div v-if="legacy.length" class="card-ink mt-2 px-4 py-3">
             <p class="mb-1.5 font-kai text-[12px] tracking-[0.3em] text-ink-faint">今昔之比</p>
@@ -392,6 +398,14 @@
                 {{ mark.targetName }}{{ mark.cleared ? '·破' : '·殁' }}
               </span>
               <span class="ml-auto shrink-0 tabular text-[10px] text-ink-faint">{{ mark.rounds }}回合 · {{ mark.buildName }}</span>
+              <button
+                v-if="isStaleRuleset(mark.ruleset)"
+                class="shrink-0 rounded border border-cinnabar/50 bg-cinnabar/10 px-1 py-0.5 font-kai text-[9px] text-cinnabar active:scale-90"
+                :title="`录于旧纪 ${mark.ruleset},天道已变`"
+                @click="openEra(mark)"
+              >
+                变
+              </button>
               <button
                 v-if="mark.replay"
                 class="shrink-0 rounded border border-gold-ink/40 px-1.5 py-0.5 font-kai text-[10px] text-gold-ink active:scale-90"
@@ -578,6 +592,27 @@
       </template>
     </BaseModal>
 
+    <!-- 天道已变:旧纪道痕为何不能按老眼光看 -->
+    <BaseModal :open="eraOpen" title="天道已变" @close="eraOpen = false">
+      <p v-if="eraMark" class="text-[11px] leading-relaxed text-ink-soft">
+        此战录于规则纪元 <span class="tabular text-cinnabar">{{ eraMark.ruleset }}</span>,今为
+        <span class="tabular">{{ RULESET_VERSION }}</span>。同界同契,当年的你依当年的规矩取胜 ——
+        如今再忆,规矩已换。
+      </p>
+      <p v-else class="text-[11px] leading-relaxed text-ink-soft">
+        纪元变迁史只记改变战斗规则本身的变更,内容增删不入此列。
+      </p>
+      <div class="mt-2.5 space-y-2">
+        <div v-for="c in eraChanges" :key="c.version" class="card-ink px-3 py-2">
+          <p class="font-kai text-[12px] tabular text-cinnabar">纪元 {{ c.version }}</p>
+          <p class="mt-0.5 text-[11px] leading-relaxed text-ink-soft">{{ c.note }}</p>
+        </div>
+        <p v-if="!eraChanges.length" class="card-ink px-3 py-3 text-center text-[11px] text-ink-ghost">
+          {{ eraMark ? '此后天道未再改过规矩 —— 当年的打法,今日依旧算数。' : '尚无变更记录。' }}
+        </p>
+      </div>
+    </BaseModal>
+
     <!-- Phase 30.9 S4:首次登真仙·终局导览 -->
     <BaseModal :open="tutorialOpen" title="登临真仙" :closable="false">
       <div class="space-y-2.5 text-[13px] leading-relaxed">
@@ -638,6 +673,7 @@
     REWRITE_ENTRY_COST
   } from '@/core/endgameService'
   import { currentDaoNarrative } from '@/core/identity'
+  import { RULESET_CHANGELOG, RULESET_VERSION, isStaleRuleset, rulesetChangesSince } from '@/data/ruleset'
   import {
     abandonExpedition,
     challengeGuardian,
@@ -710,6 +746,16 @@
     daoSourceDialogOpen.value = true
     markResourceDialogSeen()
   }
+
+  // 规则纪元:旧纪道痕为何与今日不可同日而语(纪元变迁史同出一源,视图不手抄)
+  const eraOpen = ref(false)
+  const eraMark = ref<(typeof endgame.marks)[number] | null>(null)
+  const eraChanges = computed(() => (eraMark.value ? rulesetChangesSince(eraMark.value.ruleset) : RULESET_CHANGELOG))
+  function openEra(mark: (typeof endgame.marks)[number] | null): void {
+    eraMark.value = mark
+    eraOpen.value = true
+  }
+
   const currentDao = computed(() => (endgame.daoPath ? daoPathDef(endgame.daoPath) : undefined))
 
   // ---- 页签:长卷分册(远征在途时落在远征册) ----
