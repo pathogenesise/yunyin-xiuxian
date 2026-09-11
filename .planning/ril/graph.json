@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 103,
+  "round": 104,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T23:13:52+00:00",
+  "updated_at": "2026-09-11T23:26:48+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -324,7 +324,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:05:15+00:00",
       "updated_at": "2026-09-09T14:05:15+00:00",
-      "touched_round": 95,
+      "touched_round": 103,
       "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
     },
     "CHG-007": {
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 102,
+      "touched_round": 103,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -4752,7 +4752,7 @@
       "version": 1,
       "created_at": "2026-09-11T21:21:48+00:00",
       "updated_at": "2026-09-11T21:21:48+00:00",
-      "touched_round": 95,
+      "touched_round": 103,
       "summary": "「内容只起于第一界」这类偏斜能用起点分布发现:把每条链/每条线(奇缘、门派、机缘)的起点门槛列出来,若最大值仍停在第一界,说明后几界玩家只能重复早期内容;判据「至少一条起点在后界 + 每条都起得了头」既不逼着每界都造新链,也拦得住「全起于人间」的回退",
       "confidence": 0.7
     },
@@ -5185,6 +5185,56 @@
       "touched_round": 102,
       "summary": "补三味神品丹方(神悟丹/混元丹/道祖丹),丹药库 47→50;contentDensity 增「每境一味丹」与「丹方同族同线按门槛单调」两例",
       "commit": "bfa8997"
+    },
+    "ISS-078": {
+      "id": "ISS-078",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:19:29+00:00",
+      "updated_at": "2026-09-11T23:26:48+00:00",
+      "touched_round": 103,
+      "summary": "神界与混沌海没有自己的奇缘起点:补到 6 条缘时只有仙界一条高界缘,走完云海故碑后神界之上仍只能走凡间旧账(ISS-038 的最后一条);另外 contentGateAudit 的「金丹可触发事件占比」把奇缘阶段也算进随机池事件里 —— 那不是它想量的东西,高界的缘一多,这条判据就会无端漂移",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "TASK-069": {
+      "id": "TASK-069",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:19:29+00:00",
+      "updated_at": "2026-09-11T23:26:48+00:00",
+      "touched_round": 103,
+      "summary": "补两条高界奇缘(神界「代天一行」/混沌海「本源一滴」各三程),并把「奇缘不止起于人间」升级为「四个界域各有其缘」;顺带把事件门槛判据改成只算区域随机池(不含奇缘阶段)",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "EV-083": {
+      "id": "EV-083",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:19:33+00:00",
+      "updated_at": "2026-09-11T23:19:33+00:00",
+      "touched_round": 103,
+      "summary": "chainProgression.spec 的界域判据升级为「四个界域各有其缘」(按 worldOf(起点门槛) 核,而非只看最大值);contentDensity 矩阵增「奇缘起点」一列;contentGateAudit 的事件占比改为只统计区域随机池(POOL_EVENTS);数据自洽(8 条缘 21 程、事件 79、表头计数、id 前缀/门槛不回退/默认选项/词汇表)全绿;注入(代天一行门槛 14→12 →「神界没有一条属于自己的缘」)转红;全量 134 文件 1383 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/chainProgression.spec.ts"
+    },
+    "CHG-127": {
+      "id": "CHG-127",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:26:47+00:00",
+      "updated_at": "2026-09-11T23:26:47+00:00",
+      "touched_round": 103,
+      "summary": "补神界「代天一行」与混沌海「本源一滴」两条奇缘(各三程),奇缘 6→8 条、15→21 程,事件表 73→79;chainProgression 判据升级为「四界各有其缘」;contentDensity 矩阵加奇缘起点列;contentGateAudit 事件占比口径改为仅区域随机池",
+      "commit": "0cfd5a4"
     }
   },
   "edges": [
@@ -7372,6 +7422,42 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T23:13:51+00:00"
+    },
+    {
+      "from": "ISS-078",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-11T23:26:47+00:00"
+    },
+    {
+      "from": "TASK-069",
+      "to": "ISS-078",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:26:47+00:00"
+    },
+    {
+      "from": "CHG-127",
+      "to": "TASK-069",
+      "type": "implements",
+      "created_at": "2026-09-11T23:26:47+00:00"
+    },
+    {
+      "from": "CHG-127",
+      "to": "ISS-078",
+      "type": "resolves",
+      "created_at": "2026-09-11T23:26:47+00:00"
+    },
+    {
+      "from": "EV-083",
+      "to": "HYP-028",
+      "type": "validates",
+      "created_at": "2026-09-11T23:26:47+00:00"
+    },
+    {
+      "from": "TASK-069",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:26:48+00:00"
     }
   ]
 }
