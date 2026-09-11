@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 41,
+  "round": 42,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:58:12+00:00",
+  "updated_at": "2026-09-11T15:00:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1970,7 +1970,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T14:10:24+00:00",
-      "touched_round": 40,
+      "touched_round": 41,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
       "severity": 0.6,
@@ -2416,6 +2416,17 @@
       "touched_round": 40,
       "summary": "界域总览 UI:修行页按 人间界/仙界/神界/混沌海 分组列出全部 21 境,当前境高亮、已过境留存、未至境淡出,副标「第 N / 21 境」;纯展示,复用 REALMS/WORLDS",
       "commit": "33ca4e2"
+    },
+    "CHG-056": {
+      "id": "CHG-056",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:00:15+00:00",
+      "updated_at": "2026-09-11T15:00:15+00:00",
+      "touched_round": 41,
+      "summary": "历练地界按界域分组:人间界/仙界/神界/混沌海各成一段(带界域名与地界数),分组取自 worldOf(minRealm),与 realms 数据同源",
+      "commit": "ebaa69f"
     }
   },
   "edges": [
@@ -3373,6 +3384,12 @@
       "to": "TASK-035",
       "type": "implements",
       "created_at": "2026-09-11T14:58:12+00:00"
+    },
+    {
+      "from": "CHG-056",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T15:00:15+00:00"
     }
   ]
 }
