@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 90,
+  "round": 91,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T20:01:44+00:00",
+  "updated_at": "2026-09-11T20:08:12+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 85,
+      "touched_round": 90,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -736,7 +736,7 @@
       "version": 1,
       "created_at": "2026-09-10T04:53:34+00:00",
       "updated_at": "2026-09-10T04:53:34+00:00",
-      "touched_round": 8,
+      "touched_round": 90,
       "summary": "洞府建筑系统(data/buildings + stores/dongfu + buildingService:等级闸门、离线收益上限、品类上限)"
     },
     "TASK-010": {
@@ -4401,6 +4401,78 @@
       "touched_round": 89,
       "confidence": 0.8,
       "summary": "『文案数值对账』在视图层的正确形态是**定点接线 + 定点红线**,不是通用规则:模板数字的归属需逐条判断(SVG 的 0%/100%、CSS 的 calc、游戏常量、表数据混在一起),通用扫描会又漏又吵"
+    },
+    "ISS-064": {
+      "id": "ISS-064",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:07:47+00:00",
+      "updated_at": "2026-09-11T20:08:09+00:00",
+      "touched_round": 90,
+      "summary": "同一件机制被起了多个近义名:「历练中偶遇的随机事件」既有「奇遇」又有「际遇」(玩家分不清「奇遇概率」涨的是哪一类),洞府「灵脉」被写成「地脉」,外出「历练」被写成「探索」;三处散落在数据文案与视图模板,靠记性维护必漂移",
+      "severity": 0.3,
+      "confidence": 0.85
+    },
+    "TASK-056": {
+      "id": "TASK-056",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:07:47+00:00",
+      "updated_at": "2026-09-11T20:08:09+00:00",
+      "touched_round": 90,
+      "summary": "术语统一:际遇(历练随机事件)/机缘(ft_ 取弃)/奇缘(阶段连锁)三名各指一事,灵脉与历练各留一名;并加一条按用户可见文本抽取的术语红线",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.8,
+      "effort": 3
+    },
+    "HYP-023": {
+      "id": "HYP-023",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:07:49+00:00",
+      "updated_at": "2026-09-11T20:07:49+00:00",
+      "touched_round": 90,
+      "summary": "术语一旦有两三种近义写法就会持续漂移(数据文案、视图模板、UI 标签各写各的);按「用户可见文本」抽取的红线能把它钉住 —— 但对风味文案里的四字成语(机缘自来/天降机缘)必须留例外,否则红线会逼着人改成语",
+      "confidence": 0.7
+    },
+    "EV-070": {
+      "id": "EV-070",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:07:51+00:00",
+      "updated_at": "2026-09-11T20:07:51+00:00",
+      "touched_round": 90,
+      "summary": "dataTextAudit 增「术语一致性 · 用户可见文本」三条断言(奇遇/地脉/探索);三次故障注入各转红一次(statNames 际遇概率→奇遇概率、veins 青木灵脉→青木地脉、AdventureView 历练→探索),恢复即复绿;全量 131 文件 1309 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/dataTextAudit.spec.ts"
+    },
+    "DEC-027": {
+      "id": "DEC-027",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:07:59+00:00",
+      "updated_at": "2026-09-11T20:07:59+00:00",
+      "touched_round": 90,
+      "summary": "术语一名制:三个不同机制必须三个不同名字 —— 际遇=历练中偶遇的随机事件(eventLuck/经历计数)、机缘=稀有的取/弃事件(ft_)、奇缘=阶段连锁(奇缘录);同理灵脉(不叫地脉)、历练(不叫探索)为系统唯一名。风味文案里的四字成语(机缘自来/天降机缘)不受此限,红线只判系统名",
+      "rationale": "奇遇/际遇/机缘/奇缘四个近义词并排出现时,玩家会把它们当成一件事(「奇遇概率」涨的到底是哪一类?);三处名称此前各写各的,没有来源可对。把名字钉成约定并配一条按用户可见文本抽取的红线,比逐次人工检查便宜;留成语例外是因为把「机缘自来」改成「际遇自来」只会让文案变差而不增加清晰度",
+      "alternatives_rejected": "①四个词合一,全部叫「奇遇」——但三者机制确实不同(随机事件/稀有取弃/阶段连锁),合名后玩家更分不清概率涨的是哪一类;②只改文案不加红线 —— 术语漂移无守卫,下一版又会长回来;③把成语也一并纳入红线 —— 会逼着改「机缘自来」这类四字成语,收益为负"
+    },
+    "CHG-114": {
+      "id": "CHG-114",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:08:07+00:00",
+      "updated_at": "2026-09-11T20:08:07+00:00",
+      "touched_round": 90,
+      "summary": "统一 40 余处数据与视图用词(奇遇→际遇、地脉→灵脉、探索→历练;祝福「机缘加身」→「气运加身」),并把术语一致性写进 dataTextAudit 三条红线",
+      "commit": "ae23457"
     }
   },
   "edges": [
@@ -6114,6 +6186,54 @@
       "to": "HYP-022",
       "type": "validates",
       "created_at": "2026-09-11T20:01:44+00:00"
+    },
+    {
+      "from": "ISS-064",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:08:07+00:00"
+    },
+    {
+      "from": "ISS-064",
+      "to": "COMP-007",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:08:07+00:00"
+    },
+    {
+      "from": "TASK-056",
+      "to": "ISS-064",
+      "type": "addresses",
+      "created_at": "2026-09-11T20:08:07+00:00"
+    },
+    {
+      "from": "CHG-114",
+      "to": "TASK-056",
+      "type": "implements",
+      "created_at": "2026-09-11T20:08:07+00:00"
+    },
+    {
+      "from": "CHG-114",
+      "to": "ISS-064",
+      "type": "resolves",
+      "created_at": "2026-09-11T20:08:08+00:00"
+    },
+    {
+      "from": "EV-070",
+      "to": "HYP-023",
+      "type": "validates",
+      "created_at": "2026-09-11T20:08:08+00:00"
+    },
+    {
+      "from": "DEC-027",
+      "to": "TASK-056",
+      "type": "governs",
+      "created_at": "2026-09-11T20:08:08+00:00"
+    },
+    {
+      "from": "DEC-027",
+      "to": "COMP-006",
+      "type": "governs",
+      "created_at": "2026-09-11T20:08:08+00:00"
     }
   ]
 }
