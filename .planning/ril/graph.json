@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 18,
+  "round": 19,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T03:32:09+00:00",
+  "updated_at": "2026-09-11T04:41:07+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1586,6 +1586,17 @@
       "source": "loreService.spec.ts + cf99922",
       "summary": "回归:単一 0.999 方子 + studyFrac 0.5,修复后只吃 0.001 缺口、盈余留锅(>0.49),全量 1008 测试通过",
       "confidence": 1.0
+    },
+    "DEC-012": {
+      "id": "DEC-012",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T04:41:07+00:00",
+      "updated_at": "2026-09-11T04:41:07+00:00",
+      "touched_round": 19,
+      "rationale": "停止条件五条全足",
+      "alternatives_rejected": "继续无导向深挖会触碰第8节五项硬性预算约束"
     }
   },
   "edges": [
