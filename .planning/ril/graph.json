@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 71,
+  "round": 72,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:27:40+00:00",
+  "updated_at": "2026-09-11T17:31:16+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 54,
+      "touched_round": 71,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3558,6 +3558,52 @@
       "confidence": 0.85,
       "effort": 2,
       "summary": "坏档韧性第二轮:数组/记录内垃圾元素的批量防护(asArray 滤空 + asRecordOf 滤烂值)"
+    },
+    "ISS-053": {
+      "id": "ISS-053",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:31:10+00:00",
+      "updated_at": "2026-09-11T17:31:13+00:00",
+      "touched_round": 71,
+      "summary": "星象接进历练时只改了在线:离线 settleOffline 的期望事件数仍是旧公式(不含星象之利),同一天同一地离线比在线少算一成际遇 —— 违背「离线与在线同源」",
+      "severity": 0.45,
+      "confidence": 0.95
+    },
+    "CHG-091": {
+      "id": "CHG-091",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:31:10+00:00",
+      "updated_at": "2026-09-11T17:31:10+00:00",
+      "touched_round": 71,
+      "commit": "3ca077d",
+      "summary": "抽出 exploreEventChance(含星象)供在线/离线共用;astronomy.spec 加同源红线"
+    },
+    "EV-051": {
+      "id": "EV-051",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:31:13+00:00",
+      "updated_at": "2026-09-11T17:31:13+00:00",
+      "touched_round": 71,
+      "source": "astronomy.spec「在线与离线同源」:同一 exploreEventChance 算两地比值 = 1+MANSION_EVENT_LUCK,且离线源码不得再出现 EXPLORE_EVENT_CHANCE;故障注入把离线改回自乘立刻红(commit 3ca077d)",
+      "summary": "在线/离线共用一份际遇口径,星象之利两边同算",
+      "confidence": 0.9
+    },
+    "HYP-015": {
+      "id": "HYP-015",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:31:16+00:00",
+      "updated_at": "2026-09-11T17:31:16+00:00",
+      "touched_round": 71,
+      "confidence": 0.85,
+      "summary": "凡是同一件事有两处算法(在线/离线、预估/实战、展示/结算),新机制接进来时必漏一处 —— 判据:抽成一个函数,并让「另一处不得再出现原常数」成为红线"
     }
   },
   "edges": [
@@ -4941,6 +4987,24 @@
       "to": "HYP-014",
       "type": "validates",
       "created_at": "2026-09-11T17:27:40+00:00"
+    },
+    {
+      "from": "CHG-091",
+      "to": "ISS-053",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:31:13+00:00"
+    },
+    {
+      "from": "ISS-053",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:31:13+00:00"
+    },
+    {
+      "from": "EV-051",
+      "to": "HYP-015",
+      "type": "validates",
+      "created_at": "2026-09-11T17:31:16+00:00"
     }
   ]
 }
