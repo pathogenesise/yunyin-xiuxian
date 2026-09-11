@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 81,
+  "round": 82,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T18:14:15+00:00",
+  "updated_at": "2026-09-11T18:33:55+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1761,7 +1761,7 @@
       "version": 3,
       "created_at": "2026-09-11T08:07:29+00:00",
       "updated_at": "2026-09-11T17:45:02+00:00",
-      "touched_round": 75,
+      "touched_round": 81,
       "summary": "短期秘境接线前需产品定夺内容位:元婴(门槛降为灵石/药材代价) 还是 真仙终局(维持道源代价,与远征/试炼并列)?决定后可沿 challengeTrial/runGauntlet 范式接 3 层玩法+宝藏(复用 resolveCombat/EventDef/loot,源注释明言不新建数值体系)",
       "category": "core-feature",
       "severity": 0.5,
@@ -2841,11 +2841,11 @@
     "TASK-040": {
       "id": "TASK-040",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T16:12:51+00:00",
-      "updated_at": "2026-09-11T16:12:51+00:00",
-      "touched_round": 57,
+      "updated_at": "2026-09-11T18:33:09+00:00",
+      "touched_round": 82,
       "category": "maintainability",
       "summary": "界面整理后续:界域志入口与导航调整需在真机上确认(底部五栏、人物页两行入口排版)",
       "severity": 0.25,
@@ -3672,7 +3672,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:35:59+00:00",
       "updated_at": "2026-09-11T17:35:59+00:00",
-      "touched_round": 75,
+      "touched_round": 81,
       "confidence": 0.85,
       "summary": "可达性判据要按「发放点」倒推:凡内容表里的东西(称号/奖励/条件类型),都必须有一个真实的发放或求值点;没有就是看得见拿不到"
     },
@@ -3860,11 +3860,11 @@
     "TASK-049": {
       "id": "TASK-049",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T18:07:31+00:00",
-      "updated_at": "2026-09-11T18:07:31+00:00",
-      "touched_round": 78,
+      "updated_at": "2026-09-11T18:33:09+00:00",
+      "touched_round": 81,
       "category": "core-feature",
       "severity": 0.4,
       "confidence": 0.7,
@@ -3976,6 +3976,110 @@
       "source": "storeResilience.spec『复杂状态的值也要修回来』用例;故障注入去掉 fate 夹取立刻红(commit f2ec76a)",
       "summary": "读档修形从『不抛错』推进到『值可信』;道侣三维与阶段都被钉住",
       "confidence": 0.85
+    },
+    "CHG-101": {
+      "id": "CHG-101",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:33:09+00:00",
+      "updated_at": "2026-09-11T18:33:09+00:00",
+      "touched_round": 81,
+      "commit": "8a7168d",
+      "summary": "排版自检脚本(无头 Chromium × 两种手机视口 × 八页):量横向溢出/越界元素/底部导航/pageerror"
+    },
+    "CHG-102": {
+      "id": "CHG-102",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-11T18:33:19+00:00",
+      "updated_at": "2026-09-11T18:33:26+00:00",
+      "touched_round": 81,
+      "commit": "89936a0",
+      "summary": "三处活状态值级修形(历练会话/区域事件/远征 run)"
+    },
+    "CHG-103": {
+      "id": "CHG-103",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-11T18:33:19+00:00",
+      "updated_at": "2026-09-11T18:33:26+00:00",
+      "touched_round": 81,
+      "commit": "5e465cd",
+      "summary": "秘境分两阶:凡境(元婴·灵石)与天界(真仙·道源),两版都做"
+    },
+    "CHG-104": {
+      "id": "CHG-104",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-11T18:33:19+00:00",
+      "updated_at": "2026-09-11T18:33:26+00:00",
+      "touched_round": 81,
+      "commit": "f4f7242",
+      "summary": "道侣陨落:共命之险(唯一会死人的一条路,有警示、有活路)"
+    },
+    "CHG-105": {
+      "id": "CHG-105",
+      "type": "change",
+      "status": "abandoned",
+      "version": 3,
+      "created_at": "2026-09-11T18:33:19+00:00",
+      "updated_at": "2026-09-11T18:33:26+00:00",
+      "touched_round": 82,
+      "commit": "8a7168d",
+      "summary": "重复登记:同一 commit 8a7168d 已由 CHG-101 记录,此节点作废保留痕迹"
+    },
+    "TASK-051": {
+      "id": "TASK-051",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T18:33:30+00:00",
+      "updated_at": "2026-09-11T18:33:34+00:00",
+      "touched_round": 81,
+      "category": "stability",
+      "severity": 0.4,
+      "confidence": 0.85,
+      "effort": 2,
+      "summary": "活状态(会话/区域事件/远征 run)读档时做值级修形:时间戳、层级、携带气血、区域 id 都要可校验"
+    },
+    "EV-060": {
+      "id": "EV-060",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:33:34+00:00",
+      "updated_at": "2026-09-11T18:33:34+00:00",
+      "touched_round": 81,
+      "source": "layout-check.mjs 实测 8 页 × 2 视口(375/320)=16 组合:无横向溢出、无越界元素、底部导航五项、无 pageerror;截图逐张看过(commit 8a7168d)",
+      "summary": "窄屏横向溢出这一类排版事故可自动核;真机字体与安全区仍需人工(脚本头已写明)",
+      "confidence": 0.8
+    },
+    "HYP-019": {
+      "id": "HYP-019",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:33:38+00:00",
+      "updated_at": "2026-09-11T18:33:38+00:00",
+      "touched_round": 81,
+      "confidence": 0.8,
+      "summary": "『窄屏排版』可以自动核到一半:横向溢出/越界元素/导航项数/页面异常都能用无头浏览器在两种手机视口下量出来;但字体渲染与安全区仍需真机,自动化只能证明『不会横向溢出』"
+    },
+    "EV-061": {
+      "id": "EV-061",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:33:38+00:00",
+      "updated_at": "2026-09-11T18:33:38+00:00",
+      "touched_round": 81,
+      "source": "bondEvents.spec「共命之险」四条:标注警示/关系不够则殒落/够则同生/另两条路永不致死;故障注入短路 peril 判定立刻红(commit f4f7242)",
+      "summary": "不可逆后果三原则(玩家选择/事先写明/另有活路)可被用例逐条钉住",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -5533,6 +5637,48 @@
       "to": "COMP-003",
       "type": "located_in",
       "created_at": "2026-09-11T18:14:08+00:00"
+    },
+    {
+      "from": "CHG-101",
+      "to": "TASK-040",
+      "type": "implements",
+      "created_at": "2026-09-11T18:33:30+00:00"
+    },
+    {
+      "from": "CHG-103",
+      "to": "TASK-031",
+      "type": "implements",
+      "created_at": "2026-09-11T18:33:30+00:00"
+    },
+    {
+      "from": "CHG-104",
+      "to": "TASK-049",
+      "type": "implements",
+      "created_at": "2026-09-11T18:33:30+00:00"
+    },
+    {
+      "from": "CHG-102",
+      "to": "TASK-051",
+      "type": "implements",
+      "created_at": "2026-09-11T18:33:34+00:00"
+    },
+    {
+      "from": "EV-060",
+      "to": "HYP-019",
+      "type": "validates",
+      "created_at": "2026-09-11T18:33:38+00:00"
+    },
+    {
+      "from": "EV-061",
+      "to": "HYP-016",
+      "type": "validates",
+      "created_at": "2026-09-11T18:33:42+00:00"
+    },
+    {
+      "from": "CHG-105",
+      "to": "TASK-040",
+      "type": "implements",
+      "created_at": "2026-09-11T18:33:55+00:00"
     }
   ]
 }
