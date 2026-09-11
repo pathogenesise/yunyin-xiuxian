@@ -28,7 +28,7 @@ import {
   TRIBULATION_DIFFICULTY_CAP_MAJOR,
   UPGRADE_DUST_GROWTH
 } from './constants'
-import { WORLD_BREAK_MAJOR } from './realms'
+import { LIFESPAN_WORLDS, WORLDS, WORLD_BREAK_MAJOR } from './realms'
 
 export interface ProgressionAxis {
   id: string
@@ -93,6 +93,21 @@ export const COST_CURVES: CostCurve[] = [
   { id: 'equipLevel', name: '装备强化', growth: UPGRADE_DUST_GROWTH, unit: '等级', note: '每强化一级,器灵尘开销 ×该倍率(灵石按层级另计)' },
   { id: 'stoneTier', name: '灵石掉落', growth: STONE_TIER_GROWTH, unit: '层级', note: '每上一层地界,灵石产出 ×该倍率,与花费同速' }
 ]
+
+export interface LifespanCurve {
+  world: string
+  /** 该界域起点的寿元(跨界即一次大跃) */
+  base: number
+  /** 界域内每境倍率 */
+  growth: number
+}
+
+/** 寿元曲线:界域内复利,跨界为大跃(取自 LIFESPAN_WORLDS,不另写数字) */
+export const LIFESPAN_CURVES: LifespanCurve[] = WORLDS.map(w => ({
+  world: w.name,
+  base: LIFESPAN_WORLDS[w.id].base,
+  growth: LIFESPAN_WORLDS[w.id].growth
+}))
 
 /** 供界面展示的固定说明(不含可变数字) */
 export const PROGRESSION_NOTES = {

@@ -62,6 +62,20 @@
           每一境在修行页都写着它取自何处、因何承接。
         </p>
       </div>
+
+      <!-- 寿元:界域内复利,跨界一次大跃 -->
+      <div class="card-ink px-3 py-2">
+        <p class="text-[10px] text-ink-faint">寿元(界域内复利,跨界为大跃)</p>
+        <div class="mt-1.5 space-y-1">
+          <div v-for="l in LIFESPAN_CURVES" :key="l.world" class="flex items-center gap-2">
+            <span class="w-[64px] shrink-0 text-ink-soft">{{ l.world }}</span>
+            <span class="tabular text-ink">起点 {{ formatGN(l.base) }} 载 · 每境 ×{{ l.growth.toFixed(1) }}</span>
+          </div>
+        </div>
+        <p class="mt-1.5 text-[10px] text-ink-faint">
+          唯「渡劫→真仙」是脱去凡尘的大跃(约 ×100);此后破界入神、归返混沌亦各跃一档。
+        </p>
+      </div>
     </div>
     <template #footer>
       <button class="btn-seal w-full" @click="$emit('close')">知道了</button>
@@ -73,11 +87,13 @@
   import BaseModal from './BaseModal.vue'
 import {
   COST_CURVES,
+  LIFESPAN_CURVES,
   MORTAL_TIME_PER_MAJOR,
     OUTER_TIME_PER_MAJOR,
     PROGRESSION_AXES,
     PROGRESSION_NOTES
-  } from '@/data/progressionDoc'
+} from '@/data/progressionDoc'
+import { formatGN } from '@/utils/format'
 
   defineProps<{ open: boolean }>()
   defineEmits<{ close: [] }>()

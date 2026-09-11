@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   COST_CURVES,
+  LIFESPAN_CURVES,
   PROGRESSION_AXES,
   PROGRESSION_NOTES,
   MORTAL_TIME_PER_MAJOR,
@@ -15,6 +16,7 @@ import {
 import { baseCultPerSec, buildingCost, expRequirement, gongfaUpCost, qiCap, realmScale, stoneByTier, upgradeCost } from './formulas'
 import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { toNum } from '@/utils/gnum'
+import { LIFESPAN_WORLDS, REALMS, lifespanOf } from '@/data/realms'
 
 const axis = (id: string) => PROGRESSION_AXES.find(a => a.id === id)!
 
@@ -76,5 +78,20 @@ describe('数值体系说明 · 与公式同源', () => {
     // 灵石掉落:每层 ×STONE_TIER_GROWTH
     const s = toNum(stoneByTier(11, 10)) / toNum(stoneByTier(10, 10))
     expect(s).toBeCloseTo(curve('stoneTier').growth, 5)
+  })
+
+  it('寿元曲线与 realms 数据同源,且每境至少翻倍', () => {
+    // 说明里的每条曲线都对应真实界域配置
+    expect(LIFESPAN_CURVES.length).toBe(4)
+    for (const c of LIFESPAN_CURVES) {
+      const w = Object.values(LIFESPAN_WORLDS).find(x => x.growth === c.growth && x.base === c.base)
+      expect(w, `${c.world} 的寿元配置在 LIFESPAN_WORLDS 中找不到`).toBeDefined()
+    }
+    for (let m = 0; m < REALMS.length; m += 1) {
+      expect(REALMS[m]!.lifespanYears, `${REALMS[m]!.name} 寿元与公式不符`).toBe(lifespanOf(m))
+      if (m > 0) {
+        expect(REALMS[m]!.lifespanYears).toBeGreaterThanOrEqual(REALMS[m - 1]!.lifespanYears * 2)
+      }
+    }
   })
 })
