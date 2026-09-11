@@ -252,7 +252,7 @@
 
     <!-- 一键分解:勾选品质(记忆勾选) -->
     <BaseModal :open="decomposeOpen" title="一键分解" @close="decomposeOpen = false">
-      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住。</p>
+      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊,已存入行囊的同类也会一并化作器灵尘。此规则优先于智能收纳。</p>
       <div class="mt-2 space-y-1">
         <label
           v-for="q in QUALITIES"
@@ -280,7 +280,7 @@
     <!-- 智能收纳弹窗入口共用分解弹窗下方 -->
     <BaseModal :open="smartOpen" title="智能收纳" @close="smartOpen = false">
       <p class="text-[11px] leading-relaxed text-ink-faint">
-        行囊满时,新掉落若「值得收藏」将自动挤掉包内与道无缘的旧物。识别不只看品质:流派核心件与组合技部件亦在收藏之列。
+        开启后,新掉落先过智能裁决:无缘之物直接化尘不入包;行囊满时,值得收藏的新件会挤掉包内与道无缘的旧物。识别不只看品质:流派核心件与组合技部件亦在收藏之列。
       </p>
       <label class="mt-2 flex items-center justify-between py-1.5">
         <span class="text-[13px] text-ink-soft">启用智能收纳</span>
@@ -309,7 +309,21 @@
         <input v-model="settings.smartKeep.keepComboPiece" type="checkbox" class="h-4 w-4 accent-cinnabar" />
       </label>
       <template #footer>
-        <button class="btn-ghost w-full !text-[12px]" @click="smartClean">依此规则清理行囊(未锁定的无缘之物化尘)</button>
+        <!-- 一键清理二步确认:整包报废,按一下不该就此了结 -->
+        <template v-if="!cleanConfirm">
+          <button class="btn-ghost w-full !text-[12px]" @click="cleanConfirm = true">
+            依此规则清理行囊(未锁定的无缘之物化尘)
+          </button>
+        </template>
+        <template v-else>
+          <p class="mb-2 text-center text-[11px] text-cinnabar">
+            将把行囊中未锁定的无缘之物尽数化尘,共 {{ cleanCount }} 件——此举不可逆,仍要清理?
+          </p>
+          <div class="flex gap-2">
+            <button class="btn-ghost flex-1 !text-[12px]" @click="cleanConfirm = false">再想想</button>
+            <button class="btn-seal flex-1 !text-[12px]" @click="smartClean()">清理化尘</button>
+          </div>
+        </template>
       </template>
     </BaseModal>
   </div>
@@ -521,9 +535,15 @@
   const decomposeTotal = computed(() => settings.decomposeRanks.reduce((sum, rank) => sum + (decomposeCounts.value[rank] ?? 0), 0))
 
   function toggleRank(rank: number): void {
-    settings.decomposeRanks = settings.decomposeRanks.includes(rank)
-      ? settings.decomposeRanks.filter(r => r !== rank)
-      : [...settings.decomposeRanks, rank].sort((a, b) => a - b)
+    const adding = !settings.decomposeRanks.includes(rank)
+    settings.decomposeRanks = adding
+      ? [...settings.decomposeRanks, rank].sort((a, b) => a - b)
+      : settings.decomposeRanks.filter(r => r !== rank)
+    // 新勾选一档 = 宣告该档是废料:行囊内现存同类(未上锁)一并化尘,与"此后拾取自动回收"对齐
+    if (adding) {
+      const n = decomposeByRanks([rank])
+      if (n > 0) ui.toast(`行囊内 ${QUALITIES[rank]?.name ?? '该档'}×${n} 按新规则化作器灵尘`, 'info')
+    }
   }
 
   function confirmDecompose(): void {
@@ -539,7 +559,14 @@
     { rank: 5, name: '地品' }
   ]
 
+  /** 待清理件数(确认提示用) */
+  const cleanCount = computed(() => inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep).length)
+
+  /** 清理确认态:按一次按钮先落在「再想想/清理化尘」上 */
+  const cleanConfirm = ref(false)
+
   function smartClean(): void {
+    cleanConfirm.value = false
     const targets = inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep)
     let n = 0
     for (const it of targets) {

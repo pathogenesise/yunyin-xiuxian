@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { BuildingId, StatMods } from '@/types'
 import type { VeinId } from '@/data/veins'
 import { persistConfig } from '@/utils/storage'
-import { BUILDINGS } from '@/data/buildings'
+import { BUILDINGS, buildingDef } from '@/data/buildings'
 import { INSIGHT_DISCOUNT_PER_POINT, VEINS } from '@/data/veins'
 import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS } from '@/data/constants'
 import { mergeMods } from '@/core/statsCalc'
@@ -60,6 +60,12 @@ export const useDongfuStore = defineStore(
     const offlineCapHours = computed(() => OFFLINE_CAP_HOURS[Math.min(levels.value.mansion, OFFLINE_CAP_HOURS.length - 1)]!)
     /** 洞府等级限制其余建筑上限 */
     const buildingLevelCap = computed(() => (levels.value.mansion + 1) * 5)
+    /** 建筑实际可达上限:洞府全局闸门与自身品类上限取小(洞府自身不受自己闸门所限) */
+    function buildingCap(id: BuildingId): number {
+      const def = buildingDef(id)
+      if (id === 'mansion' || !def) return def?.maxLevel ?? 0
+      return Math.min(def.maxLevel, buildingLevelCap.value)
+    }
     const subGongfaSlots = computed(() => 1 + Math.floor(levels.value.library / 3))
     const alchemyLevel = computed(() => levels.value.alchemy)
     const forgeCapBonus = computed(() => Math.floor(levels.value.forge / 2))
@@ -68,6 +74,31 @@ export const useDongfuStore = defineStore(
 
     function setLevel(id: BuildingId, lv: number): void {
       levels.value = { ...levels.value, [id]: lv }
+    }
+
+    /**
+     * 存档修复:等级/产出小数/灵脉点数全部收敛为合法值。
+     * 损坏的 levels.mansion 会让 offlineCapHours 变 NaN,离线收益全线 NaN,
+     * 这是持久化收益来源里唯一没做 sanitize 的一处
+     */
+    function sanitize(): void {
+      const nextLevels = { ...levels.value }
+      for (const def of BUILDINGS) {
+        const cur = nextLevels[def.id]
+        if (cur === undefined || !Number.isFinite(cur) || cur < 0) nextLevels[def.id] = 0
+        else nextLevels[def.id] = Math.min(Math.floor(cur), def.maxLevel)
+      }
+      levels.value = nextLevels
+      const nextFrac = { ...frac.value }
+      for (const key of Object.keys(nextFrac) as (keyof typeof frac.value)[]) {
+        if (!Number.isFinite(nextFrac[key])) nextFrac[key] = 0
+      }
+      frac.value = nextFrac
+      const nextVein = { ...veinPoints.value }
+      for (const id of Object.keys(nextVein) as VeinId[]) {
+        if (!Number.isFinite(nextVein[id]) || nextVein[id] < 0) nextVein[id] = 0
+      }
+      veinPoints.value = nextVein
     }
 
     /** 灵脉投点(校验由 veinService 负责) */
@@ -111,6 +142,7 @@ export const useDongfuStore = defineStore(
       veinTotal,
       offlineCapHours,
       buildingLevelCap,
+      buildingCap,
       subGongfaSlots,
       alchemyLevel,
       forgeCapBonus,
@@ -119,7 +151,8 @@ export const useDongfuStore = defineStore(
       setLevel,
       addVeinPoint,
       setVeinMain,
-      produce
+      produce,
+      sanitize
     }
   },
   { persist: persistConfig('dongfu') }

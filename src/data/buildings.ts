@@ -12,7 +12,7 @@ export const BUILDINGS: BuildingDef[] = [
     unlockRealm: 0,
     costBase: 200,
     costOre: 20,
-    effectText: lv => `离线收益上限 ${OFFLINE_CAP_HOURS[Math.min(lv, OFFLINE_CAP_HOURS.length - 1)]} 小时,建筑等级上限 ${(lv + 1) * 5}`,
+    effectText: lv => `离线收益上限 ${OFFLINE_CAP_HOURS[Math.min(lv, OFFLINE_CAP_HOURS.length - 1)]} 小时;洞府每升一级其余建筑等级上限 +5,各建筑另有品类上限`,
     mods: (lv): StatMods => ({ cultivationSpeed: lv * 0.04 })
   },
   {

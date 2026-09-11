@@ -31,6 +31,7 @@ import { stoneByTier } from './formulas'
 import { settleSuppressedRegions } from './suppress'
 import { harvestMaterials, studyTick } from './loreService'
 import { modOf } from './statsCalc'
+import { personalityEffects } from './petPersonality'
 import { track } from './progress'
 import { equipmentTemplate } from '@/data/equipment'
 import { usePlayerStore } from '@/stores/player'
@@ -63,6 +64,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   const effSec = capSec * OFFLINE_EFFICIENCY
   const notes: string[] = []
   const equipmentGained: OfflineSummary['equipment'] = []
+  /** 离线期间未入包(自动回收/满包化尘)装备化作的器灵尘 */
+  let recycledDust = 0
 
   // ---- 修炼 ----
   const expBefore = { ...player.exp }
@@ -80,15 +83,16 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   // ---- 藏经阁被动钻研(与在线同源,只是 dt 不同) ----
   studyTick(effSec)
 
-  // ---- 镇压区域被动收益(不受离线效率折扣,是统治该区域的补偿) ----
-  const suppressYield = settleSuppressedRegions(dtSec)
+  // ---- 镇压区域被动收益(豁免离线效率折扣,是统治该区域的补偿;但仍受洞府离线上限约束) ----
+  // 之前误传完整 dtSec:镇压收益绕过 mansion 离线封顶,洞府离线等级对"镇压力"玩家几乎失效。
+  // 折扣豁免只豁免 0.9 效率,不平白豁免洞府离线上限本身
+  const suppressYield = settleSuppressedRegions(capSec)
   if (suppressYield && !isZero(suppressYield.stone)) {
     notes.push(`镇压诸域仍有余韵:灵石 +${formatGN(suppressYield.stone)}`)
-    if (suppressYield.equipment.length > 0) {
-      for (const eq of suppressYield.equipment) {
-        equipmentGained.push(eq)
-      }
+    for (const eq of suppressYield.equipment) {
+      equipmentGained.push(eq)
     }
+    recycledDust += suppressYield.recycledDust
   }
 
   // ---- 历练挂机 ----
@@ -136,9 +140,13 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * (1 + modOf(mods, 'dropRate')))
         const realCount = Math.min(6, equipCount)
         for (let i = 0; i < realCount; i += 1) {
-          const inst = generateEquipment(region.tier, rng, { luck: modOf(mods, 'luck') })
-          acquireEquipment(inst, true)
-          equipmentGained.push({ name: equipmentTemplate(inst.templateId)?.name ?? '未知', quality: inst.quality })
+          // 灵兽性格同样管离线掉落:贪宝更易稀出,谨慎稍稍寻常(与在线 afterWin 同源)
+          const inst = generateEquipment(region.tier, rng, { luck: modOf(mods, 'luck') + personalityEffects(player.petId).dropLuck })
+          const res = acquireEquipment(inst, { quiet: true })
+          // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收;
+          // 器灵尘按 acquire 返回值记账,不再依赖对行囊作 findItem 二次判定。
+          equipmentGained.push({ name: equipmentTemplate(inst.templateId)?.name ?? '未知', quality: inst.quality, recycled: !res.bagged })
+          if (!res.bagged) recycledDust += res.dust
         }
         if (equipCount > realCount) {
           resources.addSmall('dust', (equipCount - realCount) * 4)
@@ -161,8 +169,12 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           autoResolveEvent(rng.pick(pool), region.tier)
         }
       }
-      // 离线自动挑战区域首领(收益折损,胜则连锁解锁)
-      if (!adventure.cleared.includes(region.id) && wins >= 5) {
+      // 事件只实际结算了 evCap 个;events 此前按全程估算,超额部分只是"路上料到"、
+      // 并非真实经历。总结与旅途记录若按全量上报,玩家会看到「际会 3456 次」
+      // 而实际只结算了 40 次——把 count 收敛为真实经历再写进 summary 与 session
+      events = evCap
+      // 离线自动挑战区域首领(收益折损,胜则连锁解锁;门槛与在线一致,避免离线早一步解锁下一区)
+      if (!adventure.cleared.includes(region.id) && wins >= 10) {
         const bossDef = enemyDef(placeContent(region.id).boss)
         if (bossDef) {
           const dangerFactor = modeDef.dangerMult * (1 + (region.danger - 1) * 0.05)
@@ -188,7 +200,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           ...session,
           wins: session.wins + wins,
           events: session.events + events,
-          nextBattleAt: nowMs + EXPLORE_BATTLE_INTERVAL * 1000
+          // 与在线 nextBattleTime 同源:速度加成要除以 speed,否则恢复后首战被拖慢一拍
+          nextBattleAt: nowMs + (EXPLORE_BATTLE_INTERVAL * 1000) / speed
         })
       }
     }
@@ -213,6 +226,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     wins,
     events,
     equipment: equipmentGained,
+    recycledDust,
     notes
   }
   if (player.expFull) notes.push('修为已至圆满,可尝试突破')
@@ -229,4 +243,5 @@ export function sanitizeOfflineInputs(): void {
   usePlayerStore().sanitize()
   useResourcesStore().sanitize()
   useLoreStore().sanitize()
+  useDongfuStore().sanitize() // 洞府等级非法会把离线封顶小时算成 NaN,收益全线 NaN
 }

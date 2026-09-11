@@ -64,13 +64,11 @@
     <SectionTitle title="存档" />
     <div class="card-ink space-y-2 px-4 py-3">
       <p class="text-[11px] text-ink-faint tabular">存档版本 v{{ SAVE_VERSION }} · 修行时长 {{ formatDuration(game.totalPlaySec) }}</p>
-      <template v-if="!Capacitor.isNativePlatform()">
-        <div class="grid grid-cols-2 gap-2">
-          <button class="btn-ghost !text-[12px]" @click="downloadSave()">导出存档</button>
-          <button class="btn-ghost !text-[12px]" @click="triggerImport">导入存档</button>
-          <input ref="fileInput" type="file" accept="application/json,.save" class="hidden" @change="onFilePicked" />
-        </div>
-      </template>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="btn-ghost !text-[12px]" @click="onExport">导出存档</button>
+        <button class="btn-ghost !text-[12px]" @click="triggerImport">导入存档</button>
+        <input ref="fileInput" type="file" accept="application/json,.save" class="hidden" @change="onFilePicked" />
+      </div>
       <button class="btn-ghost w-full !border-cinnabar/40 !text-[12px] !text-cinnabar" @click="openReset">
         散尽修为,重入轮回(清空存档)
       </button>
@@ -118,14 +116,14 @@
   import { useGameStore } from '@/stores/game'
   import { useUiStore } from '@/stores/ui'
   import { engine } from '@/core/engine'
-  import { downloadSave, importSaveText, resetGame, reloadGame, sealStorageWrites } from '@/core/save'
+  import { importSaveText, resetGame, reloadGame, sealStorageWrites } from '@/core/save'
+  import { exportSaveToDevice } from '@/core/savePlatform'
   import { formatDuration } from '@/utils/format'
   import { SAVE_VERSION } from '@/utils/storage'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
   import AboutDialog from '@/components/common/AboutDialog.vue'
-  import { Capacitor } from '@capacitor/core'
 
   const settings = useSettingsStore()
   const game = useGameStore()
@@ -141,6 +139,11 @@
   const privacyOpen = ref(false)
   const aboutOpen = ref(false)
   const fileInput = ref<HTMLInputElement | null>(null)
+
+  /** 导出存档:Web/Electron 走浏览器下载,原生端写 Documents(见 savePlatform) */
+  function onExport(): void {
+    void exportSaveToDevice()
+  }
 
   // ---- 重置流程:弹窗期间暂停心跳,取消则恢复 ----
   function openReset(): void {

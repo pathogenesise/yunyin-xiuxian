@@ -3,7 +3,7 @@
     <div class="flex items-start justify-between gap-2">
       <p class="min-w-0 truncate font-kai text-[14px] tracking-wider text-ink">{{ props.def.name }}</p>
       <p :key="level" class="shrink-0 text-[10px] text-ink-faint animate-ink-pop">
-        {{ level > 0 ? `${level} 级` : '未启用' }}
+        {{ level > 0 ? `${level}/${cap} 级` : '未启用' }}
       </p>
     </div>
     <p class="mt-2 grow text-[11px] leading-relaxed text-ink-faint">
@@ -28,6 +28,8 @@
   const dongfu = useDongfuStore()
 
   const level = computed(() => dongfu.levels[props.def.id] ?? 0)
+  /** 实际可达上限:洞府全局闸门与自身品类上限取小,洞府卡展现的是"提升到什么档"的依据 */
+  const cap = computed(() => dongfu.buildingCap(props.def.id))
   const info = computed(() => buildingUpgradeInfo(props.def.id))
 
   // 升级落成:整卡金光一闪(动画播完自清)

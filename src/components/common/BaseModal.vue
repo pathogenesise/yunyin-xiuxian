@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+  import { onUnmounted, watch } from 'vue'
   import GameIcon from './GameIcon.vue'
 
   const props = withDefaults(
@@ -50,4 +51,42 @@
   function onBackdrop(): void {
     if (props.closable) emit('close')
   }
+
+  // ---- Esc 关闭:只让最上面一层可关弹窗响应 ----
+  // 多弹窗叠放(详情盖列表)时按一次 Esc 只能退最上层,不能逐层全退;
+  // 不可关的顶层(离线卷轴/转世确认 `closable=false`)挡在最上时,Esc 不越层去关底下的
+  type ModalEntry = { closable: boolean; close: () => void }
+  const activeModals: ModalEntry[] = []
+  function onWindowKey(e: KeyboardEvent): void {
+    if (e.key !== 'Escape') return
+    const top = activeModals[activeModals.length - 1]
+    if (top?.closable) {
+      e.preventDefault()
+      top.close()
+    }
+  }
+  if (typeof window !== 'undefined') window.addEventListener('keydown', onWindowKey)
+
+  const entry: ModalEntry = { closable: props.closable, close: () => emit('close') }
+  watch(
+    () => props.open,
+    open => {
+      if (open) activeModals.push(entry)
+      else {
+        const i = activeModals.indexOf(entry)
+        if (i >= 0) activeModals.splice(i, 1)
+      }
+    },
+    { immediate: true }
+  )
+  watch(
+    () => props.closable,
+    c => {
+      entry.closable = c
+    }
+  )
+  onUnmounted(() => {
+    const i = activeModals.indexOf(entry)
+    if (i >= 0) activeModals.splice(i, 1)
+  })
 </script>

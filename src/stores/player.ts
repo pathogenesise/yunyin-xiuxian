@@ -14,6 +14,7 @@ import { talentDef } from '@/data/talents'
 import { baseCultPerSec, baseQiRegen, expRequirement, qiCap } from '@/core/formulas'
 import { computeFinalStats, modOf } from '@/core/statsCalc'
 import { forgeSoul } from '@/core/gauntlet'
+import { todayWeather } from '@/core/weather'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
 import { useCultivationStore } from './cultivation'
@@ -77,8 +78,6 @@ export const usePlayerStore = defineStore(
     const eventChains = ref<Record<string, number>>({}) // 奇遇连锁进度
     const winStreak = ref(0) // 当前连胜数
     const lastCaveEventDay = ref(0) // 上次洞府巡游日期
-    const selectedRoute = ref<'safe' | 'risky' | 'dangerous'>('safe') // 当前探索路线
-    const companionBeastId = ref<string | null>(null) // 陪行灵兽
 
     // Phase 30 区域镇压(每个区域独立统计)
     const regionStats = ref<Record<string, import('@/core/suppress').RegionStats>>({})
@@ -125,15 +124,27 @@ export const usePlayerStore = defineStore(
       if (!petId.value) return {}
       const def = petDef(petId.value)
       if (!def) return {}
+      // 灵兽园等级(beastMult)与「安抚灵兽」类 buff(beastPct)都放大灵兽效果;
+      // buffMods 只依赖 cultivation 自身,不兜回本 computed,无循环
+      const buffPct = 1 + modOf(cultivation.buffMods, 'beastPct')
       const scaled: StatMods = {}
       for (const k in def.mods) {
         const key = k as keyof StatMods
-        scaled[key] = (def.mods[key] ?? 0) * dongfu.beastMult
+        scaled[key] = (def.mods[key] ?? 0) * dongfu.beastMult * buffPct
       }
       return scaled
     })
 
-    const qiCapValue = computed(() => Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult))
+    /** 当天天时(Phase 31 A1)作为环境 mod 源并入最终属性:
+     * 灵雨修炼/灵气、赤阳伤害、月蚀福缘/掉落、雷鸣攻伐/渡劫抗性 ——
+     * 战斗/掉落/渡劫均读 finalStats.mods,故并入即可全链路生效,无需各自接线 */
+    const weatherMods = computed<StatMods>(() => todayWeather().mods)
+
+    const qiCapValue = computed(() => {
+      // 聚灵阵(qiCapMult)与「修复阵法」类 buff(qiCapPct)都能抬高灵气上限
+      const buffPct = 1 + modOf(cultivation.buffMods, 'qiCapPct')
+      return Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult * buffPct)
+    })
     const qiRich = computed(() => resources.qi >= qiCapValue.value * 0.5)
 
     const finalStats = computed<FinalStats>(() =>
@@ -150,6 +161,7 @@ export const usePlayerStore = defineStore(
           titleMods.value,
           mentorMods.value,
           petMods.value,
+          weatherMods.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -183,6 +195,7 @@ export const usePlayerStore = defineStore(
           titleMods.value,
           mentorMods.value,
           petMods.value,
+          weatherMods.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -342,6 +355,15 @@ export const usePlayerStore = defineStore(
       age.value = START_AGE
       lifespanBonusYears.value = 0
       dead.value = false
+      // 新的一世:本世进程全部清零。
+      // 连胜/当日巡游属于「这一世」的当下进度;秘境是进行中的一次性内容
+      // (其门槛 minMajor≥3 本就是境界限制,新世 major=0 理应推倒重来)。
+      // 保留跨世:镇压/区域兴衰(「成长改变世界」的世界记忆,见 DEC-003)、
+      // 机缘选择记忆(fortuneChoices,「世界记得你的选择」)、奇遇连锁(eventChains)
+      winStreak.value = 0
+      lastCaveEventDay.value = 0
+      secretRealm.value = null
+      regionEvent.value = null
     }
 
     /** 存档修复 */
@@ -377,14 +399,6 @@ export const usePlayerStore = defineStore(
 
     function resetWinStreak(): void {
       winStreak.value = 0
-    }
-
-    function setSelectedRoute(route: 'safe' | 'risky' | 'dangerous'): void {
-      selectedRoute.value = route
-    }
-
-    function setCompanionBeast(id: string | null): void {
-      companionBeastId.value = id
     }
 
     function markCaveEventToday(day: number): void {
@@ -486,8 +500,6 @@ export const usePlayerStore = defineStore(
       eventChains,
       winStreak,
       lastCaveEventDay,
-      selectedRoute,
-      companionBeastId,
       regionStats,
       suppressedRegions,
       suppressedSince,
@@ -538,8 +550,6 @@ export const usePlayerStore = defineStore(
       advanceEventChain,
       incrementWinStreak,
       resetWinStreak,
-      setSelectedRoute,
-      setCompanionBeast,
       markCaveEventToday,
       updateRegionStats,
       suppressRegion,

@@ -88,11 +88,28 @@ export function powN(base: number, exp: number): GNum {
 
 /** 比较:a>b → 1, a<b → -1, 相等 → 0 */
 export function cmp(a: GNum, b: GNum): number {
+  // 零永远排在正数之下、负数之上(不认 m===0 对象的指数)
   if (a.m === 0 && b.m === 0) return 0
-  if (a.m <= 0 && b.m > 0) return -1
-  if (a.m > 0 && b.m <= 0) return 1
-  // 同为正数
-  if (a.e !== b.e) return a.e > b.e ? 1 : -1
+  if (a.m === 0) return b.m > 0 ? -1 : 1
+  if (b.m === 0) return a.m > 0 ? 1 : -1
+  if (a.m > 0 && b.m < 0) return 1
+  if (a.m < 0 && b.m > 0) return -1
+  // 同号:负数指数越大负得越狠,数值反而越小,不能照搬正数的大小序
+  const bothNeg = a.m < 0
+  if (a.e !== b.e) {
+    // 指数不同不能直接比大小:指数序只在尾数归一化([1,10))时成立。
+    // 哪天有个未归一化的 GNum 流进来(如 $patch 原始对象、手工构造、损坏存档),
+    // 照旧的 a.e>b.e 判定会静默给出错误答案 —— `修为未至圆满` 卡住突破等。
+    // 统一对齐到较大指数再比尾数即可鲁棒;量级差过大(>NEGLIGIBLE_EXP_DIFF)才认指数。
+    const diff = a.e - b.e
+    if (Math.abs(diff) <= NEGLIGIBLE_EXP_DIFF) {
+      const am = a.m * Math.pow(10, diff)
+      if (am === b.m) return 0
+      return bothNeg ? (am < b.m ? -1 : 1) : am > b.m ? 1 : -1
+    }
+    if (a.e > b.e) return bothNeg ? -1 : 1
+    return bothNeg ? 1 : -1
+  }
   if (a.m === b.m) return 0
   return a.m > b.m ? 1 : -1
 }

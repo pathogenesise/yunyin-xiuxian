@@ -50,11 +50,13 @@
           <span>{{ t.text }}</span>
         </p>
       </div>
-      <button class="btn-ghost mt-4 w-full" :disabled="rerollsLeft <= 0" @click="reroll">逆天改命(余 {{ rerollsLeft }} 次)</button>
+      <button class="btn-ghost mt-4 w-full" :disabled="starting || rerollsLeft <= 0" @click="reroll">逆天改命(余 {{ rerollsLeft }} 次)</button>
     </div>
 
     <div class="grow" />
-    <button class="btn-seal mt-8 w-full !py-3 text-[16px]" @click="begin">踏 入 仙 途</button>
+    <button class="btn-seal mt-8 w-full !py-3 text-[16px]" :disabled="starting" @click="begin">
+      {{ starting ? '灵 根 鉴 定 中……' : '踏 入 仙 途' }}
+    </button>
 
     <!-- 灵根鉴定动画(踏入仙途后播放) -->
     <SpiritRootReveal ref="revealRef" />
@@ -95,11 +97,16 @@
   const profile = computed(() => game.createProfile!)
   const rerollsLeft = computed(() => game.createRerolls)
   const revealRef = ref<InstanceType<typeof SpiritRootReveal> | null>(null)
+  /** 鉴定动画进行中(约 2.6s):防连点导致重复建号、重复发新手馈赠 */
+  const starting = ref(false)
 
   /** 这一世的天然牌面(倾向文案,不含任何数值) */
   const tendencies = computed(() => tendencyLines(rootElements(profile.value.roots)))
 
   function reroll(): void {
+    // 鉴定动画进行中禁止重掷:begin 已按当时的 profile 建号,
+    // 此刻重掷既改不了已成真身的灵根,又白扣一次「逆天改命」
+    if (starting.value) return
     if (!game.spendCreateReroll()) return
     game.setCreateProfile(rollLinggen(rng))
   }
@@ -109,13 +116,15 @@
   }
 
   function begin(): void {
+    if (starting.value) return
+    starting.value = true
     const finalName = name.value.trim().slice(0, 8) || '无名散修'
     player.initCharacter(finalName, profile.value)
     // 开局馈赠:入门功法 + 一柄竹剑 + 三枚聚气散
     cultivation.learn('m_taixuan')
     cultivation.equipMain('m_taixuan')
     const starter = generateEquipment(1, rng, { slot: 'weapon' })
-    acquireEquipment(starter, true)
+    acquireEquipment(starter, { quiet: true, forceKeep: true }) // forceKeep:开局馈赠不受自动回收规则影响
     const tpl = equipmentTemplate(starter.templateId)
     if (tpl) inventory.equip(starter.uid, tpl.slot)
     inventory.addPill('p_jvqisan', 3)

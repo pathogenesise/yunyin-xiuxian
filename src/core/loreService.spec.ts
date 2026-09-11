@@ -131,6 +131,21 @@ describe('藏经阁钻研(挂机推演)', () => {
     expect(lore.knownRecipeCount).toBe(before + 1)
   })
 
+  it('临近完成的方子吃不下的钻研不蒸发:只吃缺口,盈余留在锅里', () => {
+    const player = usePlayerStore()
+    player.major = 1
+    useDongfuStore().setLevel('library', 4)
+    const lore = useLoreStore()
+    // 唯一一张未通方子只剩 0.001 缺口,锅中蓄了 0.5 —— 修复前整袋倒进 clamp 到 1,
+    // studyFrac 归零,0.499 的钻研蒸发;修复后只消费缺口,盈余留给下一拍继续
+    lore.recipeLore = { p_jvqidan: 0.999 }
+    lore.studyFrac = 0.5
+    studyTick(0.001) // dt 极小,累计增量可忽略
+    expect(lore.recipeMastery('p_jvqidan')).toBeCloseTo(1, 6)
+    // 盈余保留(δ=本拍 dt 累计的微小增量),而不是整段清零
+    expect(lore.studyFrac).toBeGreaterThan(0.49)
+  })
+
   it('架上无书可读时钻研量归零,不会无限膨胀', () => {
     const player = usePlayerStore()
     player.major = 0

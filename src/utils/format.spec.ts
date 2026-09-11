@@ -39,4 +39,40 @@ describe('数值格式化', () => {
     expect(formatPercent(0.125)).toBe('12.5%')
     expect(formatPercent(0.5)).toBe('50%')
   })
+
+  it('非法百分比显示 --', () => {
+    expect(formatPercent(NaN)).toBe('--')
+    expect(formatPercent(Infinity)).toBe('--')
+    expect(formatPercent(-Infinity)).toBe('--')
+  })
+
+  it('非法时长显示 --', () => {
+    expect(formatDuration(NaN)).toBe('--')
+    expect(formatDuration(Infinity)).toBe('--')
+  })
+
+  it('小正数不丢精度为 0', () => {
+    expect(formatGN(0.04)).toBe('0.04')
+    expect(formatGN(0.125)).toBe('0.1')
+    expect(formatGN(0.5)).toBe('0.5')
+    expect(formatGN(1)).toBe('1')
+  })
+
+  it('更细碎的正数也不该显示成 0(位数随数量级抬升)', () => {
+    expect(formatGN(0.004)).toBe('0.004')
+    expect(formatGN(0.0004)).toBe('0.0004')
+    expect(formatGN(0.09)).toBe('0.09')
+  })
+
+  it('[100,1000) 档与 <100 档一致四舍五入', () => {
+    expect(formatGN(999.9)).toBe('1000')
+    expect(formatGN(999.4)).toBe('999')
+    expect(formatGN(150)).toBe('150')
+  })
+
+  it('极小负百分比不显示为 -0%', () => {
+    expect(formatPercent(-0.00001)).toBe('0%')
+    expect(formatPercent(-0.005)).toBe('-0.5%')
+    expect(formatPercent(0.125)).toBe('12.5%')
+  })
 })

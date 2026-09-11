@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getCurrentEnlightenment, chooseEnlightenment } from '@/core/earlyGameService'
+import { getCurrentEnlightenment, chooseEnlightenment, dismissEnlightenment } from '@/core/earlyGameService'
 import type { EnlightenmentEvent } from '@/types'
 
 const event = ref<EnlightenmentEvent | null>(null)
@@ -20,6 +20,7 @@ function handleChoose(index: number) {
 }
 
 function handleIgnore() {
+  dismissEnlightenment() // 清模块级事件,轮询才不会把它弹回来
   event.value = null
 }
 

@@ -172,7 +172,8 @@ export function waveDamage(
   targetMajor: number,
   wave: number,
   hpLeft: number,
-  relief: TribulationRelief = NO_RELIEF
+  relief: TribulationRelief = NO_RELIEF,
+  weatherMult = 1
 ): number {
   const reduction = Math.min(0.6, modOf(mods, 'damageReduction'))
   // 厚土分担天罚:减伤按灵根亲和折算一部分为天劫抗性(无减伤者折算为零)
@@ -184,6 +185,8 @@ export function waveDamage(
   if (def.id === 'soulrend') dmg *= 1 - SOULREND_BURST_RELIEF[effectiveBurstTier(mods, relief)]!
   // 濒危减伤(背水路数)在气血垂危时同样护持渡劫
   if (hpLeft < 0.3) dmg *= 1 - lowHpRed
+  // 天时(雷鸣日渡劫更难,tribulationMult>1):预览与结算共用同一乘数,审计基线不传则默认 1
+  dmg *= weatherMult
   return dmg
 }
 
@@ -205,14 +208,15 @@ export function traceTribulation(
   def: TribulationDef,
   mods: StatMods,
   targetMajor: number,
-  relief: TribulationRelief = NO_RELIEF
+  relief: TribulationRelief = NO_RELIEF,
+  weatherMult = 1
 ): TribulationTrace {
   const waves = tribulationWaves(targetMajor)
   const regen = sustainScore(mods, def, relief)
   let hpLeft = 1 + guardScore(mods, def, relief)
   let minHp = hpLeft
   for (let w = 1; w <= waves; w += 1) {
-    hpLeft = hpLeft - waveDamage(def, mods, targetMajor, w, hpLeft, relief) + regen
+    hpLeft = hpLeft - waveDamage(def, mods, targetMajor, w, hpLeft, relief, weatherMult) + regen
     if (hpLeft < minHp) minHp = hpLeft
     if (hpLeft <= 0) return { survived: false, hpLeft, minHp, fellAt: w }
   }
@@ -244,7 +248,8 @@ export function buildTribulationPlan(
   targetMajor: number,
   mods: StatMods,
   kindIn?: TribulationKind,
-  relief: TribulationRelief = NO_RELIEF
+  relief: TribulationRelief = NO_RELIEF,
+  weatherMult = 1
 ): TribulationPlan {
   const kind = kindIn ?? rollTribulation(targetMajor)
   const def = tribulationDef(kind)
@@ -259,7 +264,7 @@ export function buildTribulationPlan(
 
   // 决策档以"全程最低水位"为准:险过与稳过必须分得开,
   // 否则所有幸存者都挤在同一档,玩家只能靠堆满四维来跨线。
-  const trace = traceTribulation(def, mods, targetMajor, relief)
+  const trace = traceTribulation(def, mods, targetMajor, relief, weatherMult)
   const expectedRate = trace.survived
     ? Math.min(0.95, 0.55 + Math.min(1, trace.minHp / 0.45) * 0.4)
     : failedRate(trace, tribulationWaves(targetMajor))
@@ -336,10 +341,12 @@ export function currentTribulationRelief(kind: TribulationKind): TribulationReli
   return tribulationRelief(rootElements(player.linggen?.roots), kind)
 }
 
-/** 供 UI:当前玩家(含天时、灵根)的渡劫计划 */
+/** 供 UI:当前玩家(含天时、灵根)的渡劫计划
+ * 渡劫难度随天时(雷鸣日+8%):预览乘入 todayWeather().tribulationMult,
+ * 与结算 runTribulation 同源(见 breakthrough.ts),预览与实算不可能分叉 */
 export function currentTribulationPlan(): TribulationPlan {
   const player = usePlayerStore()
   const nextMajor = player.isMajorStep ? player.major + 1 : player.major
   const kind = rollTribulation(nextMajor)
-  return buildTribulationPlan(nextMajor, player.finalStats.mods, kind, currentTribulationRelief(kind))
+  return buildTribulationPlan(nextMajor, player.finalStats.mods, kind, currentTribulationRelief(kind), todayWeather().tribulationMult)
 }

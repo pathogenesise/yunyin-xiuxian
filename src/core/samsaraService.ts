@@ -201,7 +201,10 @@ function metricProgress(metric: LifeThemeMetric, vow: LifeVow): ThemeProgress {
     case 'all': {
       // 取各条中最落后的一条作为整体进度:全部达成才算达成
       const parts = metric.of.map(m => metricProgress(m, vow))
-      const worst = parts.reduce((a, b) => (a.cur / a.need <= b.cur / b.need ? a : b))
+      // need<=0 的条目不参与比烂:0 需求视为已达成(ratio=1)。
+      // 否则 0/0→NaN、cur/0→Infinity 会让 reduce 恒留 a,选错「最落后的一条」
+      const ratioOf = (p: ThemeProgress): number => (p.need <= 0 ? 1 : p.cur / p.need)
+      const worst = parts.reduce((a, b) => (ratioOf(a) <= ratioOf(b) ? a : b))
       return { ...worst, done: parts.every(p => p.done) }
     }
   }

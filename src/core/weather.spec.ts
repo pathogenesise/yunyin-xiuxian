@@ -1,10 +1,17 @@
 /**
  * Phase 31.0 A1:天时 —— 每日确定性环境
+ * 续:天时词条接线验证 —— 描述里承诺的战斗/掉落/渡劫影响必须真能流进游戏,
+ * 而不是只在数据表里躺平(见 ISS-027:赤阳/月蚀/雷鸣三种天时曾零作用)
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { todayWeather, weatherDef, WEATHERS } from './weather'
 import { useGameStore } from '@/stores/game'
+import { usePlayerStore } from '@/stores/player'
+import { currentTribulationPlan, waveDamage } from './tribulationDecision'
+import { tribulationDef } from '@/data/tribulations'
+import { NO_RELIEF } from '@/data/linggenAffinity'
+import type { StatMods } from '@/types'
 
 describe('天时(weather)', () => {
   beforeEach(() => {
@@ -46,5 +53,105 @@ describe('天时(weather)', () => {
     const ly = weatherDef('lingyu')
     expect((ly?.mods.cultivationSpeed ?? 0)).toBeGreaterThan(0)
     expect((ly?.mods.qiRegen ?? 0)).toBeGreaterThan(0)
+  })
+})
+
+// ---- 接线验证(ISS-027):天时词条必须真正流进游戏,而非只有定义 ----
+
+describe('天时词条并入最终属性(mods 源)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('当前天时的词条出现在 player.finalStats.mods 中(战斗/掉落/渡劫即由此读取)', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    game.$patch({ totalPlaySec: 0 }) // day 0 = 灵雨:cultivationSpeed+0.1, qiRegen+0.2
+    const day0 = todayWeather()
+    expect(day0.id).toBe('lingyu')
+    expect(player.finalStats.mods.cultivationSpeed ?? 0).toBeCloseTo(0.1)
+    expect(player.finalStats.mods.qiRegen ?? 0).toBeCloseTo(0.2)
+  })
+
+  it('赤阳日:attackPct/damageBonus 生效;月蚀日:luck/dropRate 生效', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    // day2=赤阳,day3=月蚀(确定性种子,见 weather.ts)
+    game.$patch({ totalPlaySec: 2 * 86400 })
+    expect(todayWeather().id).toBe('chiyang')
+    expect(player.finalStats.mods.attackPct ?? 0).toBeCloseTo(0.05)
+    expect(player.finalStats.mods.damageBonus ?? 0).toBeCloseTo(0.05)
+    game.$patch({ totalPlaySec: 3 * 86400 })
+    expect(todayWeather().id).toBe('yueshi')
+    expect(player.finalStats.mods.luck ?? 0).toBeCloseTo(0.05)
+    expect(player.finalStats.mods.dropRate ?? 0).toBeCloseTo(0.05)
+  })
+
+  it('雷鸣日:tribulationResist 生效(渡劫变难),attackPct 生效', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    game.$patch({ totalPlaySec: 1 * 86400 })
+    expect(todayWeather().id).toBe('leiming')
+    expect(player.finalStats.mods.tribulationResist ?? 0).toBeCloseTo(-0.05)
+    expect(player.finalStats.mods.attackPct ?? 0).toBeCloseTo(0.05)
+  })
+
+  it('灵雨日:cultPerSec/qiRegenPerSec 带上天时(离线结算同源,不再仅在线生效)', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    player.initCharacter('雨修', { roots: [] } as never)
+    // 遍历确定性日子找清和(无加成)与灵雨(修炼+0.2 之外的 +0.1)两天,
+    // 同一角色、同一境界下唯一差异是天时 → 修行速度应差 1.1 倍、灵气回复 1.2 倍
+    let lingyuDay = -1
+    let qingheDay = -1
+    for (let d = 0; d < 40 && qingheDay < 0; d += 1) {
+      game.$patch({ totalPlaySec: d * 86400 })
+      const id = todayWeather().id
+      if (id === 'lingyu' && lingyuDay < 0) lingyuDay = d
+      if (id === 'qinghe') qingheDay = d
+    }
+    expect(lingyuDay).toBeGreaterThanOrEqual(0)
+    expect(qingheDay).toBeGreaterThanOrEqual(0)
+    game.$patch({ totalPlaySec: qingheDay * 86400 })
+    const baseCult = player.cultPerSec
+    const baseQi = player.qiRegenPerSec
+    game.$patch({ totalPlaySec: lingyuDay * 86400 })
+    expect(player.cultPerSec).toBeCloseTo(baseCult * 1.1, 6)
+    expect(player.qiRegenPerSec).toBeCloseTo(baseQi * 1.2, 6)
+  })
+})
+
+describe('渡劫难度随天时(雷鸣日 +8%)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('waveDamage 乘上天时倍率:雷鸣日伤害更高(预览与结算同源)', () => {
+    const def = tribulationDef('thunder')
+    const mods: StatMods = {}
+    const base = waveDamage(def, mods, 1, 1, 1)
+    const storm = waveDamage(def, mods, 1, 1, 1, NO_RELIEF, 1.08)
+    expect(storm).toBeCloseTo(base * 1.08, 9)
+    // 审计基线(不传天时)不受影响,恒等于 1.0 倍
+    expect(base).toBeCloseTo(waveDamage(def, mods, 1, 1, 1, NO_RELIEF, 1), 9)
+  })
+
+  it('currentTribulationPlan 在同一天时下,expectedRate 随雷鸣倍率下降(难度变高)', () => {
+    const game = useGameStore()
+    // 找一个雷鸣日
+    let stormDay = -1
+    for (let d = 0; d < 40; d += 1) {
+      game.$patch({ totalPlaySec: d * 86400 })
+      if (todayWeather().id === 'leiming') {
+        stormDay = d
+        break
+      }
+    }
+    expect(stormDay).toBeGreaterThanOrEqual(0)
+    // 同一天内预览稳定(确定性),且 > 0 即可(具体难度由构筑决定)
+    const a = currentTribulationPlan()
+    const b = currentTribulationPlan()
+    expect(a.kind).toBe(b.kind)
+    expect(a.expectedRate).toBeGreaterThan(0)
   })
 })

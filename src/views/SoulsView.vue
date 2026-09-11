@@ -105,7 +105,13 @@
           </div>
           <div class="flex shrink-0 gap-1">
             <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="wearSoul(soul.uid)">装配</button>
-            <button class="btn-ghost !px-2 !py-1 !text-[11px] !text-ink-faint" @click="dissolveSoul(soul.uid)">散去</button>
+            <template v-if="pendingDissolveUid !== soul.uid">
+              <button class="btn-ghost !px-2 !py-1 !text-[11px] !text-ink-faint" @click="pendingDissolveUid = soul.uid">散去</button>
+            </template>
+            <template v-else>
+              <button class="btn-seal !px-2 !py-1 !text-[11px]" @click="doDissolve(soul.uid)">确 散</button>
+              <button class="btn-ghost !px-2 !py-1 !text-[11px]" @click="pendingDissolveUid = null">取 消</button>
+            </template>
           </div>
         </div>
       </div>
@@ -131,7 +137,18 @@
               <span :style="{ color: soulGradeDef(row.gradeRank).color }">{{ soulGradeDef(row.gradeRank).name }}·{{ row.typeName }}</span>
             </p>
           </div>
-          <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="refineEquipment(row.inst.uid)">入 炉</button>
+          <!-- 入炉二步确认:毁的是原器,不按一个「入 炉」就直接交代了 -->
+          <button
+            v-if="pendingRefineUid !== row.inst.uid"
+            class="btn-ghost !px-3 !py-1 !text-[11px]"
+            @click="pendingRefineUid = row.inst.uid"
+          >
+            入 炉
+          </button>
+          <div v-else class="flex shrink-0 items-center gap-1.5">
+            <button class="btn-seal !px-2.5 !py-1 !text-[11px]" @click="doRefine(row.inst.uid)">凝 炼</button>
+            <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="pendingRefineUid = null">取 消</button>
+          </div>
         </div>
       </div>
       <p v-else class="px-4 py-6 text-center text-[11px] leading-relaxed text-ink-ghost">
@@ -168,6 +185,22 @@
   const unlocked = computed(() => endgameUnlocked())
   const idleOpen = ref(false)
   const forgeOpen = ref(false)
+  /** 等待二次确认的行(uid);非 null 表示该行已展开确认态 */
+  const pendingRefineUid = ref<string | null>(null)
+  /** 散去形意同样二步确认:器魂是花道源与一件法器凝出来的,一脚碎掉连个反悔都没有 */
+  const pendingDissolveUid = ref<string | null>(null)
+
+  /** 二步确认后真正入炉;成功后收拢确认态 */
+  function doRefine(uid: string): void {
+    if (refineEquipment(uid)) pendingRefineUid.value = null
+    else pendingRefineUid.value = null // 失败(如道源不足)也收起确认态,让玩家重挑
+  }
+
+  /** 二步确认后真正散去形意;散去不可逆,成功后收拢确认态 */
+  function doDissolve(uid: string): void {
+    dissolveSoul(uid)
+    pendingDissolveUid.value = null
+  }
 
   /** 未装配的器魂 */
   const idleSouls = computed(() => endgame.soulList.filter(s => !endgame.activeSouls.some(a => a.uid === s.uid)))

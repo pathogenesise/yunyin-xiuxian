@@ -1,7 +1,7 @@
 /**
  * Phase 28 前期玩法数据 —— 悟道顿悟/突破准备/探索路线/洞府巡游
  */
-import type { EnlightenmentOption, RouteConfig, BreakthroughPrepOption } from '@/types'
+import type { EnlightenmentOption, BreakthroughPrepOption } from '@/types'
 
 /** 悟道顿悟选项池(修炼时随机触发,三选一) */
 export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
@@ -51,40 +51,15 @@ export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
     buffId: 'enlighten_qi',
     duration: 600
   },
-  // 悟道点
+  // 悟道点 —— 悟道产出没有速率词条可挂,走即时奖励(文案与实发一致)
   {
     type: 'insight',
     label: '灵机一动',
-    desc: '悟道点获取 +30%',
-    buffId: 'enlighten_insight',
-    duration: 600
+    desc: '立即获得 5 悟道点',
+    duration: 0,
+    reward: { type: 'wudao', value: 5 }
   }
 ]
-
-/** 探索路线配置 */
-export const ROUTE_CONFIGS: Record<'safe' | 'risky' | 'dangerous', RouteConfig> = {
-  safe: {
-    label: '浅山',
-    desc: '安全但收益一般',
-    safeMod: 1.2,
-    rewardMod: 0.85,
-    eventMod: 0.9
-  },
-  risky: {
-    label: '密林',
-    desc: '中等危险,高掉落',
-    safeMod: 1.0,
-    rewardMod: 1.15,
-    eventMod: 1.1
-  },
-  dangerous: {
-    label: '旧洞',
-    desc: '高危但事件多',
-    safeMod: 0.85,
-    rewardMod: 1.1,
-    eventMod: 1.35
-  }
-}
 
 /** 突破准备选项 */
 export const BREAKTHROUGH_PREP_OPTIONS: BreakthroughPrepOption[] = [
@@ -134,7 +109,7 @@ export const CAVE_EVENT_POOL = {
       options: [
         { label: '提炼残渣', effect: '获得少量灵石', reward: { type: 'stone' as const, value: 30 } },
         { label: '吸纳药气', effect: '获得临时修炼加速', reward: { type: 'buff' as const, value: 'cave_furnace_cult' } },
-        { label: '清理炉体', effect: '提升下次炼丹成功率(未实现)', reward: { type: 'wudao' as const, value: 2 } }
+        { label: '清理炉体', effect: '获得 2 悟道点', reward: { type: 'wudao' as const, value: 2 } }
       ]
     }
   ],

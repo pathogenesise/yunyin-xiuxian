@@ -16,14 +16,14 @@
           </span>
           <span class="tabular text-[13px] text-ink">{{ row.value }}</span>
         </li>
-        <li v-if="summary.equipment.length" class="rounded-md bg-paper-deep/70 px-3 py-2">
+        <li v-if="savedEquipment.length" class="rounded-md bg-paper-deep/70 px-3 py-2">
           <p class="mb-1 flex items-center gap-2 text-[13px] text-ink-soft">
             <GameIcon name="backpack" :size="15" class="text-ink-faint" />
-            拾得装备 ×{{ summary.equipment.length }}
+            拾得装备 ×{{ savedEquipment.length }}
           </p>
           <p class="flex flex-wrap gap-x-3 gap-y-1">
             <span
-              v-for="(eq, i) in summary.equipment"
+              v-for="(eq, i) in savedEquipment"
               :key="i"
               class="font-kai text-[12px]"
               :style="{ color: qualityDef(eq.quality).color }"
@@ -70,8 +70,16 @@
     if (s.wudao > 0) list.push({ icon: 'book', label: '悟道点', value: `+${s.wudao}` })
     if (s.battles > 0) list.push({ icon: 'swords', label: '历练战斗', value: `${s.wins} 胜 / ${s.battles} 战` })
     if (s.events > 0) list.push({ icon: 'star', label: '路遇际会', value: `${s.events} 次` })
+    // 自动回收的产出不入行囊、只化器灵尘,单独成行,免得玩家以为掉了没捡到
+    if (s.recycledDust > 0) {
+      const recycled = s.equipment.filter(e => e.recycled).length
+      list.push({ icon: 'sparkles', label: '回收化尘', value: `${recycled} 件 · 器灵尘+${s.recycledDust}` })
+    }
     return list
   })
+
+  /** 真正入行囊的装备(回收件已并入"回收化尘"行,不在此重复列出) */
+  const savedEquipment = computed(() => summary.value?.equipment.filter(e => !e.recycled) ?? [])
 
   function close(): void {
     ui.offlineSummary = null

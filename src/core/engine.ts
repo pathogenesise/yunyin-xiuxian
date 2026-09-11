@@ -17,7 +17,6 @@ import { checkStateAchievements, rolloverDailyIfNeeded } from './progress'
 import { mayTriggerEnlightenment, mayTriggerCaveEvent } from './earlyGameService'
 import { settleSuppressedRegions } from './suppress'
 import { studyTick, seedLoreIfNeeded } from './loreService'
-import { todayWeather } from './weather'
 import { flushSaveWrites } from '@/utils/storage'
 
 const PERIODIC_CHECK_SEC = 30
@@ -126,14 +125,12 @@ class GameEngine {
     const cultivation = useCultivationStore()
 
     if (!player.dead) {
-      // Phase 31 A1:天时环境(当天天时,确定性)
-      const weather = todayWeather()
-      const weatherCult = 1 + (weather.mods.cultivationSpeed ?? 0)
-      const weatherQi = 1 + (weather.mods.qiRegen ?? 0)
-      // 修为增长(天时修正)
-      player.gainExp(mulN(gn(player.cultPerSec), dt * weatherCult))
-      // 灵气恢复(天时修正)
-      resources.setQi(resources.qi + player.qiRegenPerSec * weatherQi * dt, player.qiCapValue)
+      // 天时已并入 finalStats.mods(player store),修炼/灵气/战斗/掉落/渡劫全链路生效,
+      // 这里不再手动乘 weatherCult/weatherQi,否则与 mods 中的天时重复叠加
+      // 修为增长
+      player.gainExp(mulN(gn(player.cultPerSec), dt))
+      // 灵气恢复
+      resources.setQi(resources.qi + player.qiRegenPerSec * dt, player.qiCapValue)
       // 建筑产出
       dongfu.produce(dt)
       // Buff 过期

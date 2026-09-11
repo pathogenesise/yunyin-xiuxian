@@ -3,6 +3,8 @@ import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
+import { DECOMPOSE_DUST } from '@/data/constants'
+import { qualityDef } from '@/data/qualities'
 import { checkSuppression, settleSuppressedRegions } from './suppress'
 
 describe('区域镇压系统', () => {
@@ -102,19 +104,51 @@ describe('区域镇压系统', () => {
       expect(resources.spiritStone.m).toBeGreaterThan(initialStone.m)
     })
 
-    it('镇压区域产出装备的概率正确', () => {
+    it('镇压区域产出装备并按回收规则处置(入包或化尘)', () => {
       const player = usePlayerStore()
       player.major = 3
       player.suppressedRegions = ['qingyun']
       const inventory = useInventoryStore()
+      const resources = useResourcesStore()
 
-      // 模拟随机数确保掉落
-      vi.spyOn(Math, 'random').mockReturnValue(0.1) // 低于 0.4 的概率
+      // 模拟随机数确保掉落(equipChance 0.4 × 1h > 0.1)
+      vi.spyOn(Math, 'random').mockReturnValue(0.1)
 
-      settleSuppressedRegions(3600) // 1 小时
+      const itemsBefore = inventory.items.length
+      const dustBefore = resources.dust
+      const total = settleSuppressedRegions(3600) // 1 小时
 
-      // 应该获得装备
-      expect(inventory.items.length).toBeGreaterThan(0)
+      // 必掉 1 件;处置记账必须自洽:入包则件数+1且不化尘,回收则器灵尘按档位到账且不入包
+      expect(total).not.toBeNull()
+      expect(total!.equipment).toHaveLength(1)
+      const eq = total!.equipment[0]!
+      const dustGain = resources.dust - dustBefore
+      if (eq.recycled) {
+        expect(inventory.items.length).toBe(itemsBefore)
+        expect(dustGain).toBe(DECOMPOSE_DUST[qualityDef(eq.quality).rank] ?? 1)
+        expect(total!.recycledDust).toBe(dustGain)
+      } else {
+        expect(inventory.items.length).toBe(itemsBefore + 1)
+        expect(dustGain).toBe(0)
+        expect(total!.recycledDust).toBe(0)
+      }
+
+      vi.restoreAllMocks()
+    })
+
+    it('长时离线装备按次数期望产出,不再被压成每区仅 1 件', () => {
+      const player = usePlayerStore()
+      player.major = 5
+      player.suppressedRegions = ['qingyun']
+
+      // 24h → equipChance = 0.4×24 = 9.6。旧实现 `random < 9.6` 恒真但只掉 1 件;
+      // 修复后 floor(9.6)=9 + 零头 60% 概率第 10 件。mock 0 → 零头必中,共 10 件
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      const total = settleSuppressedRegions(24 * 3600)
+
+      expect(total).not.toBeNull()
+      expect(total!.equipment.length).toBeGreaterThan(1)
+      expect(total!.equipment).toHaveLength(10)
 
       vi.restoreAllMocks()
     })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getCurrentCaveEvent, chooseCaveOption } from '@/core/earlyGameService'
+import { getCurrentCaveEvent, chooseCaveOption, dismissCaveEvent } from '@/core/earlyGameService'
 import type { CaveEvent } from '@/types'
 
 const event = ref<CaveEvent | null>(null)
@@ -28,6 +28,7 @@ function handleChoose(index: number) {
 }
 
 function handleIgnore() {
+  dismissCaveEvent() // 清模块级事件,轮询才不会把它弹回来
   event.value = null
 }
 
@@ -85,7 +86,7 @@ const locationLabel = computed(() =>
             class="w-full rounded bg-ink/10 px-4 py-2 text-sm text-ink/70 transition hover:bg-ink/20"
             @click="handleIgnore"
           >
-            离开
+            离开(今日不再巡游)
           </button>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { BT_FAIL_EXP_LOSS, BT_QI_COST_RATIO } from '@/data/constants'
 import { breakthroughBaseRate, clampRate } from './formulas'
 import { modOf } from './statsCalc'
 import { rollTribulation, sustainScore, guardScore, waveDamage, tribulationWaves, currentTribulationRelief } from './tribulationDecision'
+import { todayWeather } from './weather'
 import { tribulationDef, TRIBULATIONS, type TribulationKind } from '@/data/tribulations'
 import { NO_RELIEF, type TribulationRelief } from '@/data/linggenAffinity'
 import { reliefFelt } from './linggenAffinity'
@@ -19,6 +20,8 @@ import { useUiStore } from '@/stores/ui'
 import type { BreakthroughView } from '@/stores/ui'
 import type { StatMods } from '@/types'
 import { playSfx } from './audio'
+// Phase 28 突破准备:静坐/服丹的一次性加成(见 earlyGameService;仅无劫突破受益)
+import { breakthroughPrepState, consumeBreakthroughPrep, type BreakthroughPrepView } from './earlyGameService'
 
 export interface BreakthroughInfo {
   ready: boolean
@@ -30,6 +33,8 @@ export interface BreakthroughInfo {
   isMajor: boolean
   needTribulation: boolean
   targetLabel: string
+  /** 突破准备状态(就绪时 rate 已并入加成,见 AN 接线) */
+  prep: BreakthroughPrepView
 }
 
 /** 蒙特卡洛采样次数:渡劫波次少(4~15),几千次也在毫秒级 */
@@ -79,7 +84,14 @@ export function breakthroughInfo(): BreakthroughInfo {
   const needTribulation = isMajor && realmDef(nextMajor).tribulation && player.major < nextMajor
   const qiCost = Math.floor(player.qiCapValue * BT_QI_COST_RATIO)
   const mods = player.finalStats.mods
-  const rate = clampRate(breakthroughBaseRate(player.major, player.sub) + modOf(mods, 'breakthroughRate') + modOf(mods, 'luck') * 0.05)
+  // Phase 28 突破准备:就绪的静坐/丹药加成并入展示率(消费在 attemptBreakthrough,一次性)
+  const prep = breakthroughPrepState()
+  const rate = clampRate(
+    breakthroughBaseRate(player.major, player.sub) +
+      modOf(mods, 'breakthroughRate') +
+      modOf(mods, 'luck') * 0.05 +
+      (prep.ready ? prep.bonus : 0)
+  )
   let ready = true
   let reason = ''
   if (player.atMaxRealm) {
@@ -100,13 +112,15 @@ export function breakthroughInfo(): BreakthroughInfo {
     qiCost,
     isMajor,
     needTribulation,
-    targetLabel: realmLabel(nextMajor, nextSub)
+    targetLabel: realmLabel(nextMajor, nextSub),
+    prep
   }
 }
 
 /** 模拟渡劫:返回(是否渡过, 战报)
  * Phase 32.1:与 tribulationDecision 共用度量函数,预览与结算不可能分叉
- * Phase 32.2:灵根解法通道同样经 currentTribulationRelief 取,与预览同源 */
+ * Phase 32.2:灵根解法通道同样经 currentTribulationRelief 取,与预览同源
+ * 渡劫难度随天时:与预览 currentTribulationPlan 同一乘数(雷鸣日+8%) */
 function runTribulation(targetMajor: number): { survived: boolean; log: string[] } {
   const player = usePlayerStore()
   const mods = player.finalStats.mods
@@ -114,12 +128,13 @@ function runTribulation(targetMajor: number): { survived: boolean; log: string[]
   const kind = rollTribulation(targetMajor)
   const tDef = tribulationDef(kind)
   const relief = currentTribulationRelief(kind)
+  const weatherMult = todayWeather().tribulationMult
   const regen = sustainScore(mods, tDef, relief)
   let hpLeft = 1 + guardScore(mods, tDef, relief)
   const log: string[] = [`乌云压顶,${realmDef(targetMajor).name}劫将至——${tDef.name}之劫,共 ${waves} 道!`]
   if (reliefFelt(relief)) log.push('你体内灵根与此劫气机隐隐相应,自有一线生路。')
   for (let w = 1; w <= waves; w += 1) {
-    hpLeft = hpLeft - waveDamage(tDef, mods, targetMajor, w, hpLeft, relief) * rng.float(0.85, 1.15) + regen
+    hpLeft = hpLeft - waveDamage(tDef, mods, targetMajor, w, hpLeft, relief, weatherMult) * rng.float(0.85, 1.15) + regen
     if (hpLeft <= 0) {
       log.push(`第 ${w} 道天雷轰然落下,你护体灵光崩碎,重伤坠地……`)
       return { survived: false, log }
@@ -153,6 +168,8 @@ export function attemptBreakthrough(): BreakthroughView | null {
     tribulationLog = result.log
     track('tribulations')
   } else {
+    // 无劫突破消费掉就绪的准备加成(info.rate 已并入,见 breakthroughInfo peek)
+    consumeBreakthroughPrep()
     success = rng.chance(info.rate)
   }
 

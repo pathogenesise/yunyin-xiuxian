@@ -15,6 +15,7 @@ import {
   aftermathText,
   isReviving,
   prosperityYieldMult,
+  regionRecallFor,
   NEMESIS_THRESHOLD,
   STABLE_WINS,
   FLOURISH_WINS,
@@ -23,11 +24,16 @@ import {
   emptyNemeses,
   emptyEventMemories
 } from './worldMemory'
+import { usePlayerStore } from '@/stores/player'
 import type { NemesisRecord } from '@/types'
 
 describe('S1 区域兴衰', () => {
   const HOUR = 3600_000
   const now = Date.now()
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
 
   it('初始混乱:未镇压或胜场不足', () => {
     const r = deriveProsperity({ totalWins: 5, hasSuppressed: false, lastActivityAt: now, now })
@@ -51,6 +57,23 @@ describe('S1 区域兴衰', () => {
       now
     })
     expect(idle.prosperity).toBe('chaos')
+  })
+
+  it('regionRecallFor 的 since 取镇压时刻(suppressedSince),而非最近战斗时间 — 镇压后刷战不该把「稳定时长」越打越短', () => {
+    const player = usePlayerStore()
+    const suppressedAt = Date.now() - 50 * HOUR
+    const lastFight = Date.now() - 1 * HOUR // 镇压后仍在持续战斗
+    player.suppressedRegions = ['qingyun']
+    player.suppressedSince = { qingyun: suppressedAt }
+    player.regionStats = {
+      qingyun: { totalFights: FLOURISH_WINS, avgRounds: 3, avgDamageTakenPct: 0.4, consecutiveWins: FLOURISH_WINS, lastUpdateAt: lastFight }
+    }
+    const recall = regionRecallFor('qingyun')
+    // since 应以镇压时刻为起点:50h 前镇压 → since 应为 50h 前的密钥
+    expect(recall.suppressedAt).toBe(suppressedAt)
+    expect(recall.since).toBe(suppressedAt)
+    // 若误用 lastUpdateAt,since 会变成 1h 前 —— 回归点(TASK-026)
+    expect(recall.since).not.toBe(lastFight)
   })
 
   it('兴衰名称映射正确', () => {

@@ -18,9 +18,12 @@ export interface EnlightenmentOption {
   type: EnlightenmentType
   label: string
   desc: string
-  buffId: string
+  /** 生效的 buff;无 buff 的选项走即时 reward */
+  buffId?: string
   /** 持续时间(秒) */
   duration: number
+  /** 即时奖励(不走 buff,如"灵机一动"直接给悟道点——悟道产出无速率词条可挂) */
+  reward?: { type: 'wudao'; value: number }
 }
 
 /** 悟道顿悟实例(60秒窗口) */
@@ -33,17 +36,6 @@ export interface EnlightenmentEvent {
   expiresAt: number
 }
 
-/** 探索路线类型 */
-export type ExplorationRoute = 'safe' | 'risky' | 'dangerous'
-
-/** 探索路线配置 */
-export interface RouteConfig {
-  label: string
-  desc: string
-  safeMod: number
-  rewardMod: number
-  eventMod: number
-}
 
 /** 奇遇连锁状态(玩家已触发的连锁ID → 当前阶段) */
 export type EventChainState = Record<string, number>
@@ -118,6 +110,8 @@ export type PercentStatKey =
   | 'expGain'
   | 'alchemyYield'
   | 'forgeDiscount'
+  | 'qiCapPct'
+  | 'beastPct'
 
 /** 特殊词条(战斗/系统内特判) */
 export type SpecialKey =
@@ -849,7 +843,10 @@ export interface OfflineSummary {
   battles: number
   wins: number
   events: number
-  equipment: { name: string; quality: QualityId }[]
+  /** 产出装备清单;回收(自动回收/满包化尘)的件以 recycled 标注 */
+  equipment: { name: string; quality: QualityId; recycled?: boolean }[]
+  /** 期间未入包装备化作的器灵尘总量 */
+  recycledDust: number
   notes: string[]
 }
 

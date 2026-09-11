@@ -63,7 +63,9 @@ export function checkSuppression(player: ReturnType<typeof usePlayerStore>, regi
  */
 export interface SuppressedYield {
   stone: GNum
-  equipment: { name: string; quality: QualityId }[]
+  equipment: { name: string; quality: QualityId; recycled?: boolean }[]
+  /** 未入包(自动回收/满包化尘)装备化作的器灵尘(由 acquireEquipment 记账) */
+  recycledDust: number
 }
 
 export function settleSuppressedRegions(dt: number): SuppressedYield | null {
@@ -73,7 +75,7 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
   if (player.suppressedRegions.length === 0) return null
 
   const hours = dt / 3600
-  const total: SuppressedYield = { stone: gnZero(), equipment: [] }
+  const total: SuppressedYield = { stone: gnZero(), equipment: [], recycledDust: 0 }
   const now = Date.now()
 
   // Phase 30.9:复苏判定 —— 镇压超过 72h 无活动,区域妖气再聚,自动解除镇压
@@ -109,12 +111,17 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
     resources.addStone(stoneYield)
     total.stone = add(total.stone, stoneYield)
 
-    // 装备掉落:概率结算
+    // 装备掉落:次数期望结算(0.4件/h × 时长)。不能用 Math.random()<equipChance:
+    // hours>2.5 时概率>1 恒真,离线一晚上每区只掉 1 件,与在线 0.4/h 的线性产出
+    // 差出好几倍。拆成「整数件 + 零头概率」:hours<1 时与原概率判定等价,长时离线才对齐
     const equipChance = SUPPRESS_YIELD_PER_HOUR.equipmentChance * hours
-    if (Math.random() < equipChance) {
+    const equipCount = Math.floor(equipChance) + (Math.random() < equipChance - Math.floor(equipChance) ? 1 : 0)
+    for (let i = 0; i < equipCount; i += 1) {
       const equip = generateEquipment(region.tier, rng, { luck: 0, minQualityRank: 0 })
-      acquireEquipment(equip, true) // quiet=true 避免镇压收益刷屏
-      total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality })
+      const res = acquireEquipment(equip, { quiet: true }) // quiet=true 避免镇压收益刷屏
+      // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收
+      total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality, recycled: !res.bagged })
+      if (!res.bagged) total.recycledDust += res.dust
     }
   }
 

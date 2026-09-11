@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, onUnmounted } from 'vue'
 
   const visible = ref(false)
   const animating = ref(false)
@@ -56,6 +56,9 @@
   /** 当前轮换位置(轮换中随机,结束时定格为真实灵根;必须用 ref 才能触发 computed 重算) */
   const cycleIdx = ref(0)
   let timer: ReturnType<typeof setInterval> | null = null
+  let stopTimers: (() => void) | null = null
+  /** 卸载后不再回填定时器,也不再回调 onDone(防路由切换后仍被 2200ms 定时器推回首页) */
+  let unmounted = false
 
   const currentName = computed(() => (animating.value ? (GRADES[cycleIdx.value]?.name ?? '?') : realName))
   const currentColor = computed(() => (animating.value ? (GRADES[cycleIdx.value]?.color ?? '#c9a959') : realColor))
@@ -66,6 +69,7 @@
 
   /** 展示灵根鉴定动画:随机闪现所有灵根品阶,结束时定格真实 gradeName */
   function show(gradeName: string, onDone?: () => void): void {
+    if (unmounted) return // 卸载后不再起新一轮动画
     realName = gradeName
     // 灵根品阶越高颜色越亮(从 GRADES 里找真实灵根对应的颜色)
     realColor = GRADES.find(g => g.name === gradeName)?.color ?? '#c9a959'
@@ -75,16 +79,26 @@
     timer = setInterval(() => {
       cycleIdx.value = Math.floor(Math.random() * GRADES.length)
     }, 100)
-    setTimeout(() => {
+    const doneTimeout = setTimeout(() => {
       if (timer) clearInterval(timer)
       // 定格:显示真实灵根(animating=false 后 currentName 取 realName)
       animating.value = false
-      setTimeout(() => {
+      const leave = setTimeout(() => {
         visible.value = false
-        onDone?.()
+        if (!unmounted) onDone?.()
       }, 400)
+      stopTimers = () => clearTimeout(leave)
     }, 2200)
+    stopTimers = () => {
+      if (timer) clearInterval(timer)
+      clearTimeout(doneTimeout)
+    }
   }
+
+  onUnmounted(() => {
+    unmounted = true
+    stopTimers?.()
+  })
 
   defineExpose({ show })
 </script>

@@ -36,7 +36,7 @@
             </div>
             <button
               v-if="canSealAffix(line.id)"
-              class="ml-2 shrink-0 text-[10px] text-azure active:scale-90"
+              class="ml-2 shrink-0 rounded-md px-2 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
               @click="doSealAffix(line.id)"
             >
               封存
@@ -126,9 +126,16 @@
         <div class="flex gap-2">
           <button class="btn-seal flex-1" @click="toggleEquip">{{ isEquipped ? '卸 下' : '装 备' }}</button>
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
-          <button class="btn-ghost px-3" :disabled="isEquipped || inst?.locked" @click="doDecompose">
-            <GameIcon name="trash" :size="15" />
-          </button>
+          <!-- 分解二步确认:一件淬养过的装备(强化/封存/重铸)误触垃圾桶不该直接没 -->
+          <template v-if="decomposeArm !== inst?.uid">
+            <button class="btn-ghost px-3" :disabled="isEquipped || inst?.locked" @click="decomposeArm = inst?.uid ?? null">
+              <GameIcon name="trash" :size="15" />
+            </button>
+          </template>
+          <template v-else>
+            <button class="btn-seal !px-2.5 !text-[11px]" @click="doDecompose">分解?</button>
+            <button class="btn-ghost px-2 text-[11px] text-ink-faint" @click="decomposeArm = null">算了</button>
+          </template>
         </div>
       </div>
     </template>
@@ -281,9 +288,14 @@
     if (inst.value) upgradeEquipment(inst.value.uid)
   }
 
+  const decomposeArm = ref<string | null>(null)
+
   function doDecompose(): void {
     if (!inst.value) return
-    if (decomposeEquipment(inst.value.uid)) close()
+    if (decomposeEquipment(inst.value.uid)) {
+      decomposeArm.value = null
+      close()
+    }
   }
 
   function toggleLock(): void {

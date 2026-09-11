@@ -24,6 +24,10 @@ import { useUiStore } from '@/stores/ui'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
 import { recordLoss, isNemesis, markAvenged, ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE } from './worldMemory'
 import { personalityEffects } from './petPersonality'
+// 连胜与宿敌各有一个 recordLoss,一个管连胜清空、一个管宿敌(败北阈值):
+// 前者来自 Phase 28 前期玩法(earlyGameService),后者来自世界记忆(worldMemory),
+// 这里都走别名,免得互相遮蔽
+import { recordWin as recordStreakWin, recordLoss as recordStreakLoss } from './earlyGameService'
 import { currentRegionEvent, regionEventDef, rollRegionEvent } from './regionEvent'
 import { noteEnemy } from './loreService'
 import { noteTaboo } from './samsaraService'
@@ -188,6 +192,8 @@ function runBattle(now: number): void {
 
   if (result.win) {
     track('kills')
+    // Phase 28 连胜:再下一城,3/5/10 档发放只管奖(见 earlyGameService.recordWin)
+    recordStreakWin()
     // Phase 31 A2:区域事件掉落修正(妖潮/古墓/商队更丰)
     const regReward = regEv ? (regionEventDef(regEv.eventId)?.rewardMult ?? 1) : 1
     const drops = afterWin(region, modeDef.rewardMult * regReward, Boolean(eDef.isBoss))
@@ -221,12 +227,21 @@ function runBattle(now: number): void {
       ui.toast(`【雪耻】宿敌${eDef.name}已被斩于剑下!`, 'rare')
     }
   } else {
+    // Phase 31 S4:灵兽护主 —— 慢稳/谨慎的灵兽(lossReduction>0)在危急时低概率
+    // 护住这一击:免于重伤、不计败绩、历练继续(「失败率下降」落到实处)。
+    // 好战型 lossReduction=0,恒不触发,与无灵兽行为一致
+    const ui = useUiStore()
+    if (rng.chance(personalityEffects(player.petId).lossReduction)) {
+      adventure.setSession({ ...s, nextBattleAt: nextBattleTime(now) })
+      ui.toast('灵兽机警,替你挡开了这一击,历练继续', 'info')
+      return
+    }
     cultivation.addBuff('injury', now)
     adventure.setSession({ ...s, losses: s.losses + 1 })
 
+    // Phase 28 连胜:真正的败北清空连胜(灵兽护住的那次不在此列)
+    recordStreakLoss()
     // Phase 30.9 S2: 记录败北,达到阈值标记宿敌
-    const player = usePlayerStore()
-    const ui = useUiStore()
     const { list, becameNemesis } = recordLoss(player.nemeses, eDef.id, eDef.name, region.id, now)
     if (becameNemesis) {
       player.setNemeses(list)

@@ -71,7 +71,7 @@
                 自动产出中 · {{ rateText(row.def) }}/时
               </span>
               <button
-                class="mt-1 text-[10px] text-ink-faint underline underline-offset-2 active:text-ink"
+                class="-ml-1.5 mt-0.5 rounded-md px-1.5 py-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
                 @click.stop="unsuppress(row.def.id)"
               >
                 解除镇压,再历此地

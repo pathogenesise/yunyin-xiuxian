@@ -13,7 +13,6 @@ import {
 import { encryptSave, readSaveText } from '@/utils/crypto'
 import { useGameStore } from '@/stores/game'
 import { engine } from './engine'
-import { saveAs } from 'file-saver'
 
 /** 迁移旧版本存档(链式) */
 function migrate(payload: ExportPayload): ExportPayload {
@@ -28,14 +27,6 @@ function migrate(payload: ExportPayload): ExportPayload {
 export function exportSaveText(): string {
   // 导出为密文,防手改;导入时兼容旧版明文 JSON
   return encryptSave(JSON.stringify(buildExportPayload()))
-}
-
-/** 触发浏览器下载存档文件 */
-export function downloadSave(): void {
-  const text = exportSaveText()
-  const blob = new Blob([text], { type: 'application/json' })
-  const stamp = new Date().toISOString().slice(0, 10)
-  saveAs(blob, `yunyin-xiuxian-${stamp}.save`)
 }
 
 /** 导入存档文本(密文或旧版明文皆可);成功返回 null,失败返回错误信息 */

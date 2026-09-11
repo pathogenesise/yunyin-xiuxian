@@ -26,6 +26,21 @@ export interface KeepVerdict {
   reason: string
 }
 
+/**
+ * 自动回收裁决 —— 装备进包前的第一道闸
+ * 命中任一条,该件不入行囊、直接化尘(在线离线统一):
+ *   1. 玩家在「一键分解」里勾选的品质档(显式废料声明)
+ *   2. 智能收纳开启且判「与道无缘」
+ * 上锁者豁免。
+ */
+export function shouldAutoRecycle(item: EquipmentInstance): boolean {
+  if (item.locked) return false
+  const settings = useSettingsStore()
+  const q = qualityDef(item.quality)
+  if (settings.decomposeRanks.includes(q.rank)) return true
+  return settings.smartKeep.enabled && !keepVerdict(item).keep
+}
+
 /** 判定一件装备是否值得收纳 */
 export function keepVerdict(item: EquipmentInstance): KeepVerdict {
   const settings = useSettingsStore()

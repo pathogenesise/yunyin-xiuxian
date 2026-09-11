@@ -52,6 +52,10 @@
                 <span v-for="n in p.eventLevel" :key="n" class="h-1 w-1 rounded-full bg-gold-ink/60" />
               </span>
             </p>
+            <!-- 锁住的地界要给一句"为什么现在去不了",而不是只画把锁 -->
+            <p v-if="!unlocked(p.nodeId)" class="mt-0.5 text-[10px] leading-relaxed text-cinnabar/80">
+              {{ blockReason(p.regionId) ?? '此境未开,须先走完这一世的来时路' }}
+            </p>
           </div>
           <!-- 已通的段落照样能再去 —— 「已通」是记号,不是封路 -->
           <button v-if="unlocked(p.nodeId)" class="btn-seal shrink-0 !px-3 !py-1.5 !text-[12px]" @click="depart(p.regionId)">出 发</button>
@@ -93,7 +97,7 @@
   import { useAdventureStore } from '@/stores/adventure'
   import { enemyDef } from '@/data/enemies'
   import { regionDef } from '@/data/regions'
-  import { VIEW_H, VIEW_W, canEnterNode, ensureMortalWorld, isNodeCleared, worldView } from '@/core/mortalWorldService'
+  import { VIEW_H, VIEW_W, canEnterNode, ensureMortalWorld, entryBlockReason, isNodeCleared, worldView } from '@/core/mortalWorldService'
 
   const adventure = useAdventureStore()
   const router = useRouter()
@@ -114,6 +118,10 @@
 
   function cleared(nodeId: string): boolean {
     return isNodeCleared(nodeId)
+  }
+
+  function blockReason(regionId: string): string | null {
+    return entryBlockReason(regionId)
   }
 
   /**

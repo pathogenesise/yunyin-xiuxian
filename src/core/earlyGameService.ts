@@ -4,14 +4,16 @@
 import { usePlayerStore } from '@/stores/player'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useResourcesStore } from '@/stores/resources'
+import { useUiStore } from '@/stores/ui'
 import { usePacingTelemetry } from '@/stores/pacingTelemetry'
 import type { EnlightenmentEvent, EnlightenmentOption, CaveEvent } from '@/types'
 import {
   ENLIGHTENMENT_OPTIONS,
-  ROUTE_CONFIGS,
   CAVE_EVENT_POOL,
   CHAIN_EVENT_IDS,
-  WIN_STREAK_REWARDS
+  WIN_STREAK_REWARDS,
+  BREAKTHROUGH_PREP_OPTIONS,
+  earlyEventDecay
 } from '@/data/earlyGame'
 import { gn } from '@/utils/gnum'
 
@@ -41,7 +43,10 @@ let lastEnlightenmentTime = 0
 export function mayTriggerEnlightenment(): void {
   const now = Date.now()
   if (now - lastEnlightenmentTime < 300000) return // 5分钟冷却
-  if (Math.random() > 0.08) return // 8%概率
+  // EARLY_EVENT_DECAY:顿悟是"前期玩法",境界越高存在感越低,真仙后完全退出
+  const presence = earlyEventDecay('enlightenment', usePlayerStore().major)
+  if (presence <= 0) return
+  if (Math.random() > 0.08 * presence) return // 8% × 当前境界存在感
 
   // 随机选3个不同类型的选项
   const pool = [...ENLIGHTENMENT_OPTIONS]
@@ -73,12 +78,29 @@ export function chooseEnlightenment(optionIndex: number): void {
   if (!enlightenmentEvent || optionIndex >= enlightenmentEvent.options.length) return
   const opt = enlightenmentEvent.options[optionIndex]!
   const cult = useCultivationStore()
+  const ui = useUiStore()
   const now = Date.now()
 
-  // 应用buff(addBuff签名: defId, now)
-  cult.addBuff(opt.buffId, now)
+  // 即时奖励(如灵机一动直接给悟道点)或挂 buff;buff 未注册时 addBuff 会静默……
+  // 但那不再是"选项该有的样子"——守卫在这里兜住,让漏注册显式为错误而不是静默空转
+  if (opt.reward) {
+    useResourcesStore().addSmall('wudao', opt.reward.value)
+    ui.toast(`灵机一动,悟道点 +${opt.reward.value}`, 'success')
+  } else if (opt.buffId) {
+    cult.addBuff(opt.buffId, now)
+    ui.toast(opt.desc, 'success')
+  }
 
   telemetry().record('enlightenment_choose', 'modal', `悟道:${opt.label}`)
+  enlightenmentEvent = null
+}
+
+/**
+ * 玩家忽略本次顿悟:清掉模块级事件,否则 1s 轮询的 getCurrentEnlightenment
+ * 会把它原封不动弹回来,「忽略」等于没按
+ */
+export function dismissEnlightenment(): void {
+  if (enlightenmentEvent) telemetry().record('enlightenment_ignore', 'modal', '悟道顿悟忽略')
   enlightenmentEvent = null
 }
 
@@ -106,37 +128,69 @@ export function isRetreating(): boolean {
   return true
 }
 
-/** 突破准备(静坐/服丹) */
+/** 突破准备(静坐/服丹)——数值与药价全部取自 BREAKTHROUGH_PREP_OPTIONS,逻辑不持有第二份魔法数 */
 export function prepareBreakthrough(optionId: string): boolean {
+  const opt = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === optionId)
+  if (!opt || opt.bonusRate <= 0) return false // direct/未知项 = 不是准备动作,不产生加成
+
   const resources = useResourcesStore()
-
-  if (optionId === 'meditate') {
-    breakthroughPrepBonus = 0.08
-    breakthroughPrepEndTime = Date.now() + 180000 // 3分钟
-    telemetry().record('breakthrough_prep', 'modal', '突破准备:静坐')
-    return true
+  if (opt.cost?.stone) {
+    if (!resources.hasStone(gn(opt.cost.stone))) return false
+    resources.spendStone(gn(opt.cost.stone))
   }
-
-  if (optionId === 'pill') {
-    if (!resources.hasStone(gn(80))) return false
-    resources.spendStone(gn(80))
-    breakthroughPrepBonus = 0.05
-    telemetry().record('breakthrough_prep', 'modal', '突破准备:服丹')
-    return true
+  breakthroughPrepBonus = opt.bonusRate
+  if (opt.duration > 0) {
+    // duration 单位为秒(meditate=180);=0 表示支付即了就绪(聚气丹)
+    breakthroughPrepEndTime = Date.now() + opt.duration * 1000
   }
-
-  return false
+  telemetry().record('breakthrough_prep', 'modal', `突破准备:${opt.label}`)
+  return true
 }
 
-/** 获取突破准备加成 */
-export function getBreakthroughPrepBonus(): number {
-  if (breakthroughPrepEndTime && Date.now() < breakthroughPrepEndTime) {
-    return 0 // 静坐中,尚未完成
+export interface BreakthroughPrepView {
+  /** 是否正在静坐调息(3 分钟未完) */
+  sitting: boolean
+  /** 调息剩余秒数 */
+  remainingSec: number
+  /** 加成是否已就绪可用(静坐 3 分钟完成 / 聚气丹支付即了) */
+  ready: boolean
+  /** 就绪加成:静坐 0.08 / 聚气丹 0.05 */
+  bonus: number
+  kind: 'meditate' | 'pill' | null
+}
+
+/**
+ * 突破准备当前状态(只读,不消费)。
+ * 语义:静坐调息要坐满 3 分钟才转「就绪」;聚气丹支付即了就绪;
+ * 两者都是一次性加成,突破时经 consumeBreakthroughPrep 取走后即空
+ * (模块态,随页面刷新归零,与顿悟/巡游同一生命周期)。
+ */
+export function breakthroughPrepState(): BreakthroughPrepView {
+  if (breakthroughPrepEndTime !== null) {
+    const remainSec = Math.ceil((breakthroughPrepEndTime - Date.now()) / 1000)
+    if (remainSec > 0) {
+      return { sitting: true, remainingSec: remainSec, ready: false, bonus: 0, kind: 'meditate' }
+    }
   }
-  const bonus = breakthroughPrepBonus
+  if (breakthroughPrepBonus === 0) {
+    return { sitting: false, remainingSec: 0, ready: false, bonus: 0, kind: null }
+  }
+  return {
+    sitting: false,
+    remainingSec: 0,
+    ready: true,
+    bonus: breakthroughPrepBonus,
+    kind: breakthroughPrepEndTime === null ? 'pill' : 'meditate'
+  }
+}
+
+/** 取走就绪的突破准备加成(一次性;未就绪返回 0 且不动状态) */
+export function consumeBreakthroughPrep(): number {
+  const s = breakthroughPrepState()
+  if (!s.ready) return 0
   breakthroughPrepBonus = 0
   breakthroughPrepEndTime = null
-  return bonus
+  return s.bonus
 }
 
 /** 检查是否在突破准备中 */
@@ -173,29 +227,6 @@ export function recordLoss(): void {
   player.resetWinStreak()
 }
 
-/** 获取当前探索路线配置 */
-export function getCurrentRouteConfig() {
-  const player = usePlayerStore()
-  return ROUTE_CONFIGS[player.selectedRoute]
-}
-
-/** 获取灵兽陪行加成 */
-export function getCompanionBonus(): {
-  eventMod: number
-  safeMod: number
-  lootMod: number
-} {
-  const player = usePlayerStore()
-  if (!player.companionBeastId) return { eventMod: 1, safeMod: 1, lootMod: 1 }
-
-  // TODO: 根据不同灵兽返回不同加成,暂时简化
-  return {
-    eventMod: 1.15,
-    safeMod: 1.08,
-    lootMod: 1.12
-  }
-}
-
 /** 触发洞府巡游(每日一次) */
 export function mayTriggerCaveEvent(): CaveEvent | null {
   if (caveEvent) return caveEvent // 已有未处理事件
@@ -203,6 +234,15 @@ export function mayTriggerCaveEvent(): CaveEvent | null {
   const player = usePlayerStore()
   const today = Math.floor(Date.now() / 86400000)
   if (player.lastCaveEventDay === today) return null // 今日已触发
+
+  // EARLY_EVENT_DECAY:巡游是"前期活跃",元婴后让位给更重要的系统(存在感归零完全退出)。
+  // 掷签失败即视为今日让位,否则 30s 轮询会把"今日未出"变成反复重掷,存在感被稀释
+  const presence = earlyEventDecay('cavePatrol', player.major)
+  if (presence <= 0) return null
+  if (Math.random() > presence) {
+    player.markCaveEventToday(today)
+    return null
+  }
 
   // 随机选择一个区域
   const locations = Object.keys(CAVE_EVENT_POOL) as Array<keyof typeof CAVE_EVENT_POOL>
@@ -265,14 +305,30 @@ export function chooseCaveOption(optionIndex: number): void {
     }
   }
 
-  // 应用惩罚
+  // 应用惩罚:按 penalty.type 映射已注册的惩罚 buff(如 cave_penalty_cultivationSpeed)。
+  // 修的是"动态随机 id 永远查无此 buff"——惩罚名称就是 type,不该掺时间戳
   if (opt.penalty) {
-    cult.addBuff(`cave_penalty_${Date.now()}`, now)
+    cult.addBuff(`cave_penalty_${opt.penalty.type}`, now)
   }
 
   const today = Math.floor(Date.now() / 86400000)
   player.markCaveEventToday(today)
+  // 选完给一句回执——此前选完弹窗直接关,拿到什么全凭感觉
+  useUiStore().toast(`洞府巡游·${opt.effect}`, 'success')
   telemetry().record('cave_choose', 'modal', `洞府选择:${opt.label}`)
+  caveEvent = null
+}
+
+/**
+ * 玩家离开本次洞府巡游 = 今日不赴巡游。
+ * 只清模块级事件是不够的:mayTriggerCaveEvent 每 30s 轮询会重新掷一个新事件弹回来,
+ * 「离开」就成了白按。离开与选择一样占用今日一次 —— 决定留给玩家,代价也明确
+ */
+export function dismissCaveEvent(): void {
+  if (!caveEvent) return
+  telemetry().record('cave_ignore', 'modal', '洞府巡游离开')
+  const today = Math.floor(Date.now() / 86400000)
+  usePlayerStore().markCaveEventToday(today)
   caveEvent = null
 }
 
