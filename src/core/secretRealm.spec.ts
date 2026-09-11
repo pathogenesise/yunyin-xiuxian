@@ -183,6 +183,37 @@ describe('秘境 · 推得动、出得来', () => {
     expect(currentRealm()).toBeNull()
   })
 
+  it('坏档修形:层数/气血/规则越界都夹回来,认不得的秘境直接作废', () => {
+    const player = usePlayerStore()
+    // 层数 99(否则一路「通关」)、气血 5(战斗开局算成 NaN)、规则里混进不存在的一条
+    player.setSecretRealm({
+      realmId: 'sr_kurong',
+      enteredAt: -1,
+      layer: 99,
+      wins: -3,
+      losses: 9,
+      spoils: ['旧的一行', 42 as never],
+      rules: ['治疗减半', '不存在的规则'],
+      carriedHpPct: 5,
+      finished: 'yes' as never
+    } as never)
+    player.sanitize()
+    const fixed = currentRealm()!
+    expect(fixed.layer).toBe(SECRET_LAYERS)
+    expect(fixed.carriedHpPct).toBe(1)
+    expect(fixed.losses).toBe(SECRET_MAX_LOSSES)
+    expect(fixed.wins).toBe(0)
+    expect(fixed.rules).toEqual(['治疗减半'])
+    expect(fixed.spoils).toEqual(['旧的一行'])
+    expect(fixed.finished).toBe(false)
+    expect(fixed.enteredAt).toBeGreaterThanOrEqual(0)
+
+    // 认不得的秘境 id → 直接作废,免得留一份永远结算不完的状态
+    player.setSecretRealm({ ...fixed, realmId: 'sr_nope' } as never)
+    player.sanitize()
+    expect(currentRealm()).toBeNull()
+  })
+
   it('秘境有非 spec 的入口 —— 骨架之所以叫骨架,就是因为没人接它', () => {
     // 这条正是本轮之前缺的那一环:core 里一切齐备,却没有一处 UI 调它
     const files = [resolve(__dirname, '../components/adventure/SecretRealmCard.vue'), resolve(__dirname, '../views/AdventureView.vue')]

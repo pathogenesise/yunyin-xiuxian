@@ -10,6 +10,11 @@
  */
 import type { CombatRules } from '@/types'
 
+/** 秘境层数:固定三层(放数据里,player.sanitize 读档修形也要用它,免得反手 import core) */
+export const SECRET_LAYERS = 3
+/** 败两次即被逐出 */
+export const SECRET_MAX_LOSSES = 2
+
 export interface SecretRule {
   /** 给玩家看的说法 */
   text: string

@@ -12,7 +12,7 @@ import { formatGN } from '@/utils/format'
 import { rng } from '@/utils/random'
 import { ENEMIES, enemyDef } from '@/data/enemies'
 import { REGIONS } from '@/data/regions'
-import { SECRET_REALMS, SECRET_RULES, secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
+import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES, secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
 import { makeEnemySnap, resolveCombat } from './combat'
 import { buildPlayerSnap } from './playerSnap'
 import { currentDaoRules } from './endgameService'
@@ -23,11 +23,6 @@ import { mergeRules } from './gauntlet'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiStore } from '@/stores/ui'
-
-/** 秘境层数:固定三层 */
-export const SECRET_LAYERS = 3
-/** 败两次即被逐出 */
-export const SECRET_MAX_LOSSES = 2
 
 export interface SecretRealmState {
   /** 秘境定义 id */
@@ -211,4 +206,4 @@ export function abandonRealm(): void {
   usePlayerStore().setSecretRealm(null)
 }
 
-export { SECRET_REALMS, secretRealmDef }
+export { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, secretRealmDef }

@@ -17,6 +17,8 @@ import { computeFinalStats, modOf } from '@/core/statsCalc'
 import { forgeSoul } from '@/core/gauntlet'
 import { todayWeather } from '@/core/weather'
 import { readingFromState, readingMods } from '@/core/divination'
+import { asFiniteNumber, asStringArray } from '@/utils/saveShape'
+import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
 import { fateChart, fateMods, fateSeed } from '@/core/fate'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
@@ -477,6 +479,29 @@ export const usePlayerStore = defineStore(
       }
       // 旧存档没有顿悟冷却一栏(Phase 34.6):0 = 从未顿悟,合法
       if (!Number.isFinite(enlightenmentAt.value) || enlightenmentAt.value < 0) enlightenmentAt.value = 0
+      /**
+       * 秘境状态修形(Phase 34.9):它现在真的会进档(以前是进不去的骨架)。
+       * 层数越界会让「第 99 层」直接结算通关,携带气血越界会把战斗开局算成 NaN —— 故逐项夹回。
+       */
+      if (secretRealm.value) {
+        const sr = secretRealm.value
+        const known = SECRET_REALMS.some(r => r.id === sr.realmId)
+        if (!known) {
+          secretRealm.value = null
+        } else {
+          secretRealm.value = {
+            realmId: sr.realmId,
+            enteredAt: asFiniteNumber(sr.enteredAt, Date.now(), 0),
+            layer: Math.min(SECRET_LAYERS, Math.max(1, Math.floor(asFiniteNumber(sr.layer, 1, 1)))),
+            wins: Math.floor(asFiniteNumber(sr.wins, 0, 0)),
+            losses: Math.min(SECRET_MAX_LOSSES, Math.floor(asFiniteNumber(sr.losses, 0, 0))),
+            spoils: asStringArray(sr.spoils),
+            rules: asStringArray(sr.rules).filter(t => SECRET_RULES.some(r => r.text === t)),
+            carriedHpPct: Math.min(1, asFiniteNumber(sr.carriedHpPct, 1, 0.05)),
+            finished: sr.finished === true
+          }
+        }
+      }
       /**
        * 数组类字段先补形,再谈内容 —— 存档可能被改坏、写坏或在旧版本里根本没有这一栏。
        * 此前只挡了 suppressQualified,没挡 suppressedRegions,于是坏档会在
