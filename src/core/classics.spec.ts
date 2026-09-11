@@ -6,7 +6,10 @@
  * 否则界域志就成了"看着很讲究、其实对不上"的装饰。
  */
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { CLASSICS, PLANNED_SCHOOLS, classicDef, classicsForRealm } from '@/data/classics'
+import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
 import { REALMS } from '@/data/realms'
 
 const norm = (s: string): string => s.replace(/\s+/g, '')
@@ -86,6 +89,23 @@ describe('典籍志 · 未实装门类如实标注', () => {
     for (const p of PLANNED_SCHOOLS) {
       expect(p.name).toBeTruthy()
       expect(p.note, `${p.name} 未注明状态`).toContain('未实装')
+    }
+  })
+
+  it('实装了就得从待续里出来:周易已在,不再挂着「未实装」', () => {
+    expect(PLANNED_SCHOOLS.some(p => p.name.includes('周易'))).toBe(false)
+    expect(TRIGRAMS.length).toBe(8)
+    expect(HEXAGRAMS.length).toBe(64)
+  })
+
+  it('界域志真的把周易摊开了:八卦、六十四卦与问卦都在页面上', () => {
+    const src = readFileSync(resolve(__dirname, '../views/RealmCodexView.vue'), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+    // 只认"用过"的形态(调用/列表渲染),不认 import 那一行 —— 否则注释与导入都能冒充接线
+    for (const token of ['in TRIGRAMS', 'in HEXAGRAMS', 'askDivination(', 'DIVINATION_COST']) {
+      expect(src, `界域志没有接上 ${token}`).toContain(token)
     }
   })
 })

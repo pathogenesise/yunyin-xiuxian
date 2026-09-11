@@ -117,7 +117,6 @@ export const CLASSICS: ClassicDef[] = [
 
 /** 已列入路线、尚未实装的门类(如实标注,不假装已有内容) */
 export const PLANNED_SCHOOLS: { name: string; note: string }[] = [
-  { name: '周易 · 八卦', note: '六十四卦与象数,可作卜筮决断、词条与事件之源(未实装)' },
   { name: '术数 · 紫微斗数', note: '命盘十二宫,可作命格/择时玩法(未实装)' },
   { name: '术数 · 奇门遁甲', note: '九宫八门,可作布阵与探索规则(未实装)' },
   { name: '天文 · 星象分野', note: '二十八宿与分野,可作天时与地域的来历(未实装)' }
