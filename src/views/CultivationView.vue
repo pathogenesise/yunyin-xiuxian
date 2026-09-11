@@ -167,6 +167,10 @@
       <p class="mt-2 text-[10px] leading-relaxed text-ink-faint">
         人界九境之后便是仙界。渡劫飞升、破界入神、归返混沌——每一界的空气、天象与敌手都不相同。
       </p>
+      <RouterLink to="/codex" class="mt-2 flex items-center justify-between text-[11px] text-azure active:opacity-70">
+        <span>界域志 · 每一境的来路与典籍</span>
+        <span>查阅 →</span>
+      </RouterLink>
     </div>
 
     <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止探索(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
