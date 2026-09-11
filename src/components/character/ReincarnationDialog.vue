@@ -76,6 +76,28 @@
         <span class="text-ink tabular">{{ view.knownMaterials }}</span>
         味灵材。
       </p>
+
+      <!-- 交割清单:带走什么、放下什么 —— 与 core/samsaraAudit 的继承表同源,不另写一份 -->
+      <div class="mt-3 rounded-lg border border-ink/15 px-3 py-2">
+        <p class="text-[10px] text-ink-faint">此生交割 —— 留下的是「我是谁」,放下的是「我拥有多少」</p>
+        <div v-for="g in heritageGroups()" :key="g.mode" class="mt-1.5">
+          <p class="text-[11px]" :class="g.mode === 'reset' ? 'text-ink-ghost' : 'text-ink-soft'">
+            {{ g.title }}
+            <span class="ml-1 text-[10px] text-ink-faint">{{ g.rows.length }} 项</span>
+          </p>
+          <p class="mt-0.5 flex flex-wrap gap-1">
+            <span
+              v-for="r in g.rows"
+              :key="r.id"
+              class="chip-ink !text-[10px]"
+              :class="g.mode === 'full' ? 'border-jade/50 text-jade' : g.mode === 'partial' ? 'border-gold-ink/50 text-gold-ink' : 'border-ink/20 text-ink-ghost'"
+              :title="r.detail"
+            >
+              {{ r.name }}
+            </span>
+          </p>
+        </div>
+      </div>
     </div>
     <template #footer>
       <button class="btn-seal w-full" @click="step = 'next'">往生</button>
@@ -159,6 +181,7 @@
   import { prepareReincarnation, confirmReincarnation } from '@/core/reincarnation'
   import { talentDef, TALENT_GRADE_COLORS, TALENT_GRADE_NAMES } from '@/data/talents'
   import { lifeThemeDef, TABOO_NAMES } from '@/data/lifeThemes'
+  import { heritageGroups } from '@/core/samsaraAudit'
   import { engine } from '@/core/engine'
   import BaseModal from '@/components/common/BaseModal.vue'
 

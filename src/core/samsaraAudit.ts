@@ -308,6 +308,30 @@ export const HERITAGE: HeritageRow[] = [
 
 // ---------------- 跨世永久量的累积 ----------------
 
+export interface HeritageGroup {
+  mode: HeritageMode
+  /** 界面用语:这一组是「带走」还是「放下」 */
+  title: string
+  rows: HeritageRow[]
+}
+
+/**
+ * 按去留分组的继承清单 —— 界面(轮回结算)与审计共用同一份,
+ * 保证玩家看到的「带走/放下」与代码实际交割不会分叉。
+ */
+export function heritageGroups(): HeritageGroup[] {
+  const titles: Record<HeritageMode, string> = {
+    full: '随神魂带走',
+    partial: '折损带走',
+    reset: '随皮囊放下'
+  }
+  return (['full', 'partial', 'reset'] as const).map(mode => ({
+    mode,
+    title: titles[mode],
+    rows: HERITAGE.filter(r => r.mode === mode)
+  }))
+}
+
 /** 修满人间界并飞升真仙再转世时,每世凝得的道果 */
 export const FRUIT_PER_LIFE = daoFruitGain(REBIRTH_REFERENCE_MAJOR, 9)
 

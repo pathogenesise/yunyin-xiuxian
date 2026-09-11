@@ -13,6 +13,7 @@ import {
   daoFruitAfterLives,
   FRUIT_PER_LIFE,
   HERITAGE,
+  heritageGroups,
   hoursToPeakAt,
   pacePerLife,
   permanentPowerMultAt,
@@ -240,5 +241,14 @@ describe('轮回审计 · 继承清单最小完备', () => {
     expect(byId('bonds').mode).toBe('partial')
     // 终局同理:道途归还天地(本世之诺),道源与道痕随神魂不灭
     expect(byId('endgame').mode).toBe('partial')
+  })
+
+  it('结算界面按去留分组时,清单一行不漏、一行不重(界面与代码同源)', () => {
+    const groups = heritageGroups()
+    expect(groups.map(g => g.mode)).toEqual(['full', 'partial', 'reset'])
+    const seen = groups.flatMap(g => g.rows.map(r => r.id))
+    expect(seen.length, '分组后条目总数应等于清单总数').toBe(HERITAGE.length)
+    expect(new Set(seen).size, '不得有条目被重复归组').toBe(HERITAGE.length)
+    for (const g of groups) expect(g.title, `${g.mode} 组缺界面用语`).toBeTruthy()
   })
 })
