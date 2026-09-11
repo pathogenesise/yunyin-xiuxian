@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 91,
+  "round": 92,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T20:08:12+00:00",
+  "updated_at": "2026-09-11T20:37:12+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1917,10 +1917,10 @@
     "HYP-005": {
       "id": "HYP-005",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T14:03:10+00:00",
-      "updated_at": "2026-09-11T14:03:10+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 57,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
@@ -2979,7 +2979,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:41:15+00:00",
       "updated_at": "2026-09-11T16:41:15+00:00",
-      "touched_round": 89,
+      "touched_round": 91,
       "summary": "界域志/经典系统(classics.ts 典籍志 + yijing.ts 易 + RealmCodexView):承载传统经典的阅读与术数玩法"
     },
     "CHG-078": {
@@ -3035,10 +3035,10 @@
     "HYP-007": {
       "id": "HYP-007",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T16:41:30+00:00",
-      "updated_at": "2026-09-11T16:41:30+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 60,
       "confidence": 0.8,
       "summary": "术数类门可以做到『合卦义』与『可校验』兼得:数值只写在八卦,重卦由上下相叠推出,故 64 卦之力天然自洽,无需逐卦校数"
@@ -3081,10 +3081,10 @@
     "HYP-008": {
       "id": "HYP-008",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T16:45:58+00:00",
-      "updated_at": "2026-09-11T16:45:58+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 61,
       "confidence": 0.85,
       "summary": "常驻底色(命格这类一世不变的加成)可以并入最终属性而不破坏既有审计:只要涉及最终属性的断言按来源拆分(钉某源贡献了多少),不钉绝对总数"
@@ -3141,10 +3141,10 @@
     "HYP-009": {
       "id": "HYP-009",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T16:50:39+00:00",
-      "updated_at": "2026-09-11T16:50:39+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 62,
       "confidence": 0.85,
       "summary": "日更的术数玩法可以彼此不重复:天时管全境之气、星象管一方界域之利、卦管自己一时的机 —— 三者各占一层,不互相顶替"
@@ -3203,10 +3203,10 @@
     "HYP-010": {
       "id": "HYP-010",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T16:52:47+00:00",
-      "updated_at": "2026-09-11T16:52:47+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 63,
       "confidence": 0.8,
       "summary": "同类缺陷(付费或已耗资源的状态挂模块态)可以靠一条判据批量排查:凡模块态字段,问一句『它有没有代价』——有代价的一律迁入 store"
@@ -3274,10 +3274,10 @@
     "HYP-011": {
       "id": "HYP-011",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:02:00+00:00",
-      "updated_at": "2026-09-11T17:02:00+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 64,
       "confidence": 0.85,
       "summary": "新玩法若只做既有规则/数据的组合,就能既有用又不扰动审计基线 —— 判据:不新增字段、不新增系统,且默认路径产出与从前逐字相同"
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 64,
+      "touched_round": 91,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -3360,10 +3360,10 @@
     "HYP-012": {
       "id": "HYP-012",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:05:43+00:00",
-      "updated_at": "2026-09-11T17:05:43+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 65,
       "confidence": 0.8,
       "summary": "『声明而未实现』可被词表级覆盖判定拦住;但**数据字段级**(对象属性是否被读)不可靠 —— 动态取键(Record 查表、modOf(mods,'key'))太多,静态判定会产出大量误报"
@@ -3456,10 +3456,10 @@
     "HYP-013": {
       "id": "HYP-013",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:16:37+00:00",
-      "updated_at": "2026-09-11T17:16:37+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 68,
       "confidence": 0.85,
       "summary": "『手写清单』守不住新字段:凡是要穷举覆盖的契约,都必须从真实来源(store $state / 类型 / 数据表)倒推,手写清单只能作为展示层"
@@ -3514,10 +3514,10 @@
     "HYP-014": {
       "id": "HYP-014",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:24:38+00:00",
-      "updated_at": "2026-09-11T17:24:38+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 79,
       "confidence": 0.85,
       "summary": "坏档韧性可以靠一条通用红线守住:对每个持久化分片的每个字段灌 undefined,再跑 sanitize 并求值所有计算属性 —— 只跑 sanitize 不够,白屏发生在渲染期读 computed"
@@ -3597,10 +3597,10 @@
     "HYP-015": {
       "id": "HYP-015",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:31:16+00:00",
-      "updated_at": "2026-09-11T17:31:16+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 76,
       "confidence": 0.85,
       "summary": "凡是同一件事有两处算法(在线/离线、预估/实战、展示/结算),新机制接进来时必漏一处 —— 判据:抽成一个函数,并让「另一处不得再出现原常数」成为红线"
@@ -3755,10 +3755,10 @@
     "HYP-017": {
       "id": "HYP-017",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:45:05+00:00",
-      "updated_at": "2026-09-11T17:45:05+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 78,
       "confidence": 0.85,
       "summary": "『骨架空转』可以用一条判据提前发现:凡有持久化状态的功能,必须存在非 spec 的入口调用(writer/action 在 views/components 里被调用),否则就是声明在前实现没跟"
@@ -3897,10 +3897,10 @@
     "HYP-018": {
       "id": "HYP-018",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T18:07:41+00:00",
-      "updated_at": "2026-09-11T18:07:41+00:00",
+      "updated_at": "2026-09-11T20:21:14+00:00",
       "touched_round": 78,
       "confidence": 0.85,
       "summary": "『骨架空转』(有状态/逻辑/用例、无运行时接线)可以靠一条判据持续发现:运行时模块里只被 spec 用到的导出;但模块边界必须具名维护,自动传递判据会被审计模块污染"
@@ -4473,6 +4473,67 @@
       "touched_round": 90,
       "summary": "统一 40 余处数据与视图用词(奇遇→际遇、地脉→灵脉、探索→历练;祝福「机缘加身」→「气运加身」),并把术语一致性写进 dataTextAudit 三条红线",
       "commit": "ae23457"
+    },
+    "ISS-065": {
+      "id": "ISS-065",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:37:02+00:00",
+      "updated_at": "2026-09-11T20:37:12+00:00",
+      "touched_round": 91,
+      "summary": "页面上手抄的数量与来源脱节:界域志「四界二十一境」、周易「六十四卦/十二宫/十四主星」、星象「二十八宿/四象配四界」、秘境「三层」、远征「三重/六连战」、构筑「五维评级」、画像「道痕未满五则」、法宝「元婴境开启第二法宝位」——内容增长(加界域/加卦/改层数)时这些句子会静默撒谎;其中法宝位规则还在界面与切换构筑两处各写一遍",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "TASK-057": {
+      "id": "TASK-057",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T20:37:05+00:00",
+      "updated_at": "2026-09-11T20:37:12+00:00",
+      "touched_round": 91,
+      "summary": "数量对账:页面上写的数量必须从来源表数出来(汉字数字用 cnNumber 渲染),并把「接线 + 值没变 + 字面量消失」写成定点红线",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.8,
+      "effort": 3
+    },
+    "HYP-024": {
+      "id": "HYP-024",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:37:05+00:00",
+      "updated_at": "2026-09-11T20:37:05+00:00",
+      "touched_round": 91,
+      "summary": "「页面上的数量」这一类缺陷能靠定点接线守住:数量只在内容增长时变,没人会想起改文案 —— 故判据要两条腿,一条钉「读的是来源表」(改内容即跟着变),一条钉「玩家看到的数没变」(换算法不是改文案的借口);但数值与字面量必须分开看,不能写「模板里不许出现汉字数字」这种通用规则(风味成语、九宫这类固有说法会被误伤)",
+      "confidence": 0.75
+    },
+    "EV-071": {
+      "id": "EV-071",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:37:07+00:00",
+      "updated_at": "2026-09-11T20:37:07+00:00",
+      "touched_round": 91,
+      "summary": "dataTextAudit 增「视图不手抄数量」8 条断言:值对账(四界二十一境/六十四卦/十二宫/十四主星/二十八宿/三层/三重/六连战/五则/二法宝位/元婴)、洛书八门各占一宫且中五无门、五处视图接线、法宝位单一来源;三次故障注入(CharacterView 复用字面量、loadoutService 复用 3/2 三元、qimen 一门挪到中五)各转红一次,恢复即复绿;全量 131 文件 1320 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/dataTextAudit.spec.ts"
+    },
+    "CHG-115": {
+      "id": "CHG-115",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T20:37:10+00:00",
+      "updated_at": "2026-09-11T20:37:10+00:00",
+      "touched_round": 91,
+      "summary": "cnNumber 工具 + 11 处页面数量改为从来源表数(REALMS/WORLDS/HEXAGRAMS/TRIGRAMS/PALACES/STARS/MANSIONS/GATES/SECRET_LAYERS/EXPEDITION_*/MUTATION_FIGHTS/powerRating/PROFILE_MIN_MARKS);洛书排布句与四象配四界由数据推出;法宝位与远征层号收成单一来源",
+      "commit": "2bc0a93"
     }
   },
   "edges": [
@@ -6234,6 +6295,42 @@
       "to": "COMP-006",
       "type": "governs",
       "created_at": "2026-09-11T20:08:08+00:00"
+    },
+    {
+      "from": "ISS-065",
+      "to": "COMP-012",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:37:10+00:00"
+    },
+    {
+      "from": "ISS-065",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-11T20:37:10+00:00"
+    },
+    {
+      "from": "TASK-057",
+      "to": "ISS-065",
+      "type": "addresses",
+      "created_at": "2026-09-11T20:37:10+00:00"
+    },
+    {
+      "from": "CHG-115",
+      "to": "TASK-057",
+      "type": "implements",
+      "created_at": "2026-09-11T20:37:10+00:00"
+    },
+    {
+      "from": "CHG-115",
+      "to": "ISS-065",
+      "type": "resolves",
+      "created_at": "2026-09-11T20:37:10+00:00"
+    },
+    {
+      "from": "EV-071",
+      "to": "HYP-024",
+      "type": "validates",
+      "created_at": "2026-09-11T20:37:10+00:00"
     }
   ]
 }
