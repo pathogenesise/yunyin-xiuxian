@@ -5,6 +5,7 @@ import { useResourcesStore } from '@/stores/resources'
 import { useEndgameStore } from '@/stores/endgame'
 import { FURNACE_RATES, DAO_SOURCE_PER_FRUIT } from '@/data/endgame'
 import { challengeWorld, chooseDaoPath, condenseDaoFruit, currentDaoRules, endgameUnlocked, furnaceConvert } from './endgameService'
+import { attemptBreakthrough } from './breakthrough'
 
 function ascend(): void {
   const player = usePlayerStore()
@@ -102,5 +103,31 @@ describe('真仙终局服务', () => {
     expect(player.realm.name).toBe('混沌道祖')
     expect(player.worldName).toBe('混沌海')
     expect(endgameUnlocked()).toBe(true) // 越往高处走,天界只会更开,不会关
+  })
+
+  /**
+   * 飞升是扩界新增的三次「换一片天」之一(另两次是入神、归返混沌)。
+   * 渡劫→真仙不渡劫(飞升之赏),只按成功率判定;重试到成功为止(单次约 1/3,连败 200 次概率≈0),
+   * 以此验明这条叙事与跨世节点真的落到存档里。
+   */
+  it('飞升真仙:记下跨世节点 first_immortal,并给出界域叙事', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    const endgame = useEndgameStore()
+    player.major = 8 // 渡劫圆满,下一步即飞升
+    player.sub = 9
+
+    let view = null as ReturnType<typeof attemptBreakthrough>
+    for (let i = 0; i < 200 && !view?.success; i += 1) {
+      player.exp = player.expReq
+      resources.setQi(player.qiCapValue, player.qiCapValue)
+      view = attemptBreakthrough()
+    }
+
+    expect(view?.success).toBe(true)
+    expect(player.major).toBe(9)
+    expect(player.realm.name).toBe('真仙')
+    expect(endgame.milestones.some(m => m.id === 'first_immortal')).toBe(true)
+    expect(view?.message).toContain('仙界')
   })
 })
