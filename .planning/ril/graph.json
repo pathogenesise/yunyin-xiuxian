@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 76,
+  "round": 77,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:45:10+00:00",
+  "updated_at": "2026-09-11T17:49:14+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 71,
+      "touched_round": 76,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3601,7 +3601,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:31:16+00:00",
       "updated_at": "2026-09-11T17:31:16+00:00",
-      "touched_round": 71,
+      "touched_round": 76,
       "confidence": 0.85,
       "summary": "凡是同一件事有两处算法(在线/离线、预估/实战、展示/结算),新机制接进来时必漏一处 —— 判据:抽成一个函数,并让「另一处不得再出现原常数」成为红线"
     },
@@ -3762,6 +3762,41 @@
       "touched_round": 75,
       "confidence": 0.85,
       "summary": "『骨架空转』可以用一条判据提前发现:凡有持久化状态的功能,必须存在非 spec 的入口调用(writer/action 在 views/components 里被调用),否则就是声明在前实现没跟"
+    },
+    "ISS-055": {
+      "id": "ISS-055",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:49:03+00:00",
+      "updated_at": "2026-09-11T17:49:07+00:00",
+      "touched_round": 76,
+      "summary": "用例赌运气:新写的秘境用例拿真实一跳(含随机规则)去断言 healMult≥2,而随机池里有一条「治疗减半」,掷中时 ×2×0.5=×1 → 三跑一红。与 ISS-049 同属『未固定随机源就断言』一类",
+      "severity": 0.35,
+      "confidence": 0.9
+    },
+    "CHG-096": {
+      "id": "CHG-096",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:49:03+00:00",
+      "updated_at": "2026-09-11T17:49:03+00:00",
+      "touched_round": 76,
+      "commit": "2bb044f",
+      "summary": "秘境用例改逐条隔离验证(固定状态+指定规则),并钉住规则合并是乘区"
+    },
+    "EV-055": {
+      "id": "EV-055",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:49:07+00:00",
+      "updated_at": "2026-09-11T17:49:07+00:00",
+      "touched_round": 76,
+      "source": "连跑 5 次 secretRealm.spec + 3 次全量 vitest 全绿;用例已改成固定状态逐条验(×2 自带、随机回合上限并入、×2×0.5 回落 ×1、三层更凶)(commit 2bb044f)",
+      "summary": "随机相关断言改为隔离验证后不再时红时绿;同时钉住规则合并为乘区",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -5229,6 +5264,24 @@
       "to": "HYP-016",
       "type": "validates",
       "created_at": "2026-09-11T17:45:09+00:00"
+    },
+    {
+      "from": "CHG-096",
+      "to": "ISS-055",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:49:07+00:00"
+    },
+    {
+      "from": "ISS-055",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:49:07+00:00"
+    },
+    {
+      "from": "EV-055",
+      "to": "HYP-015",
+      "type": "validates",
+      "created_at": "2026-09-11T17:49:14+00:00"
     }
   ]
 }
