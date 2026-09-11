@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 98,
+  "round": 99,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T22:03:37+00:00",
+  "updated_at": "2026-09-11T22:21:56+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 96,
+      "touched_round": 98,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 97,
+      "touched_round": 98,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -4885,7 +4885,7 @@
       "version": 1,
       "created_at": "2026-09-11T21:56:30+00:00",
       "updated_at": "2026-09-11T21:56:30+00:00",
-      "touched_round": 97,
+      "touched_round": 98,
       "summary": "statBreakdown.spec 5 例:递减词条折回来源、软阈值同乘折算、真存档逐键「明细之和 = 面板值」、来源必须具名、道果拆成修炼(并入)与攻防血(另乘)两条;三次故障注入(软阈值不摊、删道果修炼行、把来源名改成「来源 1」)各转红;无头实证:点「修炼速度 +73.1%」展开得 天时+10/命格+5/灵根+30/道果+28.1,和即 73.1;全量 133 文件 1341 用例绿",
       "confidence": 0.9,
       "source": "src/core/statBreakdown.spec.ts"
@@ -4900,6 +4900,80 @@
       "touched_round": 97,
       "summary": "mergeModsDetailed 把递减/软阈值两道折算摊回来源;computeFinalStats 返回 breakdown(含灵根/道果/灵气三条与 onTop 标记);player store 给每个来源起名;人物页属性行可点开「来源明细」;新增 statBreakdown.spec 并登记进分类报告",
       "commit": "e20cde8"
+    },
+    "ISS-072": {
+      "id": "ISS-072",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:10:01+00:00",
+      "updated_at": "2026-09-11T22:21:55+00:00",
+      "touched_round": 98,
+      "summary": "五维评级只给星级不给来路:玩家看到「生存 ★★☆☆☆」不知道差在哪条词条;且 powerRating 的得分公式与展示之间没有任何对应关系 —— 改公式不必改展示,改了也没人会发现",
+      "severity": 0.25,
+      "confidence": 0.8,
+      "effort": 2
+    },
+    "ISS-073": {
+      "id": "ISS-073",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:10:01+00:00",
+      "updated_at": "2026-09-11T22:21:55+00:00",
+      "touched_round": 98,
+      "summary": "冒烟夹具不含装备/功法,故凡「成路之后」才出现的界面(流派页五维评级、组合技、成路来源)在无头自检里从未渲染过 —— 未成路时整张卡被 v-if 挡着,测了个空",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "TASK-064": {
+      "id": "TASK-064",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:10:04+00:00",
+      "updated_at": "2026-09-11T22:21:55+00:00",
+      "touched_round": 98,
+      "summary": "五维可解释:每维返回 terms(贡献之和 = 得分,得分走独立算式以防同义反复),流派页点一维展开看词条与分档;并给冒烟夹具补两件背水装备,让成路界面真的被渲染",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "HYP-031": {
+      "id": "HYP-031",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:10:04+00:00",
+      "updated_at": "2026-09-11T22:10:04+00:00",
+      "touched_round": 98,
+      "summary": "「明细之和 = 那个数」这类等式要真的能红,等式两边就必须各走各的路:若把结果定义成明细的求和,审计就成了同义反复(删一条词条两边一起少)。故被解释的那个数必须来自独立算式,明细只负责把算式摊开",
+      "confidence": 0.85
+    },
+    "CHG-122": {
+      "id": "CHG-122",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:21:50+00:00",
+      "updated_at": "2026-09-11T22:21:50+00:00",
+      "touched_round": 98,
+      "summary": "ratePower 每维带 terms(贡献+原始值)与分档阈值,得分仍走独立算式;流派页五维可点开;powerRating.spec 增 4 例(明细之和=得分、无白板条目、星级与分档同源、机制维点名成路);ui-smoke 后期夹具补两件背水装备让成路界面真被渲染",
+      "commit": "1877c5e"
+    },
+    "EV-078": {
+      "id": "EV-078",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:21:55+00:00",
+      "updated_at": "2026-09-11T22:21:55+00:00",
+      "touched_round": 98,
+      "summary": "powerRating.spec 增 4 例:每维贡献之和=得分、明细无白板条目(0 不列出)、星级与面板给的分档同源、机制维点名成路与副系;两次故障注入(删掉进攻维的「破甲」term → 明细之和 1.025 ≠ 得分 1.185;把面板分档换成另一套而判定不变 → 星级与分档不符)各转红;无头实证:成路存档下点「进攻」展开得 +0.05/+0.04/+0.02 与得分 0.11 相符;全量 133 文件 1345 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/powerRating.spec.ts"
     }
   },
   "edges": [
@@ -6907,6 +6981,60 @@
       "to": "HYP-030",
       "type": "validates",
       "created_at": "2026-09-11T22:03:37+00:00"
+    },
+    {
+      "from": "ISS-072",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "ISS-073",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "TASK-064",
+      "to": "ISS-072",
+      "type": "addresses",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "TASK-064",
+      "to": "ISS-073",
+      "type": "addresses",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "CHG-122",
+      "to": "TASK-064",
+      "type": "implements",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "CHG-122",
+      "to": "ISS-072",
+      "type": "resolves",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "CHG-122",
+      "to": "ISS-073",
+      "type": "resolves",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "EV-077",
+      "to": "HYP-031",
+      "type": "validates",
+      "created_at": "2026-09-11T22:21:51+00:00"
+    },
+    {
+      "from": "EV-078",
+      "to": "HYP-031",
+      "type": "validates",
+      "created_at": "2026-09-11T22:21:55+00:00"
     }
   ]
 }
