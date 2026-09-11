@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 95,
+  "round": 96,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T21:16:15+00:00",
+  "updated_at": "2026-09-11T21:29:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -324,7 +324,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:05:15+00:00",
       "updated_at": "2026-09-09T14:05:15+00:00",
-      "touched_round": 19,
+      "touched_round": 95,
       "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
     },
     "CHG-007": {
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 94,
+      "touched_round": 95,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -4717,6 +4717,67 @@
       "touched_round": 94,
       "summary": "高界每界域补两件法宝(26→32):青锋仙剑/云纹仙印(仙界)、镇神印/神雷珠(神界)、混沌青莲/虚界梭(混沌海);contentDensity 增判据「法宝件数 > 法宝位数」",
       "commit": Infinity
+    },
+    "ISS-069": {
+      "id": "ISS-069",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:21:45+00:00",
+      "updated_at": "2026-09-11T21:29:05+00:00",
+      "touched_round": 95,
+      "summary": "奇缘全起于人间:五条缘的第一程门槛都是 0,真仙之上玩家能走的只有凡间那笔旧账 —— 高界有专属天时/机缘/秘境,却没有一条属于自己的缘;另:见闻志把奇缘阶段与普通际遇一律标成「历练际遇」,与「奇缘不属于任何地界」正好说反",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "TASK-061": {
+      "id": "TASK-061",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:21:48+00:00",
+      "updated_at": "2026-09-11T21:29:05+00:00",
+      "touched_round": 95,
+      "summary": "补一条仙界起头的奇缘(云海故碑,三程:真仙/太乙/神将),并把「未起之缘」那条判据从「全部都能同时选」改成「门槛已到的都等着 + 每条缘都起得了头 + 高界至少有缘」;见闻志里奇缘与际遇各归各名",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.8,
+      "effort": 3
+    },
+    "HYP-028": {
+      "id": "HYP-028",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:21:48+00:00",
+      "updated_at": "2026-09-11T21:21:48+00:00",
+      "touched_round": 95,
+      "summary": "「内容只起于第一界」这类偏斜能用起点分布发现:把每条链/每条线(奇缘、门派、机缘)的起点门槛列出来,若最大值仍停在第一界,说明后几界玩家只能重复早期内容;判据「至少一条起点在后界 + 每条都起得了头」既不逼着每界都造新链,也拦得住「全起于人间」的回退",
+      "confidence": 0.7
+    },
+    "EV-075": {
+      "id": "EV-075",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:21:51+00:00",
+      "updated_at": "2026-09-11T21:21:51+00:00",
+      "touched_round": 95,
+      "summary": "chainProgression.spec:新增「每条缘都起得了头(起点门槛 ≤ 最高境界,且到门槛时确实待走)」「奇缘不止起于人间(起点最大值 ≥ 仙界起点)」「见闻志里奇缘与际遇各归各名」;原来的「未起之缘都在第一程」改成按门槛筛并覆盖 0/9/12/15 四点;两次故障注入(云海故碑第一程门槛改回 0、见闻志标签改回一律际遇)各转红一次;全量 132 文件 1333 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/chainProgression.spec.ts"
+    },
+    "CHG-119": {
+      "id": "CHG-119",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:28:59+00:00",
+      "updated_at": "2026-09-11T21:28:59+00:00",
+      "touched_round": 95,
+      "summary": "新增奇缘「云海故碑」三程(门槛 9/12/15),奇缘 6 条 15 程、随机事件表 70→73;见闻志按 chainOfEvent 分出奇缘;chainProgression 判据改口径并补「起得了头」「不止起于人间」两条",
+      "commit": "557e0e7"
     }
   },
   "edges": [
@@ -6628,6 +6689,42 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T21:16:10+00:00"
+    },
+    {
+      "from": "ISS-069",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-11T21:28:59+00:00"
+    },
+    {
+      "from": "TASK-061",
+      "to": "ISS-069",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:28:59+00:00"
+    },
+    {
+      "from": "CHG-119",
+      "to": "TASK-061",
+      "type": "implements",
+      "created_at": "2026-09-11T21:28:59+00:00"
+    },
+    {
+      "from": "CHG-119",
+      "to": "ISS-069",
+      "type": "resolves",
+      "created_at": "2026-09-11T21:28:59+00:00"
+    },
+    {
+      "from": "EV-075",
+      "to": "HYP-028",
+      "type": "validates",
+      "created_at": "2026-09-11T21:28:59+00:00"
+    },
+    {
+      "from": "TASK-061",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:28:59+00:00"
     }
   ]
 }
