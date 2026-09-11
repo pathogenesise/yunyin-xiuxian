@@ -183,6 +183,17 @@ export function secretLayerFoe(state: SecretRealmState, rand: typeof rng = rng):
   return { snap: worldFoeSnap(shape, ref, 1 + 0.12 * (state.layer - 1)), shape }
 }
 
+/**
+ * 本层战利:灵石随**层数**与**本境倍率**上浮,材料只随层数。
+ *
+ * 材料不吃倍率是有意的:倍率是「此地物产丰饶」的说法,若材料也跟着乘,
+ * 高倍率境会把材料也顶穿,几条产线的产出结构就拉平了。抽成纯函数是为了可测 ——
+ * 用例直接比「同一层级下两境倍率之比」,不必掷运气打完整场。
+ */
+export function secretLayerReward(tier: number, layer: number, rewardMult: number): { stone: GNum; material: number } {
+  return { stone: stoneByTier(tier, (12 + 6 * layer) * rewardMult), material: 2 + layer }
+}
+
 /** 打一层 */
 export function fightSecretLayer(): SecretLayerResult | null {
   const player = usePlayerStore()
@@ -202,9 +213,8 @@ export function fightSecretLayer(): SecretLayerResult | null {
 
   if (result.win) {
     // 战利:灵石 + 材料,随层数与本境倍率上浮
-    const stone = stoneByTier(tier, (12 + 6 * state.layer) * def.rewardMult)
+    const { stone, material: mat } = secretLayerReward(tier, state.layer, def.rewardMult)
     resources.addStone(stone)
-    const mat = 2 + state.layer
     resources.addSmall('herb', mat)
     lines.push(`胜 ${snap.name} · 灵石 +${formatGN(stone)} · 灵草 +${mat}`)
     const nextLayer = state.layer + 1

@@ -33,6 +33,7 @@ import {
   realmUnlock,
   secretFightRules,
   secretLayerFoe,
+  secretLayerReward,
   tierOfMajor
 } from './secretRealm'
 
@@ -312,5 +313,32 @@ describe('秘境 · 敌人按玩家缩放(与远征/试炼同法)', () => {
     expect(r).not.toBeNull()
     expect(r!.lines.length).toBeGreaterThan(0)
     for (const line of r!.lines) expect(line).not.toContain('NaN')
+  })
+})
+
+describe('秘境 · 战利倍率算得出对', () => {
+  it('同一层级同一层数下,灵石战利与本境倍率成正比', () => {
+    const a = secretLayerReward(10, 1, 1.2)
+    const b = secretLayerReward(10, 1, 1.5)
+    expect(toNum(b.stone) / toNum(a.stone)).toBeCloseTo(1.5 / 1.2, 6)
+  })
+
+  it('层数越深灵石越厚,材料只随层数(不吃倍率,免得几条产线被拉平)', () => {
+    const l1 = secretLayerReward(10, 1, 1.4)
+    const l3 = secretLayerReward(10, 3, 1.4)
+    expect(toNum(l3.stone)).toBeGreaterThan(toNum(l1.stone))
+    expect(l1.material).toBe(3)
+    expect(l3.material).toBe(5)
+    // 材料与倍率无关:同一层数下换倍率,材料数不变
+    expect(secretLayerReward(10, 2, 9).material).toBe(secretLayerReward(10, 2, 0.1).material)
+  })
+
+  it('层级单调:同层同倍率下,高一层的战利必然更厚', () => {
+    // 注意这里不写「高一层的第一层 > 低一层的第三层」——那是我一开始想当然的判据,
+    // 实测 11 层×1.2 倍(1.59万)< 10 层×1.5 倍第 3 层(1.74万)。
+    // 深层的厚赏压过上一层的薄层是**设计允许**的(奖励深度),故只钉单调性。
+    for (let tier = 3; tier < 30; tier += 1) {
+      expect(toNum(secretLayerReward(tier + 1, 2, 1.2).stone)).toBeGreaterThan(toNum(secretLayerReward(tier, 2, 1.2).stone))
+    }
   })
 })

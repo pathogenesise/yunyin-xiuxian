@@ -5,6 +5,7 @@ import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { DECOMPOSE_DUST } from '@/data/constants'
 import { qualityDef } from '@/data/qualities'
+import { toNum } from '@/utils/gnum'
 import { checkSuppression, settleSuppressedRegions, suppressYield } from './suppress'
 
 describe('区域镇压系统', () => {
@@ -49,6 +50,29 @@ describe('区域镇压系统', () => {
       expect(row, '产出清单应记下灵草').toBeDefined()
       expect(row!.name).toBe('灵草')
       expect(row!.amount).toBeGreaterThan(0)
+    })
+
+    /**
+     * 比率体检:镇压产出对**时长**必须是线性的(层级线性上面已有用例)。
+     * 只看"有没有产出"看不出某处被 clamp 或按整点数取整 —— 六小时的产出
+     * 应当恰是两小时的三倍。
+     */
+    it('时长线性:六小时产出恰是两小时的三倍(同一片地,不因取整走样)', () => {
+      const player = usePlayerStore()
+      player.suppressedRegions = ['wanyao']
+      player.suppressedSince = { wanyao: Date.now() }
+      const two = settleSuppressedRegions(2 * 3600)!
+      const six = settleSuppressedRegions(6 * 3600)!
+      const twoStone = toNum(two.stone)
+      const sixStone = toNum(six.stone)
+      expect(twoStone).toBeGreaterThan(0)
+      expect(sixStone / twoStone, `六小时 ${sixStone} vs 两小时 ${twoStone}`).toBeCloseTo(3, 6)
+      // 材料是整数取整,允许 ±1 的取整误差,但比值仍应在 3 附近
+      const twoHerb = two.resources.find(r => r.id === 'herb')?.amount ?? 0
+      const sixHerb = six.resources.find(r => r.id === 'herb')?.amount ?? 0
+      expect(twoHerb).toBeGreaterThan(0)
+      expect(sixHerb / twoHerb).toBeGreaterThan(2.5)
+      expect(sixHerb / twoHerb).toBeLessThan(3.5)
     })
   })
 
