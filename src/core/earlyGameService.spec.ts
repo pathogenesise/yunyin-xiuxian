@@ -160,6 +160,37 @@ describe('突破准备(Phase 28 · TASK-023 接线后)', () => {
     expect(prepareBreakthrough('pill')).toBe(false)
     expect(breakthroughPrepState().ready).toBe(false)
   })
+
+  it('付费的一次性加成存进档:刷新页面不吞玩家的 80 灵石(Phase 34.6)', () => {
+    const resources = useResourcesStore()
+    resources.addStone(gn(100))
+    expect(prepareBreakthrough('pill')).toBe(true)
+
+    // ① 状态在 store 上 —— 存档写盘取的就是这份 $state
+    const persisted = JSON.parse(JSON.stringify(usePlayerStore().$state)) as { breakthroughPrep?: unknown }
+    expect(persisted.breakthroughPrep, '准备态没进 store,刷新必丢').toBeTruthy()
+
+    // ② 重开一局(新 pinia = 重新载入进程),把写盘的那份灌回来 → 加成仍在
+    setActivePinia(createPinia())
+    const reloaded = usePlayerStore()
+    reloaded.$patch({ breakthroughPrep: persisted.breakthroughPrep as never })
+    const s = breakthroughPrepState()
+    expect(s.ready).toBe(true)
+    expect(s.bonus).toBeCloseTo(BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'pill')!.bonusRate)
+    // ③ 仍是一次性的:取过即空
+    expect(consumeBreakthroughPrep()).toBeCloseTo(0.05)
+    expect(breakthroughPrepState().ready).toBe(false)
+  })
+
+  it('转世不带突破准备:新的一世要重新备(与卦同理)', () => {
+    const resources = useResourcesStore()
+    resources.addStone(gn(100))
+    prepareBreakthrough('pill')
+    const player = usePlayerStore()
+    expect(player.breakthroughPrep).not.toBeNull()
+    player.rebirth(player.linggen!)
+    expect(player.breakthroughPrep).toBeNull()
+  })
 })
 
 describe('突破准备数据源(BREAKTHROUGH_PREP_OPTIONS · TASK-029 接线后)', () => {

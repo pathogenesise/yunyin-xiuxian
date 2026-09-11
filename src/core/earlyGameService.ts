@@ -2,6 +2,7 @@
  * Phase 28 前期玩法服务 —— 悟道顿悟/突破准备/闭关/探索路线/连胜/洞府巡游/灵兽陪行
  */
 import { usePlayerStore } from '@/stores/player'
+import { useGameStore } from '@/stores/game'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useResourcesStore } from '@/stores/resources'
 import { useAdventureStore } from '@/stores/adventure'
@@ -23,8 +24,6 @@ function telemetry(): ReturnType<typeof usePacingTelemetry> {
 
 let enlightenmentEvent: EnlightenmentEvent | null = null
 let caveEvent: CaveEvent | null = null
-let breakthroughPrepEndTime: number | null = null // 突破准备结束时间戳
-let breakthroughPrepBonus: number = 0 // 突破准备加成
 
 /** 获取当前悟道顿悟事件(60秒窗口) */
 export function getCurrentEnlightenment(): EnlightenmentEvent | null {
@@ -147,13 +146,21 @@ export function prepareBreakthrough(optionId: string): boolean {
     if (!resources.hasStone(gn(opt.cost.stone))) return false
     resources.spendStone(gn(opt.cost.stone))
   }
-  breakthroughPrepBonus = opt.bonusRate
-  if (opt.duration > 0) {
-    // duration 单位为秒(meditate=180);=0 表示支付即了就绪(聚气丹)
-    breakthroughPrepEndTime = Date.now() + opt.duration * 1000
-  }
+  // duration 单位为秒(meditate=180);=0 表示支付即了就绪(聚气丹)
+  usePlayerStore().setBreakthroughPrep({
+    bonus: opt.bonusRate,
+    readyAt: Date.now() + Math.max(0, opt.duration) * 1000,
+    kind: opt.id === 'pill' ? 'pill' : 'meditate'
+  })
   telemetry().record('breakthrough_prep', 'modal', `突破准备:${opt.label}`)
   return true
+}
+
+/** 存进档的准备态:加成、就绪时刻、来源(见 player store 的注释) */
+export interface BreakthroughPrepState {
+  bonus: number
+  readyAt: number
+  kind: 'meditate' | 'pill'
 }
 
 export interface BreakthroughPrepView {
@@ -171,34 +178,28 @@ export interface BreakthroughPrepView {
 /**
  * 突破准备当前状态(只读,不消费)。
  * 语义:静坐调息要坐满 3 分钟才转「就绪」;聚气丹支付即了就绪;
- * 两者都是一次性加成,突破时经 consumeBreakthroughPrep 取走后即空
- * (模块态,随页面刷新归零,与顿悟/巡游同一生命周期)。
+ * 两者都是一次性加成,突破时经 consumeBreakthroughPrep 取走后即空。
+ *
+ * 状态存在 player store(随档持久化):聚气丹是要花 80 灵石的,
+ * 刷新一次就没了等于吞资源;顿悟/巡游那种免费提示才适合模块态。
  */
 export function breakthroughPrepState(): BreakthroughPrepView {
-  if (breakthroughPrepEndTime !== null) {
-    const remainSec = Math.ceil((breakthroughPrepEndTime - Date.now()) / 1000)
-    if (remainSec > 0) {
-      return { sitting: true, remainingSec: remainSec, ready: false, bonus: 0, kind: 'meditate' }
-    }
+  // 读一次心跳:倒计时与"坐满转就绪"要随时间被重新计算(见 divination 同款处理)
+  void useGameStore().totalPlaySec
+  const state = usePlayerStore().breakthroughPrep
+  if (!state) return { sitting: false, remainingSec: 0, ready: false, bonus: 0, kind: null }
+  const remainSec = Math.ceil((state.readyAt - Date.now()) / 1000)
+  if (remainSec > 0) {
+    return { sitting: true, remainingSec: remainSec, ready: false, bonus: 0, kind: state.kind }
   }
-  if (breakthroughPrepBonus === 0) {
-    return { sitting: false, remainingSec: 0, ready: false, bonus: 0, kind: null }
-  }
-  return {
-    sitting: false,
-    remainingSec: 0,
-    ready: true,
-    bonus: breakthroughPrepBonus,
-    kind: breakthroughPrepEndTime === null ? 'pill' : 'meditate'
-  }
+  return { sitting: false, remainingSec: 0, ready: true, bonus: state.bonus, kind: state.kind }
 }
 
 /** 取走就绪的突破准备加成(一次性;未就绪返回 0 且不动状态) */
 export function consumeBreakthroughPrep(): number {
   const s = breakthroughPrepState()
   if (!s.ready) return 0
-  breakthroughPrepBonus = 0
-  breakthroughPrepEndTime = null
+  usePlayerStore().setBreakthroughPrep(null)
   return s.bonus
 }
 

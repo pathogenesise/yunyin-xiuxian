@@ -108,6 +108,15 @@ export const usePlayerStore = defineStore(
     /** Phase 34.3 问卦所得之卦(一世一时之象,过期自散;转世不带) */
     const divination = ref<import('@/core/divination').DivinationState | null>(null)
 
+    /**
+     * 突破准备(静坐/聚气丹)—— **付费的一次性加成必须存进档**。
+     *
+     * 原先它是 earlyGameService 的模块态:聚气丹花掉 80 灵石换来 +5%,
+     * 玩家一刷新页面就没了 —— 顿悟/巡游丢状态无所谓(那是免费的提示),
+     * 花钱买的一次性加成丢了就是吞了玩家的资源。
+     */
+    const breakthroughPrep = ref<import('@/core/earlyGameService').BreakthroughPrepState | null>(null)
+
     // Phase 31.1 机缘链:机缘选择记忆(取/弃),影响师承推荐与未来同类机缘
     const fortuneChoices = ref<Record<string, FortuneChoice>>({})
 
@@ -425,6 +434,8 @@ export const usePlayerStore = defineStore(
       regionEvent.value = null
       // 卦是此一时的时机,不是"我是谁":转世即散
       divination.value = null
+      // 突破准备也随这一世散去(下一世要重新备)
+      breakthroughPrep.value = null
       // 外物随皮囊散去:灵兽、洞府建筑、灵脉投资都是「我拥有多少」,不是「我是谁」
       petId.value = null
       dongfu.resetForRebirth()
@@ -451,6 +462,12 @@ export const usePlayerStore = defineStore(
           typeof d.expiresAt === 'number' &&
           !!readingFromState(d)
         if (!ok) divination.value = null
+      }
+      // 旧存档没有突破准备一栏(Phase 34.6);形状不对的直接作废
+      if (breakthroughPrep.value) {
+        const p = breakthroughPrep.value
+        const ok = Number.isFinite(p.bonus) && Number.isFinite(p.readyAt) && (p.kind === 'meditate' || p.kind === 'pill')
+        if (!ok) breakthroughPrep.value = null
       }
       for (const id of suppressedRegions.value) {
         if (!suppressQualified.value.includes(id)) suppressQualified.value.push(id)
@@ -575,6 +592,11 @@ export const usePlayerStore = defineStore(
       divination.value = state
     }
 
+    // ---------- Phase 28 突破准备 ----------
+    function setBreakthroughPrep(state: import('@/core/earlyGameService').BreakthroughPrepState | null): void {
+      breakthroughPrep.value = state
+    }
+
     // ---------- Phase 31.1 机缘链 ----------
     function setFortuneChoices(choices: Record<string, FortuneChoice>): void {
       fortuneChoices.value = choices
@@ -605,6 +627,7 @@ export const usePlayerStore = defineStore(
       regionEvent,
       secretRealm,
       divination,
+      breakthroughPrep,
       fortuneChoices,
       realm,
       realmName,
@@ -666,6 +689,7 @@ export const usePlayerStore = defineStore(
       setRegionEvent,
       setSecretRealm,
       setDivination,
+      setBreakthroughPrep,
       setFortuneChoices
     }
   },
