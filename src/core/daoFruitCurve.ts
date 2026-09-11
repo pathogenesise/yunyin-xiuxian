@@ -28,7 +28,7 @@
 import { DAO_FRUIT_SOFT_EXP } from '@/data/constants'
 import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 import { hoursToReach, type SimAssumptions } from './progressionSim'
-import { daoFruitAfterLives, FRUIT_PER_LIFE, talentCultBonusAt, veinCultBonusAt } from './samsaraAudit'
+import { daoFruitAfterLives, FRUIT_PER_LIFE, talentCultBonusAt } from './samsaraAudit'
 
 /** 候选曲线:道果总量 → 有效值(即当前 effectiveDaoFruit 的位置) */
 export interface FruitCurve {
@@ -107,7 +107,8 @@ export function equivalentFruit(curve: FruitCurve, fruit: number): number {
 
 /** 第 n 世的修行假设(与 samsaraAudit 同口径:天赋 + 灵脉都是有界项) */
 function assumptionsAt(lives: number): SimAssumptions {
-  return { linggenMult: 1.6, talentCultBonus: talentCultBonusAt(lives - 1) + veinCultBonusAt(lives - 1) }
+  // 灵脉已随转世归零,不再计入(外物不跨世)
+  return { linggenMult: 1.6, talentCultBonus: talentCultBonusAt(lives - 1) }
 }
 
 /** 某曲线下,第 n 世从炼气修满人间界并飞升真仙所需小时 */

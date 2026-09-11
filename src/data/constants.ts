@@ -305,8 +305,8 @@ export const DAO_FRUIT_SOFT_EXP = 0.9
 export const TALENT_DRAW_DIV = 2
 /** 转世后灵根资质保底提升 */
 export const REINCARNATE_APTITUDE_FLOOR = 5
-/** 转世后已习功法层数折半(向下取整,至少 1 层) */
-export const REBIRTH_GONGFA_LEVEL_DIV = 2
+// (原「转世后已习功法层数折半」的系数已撤:门类保留、层数归零回一层,
+//  不再有折半比例可调 —— 见 core/reincarnation 的 carryGongfa。)
 
 // ============ 离线首领 ============
 /** 离线自动挑战区域首领的收益折损系数 */

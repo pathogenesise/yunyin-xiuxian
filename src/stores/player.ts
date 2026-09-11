@@ -386,6 +386,9 @@ export const usePlayerStore = defineStore(
       lastCaveEventDay.value = 0
       secretRealm.value = null
       regionEvent.value = null
+      // 外物随皮囊散去:灵兽、洞府建筑、灵脉投资都是「我拥有多少」,不是「我是谁」
+      petId.value = null
+      dongfu.resetForRebirth()
     }
 
     /** 存档修复 */

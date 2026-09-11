@@ -10,7 +10,6 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  veinCultBonusAt,
   daoFruitAfterLives,
   FRUIT_PER_LIFE,
   HERITAGE,
@@ -37,18 +36,21 @@ describe('轮回审计 · 继承清单(逐条对照代码核实)', () => {
     for (const id of ['equipment', 'pills', 'artifacts', 'materials', 'regions', 'realm']) {
       expect(byId(id).mode).toBe('reset')
     }
-    // 洞府与功法是折半,不是原样带走
-    expect(byId('buildings').mode).toBe('partial')
+    // 洞府是外物,整座归零;功法只留门类、层数归零(仍属"半留")
+    expect(byId('buildings').mode).toBe('reset')
     expect(byId('gongfa').mode).toBe('partial')
   })
 
-  it('仍有「状态」类资产被完整继承——违反「重置我拥有多少」', () => {
+  it('外物已全部归零;仍完整继承的状态类只剩荣誉/道统/世界记忆', () => {
     const s = summarize()
     const names = s.stateButFull.map(r => r.name)
     console.log(`\n属于状态却完整继承:${names.join('、')}`)
-    // 称号、灵兽、师承的 mods 直接带入下一世;rebirth() 未重置这三项
+    // 灵兽/洞府/灵脉已改为归零(外物随皮囊散去)
+    expect(names).not.toContain('灵兽')
+    expect(names).not.toContain('洞府建筑')
+    expect(names).not.toContain('灵脉投资')
+    // 留下的三项各有理由:荣誉(称号)、道统(师承)、世界记忆(镇压与宿敌)
     expect(names).toContain('称号')
-    expect(names).toContain('灵兽')
     expect(names).toContain('师承')
   })
 })
@@ -128,10 +130,12 @@ describe('轮回审计 · 与数值膨胀共根', () => {
     const s = summarize()
     const names = s.compressing.map(r => r.name)
     console.log(`\n压缩成长空间的 ${names.length} 项:${names.join('、')}`)
-    // 道果、天赋、功法、洞府是主要压缩源
-    for (const n of ['道果', '先天之姿', '功法', '洞府建筑']) {
+    // 道果、天赋、功法(门类保留)是主要压缩源;洞府已归零,不再压缩
+    for (const n of ['道果', '先天之姿', '功法']) {
       expect(names).toContain(n)
     }
+    expect(names).not.toContain('洞府建筑')
+    expect(names).not.toContain('灵脉投资')
   })
 
   it('认知与成就不压缩成长空间——它们只让人「知道得更多」', () => {
@@ -145,26 +149,96 @@ describe('轮回审计 · 与数值膨胀共根', () => {
 })
 
 describe('轮回审计 · 灵脉投资', () => {
-  it('灵脉完全不重置,第二世起就带着投满的地脉出生', () => {
+  it('灵脉是外物:转世即清零,不再带着投满的地脉出生', () => {
     const row = HERITAGE.find(r => r.id === 'veins')!
-    expect(row.mode).toBe('full')
-    // 属于「状态」类(我拥有多少)却完整继承,与称号/灵兽/师承同一性质
+    expect(row.mode).toBe('reset')
     expect(row.kind).toBe('state')
-    expect(row.compressesGrowth).toBe(true)
+    expect(row.compressesGrowth).toBe(false)
     console.log(`\n灵脉:${row.detail}`)
   })
 
-  it('灵脉是有界项:满投即封顶,不同于道果的无界累积', () => {
-    // 第 2 世就能吃满,之后不再增长
-    expect(veinCultBonusAt(2)).toBe(veinCultBonusAt(100))
-    expect(veinCultBonusAt(0)).toBe(0)
-    console.log(`\n灵脉修速加成 +${(veinCultBonusAt(2) * 100).toFixed(0)}%(第2世即封顶,与第100世相同)`)
-  })
-
-  it('灵脉与天赋同为有界项,道果是唯一无界的那个', () => {
-    const bounded = [veinCultBonusAt(10) === veinCultBonusAt(1000), talentsAfterLives(10) === talentsAfterLives(1000)]
-    expect(bounded).toEqual([true, true])
+  it('跨世累积只剩有界的天赋与无界的道果两项', () => {
+    // 灵脉已归零,不再是跨世累积项;天赋有界(集齐即止),道果无界
+    expect(talentsAfterLives(10)).toBe(talentsAfterLives(1000))
     // 道果不然
     expect(daoFruitAfterLives(1000)).toBeGreaterThan(daoFruitAfterLives(10) * 90)
+  })
+})
+
+/**
+ * 继承清单的「最小完备」:凡有跨世去留的功能都要在 HERITAGE 里登记一行。
+ * 这份 id 清单随功能增长 —— 新加一个会跨世的系统(或改掉一项的去留)时,
+ * 必须同时回答「它跨世留不留」,而不是让它在代码里悄悄决定。
+ */
+describe('轮回审计 · 继承清单最小完备', () => {
+  const REQUIRED = [
+    'realm',
+    'equipment',
+    'pills',
+    'artifacts',
+    'materials',
+    'regions',
+    'buildings',
+    'gongfa',
+    'daoFruit',
+    'talents',
+    'insight',
+    'title',
+    'pet',
+    'mentor',
+    'veins',
+    'lore',
+    'quests',
+    'endgame',
+    'suppress',
+    'secretRealm',
+    'regionEvent',
+    'mortalWorld',
+    'fortuneMemory',
+    'bonds',
+    'trial',
+    'streak',
+    'linggen'
+  ]
+
+  it('每一个跨世系统都在清单里有一行', () => {
+    const ids = new Set(HERITAGE.map(r => r.id))
+    const missing = REQUIRED.filter(id => !ids.has(id))
+    expect(missing, `这些系统未登记跨世去留:${missing.join('、')}`).toEqual([])
+  })
+
+  it('外物一律归零:装备/法宝/丹药/材料/灵兽/洞府/灵脉/区域/本世/秘境/事件/契约', () => {
+    const byId = (id: string) => HERITAGE.find(r => r.id === id)!
+    for (const id of [
+      'equipment',
+      'artifacts',
+      'pills',
+      'materials',
+      'regions',
+      'buildings',
+      'veins',
+      'pet',
+      'secretRealm',
+      'regionEvent',
+      'mortalWorld',
+      'trial',
+      'streak',
+      'linggen'
+    ]) {
+      expect(byId(id).mode, `${byId(id).name} 是外物,应归零`).toBe('reset')
+    }
+  })
+
+  it('记忆/精神/灵魂一律留:认知/成就/道果/天赋/宿慧/称号/师承/道痕/世界记忆/机缘记忆', () => {
+    const byId = (id: string) => HERITAGE.find(r => r.id === id)!
+    for (const id of ['lore', 'quests', 'daoFruit', 'talents', 'insight', 'title', 'mentor', 'suppress', 'fortuneMemory']) {
+      expect(byId(id).mode, `${byId(id).name} 属记忆/精神/灵魂,应保留`).toBe('full')
+    }
+    // 功法只「半留」:门类是记忆,层数是修为进度
+    expect(byId('gongfa').mode).toBe('partial')
+    // 道友同理:关系归档入履历,人不留下
+    expect(byId('bonds').mode).toBe('partial')
+    // 终局同理:道途归还天地(本世之诺),道源与道痕随神魂不灭
+    expect(byId('endgame').mode).toBe('partial')
   })
 })

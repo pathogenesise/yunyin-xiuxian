@@ -117,6 +117,19 @@ export const useDongfuStore = defineStore(
       veinMain.value = id
     }
 
+    /**
+     * 转世:洞府与地脉都是「外物」,随皮囊一同散去 —— 建筑归零、灵脉清零。
+     * 留下的只有认知与宿慧(见 core/reincarnation 的继承清单)。
+     */
+    function resetForRebirth(): void {
+      const nextLevels = { ...levels.value }
+      for (const def of BUILDINGS) nextLevels[def.id] = 0
+      levels.value = nextLevels
+      frac.value = { herb: 0, ore: 0, wudao: 0 }
+      veinMain.value = null
+      veinPoints.value = { gather: 0, craft: 0, alchemy: 0, insight: 0 }
+    }
+
     /** 建筑产出(灵田/藏经阁),按秒推进 */
     function produce(dtSec: number): void {
       const resources = useResourcesStore()
@@ -158,6 +171,7 @@ export const useDongfuStore = defineStore(
       setLevel,
       addVeinPoint,
       setVeinMain,
+      resetForRebirth,
       produce,
       sanitize
     }

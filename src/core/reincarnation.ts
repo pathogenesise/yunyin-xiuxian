@@ -7,7 +7,7 @@
  */
 import { rng } from '@/utils/random'
 import { TALENTS } from '@/data/talents'
-import { REBIRTH_GONGFA_LEVEL_DIV, TALENT_DRAW_DIV } from '@/data/constants'
+import { TALENT_DRAW_DIV } from '@/data/constants'
 import { lifeThemeDef } from '@/data/lifeThemes'
 import { nextStageAfter, stageAt } from '@/data/samsara'
 import { rollLinggen } from './linggenGen'
@@ -28,13 +28,12 @@ import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { useCultivationStore } from '@/stores/cultivation'
-import { useDongfuStore } from '@/stores/dongfu'
 import { useAdventureStore } from '@/stores/adventure'
 import { useEndgameStore } from '@/stores/endgame'
 import { useGameStore } from '@/stores/game'
 import { useUiStore } from '@/stores/ui'
 import type { LifeReview, ReincarnationView } from '@/stores/ui'
-import type { BuildingId, GNum } from '@/types'
+import type { GNum } from '@/types'
 import { recordMilestone } from './identity'
 import { gnZero } from '@/utils/gnum'
 
@@ -126,8 +125,9 @@ export function prepareReincarnation(): ReincarnationView {
 /**
  * 已习功法的折损。
  *
- * 层数折半是多周目审计后的收敛口径;到了「百世老修」这一阶,
- * 修为最深的那一门可以完整带走 —— 练过百世的东西,不至于连怎么起手都忘了。
+ * 「记得哪些功法」是记忆,留下;**练到几层**是修为进度,随皮囊归零(回到一层的起手)。
+ * 到了「百世老修」这一阶,修为最深的那一门可以完整带走 ——
+ * 练过百世的东西,不至于连怎么起手都忘了。
  */
 function carryGongfa(learned: Readonly<Record<string, number>>, keepOne: boolean): Record<string, number> {
   let keptId: string | null = null
@@ -138,7 +138,7 @@ function carryGongfa(learned: Readonly<Record<string, number>>, keepOne: boolean
   }
   const out: Record<string, number> = {}
   for (const [id, lv] of Object.entries(learned)) {
-    out[id] = id === keptId ? lv : Math.max(1, Math.floor(lv / REBIRTH_GONGFA_LEVEL_DIV))
+    out[id] = id === keptId ? lv : 1
   }
   return out
 }
@@ -154,7 +154,6 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   const resources = useResourcesStore()
   const inventory = useInventoryStore()
   const cultivation = useCultivationStore()
-  const dongfu = useDongfuStore()
   const adventure = useAdventureStore()
   const ui = useUiStore()
   const view = ui.reincarnation
@@ -215,10 +214,7 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   if (bondRec) player.recordBond(bondRec)
   adventure.cleared = []
   adventure.lastBattle = null
-  // 建筑折半留存
-  for (const id of Object.keys(dongfu.levels) as BuildingId[]) {
-    dongfu.setLevel(id, Math.floor((dongfu.levels[id] ?? 0) / 2))
-  }
+  // (洞府/灵脉/灵兽的归零在 player.rebirth() 里,与其余「本世进程」同处一地)
 
   // 认知不因转世清零,只按阶补齐:该认得的药,睁眼就该认得
   const recognized = carryLore(stage)

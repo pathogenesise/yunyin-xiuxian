@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
+import { useDongfuStore } from '@/stores/dongfu'
 import type { SecretRealmState } from '@/core/secretRealm'
 
 function seedPlayer(p: ReturnType<typeof usePlayerStore>): void {
@@ -52,5 +53,29 @@ describe('player.rebirth 转世状态重置', () => {
     // 「世界记得你的选择」:机缘取/弃记忆不随转世清空
     expect(p.fortuneChoices).toEqual({ ft_sword_remnant: 'take' })
     expect(p.eventChains).toEqual({ old_man_stone: 2 })
+  })
+
+  /**
+   * 「灵魂/记忆留下,外物归零」:灵兽、洞府建筑、灵脉投资都是外物,
+   * 不得随转世带走 —— 否则每一世都从半成品起步,「重新经历」名存实亡。
+   */
+  it('外物归零:灵兽/洞府建筑/灵脉投资', () => {
+    const p = usePlayerStore()
+    const dongfu = useDongfuStore()
+    p.initCharacter('测试道友', { roots: [] } as never)
+    p.setPet('pet_yueying')
+    dongfu.setLevel('field', 8)
+    dongfu.setLevel('library', 6)
+    dongfu.setVeinMain('gather')
+    dongfu.addVeinPoint('gather', 30)
+    dongfu.addVeinPoint('insight', 12)
+
+    p.rebirth({ roots: [] } as never)
+
+    expect(p.petId, '灵兽应随皮囊散去').toBeNull()
+    expect(dongfu.levels.field, '洞府建筑应归零').toBe(0)
+    expect(dongfu.levels.library).toBe(0)
+    expect(dongfu.veinMain, '灵脉主脉应清空').toBeNull()
+    expect(Object.values(dongfu.veinPoints).every(v => v === 0), '灵脉投点应清零').toBe(true)
   })
 })
