@@ -20,6 +20,9 @@
       </RouterLink>
 
       <SectionTitle title="历练" hint="行万里路,炼一颗心" />
+      <p v-if="player.suppressedRegions.length > 0" class="text-[10px] text-gold-ink">
+        镇压收益中 {{ player.suppressedRegions.length }} 处 —— 与历练互不冲突,可同时收取;一次只能历练一处。
+      </p>
       <div class="space-y-2.5">
         <template v-for="group in groupedRows" :key="group.world.id">
           <div class="flex items-center gap-2 pt-1">
@@ -65,13 +68,17 @@
               已通关的地界仍可再历 —— 「已靖」只是标记,不是封路。
               首领已清之后进去仍能刷杂兵、拾遗、碰机缘
             -->
-            <button
-              v-if="row.canEnter && (!row.suppressed || row.revived)"
-              class="btn-seal shrink-0 !px-4 !py-2 !text-[13px]"
-              @click="chooseMode(row.def)"
-            >
-              出发
-            </button>
+            <!-- 未取收益时:可历练;取得过镇压资格者,还可一键切回收益态(无需再镇压) -->
+            <div v-if="row.canEnter && !row.suppressed" class="flex shrink-0 flex-col items-stretch gap-1">
+              <button class="btn-seal !px-4 !py-2 !text-[13px]" @click="chooseMode(row.def)">出发</button>
+              <button
+                v-if="row.qualified"
+                class="chip-ink justify-center !py-1 !text-[10px] active:scale-95"
+                @click.stop="suppress(row.def.id)"
+              >
+                转为镇压收益
+              </button>
+            </div>
             <div v-else-if="row.suppressed" class="shrink-0 text-right">
               <span class="block text-[11px] text-gold-ink">
                 自动产出中 · {{ rateText(row.def) }}/时
@@ -80,7 +87,7 @@
                 class="-ml-1.5 mt-0.5 rounded-md px-1.5 py-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
                 @click.stop="unsuppress(row.def.id)"
               >
-                解除镇压,再历此地
+                停取收益,改去历练
               </button>
             </div>
           </div>
@@ -238,6 +245,8 @@
         cleared: adventure.cleared.includes(r.id),
         suppressed,
         revived,
+        /** 是否取得过镇压资格(取得即永久,此后可自由在历练/收益之间切换) */
+        qualified: player.suppressQualified.includes(r.id),
         recall,
         tooHard: r.minRealm > player.major,
         // 第一层信息:只保留最强的两个生态标签
@@ -295,11 +304,18 @@
     return r.requireCleared ? (regionDef(r.requireCleared)?.name ?? '') : ''
   }
 
-  /** 解除镇压,恢复主动历练 */
+  /** 停取收益,恢复主动历练(资格保留,随时可一键切回) */
   function unsuppress(regionId: string): void {
     player.unsuppressRegion(regionId)
     const r = regionDef(regionId)
-    ui.toast(`你已解除对${r?.name ?? '此地'}的镇压,此方妖邪再度骚动`, 'info')
+    ui.toast(`${r?.name ?? '此地'}已停取镇压收益,重新成为历练之地`, 'info')
+  }
+
+  /** 已取得镇压资格者:一键切回收益态 —— 镇压过就是镇压过,不必再打满二十场 */
+  function suppress(regionId: string): void {
+    player.suppressRegion(regionId)
+    const r = regionDef(regionId)
+    ui.toast(`你重掌${r?.name ?? '此地'}——镇压依旧,收益自取`, 'success')
   }
 
   /** 镇压区域每小时灵石产出速率(展示给玩家) */

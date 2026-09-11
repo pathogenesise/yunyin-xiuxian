@@ -220,8 +220,11 @@ function runBattle(now: number): void {
     const ui = useUiStore()
     player.updateRegionStats(region.id, result.win, result.rounds, damageTakenPct)
     player.recordRegionWin(region.id)
+    // 取得镇压资格即永久:「镇压过就不必再镇压」。
+    // 首次达成时自动转为收益态;此后收不收收益由玩家自行开关(见 AdventureView 的切换)。
     const suppressed = checkSuppression(player, region.id)
-    if (suppressed) {
+    if (suppressed && !player.suppressQualified.includes(region.id)) {
+      player.markSuppressQualified(region.id)
       player.suppressRegion(region.id)
       ui.toast(`你已彻底镇压${region.name},此地将自动产出资源`, 'rare')
     }

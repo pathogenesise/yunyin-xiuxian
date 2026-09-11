@@ -83,6 +83,13 @@ export const usePlayerStore = defineStore(
     // Phase 30 区域镇压(每个区域独立统计)
     const regionStats = ref<Record<string, import('@/core/suppress').RegionStats>>({})
     const suppressedRegions = ref<string[]>([])
+    /**
+     * 镇压资格(取得即永久,随世界记忆跨世保留)。
+     *
+     * 「镇压过就镇压过」:一旦对某地区域取得过绝对优势,此后随时可把它切回收益态,
+     * 不必再打满二十场重新证明一遍。收益是否正在收取是另一件事(见 suppressedRegions)。
+     */
+    const suppressQualified = ref<string[]>([])
     /** 镇压时间戳:区域 → 镇压开始的时刻(供复苏判定) */
     const suppressedSince = ref<Record<string, number>>({})
 
@@ -390,6 +397,11 @@ export const usePlayerStore = defineStore(
       // Phase 32.5:旧存档没有宿慧/履历/命题三项,按转世次数折算补齐,不让老玩家凭空掉档
       const r = reincarnation.value
       const count = Number.isFinite(r?.count) ? Math.max(0, r.count) : 0
+      // 旧存档没有「镇压资格」一栏:已有的镇压区域视为已取得资格,不让老玩家掉档
+      if (!Array.isArray(suppressQualified.value)) suppressQualified.value = []
+      for (const id of suppressedRegions.value) {
+        if (!suppressQualified.value.includes(id)) suppressQualified.value.push(id)
+      }
       reincarnation.value = {
         count,
         daoFruit: Number.isFinite(r?.daoFruit) ? Math.max(0, r.daoFruit) : 0,
@@ -450,6 +462,13 @@ export const usePlayerStore = defineStore(
       if (!suppressedRegions.value.includes(regionId)) {
         suppressedRegions.value = [...suppressedRegions.value, regionId]
         suppressedSince.value = { ...suppressedSince.value, [regionId]: Date.now() }
+      }
+    }
+
+    /** 记下镇压资格(幂等) —— 资格一旦取得便不再失,故与收益开关分开存 */
+    function markSuppressQualified(regionId: string): void {
+      if (!suppressQualified.value.includes(regionId)) {
+        suppressQualified.value = [...suppressQualified.value, regionId]
       }
     }
 
@@ -517,6 +536,7 @@ export const usePlayerStore = defineStore(
       lastCaveEventDay,
       regionStats,
       suppressedRegions,
+      suppressQualified,
       suppressedSince,
       nemeses,
       regionWins,
@@ -573,6 +593,7 @@ export const usePlayerStore = defineStore(
       updateRegionStats,
       suppressRegion,
       unsuppressRegion,
+      markSuppressQualified,
       recordRegionWin,
       setNemeses,
       adoptMentor,

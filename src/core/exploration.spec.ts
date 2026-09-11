@@ -167,6 +167,41 @@ describe('连胜(TASK-022 接线 · runBattle 胜负驱动 player.winStreak)', (
   })
 })
 
+/**
+ * 镇压资格只在**首次**达成时自动接管(DEC-018):
+ * 若每次优势取胜都自动转成收益态,玩家就没法自由选择「这一世我要历练它」。
+ */
+describe('镇压资格首次自动、此后自由', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    protect.value = false
+    combatWin.value = true
+  })
+
+  it('首次达成条件 → 自动转收益并记下资格;停取后再胜,不再自动接管', () => {
+    const player = usePlayerStore()
+    player.initCharacter('镇守', { roots: [] } as never)
+    // 已达镇压条件的一地
+    const stats = { totalFights: 30, avgRounds: 2, avgDamageTakenPct: 0.03, consecutiveWins: 30, lastUpdateAt: Date.now() }
+    player.regionStats.qingyun = { ...stats }
+
+    const now = Date.now()
+    forgeSession(now)
+    tickExploration(now)
+    expect(player.suppressedRegions, '首次达成应自动转收益').toContain('qingyun')
+    expect(player.suppressQualified).toContain('qingyun')
+
+    // 玩家改主意:停取收益,重新历练此地
+    player.unsuppressRegion('qingyun')
+    player.regionStats.qingyun = { ...stats }
+    const now2 = Date.now() + 60_000
+    forgeSession(now2)
+    tickExploration(now2)
+    expect(player.suppressedRegions, '已取得资格后不该再被自动接管').not.toContain('qingyun')
+    expect(player.suppressQualified).toContain('qingyun')
+  })
+})
+
 describe('闭关禁令:闭关期间不得进入历练(Phase 28 接线后)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

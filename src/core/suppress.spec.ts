@@ -12,6 +12,54 @@ describe('区域镇压系统', () => {
     setActivePinia(createPinia())
   })
 
+  /**
+   * 「镇压过就镇压过」(DEC-018):
+   * 取得资格是**一次性**的,此后收取收益只是一个开关 —— 停取不影响资格,
+   * 想切回来一键即可,不必重新打满二十场。收益可多处并存,历练一次只一处。
+   */
+  describe('镇压资格 · 收益自由开关', () => {
+    it('停取收益不丢资格,可一键切回', () => {
+      const player = usePlayerStore()
+      player.markSuppressQualified('qingyun')
+      player.suppressRegion('qingyun')
+      expect(player.suppressedRegions).toContain('qingyun')
+
+      player.unsuppressRegion('qingyun')
+      expect(player.suppressedRegions).not.toContain('qingyun')
+      expect(player.suppressQualified, '资格不该随停取而失去').toContain('qingyun')
+
+      player.suppressRegion('qingyun') // 一键切回,无需再战
+      expect(player.suppressedRegions).toContain('qingyun')
+    })
+
+    it('收益可多处同时收取,资格各自独立', () => {
+      const player = usePlayerStore()
+      for (const id of ['qingyun', 'luoxia', 'heifeng']) {
+        player.markSuppressQualified(id)
+        player.suppressRegion(id)
+      }
+      expect([...player.suppressedRegions].sort()).toEqual(['heifeng', 'luoxia', 'qingyun'])
+      player.unsuppressRegion('luoxia')
+      expect([...player.suppressedRegions].sort()).toEqual(['heifeng', 'qingyun'])
+      expect(player.suppressQualified).toContain('luoxia')
+    })
+
+    it('资格幂等:重复取得不会写重', () => {
+      const player = usePlayerStore()
+      player.markSuppressQualified('qingyun')
+      player.markSuppressQualified('qingyun')
+      expect(player.suppressQualified.filter(id => id === 'qingyun')).toHaveLength(1)
+    })
+
+    it('旧存档修复:已有镇压区域自动视为已取得资格', () => {
+      const player = usePlayerStore()
+      player.suppressedRegions = ['qingyun']
+      player.suppressQualified = []
+      player.sanitize()
+      expect(player.suppressQualified, '老存档不该丢失镇压资格').toContain('qingyun')
+    })
+  })
+
   describe('checkSuppression', () => {
     it('战斗次数不足时不触发镇压', () => {
       const player = usePlayerStore()
