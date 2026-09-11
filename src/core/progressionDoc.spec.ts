@@ -11,8 +11,16 @@ import {
   PROGRESSION_AXES,
   PROGRESSION_NOTES,
   MORTAL_TIME_PER_MAJOR,
-  OUTER_TIME_PER_MAJOR
+  OUTER_TIME_PER_MAJOR,
+  SORCERY_LAYERS,
+  SORCERY_SUMMARY
 } from '@/data/progressionDoc'
+import { CHANGING_TIERS, DIVINATION_COST } from './divination'
+import { MANSION_EVENT_LUCK } from './astronomy'
+import { GATES } from '@/data/qimen'
+import { MANSIONS, IMAGES } from '@/data/xiangxiu'
+import { PALACES, STARS } from '@/data/ziwei'
+import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
 import { baseCultPerSec, buildingCost, expRequirement, gongfaUpCost, qiCap, realmScale, stoneByTier, upgradeCost } from './formulas'
 import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { toNum } from '@/utils/gnum'
@@ -95,6 +103,54 @@ describe('数值体系说明 · 与公式同源', () => {
       if (m > 0) {
         expect(REALMS[m]!.lifespanYears).toBeGreaterThanOrEqual(REALMS[m - 1]!.lifespanYears * 2)
       }
+    }
+  })
+})
+
+describe('数值体系说明 · 术数四门不撒谎', () => {
+  const layer = (id: string) => SORCERY_LAYERS.find(s => s.id === id)!
+
+  it('四门齐备,且分属四种节奏(一时/一世/日更/一趟)', () => {
+    expect(SORCERY_LAYERS.map(s => s.id).sort()).toEqual(['gong', 'men', 'ming', 'xiang'])
+    for (const s of SORCERY_LAYERS) {
+      expect(s.name.length).toBeGreaterThan(2)
+      expect(s.cadence.length, `${s.name} 没说清节奏`).toBeGreaterThan(2)
+      expect(s.cost.length, `${s.name} 没说清代价`).toBeGreaterThan(1)
+      expect(s.note.length, `${s.name} 没说明分工`).toBeGreaterThan(6)
+    }
+  })
+
+  it('问卦一栏的数字就是问卦模块的数字', () => {
+    const gong = layer('gong')
+    expect(gong.cost).toContain(String(DIVINATION_COST))
+    expect(gong.cadence).toContain(String(CHANGING_TIERS[0]!.minutes))
+    expect(gong.cadence).toContain(String(CHANGING_TIERS[CHANGING_TIERS.length - 1]!.minutes))
+    expect(gong.note).toContain(String(TRIGRAMS.length))
+    expect(gong.note).toContain(String(HEXAGRAMS.length))
+  })
+
+  it('命格一栏的宫星之数就是紫微模块的数字', () => {
+    const ming = layer('ming')
+    expect(ming.note).toContain(String(PALACES.length))
+    expect(ming.note).toContain(String(STARS.length))
+  })
+
+  it('星象一栏的轮值与加成就是星象模块的数字', () => {
+    const xiang = layer('xiang')
+    expect(xiang.cadence).toContain(String(MANSIONS.length))
+    expect(xiang.cadence).toContain(String(IMAGES.length))
+    expect(xiang.note).toContain(String(Math.round(MANSION_EVENT_LUCK * 100)))
+  })
+
+  it('奇门一栏的门数就是八门之数,且说明里点明不碰道源倍数', () => {
+    const men = layer('men')
+    expect(men.note).toContain(String(GATES.length))
+    expect(men.note).toContain('道源')
+  })
+
+  it('总纲把五层各占一层说清楚(不是一锅加成)', () => {
+    for (const word of ['天时', '星象', '问卦', '命格', '择门']) {
+      expect(SORCERY_SUMMARY, `总纲漏了${word}`).toContain(word)
     }
   })
 })

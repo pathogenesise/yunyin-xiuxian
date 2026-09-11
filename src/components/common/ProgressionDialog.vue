@@ -63,6 +63,24 @@
         </p>
       </div>
 
+      <!-- 术数四门:时机各占一层 -->
+      <div class="card-ink px-3 py-2">
+        <p class="text-[10px] text-ink-faint">术数四门(时机各占一层,不是四份加成叠着发)</p>
+        <div class="mt-1.5 space-y-1.5">
+          <div v-for="s in SORCERY_LAYERS" :key="s.id" class="flex items-start gap-2">
+            <span class="w-[84px] shrink-0 text-ink-soft">{{ s.name }}</span>
+            <span class="min-w-0 grow">
+              <span class="block text-[10px] text-ink-faint">{{ s.cadence }} · 代价:{{ s.cost }}</span>
+              <span class="block text-[10px] leading-relaxed text-ink-faint">{{ s.note }}</span>
+            </span>
+          </div>
+        </div>
+        <p class="mt-1.5 text-[10px] leading-relaxed text-ink-soft">{{ SORCERY_SUMMARY }}</p>
+        <p class="mt-1 text-[10px] text-ink-faint">
+          四门的数字同样取自各自模块(问卦代价、卦的时长档位、星象加成、八门之数),此处不手写。
+        </p>
+      </div>
+
       <!-- 寿元:界域内复利,跨界一次大跃 -->
       <div class="card-ink px-3 py-2">
         <p class="text-[10px] text-ink-faint">寿元(界域内复利,跨界为大跃)</p>
@@ -98,8 +116,10 @@ import {
   LIFESPAN_CURVES,
   MORTAL_TIME_PER_MAJOR,
     OUTER_TIME_PER_MAJOR,
-    PROGRESSION_AXES,
-    PROGRESSION_NOTES
+  PROGRESSION_AXES,
+    PROGRESSION_NOTES,
+    SORCERY_LAYERS,
+    SORCERY_SUMMARY
 } from '@/data/progressionDoc'
 import { formatGN } from '@/utils/format'
 

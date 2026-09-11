@@ -29,6 +29,12 @@ import {
   UPGRADE_DUST_GROWTH
 } from './constants'
 import { LIFESPAN_WORLDS, REALMS, WORLDS, WORLD_BREAK_MAJOR } from './realms'
+import { DIVINATION_COST, CHANGING_TIERS } from '@/core/divination'
+import { MANSION_EVENT_LUCK } from '@/core/astronomy'
+import { PALACES, STARS } from './ziwei'
+import { GATES } from './qimen'
+import { MANSIONS, IMAGES } from './xiangxiu'
+import { TRIGRAMS, HEXAGRAMS } from './yijing'
 
 export interface ProgressionAxis {
   id: string
@@ -132,3 +138,56 @@ export const PROGRESSION_NOTES = {
     '突破失败损失部分修为(可被「护道」类词条减免),但已积余的部分仍留在账上'
   ]
 }
+
+/**
+ * 术数四门 —— 四层「时机」各占一层,不是四份加成叠着发。
+ *
+ * 说明页最容易被忽略的一段:玩家会问"这些是干什么的、会不会互相顶替"。
+ * 故这里把四门的**节奏**与**代价**摆出来,数字一律取自各自模块
+ * (问卦耗多少悟道点、卦管多久、星象加成几成、奇门几门),不手写。
+ */
+export interface SorceryLayer {
+  id: 'gong' | 'ming' | 'xiang' | 'men'
+  name: string
+  /** 节奏:多快轮换一次 */
+  cadence: string
+  /** 代价 */
+  cost: string
+  /** 管什么 */
+  note: string
+}
+
+export const SORCERY_LAYERS: SorceryLayer[] = [
+  {
+    id: 'gong',
+    name: '周易 · 问卦',
+    cadence: `一时之机 · 卦管 ${CHANGING_TIERS[0]!.minutes}~${CHANGING_TIERS[CHANGING_TIERS.length - 1]!.minutes} 分钟`,
+    cost: `悟道点 ${DIVINATION_COST} · 一事不二卜`,
+    note: `${TRIGRAMS.length} 卦为体、${HEXAGRAMS.length} 卦为用;动爻越多,卦力越盛而时限越短`
+  },
+  {
+    id: 'ming',
+    name: '紫微 · 命格',
+    cadence: '一世之格 · 常驻',
+    cost: '免费(转世重掷灵根即重排)',
+    note: `${PALACES.length} 宫 ${STARS.length} 主星定底色;力薄而常驻,不受时限,也不与卦叠加同类效果`
+  },
+  {
+    id: 'xiang',
+    name: '星象 · 值日',
+    cadence: `${MANSIONS.length} 日一轮 · ${IMAGES.length} 象配四界`,
+    cost: '免费、被动',
+    note: `只利所配界域:其地际遇 +${Math.round(MANSION_EVENT_LUCK * 100)}%,他处不加`
+  },
+  {
+    id: 'men',
+    name: '奇门 · 择门',
+    cadence: '一趟远征一择',
+    cost: '免费',
+    note: `${GATES.length} 门各有打法(续航/抢攻/守拙/速决);不碰道源倍数 —— 那是天道契约的事`
+  }
+]
+
+/** 术数四门的分工一句话(展示层用,避免把四层说成一锅加成) */
+export const SORCERY_SUMMARY =
+  '天时管全境之气,星象管一方界域,问卦管自己一时的机,命格定一世之格,择门定一趟的打法 —— 五层各占一层,互不顶替。'
