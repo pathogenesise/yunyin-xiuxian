@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 50,
+  "round": 51,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:25:19+00:00",
+  "updated_at": "2026-09-11T15:32:47+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 45,
+      "touched_round": 50,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -2551,6 +2551,41 @@
       "touched_round": 49,
       "summary": "数值体系补「突破与天劫」段:说明小层成功率不作无限下降(惩罚≠难度)、难度落在修为需求与天劫、天劫在指定境界封顶、失败损失可减免且积余留存;弹窗展示;审计绑定封顶境界名",
       "commit": "8b237df"
+    },
+    "ISS-045": {
+      "id": "ISS-045",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T15:32:47+00:00",
+      "updated_at": "2026-09-11T15:32:47+00:00",
+      "touched_round": 50,
+      "summary": "veinEconomyAudit 的装备重铸审计是写于机制缺位时的旧稿:打印「重铸成本递增机制缺失(当前固定成本)」并建议补公式,而 reforge.ts 早已实现 1.5^次数×品质×封存稀有度;断言停在 expect(true)(恒真,测不出东西)——审计本身在撒谎",
+      "severity": 0.4,
+      "confidence": 1.0
+    },
+    "CHG-065": {
+      "id": "CHG-065",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:32:47+00:00",
+      "updated_at": "2026-09-11T15:32:47+00:00",
+      "touched_round": 50,
+      "summary": "重铸审计改为行为验证:品质倍率/次数×1.5且达上限为 null/封存传说×3.0/层阶按 stoneByTier/第9次远超首次;头部旧口径 120→100 一并改正",
+      "commit": "4a80c02"
+    },
+    "EV-032": {
+      "id": "EV-032",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:32:47+00:00",
+      "updated_at": "2026-09-11T15:32:47+00:00",
+      "touched_round": 50,
+      "source": "故障注入:reforge.ts 的 1.5 改 2.0 → 次数递增用例即红;恢复后 115 files / 1090 tests 绿",
+      "summary": "重铸成本递增由恒真占位改为可打红的行为验证",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -3580,6 +3615,18 @@
       "to": "TASK-034",
       "type": "implements",
       "created_at": "2026-09-11T15:25:19+00:00"
+    },
+    {
+      "from": "CHG-065",
+      "to": "ISS-045",
+      "type": "resolves",
+      "created_at": "2026-09-11T15:32:47+00:00"
+    },
+    {
+      "from": "EV-032",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T15:32:47+00:00"
     }
   ]
 }
