@@ -1,6 +1,12 @@
 /**
  * 装备经济压力测试(Phase 19)
  * 用真实掉落生成模拟长期挂机的装备洪流,量化背包压力与品质分布
+ *
+ * ⚠ 口径:这是**基线模型**,不是玩家实况 ——
+ *   不含玩家的 dropRate / luck / 双倍掉落 / 首领保底,胜率按固定 0.85 估。
+ *   可用于:比不同层级之间的压力、看趋势与爆仓量级;
+ *   不可用于:宣称"某玩家每小时掉 N 件"(实况取决于其构筑与是否打首领)。
+ *   与 samsaraAudit 的绝对值警告同理:比值可用,绝对值不可用。
  */
 import { mulberry32, RandomService } from '@/utils/random'
 import { qualityDef, QUALITIES } from '@/data/qualities'
