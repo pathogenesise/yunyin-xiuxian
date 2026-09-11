@@ -112,4 +112,15 @@ describe('境界体系 · 结构', () => {
       expect(allowed[r.world], `${r.name} 的出处「${r.basis}」与界域「${r.world}」不符`).toContain(r.basis)
     }
   })
+
+  it('寿元随境界单调增长,且每一境至少翻倍(渡劫→真仙为飞升之大跃)', () => {
+    for (let i = 1; i <= MAX_MAJOR; i += 1) {
+      const prev = REALMS[i - 1]!.lifespanYears
+      const cur = REALMS[i]!.lifespanYears
+      expect(cur, `${REALMS[i]!.name} 寿元未高于 ${REALMS[i - 1]!.name}`).toBeGreaterThanOrEqual(prev * 2)
+    }
+    // 飞升是全流程唯一的一次寿元大跃(脱离凡尘),它必须显著高于寻常一境
+    const dujie = REALMS[WORLD_BREAK_MAJOR - 1]!.lifespanYears
+    expect(REALMS[WORLD_BREAK_MAJOR]!.lifespanYears / dujie).toBeGreaterThanOrEqual(10)
+  })
 })
