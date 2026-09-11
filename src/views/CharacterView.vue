@@ -53,7 +53,13 @@
         </div>
         <div v-if="modRows.length" class="ink-divider my-2.5" />
         <div class="grid grid-cols-2 gap-x-4 gap-y-1">
-          <p v-for="row in modRows" :key="row.label" class="flex justify-between text-[11px]">
+          <!-- 每行可点:玩家问的从来不只是「多少」,还有「从哪来」 -->
+          <button
+            v-for="row in modRows"
+            :key="row.label"
+            class="flex justify-between text-left text-[11px] active:opacity-60"
+            @click="toggleBreakdown(row.key)"
+          >
             <span class="text-ink-faint">
               {{ row.label }}
               <span v-if="row.capped" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
@@ -61,6 +67,22 @@
             <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
               {{ row.value > 0 ? '+' : '' }}{{ formatPercent(row.value) }}
             </span>
+          </button>
+        </div>
+        <p v-if="modRows.length" class="mt-1 text-[9px] text-ink-ghost">点一行看它从哪来</p>
+        <div v-if="breakdownRows.length" class="mt-1.5 rounded-md bg-paper-deep/60 px-2.5 py-2">
+          <p class="text-[10px] text-ink-soft">{{ STAT_NAMES[breakdownKey!] }} · 来源明细</p>
+          <p v-for="c in breakdownRows" :key="c.name" class="mt-0.5 flex justify-between text-[10px]">
+            <span class="text-ink-faint">
+              {{ c.name }}
+              <span v-if="c.onTop" class="ml-1 text-[9px] text-cinnabar/80">另乘</span>
+            </span>
+            <span class="tabular" :class="c.value > 0 ? 'text-azure' : 'text-cinnabar'">
+              {{ c.value > 0 ? '+' : '' }}{{ formatPercent(c.value) }}
+            </span>
+          </p>
+          <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
+            明细之和就是上面那个数;标「另乘」的不并入百分比,而是单独乘在攻防血上。
           </p>
         </div>
         <p v-if="softCappedNotes.length" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">
@@ -478,6 +500,20 @@
       capped: isSoftCapped(stats.value.mods, k)
     })).filter(x => x.value !== 0)
   )
+
+  /** 来源明细:点哪一行看哪一行 —— 数据来自 finalStats.breakdown,不在界面里另算 */
+  const breakdownKey = ref<AnyStatKey | null>(null)
+  const breakdownRows = computed(() => {
+    const key = breakdownKey.value
+    if (!key) return []
+    return stats.value.breakdown
+      .map(r => ({ name: r.name, value: r.mods[key] ?? 0, onTop: r.onTop === true }))
+      .filter(c => c.value !== 0)
+  })
+
+  function toggleBreakdown(key: AnyStatKey): void {
+    breakdownKey.value = breakdownKey.value === key ? null : key
+  }
 
   /**
    * 软上限从来不是暗改:越过之后超出部分按折扣计入,

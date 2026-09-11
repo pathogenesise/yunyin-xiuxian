@@ -145,6 +145,21 @@ export interface FinalStats {
   maxHp: GNum
   power: GNum
   mods: StatMods
+  /**
+   * 属性来源明细 —— 面板上「这个数从哪来」读它,不另算一遍。
+   *
+   * onTop 的那几条(道果)不并入百分比,而是单独乘在攻防血/修炼上:
+   * 故面板展示时要说清「另乘」,否则明细之和会对不上玩家看到的值。
+   */
+  breakdown: StatSourceRow[]
+}
+
+/** 一条属性来源:谁给的、给了多少 */
+export interface StatSourceRow {
+  name: string
+  mods: StatMods
+  /** true = 不在百分比里相加,而是另行乘算(目前只有道果) */
+  onTop?: boolean
 }
 
 // ============ 品质 ============

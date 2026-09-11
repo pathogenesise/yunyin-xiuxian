@@ -2,7 +2,7 @@
  * 属性汇总 —— Base × 装备 × 功法 × 天赋 × Buff × 建筑 = FinalStats
  * 纯函数:输入快照,输出最终属性
  */
-import type { AnyStatKey, FinalStats, GNum, StatMods } from '@/types'
+import type { AnyStatKey, FinalStats, GNum, StatMods, StatSourceRow } from '@/types'
 import { add, mulN } from '@/utils/gnum'
 import {
   DAO_FRUIT_COMBAT_BONUS,
@@ -22,6 +22,8 @@ export interface StatsInput {
   linggenMult: number
   /** 各来源的百分比加成集合(装备/功法/天赋/称号/灵兽/Buff/建筑) */
   modSources: StatMods[]
+  /** 各来源的名字(与 modSources 一一对应);漏写的那几个会显示成「来源 N」并被审计点名 */
+  sourceNames?: string[]
   /** 装备平铺数值 */
   equipFlats: { attack: GNum; defense: GNum; maxHp: GNum }
   /** 道果数量(转世永久加成) */
@@ -38,27 +40,45 @@ const DIMINISH_SET = new Set<AnyStatKey>(DIMINISH_KEYS)
  * 同一词条重复堆叠边际递减,混合构筑相对更值(Phase 19.5)
  */
 export function mergeMods(sources: StatMods[]): StatMods {
+  return mergeModsDetailed(sources).mods
+}
+
+/**
+ * 与 mergeMods 同一套算法,但额外回答「每一份最终值是谁给的」。
+ *
+ * 面板要显示来源明细,而合并里有两道非线性:递减词条按来源强弱排队打折、
+ * 软阈值再对合计折算。若直接把各来源的原始值列出来,明细之和会对不上面板 ——
+ * 这正是「解释了等于没解释」。故这里把两道折算都摊回来源身上:
+ * 打折后的那一份记给该来源,软阈值则给所有相关来源同乘一个系数(线性,故仍相加正确)。
+ */
+export function mergeModsDetailed(sources: StatMods[]): { mods: StatMods; effective: StatMods[] } {
   const out: StatMods = {}
-  const diminished = new Map<AnyStatKey, number[]>()
-  for (const src of sources) {
+  const effective: StatMods[] = sources.map(() => ({}))
+  const diminished = new Map<AnyStatKey, { src: number; value: number }[]>()
+  sources.forEach((src, si) => {
     for (const k in src) {
       const key = k as AnyStatKey
       const v = src[key]
       if (typeof v !== 'number' || v === 0) continue
       if (v > 0 && DIMINISH_SET.has(key)) {
         const list = diminished.get(key)
-        if (list) list.push(v)
-        else diminished.set(key, [v])
+        if (list) list.push({ src: si, value: v })
+        else diminished.set(key, [{ src: si, value: v }])
       } else {
         out[key] = (out[key] ?? 0) + v
+        effective[si]![key] = v
       }
     }
-  }
+  })
   for (const [key, list] of diminished) {
-    list.sort((a, b) => b - a)
+    list.sort((a, b) => b.value - a.value)
     let sum = out[key] ?? 0
     for (let i = 0; i < list.length; i += 1) {
-      sum += list[i]! * (DIMINISH_WEIGHTS[Math.min(i, DIMINISH_WEIGHTS.length - 1)] ?? 0.25)
+      const entry = list[i]!
+      const counted = entry.value * (DIMINISH_WEIGHTS[Math.min(i, DIMINISH_WEIGHTS.length - 1)] ?? 0.25)
+      sum += counted
+      const bucket = effective[entry.src]!
+      bucket[key] = (bucket[key] ?? 0) + counted
     }
     out[key] = sum
   }
@@ -68,10 +88,17 @@ export function mergeMods(sources: StatMods[]): StatMods {
     const v = out[key]
     const rule = SOFT_CAPS[key]
     if (rule && typeof v === 'number' && v > rule.cap) {
-      out[key] = rule.cap + (v - rule.cap) * rule.diminish
+      const scaled = rule.cap + (v - rule.cap) * rule.diminish
+      // 同乘一个系数摊回各来源:明细之和仍等于面板值
+      const factor = scaled / v
+      for (const bucket of effective) {
+        const own = bucket[key]
+        if (typeof own === 'number' && own !== 0) bucket[key] = own * factor
+      }
+      out[key] = scaled
     }
   }
-  return out
+  return { mods: out, effective }
 }
 
 /** 某键是否已进入软阈值递减区(展示层提示用) */
@@ -108,7 +135,7 @@ export function effectiveDaoFruit(fruit: number): number {
 }
 
 export function computeFinalStats(input: StatsInput): FinalStats {
-  const mods = mergeMods(input.modSources)
+  const { mods, effective } = mergeModsDetailed(input.modSources)
   const base = baseCombatStats(input.major, input.sub)
   const fruit = effectiveDaoFruit(input.daoFruit)
   const combatBonus = fruit * DAO_FRUIT_COMBAT_BONUS
@@ -121,5 +148,26 @@ export function computeFinalStats(input: StatsInput): FinalStats {
   const cultExtra = input.linggenMult - 1 + fruit * DAO_FRUIT_CULT_BONUS + (input.qiRich ? QI_RICH_BONUS : 0)
   mods.cultivationSpeed = Math.max(-0.9, (mods.cultivationSpeed ?? 0) + cultExtra)
 
-  return { attack, defense, maxHp, power: powerScore(attack, defense, maxHp), mods }
+  /*
+   * 来源明细:两部分 —— 各 mod 源真正计入的那一份(已有两道折算),以及
+   * 不走 modSources 的三条(灵根/道果/灵气充盈走修炼,道果另乘攻防血)。
+   * 面板据此回答「这个数从哪来」,而审计会核对「明细之和 = 面板值」。
+   */
+  const breakdown: StatSourceRow[] = input.modSources.map((_, i) => ({
+    name: input.sourceNames?.[i] ?? `来源 ${i + 1}`,
+    mods: effective[i] ?? {}
+  }))
+  const linggenExtra = input.linggenMult - 1
+  if (linggenExtra !== 0) breakdown.push({ name: '灵根', mods: { cultivationSpeed: linggenExtra } })
+  if (fruit > 0) {
+    breakdown.push({ name: '道果(修炼)', mods: { cultivationSpeed: fruit * DAO_FRUIT_CULT_BONUS } })
+    breakdown.push({
+      name: '道果(攻防血)',
+      mods: { attackPct: combatBonus, defensePct: combatBonus, maxHpPct: combatBonus },
+      onTop: true
+    })
+  }
+  if (input.qiRich) breakdown.push({ name: '灵气充盈', mods: { cultivationSpeed: QI_RICH_BONUS } })
+
+  return { attack, defense, maxHp, power: powerScore(attack, defense, maxHp), mods, breakdown }
 }

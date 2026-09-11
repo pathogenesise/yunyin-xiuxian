@@ -234,6 +234,21 @@ export const usePlayerStore = defineStore(
           fateModsValue.value,
           ...talentMods.value
         ],
+        // 名字与上面一一对应 —— 面板的「来源明细」直接读它们,不再另起一套说法
+        sourceNames: [
+          '装备',
+          '功法',
+          '丹药与增益',
+          '洞府建筑',
+          '灵脉',
+          '称号',
+          '师承',
+          '灵兽',
+          '天时',
+          '在身之卦',
+          '命格',
+          ...reincarnation.value.talents.map(id => `天赋·${talentDef(id)?.name ?? id}`)
+        ],
         equipFlats: inventory.equipFlats,
         daoFruit: reincarnation.value.daoFruit,
         qiRich: qiRich.value
@@ -269,6 +284,20 @@ export const usePlayerStore = defineStore(
           divinationMods.value,
           fateModsValue.value,
           ...talentMods.value
+        ],
+        sourceNames: [
+          useEndgameStore().activeSouls.length > 0 ? '器魂' : '凡器形意',
+          '功法',
+          '丹药与增益',
+          '洞府建筑',
+          '灵脉',
+          '称号',
+          '师承',
+          '灵兽',
+          '天时',
+          '在身之卦',
+          '命格',
+          ...reincarnation.value.talents.map(id => `天赋·${talentDef(id)?.name ?? id}`)
         ],
         equipFlats: inventory.equipFlats,
         daoFruit: reincarnation.value.daoFruit,
