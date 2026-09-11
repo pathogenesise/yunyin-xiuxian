@@ -21,6 +21,8 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import type { AnyStatKey, StatMods } from '@/types'
 import { mergeMods, mergeModsDetailed } from './statsCalc'
+import { modOf } from './statsCalc'
+import { baseCultPerSec } from './formulas'
 import { SOFT_CAPS } from '@/data/constants'
 import { usePlayerStore } from '@/stores/player'
 import { useInventoryStore } from '@/stores/inventory'
@@ -120,5 +122,26 @@ describe('属性来源明细 · 面板读的那一份', () => {
     expect(cult!.onTop).toBeFalsy()
     expect(combat, '道果对攻防血的加成没人认领').toBeDefined()
     expect(combat!.onTop, '这一份是乘上去的,不能混进百分比相加').toBe(true)
+  })
+
+  /**
+   * 修行页那一行字:「基础 × (1 + 各来源之和) = 修为/秒」。
+   *
+   * 修行速度是玩家盯得最紧的数,而它比别的属性多一层:页面把基础与加成拆开写,
+   * 于是三个数必须真的乘得回来 —— 否则玩家照着算一遍,发现对不上,
+   * 比不给解释更糟。
+   */
+  it('修行页那行字与引擎速率对得上:基础 × (1 + 来源之和) = cultPerSec', () => {
+    const player = usePlayerStore()
+    player.major = 6
+    player.sub = 3
+    player.reincarnation.talents = ['t_fuyuan']
+    player.reincarnation.daoFruit = 16
+    const breakdownSum = player.finalStats.breakdown
+      .filter(r => !r.onTop)
+      .reduce((s, r) => s + (r.mods.cultivationSpeed ?? 0), 0)
+    expect(breakdownSum, '来源之和与面板上的总加成不符').toBeCloseTo(modOf(player.finalStats.mods, 'cultivationSpeed'), 8)
+    const expected = baseCultPerSec(player.major, player.sub) * Math.max(0.05, 1 + breakdownSum)
+    expect(player.cultPerSec, '基础 × (1 + 来源之和) 不等于引擎算出的速率').toBeCloseTo(expected, 6)
   })
 })

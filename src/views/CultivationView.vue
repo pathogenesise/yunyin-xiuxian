@@ -14,7 +14,10 @@
       </div>
       <div class="mt-4">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
-          <span>修为 +{{ formatRate(player.cultPerSec) }}</span>
+          <button class="text-left active:opacity-60" @click="showCultBreakdown = !showCultBreakdown">
+            修为 +{{ formatRate(player.cultPerSec) }}
+            <span class="ml-0.5 text-[9px] text-ink-ghost">{{ showCultBreakdown ? '▾' : '▸' }}来路</span>
+          </button>
           <span>
             {{ formatGN(player.expFull ? player.expReq : player.exp) }} / {{ formatGN(player.expReq) }}
             <span v-if="player.expFull && player.expOverflow.m > 0" class="text-jade">
@@ -23,8 +26,25 @@
           </span>
         </div>
         <div :class="player.expFull ? 'bar-charged' : ''">
-          <ProgressBar :value="player.expProgress" color="var(--color-cinnabar)" :height="8" />
-        </div>
+        <ProgressBar :value="player.expProgress" color="var(--color-cinnabar)" :height="8" />
+      </div>
+      <!-- 修行速度是玩家最常盯的数,故在它自己那一行就地摊开:基础 × (1 + 各来源) -->
+      <div v-if="showCultBreakdown" class="mt-2 rounded-md bg-paper-deep/60 px-2.5 py-2 text-[10px]">
+        <p class="text-ink-soft">
+          基础 {{ formatRate(cultBase) }}({{ player.realm.name }}{{ player.subName }}{{ player.linggen ? `·${player.linggen.gradeName}` : '' }})
+          × (1 + <span class="tabular text-azure">{{ formatPercent(cultMultiplier) }}</span>)
+          = <span class="tabular text-cinnabar">{{ formatRate(player.cultPerSec) }}</span>
+        </p>
+        <p v-for="row in cultSources" :key="row.name" class="mt-0.5 flex justify-between">
+          <span class="text-ink-faint">{{ row.name }}</span>
+          <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
+            {{ row.value > 0 ? '+' : '' }}{{ formatPercent(row.value) }}
+          </span>
+        </p>
+        <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
+          这些都是修行速度的百分比加成,相加后乘在基础上 —— 与人物页属性明细同源。
+        </p>
+      </div>
       </div>
       <div class="mt-3">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
@@ -236,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
   import { useResourcesStore } from '@/stores/resources'
   import { useCultivationStore } from '@/stores/cultivation'
@@ -245,6 +265,8 @@
   import { attemptBreakthrough, breakthroughInfo } from '@/core/breakthrough'
   import { prepareBreakthrough, startRetreat, isRetreating, getRetreatRemainingSec } from '@/core/earlyGameService'
   import { toNum } from '@/utils/gnum'
+  import { baseCultPerSec } from '@/core/formulas'
+  import { modOf } from '@/core/statsCalc'
   import { currentTribulationPlan, verdictLabel, type TribulationPlan } from '@/core/tribulationDecision'
   import { reliefElements, rootElements } from '@/core/linggenAffinity'
   import { comprehendGongfa } from '@/core/gongfaService'
@@ -258,7 +280,7 @@
   import { buffDef } from '@/data/buffs'
   import { pillDef } from '@/data/pills'
   import { COMPREHEND_PAGE_COST } from '@/data/constants'
-  import { formatDuration, formatGN, formatNum, formatRate } from '@/utils/format'
+  import { formatDuration, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'
@@ -268,6 +290,20 @@
 
   const player = usePlayerStore()
   const resources = useResourcesStore()
+
+  /**
+   * 修行速度的来路 —— 玩家最常盯的就是这一行,故就地摊开:
+   *   基础(境界/层) × (1 + 各来源之和)
+   * 来源取自 finalStats.breakdown,与人物页属性明细同源,不在界面里另算一遍。
+   */
+  const showCultBreakdown = ref(false)
+  const cultBase = computed(() => baseCultPerSec(player.major, player.sub))
+  const cultSources = computed(() =>
+    player.finalStats.breakdown
+      .map(r => ({ name: r.name, value: r.mods.cultivationSpeed ?? 0 }))
+      .filter(r => r.value !== 0)
+  )
+  const cultMultiplier = computed(() => modOf(player.finalStats.mods, 'cultivationSpeed'))
   const cultivation = useCultivationStore()
   const inventory = useInventoryStore()
   const ui = useUiStore()
