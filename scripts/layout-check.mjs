@@ -7,10 +7,12 @@
  *   npm i --no-save playwright        # 或全局装;浏览器缓存在 ~/.cache/ms-playwright
  *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
  *
- * 它做三件事:
+ * 它做四件事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
  *   二 在 375×812 与 320×568 两个宽度下,逐页量 scrollWidth 与越界元素;
- *   三 把「底部导航五项」「无 pageerror」也一并核对。
+ *   三 把「底部导航五项」「无 pageerror」也一并核对;
+ *   四 把浏览器存储卡死(令 setItem 抛错),看设置页会不会把「写不进去」说出来 ——
+ *      静默丢档是玩家看不见的事故,只能靠这一条端到端核。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -84,6 +86,38 @@ for (const vp of VIEWPORTS) {
     }
   }
   if (pageErrors.length) failures.push(`[${vp.tag}] 页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await page.close()
+}
+
+// ---- 第四件事:存档写不进去时,设置页必须说话 ----
+{
+  const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
+  const pageErrors = []
+  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  await page.locator('input[type=checkbox]').first().check()
+  await page.getByRole('button', { name: /同意并开始/ }).first().click()
+  await page.waitForTimeout(3200)
+  await page.locator('input:not([type=file]):not([type=checkbox])').first().fill('存档自检')
+  await page.getByRole('button', { name: /踏\s*入\s*仙\s*途/ }).first().click()
+  await page.waitForTimeout(1200)
+
+  // 卡死存储:此后任何写盘都抛配额错误(引擎每秒仍在改状态,故几秒内必然撞上一次刷盘)
+  await page.evaluate(() => {
+    Storage.prototype.setItem = function () {
+      throw new DOMException('quota', 'QuotaExceededError')
+    }
+  })
+  await page.waitForTimeout(6500)
+  await page.evaluate(() => {
+    location.hash = '#/settings'
+  })
+  await page.waitForTimeout(800)
+  const warned = await page.evaluate(() => document.body.innerText.includes('上次写入存档失败'))
+  checked += 1
+  if (!warned) failures.push('[375] /settings → 存档写失败时设置页没有提示(静默丢档)')
+  if (pageErrors.length) failures.push(`[375] 存档失败场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await page.close()
 }
 

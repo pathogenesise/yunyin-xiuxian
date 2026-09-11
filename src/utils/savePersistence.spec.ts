@@ -18,7 +18,16 @@
  * 只测前者会退化成「写得越少越好」,把不写档也判成通过 —— 故两条必须同测。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SAVE_FLUSH_MS, clearAllSave, dropPendingWrites, flushSaveWrites, persistConfig, storageKey } from './storage'
+import {
+  SAVE_FLUSH_MS,
+  clearAllSave,
+  dropPendingWrites,
+  flushSaveWrites,
+  persistConfig,
+  saveWriteFailure,
+  storageKey,
+  subscribeSaveWriteFailure
+} from './storage'
 
 interface Probe {
   disk: Map<string, string>
@@ -48,6 +57,8 @@ beforeEach(() => {
   vi.useFakeTimers()
   dropPendingWrites()
   probe = installFakeStorage()
+  // 写盘失败状态是模块级的:每个用例都得从「没出过事」出发,否则前一条的失败会漏给下一条
+  clearAllSave()
 })
 
 afterEach(() => {
@@ -135,5 +146,100 @@ describe('存档写盘 · 省下的电不能拿存档换', () => {
     vi.advanceTimersByTime(SAVE_FLUSH_MS * 3)
     expect(probe.disk.has(key)).toBe(false)
     expect(storage.getItem(key)).toBeNull()
+  })
+})
+
+/**
+ * 写盘失败不许静默 —— 「省电」那一套的另一面。
+ *
+ * 从前 flushSaveWrites 的 catch 里什么也不做,紧接着 pending.clear() 把这一批丢掉:
+ * 存储被占满或被 WebView 拒绝时,玩家可能玩了几小时,一批分片一片也没落盘,
+ * 而界面上毫无迹象(设置页照旧显示「存档版本 v2」)。这一组守三件事:
+ *   一 失败要浮出来(订阅方收得到,状态读得到);
+ *   二 失败的那一片不许丢 —— 留在队列里,下一次刷盘重试;
+ *   三 恢复之后要报一声「好了」,并清掉警告(不能一红到底)。
+ */
+describe('存档写盘 · 失败不许静默', () => {
+  /** 让 localStorage.setItem 按开关抛错(模拟容量满/被拒);allow(true) = 能写得进去 */
+  function installJammedStorage(probe: Probe): { allow: (ok: boolean) => void } {
+    let jammed = false
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => probe.disk.get(k) ?? null,
+      setItem: (k: string, v: string) => {
+        if (jammed) throw new DOMException('quota', 'QuotaExceededError')
+        probe.disk.set(k, v)
+        probe.writes += 1
+      },
+      removeItem: (k: string) => probe.disk.delete(k),
+      clear: () => probe.disk.clear(),
+      key: () => null,
+      length: 0
+    })
+    return {
+      allow: (ok: boolean) => {
+        jammed = !ok
+      }
+    }
+  }
+
+  it('写不进去时:状态浮出来、订阅方被通知、那一片留在队列里等重试', () => {
+    const jam = installJammedStorage(probe)
+    const seen: (string[] | null)[] = []
+    const unsubscribe = subscribeSaveWriteFailure(f => seen.push(f ? f.keys : null))
+    const { storage, serializer, key } = persistConfig('player')
+
+    jam.allow(true)
+    storage.setItem(key, serializer.serialize({ exp: 1 }))
+    flushSaveWrites()
+    expect(probe.writes).toBe(1)
+    expect(saveWriteFailure()).toBeNull()
+
+    const beforeFail = probe.disk.get(key)
+    jam.allow(false)
+    storage.setItem(key, serializer.serialize({ exp: 2 }))
+    flushSaveWrites()
+    expect(saveWriteFailure(), '写失败却没有任何状态').not.toBeNull()
+    expect(seen, '订阅方应当收到一次失败通知').toEqual([[key]])
+    // 磁盘上还是失败前那一版;最新的那一份留在队列里(读得到),下一次刷盘还有机会写进去
+    expect(probe.disk.get(key), '写失败却把磁盘上的旧档动了').toBe(beforeFail)
+    expect(serializer.deserialize(storage.getItem(key)!)).toEqual({ exp: 2 })
+    jam.allow(true)
+    flushSaveWrites()
+    expect(probe.writes, '恢复后重试应当真的写进去').toBe(2)
+    expect(probe.disk.get(key), '重试没有真正落盘').not.toBe(beforeFail)
+    expect(saveWriteFailure(), '恢复后警告要清掉').toBeNull()
+    expect(seen, '恢复也要报一声').toEqual([[key], null])
+    unsubscribe()
+  })
+
+  it('持续失败不重复轰炸:只在状态翻转时通知一次', () => {
+    const jam = installJammedStorage(probe)
+    let calls = 0
+    const unsubscribe = subscribeSaveWriteFailure(() => {
+      calls += 1
+    })
+    const { storage, serializer, key } = persistConfig('player')
+    jam.allow(false)
+    storage.setItem(key, serializer.serialize({ exp: 1 }))
+    flushSaveWrites()
+    vi.advanceTimersByTime(SAVE_FLUSH_MS)
+    vi.advanceTimersByTime(SAVE_FLUSH_MS)
+    expect(calls, '反复失败只该通知一次').toBe(1)
+    unsubscribe()
+  })
+
+  it('清档会清掉旧的失败警告(那批待写内容已经不打算写了)', () => {
+    const jam = installJammedStorage(probe)
+    const seen: (string[] | null)[] = []
+    const unsubscribe = subscribeSaveWriteFailure(f => seen.push(f ? f.keys : null))
+    const { storage, serializer, key } = persistConfig('player')
+    jam.allow(false)
+    storage.setItem(key, serializer.serialize({ exp: 1 }))
+    flushSaveWrites()
+    expect(saveWriteFailure()).not.toBeNull()
+    clearAllSave()
+    expect(saveWriteFailure()).toBeNull()
+    expect(seen).toEqual([[key], null])
+    unsubscribe()
   })
 })

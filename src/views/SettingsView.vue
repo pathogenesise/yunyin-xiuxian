@@ -64,6 +64,10 @@
     <SectionTitle title="存档" />
     <div class="card-ink space-y-2 px-4 py-3">
       <p class="text-[11px] text-ink-faint tabular">存档版本 v{{ SAVE_VERSION }} · 修行时长 {{ formatDuration(game.totalPlaySec) }}</p>
+      <!-- 写盘失败时这里必须说话:玩家可能正玩得兴起,却不知道进度没进档 -->
+      <p v-if="saveFailed" class="rounded-md border border-cinnabar/40 bg-cinnabar/8 px-2 py-1.5 text-[11px] leading-relaxed text-cinnabar">
+        上次写入存档失败 —— 浏览器存储可能已满。请先「导出存档」留一份,再清理浏览器数据或换设备导入。
+      </p>
       <div class="grid grid-cols-2 gap-2">
         <button class="btn-ghost !text-[12px]" @click="onExport">导出存档</button>
         <button class="btn-ghost !text-[12px]" @click="triggerImport">导入存档</button>
@@ -126,7 +130,7 @@
   import { importSaveText, resetGame, reloadGame, sealStorageWrites } from '@/core/save'
   import { exportSaveToDevice } from '@/core/savePlatform'
   import { formatDuration } from '@/utils/format'
-  import { SAVE_VERSION } from '@/utils/storage'
+  import { SAVE_VERSION, saveWriteFailure, subscribeSaveWriteFailure } from '@/utils/storage'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
@@ -136,6 +140,12 @@
   const settings = useSettingsStore()
   const game = useGameStore()
   const ui = useUiStore()
+
+  /** 写盘失败状态:进页面先读一次,之后随订阅翻转 */
+  const saveFailed = ref(saveWriteFailure() !== null)
+  const unsubscribeSaveFailure = subscribeSaveWriteFailure(failure => {
+    saveFailed.value = failure !== null
+  })
 
   const THEME_OPTIONS = [
     { id: 'auto', label: '跟随系统' },
@@ -171,6 +181,7 @@
 
   // 弹窗开着就离开页面时兜底恢复
   onUnmounted(() => {
+    unsubscribeSaveFailure()
     if (resetConfirm.value) engine.resume()
   })
 

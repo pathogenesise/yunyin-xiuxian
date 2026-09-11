@@ -38,7 +38,9 @@
   import { onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useGameStore } from '@/stores/game'
+  import { useUiStore } from '@/stores/ui'
   import { useSettingsStore } from '@/stores/settings'
+  import { subscribeSaveWriteFailure } from '@/utils/storage'
   import { engine } from '@/core/engine'
   import { applyTheme, initTheme } from '@/core/theme'
   import { configureAudio, playSfx, stopBgm, unlockAudio } from '@/core/audio'
@@ -55,6 +57,7 @@
   import CaveEventModal from '@/components/dongfu/CaveEventModal.vue'
 
   const game = useGameStore()
+  const ui = useUiStore()
   const settings = useSettingsStore()
   const route = useRoute()
 
@@ -74,6 +77,7 @@
   }
 
   let unsubscribeTheme: () => void = () => undefined
+  let unsubscribeSaveFailure: () => void = () => undefined
 
   /** 浏览器要求首次交互后才可出声;顺带给所有按钮一个轻点击音 */
   function onPointerDown(e: PointerEvent): void {
@@ -99,12 +103,22 @@
 
   onMounted(() => {
     unsubscribeTheme = initTheme(() => settings.theme)
+    /*
+     * 存档写不进去必须让玩家知道:静默失败意味着从现在起的进度都不会进档,
+     * 而他可能正玩得兴起。这里只说两件事 —— 出事了(并给出可做的事:导出备份),
+     * 以及什么时候好了。反复失败不重复弹(订阅只在状态翻转时回调)。
+     */
+    unsubscribeSaveFailure = subscribeSaveWriteFailure(failure => {
+      if (failure) ui.toast('存档写入失败 —— 浏览器存储可能已满,建议先导出备份', 'warn')
+      else ui.toast('存档已恢复写入', 'info')
+    })
     engine.start()
     window.addEventListener('pointerdown', onPointerDown)
   })
 
   onUnmounted(() => {
     unsubscribeTheme()
+    unsubscribeSaveFailure()
     engine.stop()
     stopBgm()
     window.removeEventListener('pointerdown', onPointerDown)
