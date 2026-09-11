@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 96,
+  "round": 97,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T21:29:05+00:00",
+  "updated_at": "2026-09-11T21:48:37+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 73,
+      "touched_round": 96,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -3047,11 +3047,11 @@
       "id": "ISS-049",
       "type": "issue",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-11T16:41:32+00:00",
-      "updated_at": "2026-09-11T16:41:32+00:00",
-      "touched_round": 60,
-      "summary": "全量并行跑测试时,savePersistence『读己所写:尚未落盘也能立刻读回最新值』出现过一次红(未捕获断言原文);此后单跑与连续 4 次全量均绿,未能复现 —— 疑似并行负载下的偶发,不可当已修",
+      "updated_at": "2026-09-11T21:48:37+00:00",
+      "touched_round": 96,
+      "summary": "全量并行跑测试时,savePersistence 偶发一红(两度出现:round 60 那次是「读己所写」,round 96 这轮全量又出现一次,当次输出未留存,随后连续 6 次全量 1336 例全绿,单跑亦绿);疑与并行负载下的模块级状态/真假定时器交界有关,不可当已修",
       "severity": 0.2,
       "confidence": 0.3
     },
@@ -4778,6 +4778,67 @@
       "touched_round": 95,
       "summary": "新增奇缘「云海故碑」三程(门槛 9/12/15),奇缘 6 条 15 程、随机事件表 70→73;见闻志按 chainOfEvent 分出奇缘;chainProgression 判据改口径并补「起得了头」「不止起于人间」两条",
       "commit": "557e0e7"
+    },
+    "ISS-070": {
+      "id": "ISS-070",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:41:16+00:00",
+      "updated_at": "2026-09-11T21:48:37+00:00",
+      "touched_round": 96,
+      "summary": "存档写盘失败是静默的:flushSaveWrites 的 catch 什么也不做,紧接着 pending.clear() 把这一批丢掉 —— 浏览器存储被占满/被 WebView 拒绝时,玩家可能玩几小时、一片也没落盘,而界面上毫无迹象(设置页照旧显示「存档版本 v2」);只有导入路径会报错(存档中的「写入存档失败」),日常自动存档这条路不会",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-062": {
+      "id": "TASK-062",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T21:41:16+00:00",
+      "updated_at": "2026-09-11T21:48:37+00:00",
+      "touched_round": 96,
+      "summary": "写盘失败要浮出来:失败分片留在队列里自动重试、状态可订阅可读(App 弹提示、设置页显示警告)、恢复时报一声;并把「存储卡死时设置页必须说话」加进排版自检脚本(端到端)",
+      "category": "robustness",
+      "severity": 0.45,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "HYP-029": {
+      "id": "HYP-029",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:41:20+00:00",
+      "updated_at": "2026-09-11T21:41:20+00:00",
+      "touched_round": 96,
+      "summary": "「省电」与「丢档」是一对:凡是把写入推迟/合批的层,都必须回答「这一批没写成功怎么办」—— 否则 catch 一吞、队列一清,失败就变成玩家看不见的静默丢档;正确形态是失败分片留在队列重试 + 状态可观测(订阅/可读)+ 恢复可报,并有一条端到端检查(卡死存储后界面必须说话)",
+      "confidence": 0.8
+    },
+    "EV-076": {
+      "id": "EV-076",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:41:20+00:00",
+      "updated_at": "2026-09-11T21:41:20+00:00",
+      "touched_round": 96,
+      "summary": "savePersistence.spec 增「失败不许静默」3 例(状态与订阅、失败分片留在队列并自动重试、清档清警告);layout-check 增第四件事「卡死 Storage.setItem 后设置页必须出现『上次写入存档失败』」;两次故障注入(failed.push 去掉 → 3 例红;失败分片直接丢 → 1 例红)与一次端到端注入(设置页警告改 v-if=false → 脚本报「静默丢档」)均转红;全量 132 文件 1336 用例连续 6 次绿",
+      "confidence": 0.9,
+      "source": "src/utils/savePersistence.spec.ts"
+    },
+    "CHG-120": {
+      "id": "CHG-120",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T21:48:30+00:00",
+      "updated_at": "2026-09-11T21:48:30+00:00",
+      "touched_round": 96,
+      "summary": "写盘失败可见化:失败分片留队列+自动重试;subscribeSaveWriteFailure/saveWriteFailure 可订阅可读;App 弹提示、设置页显示红字警告、恢复报一声;layout-check 增「卡死存储后设置页必须说话」端到端场景;新增 3 例用例",
+      "commit": "66e6a43"
     }
   },
   "edges": [
@@ -6725,6 +6786,36 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T21:28:59+00:00"
+    },
+    {
+      "from": "ISS-070",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T21:48:30+00:00"
+    },
+    {
+      "from": "TASK-062",
+      "to": "ISS-070",
+      "type": "addresses",
+      "created_at": "2026-09-11T21:48:30+00:00"
+    },
+    {
+      "from": "CHG-120",
+      "to": "TASK-062",
+      "type": "implements",
+      "created_at": "2026-09-11T21:48:30+00:00"
+    },
+    {
+      "from": "CHG-120",
+      "to": "ISS-070",
+      "type": "resolves",
+      "created_at": "2026-09-11T21:48:31+00:00"
+    },
+    {
+      "from": "EV-076",
+      "to": "HYP-029",
+      "type": "validates",
+      "created_at": "2026-09-11T21:48:31+00:00"
     }
   ]
 }
