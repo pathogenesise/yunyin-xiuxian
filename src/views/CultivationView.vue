@@ -32,7 +32,7 @@
           <span>
             {{ formatNum(Math.floor(Math.min(resources.qi, player.qiCapValue))) }} / {{ formatNum(player.qiCapValue) }}
             <span v-if="resources.qi > player.qiCapValue" class="text-azure">
-              · 积 +{{ formatNum(Math.floor(resources.qi - player.qiCapValue)) }}
+              · 积余 {{ formatNum(Math.floor(resources.qi)) }} / {{ formatNum(player.qiBankCapValue) }}
             </span>
           </span>
         </div>

@@ -73,4 +73,9 @@ describe('灵气积余(可存到标称容量的倍数)', () => {
     resources.setQi(-100, player.qiCapValue)
     expect(resources.qi).toBe(0)
   })
+
+  it('灵气积余上限对外可见 = 标称容量 × 积余倍数(界面据此显示)', () => {
+    const player = usePlayerStore()
+    expect(player.qiBankCapValue).toBeCloseTo(player.qiCapValue * QI_BANK_MULT, 6)
+  })
 })
