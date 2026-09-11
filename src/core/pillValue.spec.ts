@@ -19,7 +19,7 @@ import { describe, it, expect } from 'vitest'
 import { PILLS, pillDef } from '@/data/pills'
 import { buffDef } from '@/data/buffs'
 import { qualityDef } from '@/data/qualities'
-import { MAX_MAJOR } from '@/data/realms'
+import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import {
   DROP_CRAFT_RATIO,
   craftBattlesOf,
@@ -253,6 +253,22 @@ describe('定价法则', () => {
   it('E —— 每个大境界的掉落池非空', () => {
     for (let m = 0; m <= MAX_MAJOR; m += 1) {
       expect(dropPoolAt(m).length, `境界 ${m} 掉不出任何丹药`).toBeGreaterThan(0)
+    }
+  })
+
+  /**
+   * 【法则 E2】仙界以上的掉落池里得有该境界用得上的丹。
+   *
+   * 「非空」是字面满足:如果高境界只能捡到炼气期的妖血丹,池子不空却毫无内容。
+   * 这条要求仙界及其上每一境的掉落池里,至少有一味是高界(准入境界 ≥ 仙界门槛)的丹。
+   */
+  it('E2 —— 仙界以上的掉落池不是入门丹的堆砌', () => {
+    for (let m = WORLD_BREAK_MAJOR; m <= MAX_MAJOR; m += 1) {
+      const pool = dropPoolAt(m)
+      expect(
+        pool.some(p => p.minRealm >= WORLD_BREAK_MAJOR),
+        `境界 ${m} 只能捡到入门丹`
+      ).toBe(true)
     }
   })
 

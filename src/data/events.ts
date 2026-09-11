@@ -1,4 +1,4 @@
-/** 随机事件库 —— 50 个,数据驱动,按区域标签匹配 */
+/** 随机事件库 —— 58 个随机事件 + 11 条机缘,数据驱动,按区域标签匹配 */
 import type { EventChoice, EventDef, EventEffect, EventOutcome } from '@/types'
 
 function o(weight: number, text: string, ...effects: EventEffect[]): EventOutcome {

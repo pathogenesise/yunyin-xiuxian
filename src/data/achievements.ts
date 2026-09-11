@@ -1,8 +1,8 @@
 /**
- * 成就库 —— 50 个,长期目标
+ * 成就库 —— 61 个,长期目标
  *
  * 未达成者在界面上一律以「???」示人(见 views/CollectionView.vue),
- * 所以此表不再有"隐藏成就"一说 —— 五十个位子人人平等,成了才现名目。
+ * 所以此表不再有"隐藏成就"一说 —— 每个位子人人平等,成了才现名目。
  */
 import type { AchievementDef, AchvCond, CounterKey, RewardBundle } from '@/types'
 
