@@ -25,7 +25,7 @@ const CATEGORIES = [
   { name: 'Economy     资源经济', match: ['economySim', 'lootSim', 'loot.spec', 'petLuck', 'pillValue', 'veinEconomyAudit', 'veinVisibility', 'resourceGuidance', 'offlineCap', 'veinService', 'qiRepair'] },
   {
     name: 'Regression  服务与归因',
-    match: ['loadoutService', 'battleAnalysis', 'loreService', 'contentReachability', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform', 'dataHeaderAudit', 'deadExportAudit', 'chainProgression', 'vocabularyCoverage', 'storeResilience']
+    match: ['loadoutService', 'battleAnalysis', 'loreService', 'contentReachability', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform', 'dataHeaderAudit', 'deadExportAudit', 'chainProgression', 'vocabularyCoverage', 'storeResilience', 'rewardReachability']
   },
   { name: 'Celestial   真仙终局', match: ['celestialSim', 'endgameService', 'phase21', 'soulForge', 'souls.spec', 'rulesetEra', 'qimen'] },
   {

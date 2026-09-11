@@ -104,7 +104,14 @@ export function checkAchievements(): void {
   const quests = useQuestsStore()
   for (const def of ACHIEVEMENTS) {
     if (quests.hasAchieved(def.id)) continue
-    if (def.cond.type === 'quality' || def.cond.type === 'custom') continue
+    if (def.cond.type === 'quality') continue
+    /**
+     * custom 分两种:
+     * - `realm_<major>_<sub>`:状态可判,这里直接判(此前被一并跳过,于是这条分支成了死代码,
+     *   「炼气圆满」那类成就根本无人解锁);
+     * - 其余状态型键(lifespanLow / lifespan10k / stone1m):由 checkStateAchievements 显式触发。
+     */
+    if (def.cond.type === 'custom' && !/^realm_\d+_\d+$/.test(def.cond.key)) continue
     if (evalCond(def.cond)) unlockAchievement(def.id)
   }
 }
@@ -192,6 +199,8 @@ export function trackRealm(): void {
       unlockAchievement(def.id)
     }
   }
+  // 小层也走这里:realm_<major>_<sub> 型成就要在「修至本境圆满」那一刻就解锁
+  checkAchievements()
   checkMainQuest()
 }
 
