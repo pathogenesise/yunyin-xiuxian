@@ -80,6 +80,7 @@
   import { ARTIFACTS } from '@/data/artifacts'
   import { PETS } from '@/data/pets'
   import { EVENTS } from '@/data/events'
+  import { chainOfEvent } from '@/data/chains'
   import { TALENTS, TALENT_GRADE_COLORS } from '@/data/talents'
   import { qualityDef } from '@/data/qualities'
   import { branchCodex, materialCodex, type CodexCat, type CodexEntry } from '@/ui/codex'
@@ -210,7 +211,14 @@
         'event',
         '见闻志',
         c.event,
-        EVENTS.map(e => ({ id: e.id, name: e.title, desc: e.text, meta: '历练际遇' }))
+        // 奇缘的阶段事件与普通际遇同表,但在见闻志里得各归各的名 ——
+        // 一律写成「历练际遇」,玩家会以为那条缘也能在随便哪个地界撞见
+        EVENTS.map(e => ({
+          id: e.id,
+          name: e.title,
+          desc: e.text,
+          meta: chainOfEvent(e.id) ? '奇缘' : '历练际遇'
+        }))
       ),
       makeCat(
         'talent',

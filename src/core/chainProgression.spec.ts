@@ -14,11 +14,14 @@
  *   三 推进的因果:结一程才轮到下一程,断了缘就没有后文。
  */
 import { describe, expect, it, beforeEach } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
 import { RandomService, mulberry32 } from '@/utils/random'
 import { CHAINS, CHAIN_EVENTS, CHAIN_TAG, chainOfEvent } from '@/data/chains'
 import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
 import { REGIONS } from '@/data/regions'
+import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import {
   chainProgressRows,
   pendingChainStages,
@@ -84,10 +87,38 @@ describe('奇缘 · 数据自洽', () => {
 })
 
 describe('奇缘 · 结一程才轮到下一程', () => {
-  it('未起之缘都在第一程上等着', () => {
-    const pending = pendingChainStages(0)
-    expect(pending.length).toBe(CHAINS.length)
-    for (const p of pending) expect(p.stage).toBe(0)
+  it('未起之缘都在第一程上等着 —— 门槛已到的那些', () => {
+    // 奇缘不再全起于人间:云海故碑第一程在真仙。故这里按「门槛是否已到」筛,
+    // 而不是一律等于链数 —— 判据仍是「未起的缘停在第一程」,不是「全部同时可选」。
+    for (const major of [0, 9, 12, 15]) {
+      const pending = pendingChainStages(major)
+      const ready = CHAINS.filter(c => {
+        const first = eventDef(c.stages[0]!)!
+        return (first.minRealm ?? 0) <= major
+      })
+      expect(pending.length, `境界 ${major} 该等着的缘数与门槛不符`).toBe(ready.length)
+      for (const p of pending) expect(p.stage).toBe(0)
+      expect(pending.every(p => (eventDef(CHAINS.find(c => c.id === p.chainId)!.stages[0]!)!.minRealm ?? 0) <= major)).toBe(true)
+    }
+  })
+
+  it('每条缘都起得了头:门槛不超过最高境界,且到门槛时确实待走', () => {
+    for (const c of CHAINS) {
+      const first = eventDef(c.stages[0]!)!
+      expect(first.minRealm ?? 0, `${c.name} 的起点门槛高过全境之极`).toBeLessThanOrEqual(MAX_MAJOR)
+      const pending = pendingChainStages(first.minRealm ?? 0)
+      expect(
+        pending.some(p => p.chainId === c.id),
+        `${c.name} 到了自己的起点门槛却还没待走 —— 这条缘永远起不了头`
+      ).toBe(true)
+    }
+  })
+
+  it('奇缘不止起于人间:高界也该有自己的缘', () => {
+    // 从前五条缘的起点都在人间寻常处,真仙之上能走的只有凡间的旧账。
+    // 这条守的是那次补充:至少有一条缘的起点在仙界以上(而非把凡间那条拉长)。
+    const starts = CHAINS.map(c => eventDef(c.stages[0]!)!.minRealm ?? 0)
+    expect(Math.max(...starts), '全部奇缘仍起于人间').toBeGreaterThanOrEqual(WORLD_BREAK_MAJOR)
   })
 
   it('解了哪一程,那条缘才往前一程', () => {
@@ -122,6 +153,13 @@ describe('奇缘 · 结一程才轮到下一程', () => {
 })
 
 describe('奇缘 · 不进区域随机池,但真的会出现', () => {
+  it('见闻志里奇缘与际遇各归各的名(阶段事件与普通事件同表)', () => {
+    // 事件同表是引擎的需要;展示层若一律写「历练际遇」,玩家会以为那条缘
+    // 也能在随便哪个地界撞见 —— 与「奇缘不属于任何地界」这条契约正好相反。
+    const view = readFileSync(resolve(__dirname, '../views/CollectionView.vue'), 'utf8')
+    expect(view, '见闻志应按 chainOfEvent 分出奇缘').toContain("chainOfEvent(e.id) ? '奇缘' : '历练际遇'")
+  })
+
   it('区域事件池一个奇缘阶段都没有', () => {
     const pool = regionEventPoolFor(REGIONS[0]!)
     expect(pool.length).toBeGreaterThan(0)
