@@ -1,4 +1,4 @@
-/** 法宝池 —— 26 件,拥有被动属性与自动触发的主动神通 */
+/** 法宝池 —— 32 件,拥有被动属性与自动触发的主动神通 */
 import type { ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
 
 function f(
@@ -357,6 +357,85 @@ export const ARTIFACTS: ArtifactDef[] = [
     4,
     { type: 'heal', pctMaxHp: 0.18 },
     'gem'
+  ),
+  // 高界补两件:法宝位只有两个,一个界域若只给两件,「带上就完事」——取舍就没有了
+  f(
+    'af_xianjian',
+    '青锋仙剑',
+    'immortal',
+    23,
+    '剑光过处,仙庭无声',
+    { attackPct: 0.06, critRate: 0.03 },
+    '斩尘',
+    '每 3 回合剑气纵横,造成 240% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.4 },
+    'sword'
+  ),
+  f(
+    'af_yunwen',
+    '云纹仙印',
+    'immortal',
+    23,
+    '印上云纹流动,身随云走',
+    { speed: 0.05, dodgeRate: 0.04 },
+    '云行',
+    '每 4 回合踏云掠影,获得 12% 生命护盾',
+    4,
+    { type: 'shield', pctMaxHp: 0.12 },
+    'wind'
+  ),
+  f(
+    'af_zhenshen',
+    '镇神印',
+    'divine',
+    28,
+    '一印落下,神域皆静',
+    { damageReduction: 0.05, maxHpPct: 0.07 },
+    '镇神',
+    '每 3 回合镇压四方,敌人伤害降低 18%',
+    3,
+    { type: 'weaken', pct: 0.18 },
+    'gem'
+  ),
+  f(
+    'af_shenlei',
+    '神雷珠',
+    'divine',
+    28,
+    '珠内藏一道不散的神雷',
+    { attackPct: 0.06, damageBonus: 0.06 },
+    '雷殛',
+    '每 3 回合引雷加身,造成 260% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.6 },
+    'zap'
+  ),
+  f(
+    'af_qinglian',
+    '混沌青莲',
+    'divine',
+    31,
+    '莲开于混沌未判之时,不染不灭',
+    { cultivationSpeed: 0.08, qiRegen: 0.08 },
+    '莲开',
+    '每 4 回合青莲护身,获得 16% 生命护盾',
+    4,
+    { type: 'shield', pctMaxHp: 0.16 },
+    'leaf'
+  ),
+  f(
+    'af_xujiesuo',
+    '虚界梭',
+    'divine',
+    31,
+    '一梭穿虚,来去皆不留痕',
+    { luck: 0.06, dropRate: 0.06, explorationSpeed: 0.06 },
+    '虚空挪移',
+    '每 4 回合挪移虚界,敌人伤害降低 20%',
+    4,
+    { type: 'weaken', pct: 0.2 },
+    'sparkles'
   )
 ]
 

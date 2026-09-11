@@ -24,7 +24,7 @@ import { ENEMIES } from '@/data/enemies'
 import { GONGFA } from '@/data/gongfa'
 import { PILLS } from '@/data/pills'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
-import { ARTIFACTS } from '@/data/artifacts'
+import { ARTIFACTS, ARTIFACT_MAX_SLOTS } from '@/data/artifacts'
 import { SECRET_REALMS } from '@/data/secretRealms'
 import { WORLD_WEATHERS } from '@/core/weather'
 
@@ -94,6 +94,19 @@ describe('内容密度 · 每一境都得有新东西', () => {
     for (const r of rows) {
       expect(r.装备模板, `${r.world} 没有专属装备模板`).toBeGreaterThan(0)
       expect(r.法宝, `${r.world} 没有专属法宝`).toBeGreaterThan(0)
+    }
+  })
+
+  it('高界的法宝也成取舍:一个界域的法宝件数要多于可装备的槽位数', () => {
+    // 法宝位只有 ARTIFACT_MAX_SLOTS 个;若一个界域正好只给这么多件,
+    // 玩家就把它们全带上,「选哪件」这个问题根本不会出现 —— 内容量够,选择才存在。
+    const tierWorld = new Map<number, string>()
+    for (const r of REGIONS) tierWorld.set(r.tier, worldOf(r.minRealm).id)
+    for (const w of WORLDS) {
+      const n = ARTIFACTS.filter(a => tierWorld.get(a.minTier) === w.id).length
+      expect(n, `${w.name} 有 ${n} 件法宝、${ARTIFACT_MAX_SLOTS} 个法宝位 —— 带满即最优,没有取舍`).toBeGreaterThan(
+        ARTIFACT_MAX_SLOTS
+      )
     }
   })
 })
