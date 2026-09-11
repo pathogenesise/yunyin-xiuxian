@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 30,
+  "round": 31,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T14:27:22+00:00",
+  "updated_at": "2026-09-11T14:29:29+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1970,7 +1970,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T14:10:24+00:00",
-      "touched_round": 26,
+      "touched_round": 30,
       "category": "core-feature",
       "summary": "新界内容加密:仙界/神界/混沌海目前每境仅 1 区域,可补第二区域、界域专属天时/机缘、每境独有机制,避免 12 个新境界同质为纯数值阶梯",
       "severity": 0.6,
@@ -2163,6 +2163,17 @@
       "source": "故障注入:临时给 ev_kunpeng_hua 加回 once:true → 新审计两条齐红;撤销后 110 files / 1051 tests 全绿",
       "summary": "新审计可被打红,证明其真能拦住「概率分支+once」这一类死内容",
       "confidence": 1.0
+    },
+    "CHG-045": {
+      "id": "CHG-045",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T14:29:29+00:00",
+      "updated_at": "2026-09-11T14:29:29+00:00",
+      "touched_round": 30,
+      "summary": "轮回命题延伸到新界:补 lt_feisheng(本世飞升真仙,minStage3)/lt_rushen(本世踏入神界,minStage4),守 stage 宿慧单调",
+      "commit": "e5f5cfb"
     }
   },
   "edges": [
@@ -3012,6 +3023,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T14:27:21+00:00"
+    },
+    {
+      "from": "CHG-045",
+      "to": "TASK-035",
+      "type": "implements",
+      "created_at": "2026-09-11T14:29:29+00:00"
     }
   ]
 }
