@@ -32,7 +32,7 @@ const CATEGORIES = [
     name: 'Decision    决策质量',
     match: [
       'decisionAudit', 'synergyScan', 'worldGen', 'ruleUniverse', 'playerLab', 'legacy', 'identity', 'samsara',
-      'fortune', 'worldEcho', 'regionEvent', 'weather', 'tribulation', 'secretRealm', 'petPersonality'
+      'fortune', 'worldEcho', 'regionEvent', 'weather', 'tribulation', 'secretRealm', 'petPersonality', 'goal.spec'
     ]
   }
 ]

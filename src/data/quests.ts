@@ -77,7 +77,59 @@ export const MAIN_QUESTS: QuestDef[] = [
     cond: { type: 'counter', key: 'bossKills', value: 10 },
     reward: { stoneTier: 200, wudao: 50 }
   },
-  { id: 'q_huashen', name: '问鼎化神', desc: '突破至化神境', cond: { type: 'realm', major: 4 }, reward: { stoneTier: 300, wudao: 80 } }
+  { id: 'q_huashen', name: '问鼎化神', desc: '突破至化神境', cond: { type: 'realm', major: 4 }, reward: { stoneTier: 300, wudao: 80 } },
+
+  // ---- 人间界后期:主线一路铺到飞升 ----
+  {
+    id: 'q_boss20',
+    name: '踏平妖庭',
+    desc: '击败 20 位区域首领',
+    cond: { type: 'counter', key: 'bossKills', value: 20 },
+    reward: { stoneTier: 350, wudao: 90, dust: 60 }
+  },
+  { id: 'q_lianxu', name: '炼虚返真', desc: '突破至炼虚境', cond: { type: 'realm', major: 5 }, reward: { stoneTier: 420, wudao: 110 } },
+  { id: 'q_heti', name: '身道相合', desc: '突破至合体境', cond: { type: 'realm', major: 6 }, reward: { stoneTier: 520, wudao: 140 } },
+  { id: 'q_dacheng', name: '大道将成', desc: '突破至大乘境', cond: { type: 'realm', major: 7 }, reward: { stoneTier: 640, wudao: 180 } },
+  { id: 'q_dujie', name: '九重雷海', desc: '突破至渡劫境', cond: { type: 'realm', major: 8 }, reward: { stoneTier: 800, wudao: 220 } },
+  {
+    id: 'q_zhenxian',
+    name: '飞升仙界',
+    desc: '跨过天门,证得真仙 —— 从今往后,天不再是顶',
+    cond: { type: 'realm', major: 9 },
+    reward: { stoneTier: 1000, wudao: 300 }
+  },
+  // ---- 仙界 ----
+  { id: 'q_xuanxian', name: '玄之又玄', desc: '突破至玄仙境', cond: { type: 'realm', major: 10 }, reward: { stoneTier: 1200, wudao: 360 } },
+  { id: 'q_jinxian', name: '金性不朽', desc: '突破至金仙境', cond: { type: 'realm', major: 11 }, reward: { stoneTier: 1450, wudao: 430 } },
+  { id: 'q_taiyi', name: '太乙近道', desc: '突破至太乙境', cond: { type: 'realm', major: 12 }, reward: { stoneTier: 1750, wudao: 520 } },
+  { id: 'q_daluo', name: '大罗逍遥', desc: '突破至大罗境', cond: { type: 'realm', major: 13 }, reward: { stoneTier: 2100, wudao: 620 } },
+  // ---- 神界 ----
+  {
+    id: 'q_shenren',
+    name: '破界入神',
+    desc: '自仙界踏入神界,证得神人境',
+    cond: { type: 'realm', major: 14 },
+    reward: { stoneTier: 2500, wudao: 750 }
+  },
+  { id: 'q_shenjiang', name: '代天行罚', desc: '突破至神将境', cond: { type: 'realm', major: 15 }, reward: { stoneTier: 2900, wudao: 900 } },
+  { id: 'q_shenwang', name: '神域之主', desc: '突破至神王境', cond: { type: 'realm', major: 16 }, reward: { stoneTier: 3400, wudao: 1080 } },
+  { id: 'q_shendi', name: '神帝临尘', desc: '突破至神帝境', cond: { type: 'realm', major: 17 }, reward: { stoneTier: 4000, wudao: 1300 } },
+  // ---- 混沌海 ----
+  {
+    id: 'q_hundunling',
+    name: '归返混沌',
+    desc: '踏入混沌海,证得混沌真灵',
+    cond: { type: 'realm', major: 18 },
+    reward: { stoneTier: 4800, wudao: 1600 }
+  },
+  { id: 'q_hundunshenmo', name: '开天辟地', desc: '突破至混沌神魔境', cond: { type: 'realm', major: 19 }, reward: { stoneTier: 5700, wudao: 1950 } },
+  {
+    id: 'q_hundundaozu',
+    name: '万道之祖',
+    desc: '证道混沌道祖 —— 走到这里,这条路才算走到了尽头',
+    cond: { type: 'realm', major: 20 },
+    reward: { stoneTier: 7000, wudao: 2400 }
+  }
 ]
 
 export interface DailyTaskDef {
