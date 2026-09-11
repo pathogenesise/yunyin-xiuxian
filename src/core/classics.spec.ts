@@ -115,3 +115,31 @@ describe('典籍志 · 未实装门类如实标注', () => {
     }
   })
 })
+
+describe('界域志 · 分册', () => {
+  const src = readFileSync(resolve(__dirname, '../views/RealmCodexView.vue'), 'utf8')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+
+  /** 分册表里声明的每一册 */
+  const tabIds = [...src.matchAll(/id: '(realm|classics|yi|ziwei|xiang|qimen|todo)'/g)].map(m => m[1]!)
+
+  it('六册俱全(界域/典籍/周易/紫微/星象/奇门)', () => {
+    for (const id of ['realm', 'classics', 'yi', 'ziwei', 'xiang', 'qimen']) {
+      expect(tabIds, `分册缺了 ${id}`).toContain(id)
+    }
+  })
+
+  it('每一册都有对应的内容段 —— 点了不会落到空白页', () => {
+    for (const id of ['realm', 'classics', 'yi', 'ziwei', 'xiang', 'qimen']) {
+      expect(src, `分册 ${id} 没有对应内容`).toContain(`codexTab === '${id}'`)
+    }
+  })
+
+  it('六门各自的标题都在页面上(分册只是分组,不删内容)', () => {
+    for (const title of ['界域志', '典籍', '周易', '紫微', '星象', '奇门']) {
+      expect(src, `页面上找不到「${title}」`).toContain(`title="${title}"`)
+    }
+  })
+})

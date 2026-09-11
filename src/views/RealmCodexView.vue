@@ -7,7 +7,9 @@
     </div>
 
     <SectionTitle title="界域志" hint="境界名从哪来,一路读下去" />
+    <InkTabs v-model="codexTab" :tabs="CODEX_TABS" />
 
+    <template v-if="codexTab === 'realm'">
     <!-- 界域与境界:逐境写明出处与承接 -->
     <section v-for="row in worldRows" :key="row.world.id" class="card-ink px-4 py-3">
       <div class="flex items-baseline gap-2">
@@ -37,7 +39,9 @@
         </div>
       </div>
     </section>
+    </template>
 
+    <template v-if="codexTab === 'classics'">
     <!-- 典籍:境界名背后的原典 -->
     <SectionTitle title="典籍" hint="所述者传统道教、佛教、道家与丹道之书" />
     <section class="space-y-2">
@@ -53,7 +57,9 @@
         </p>
       </article>
     </section>
+    </template>
 
+    <template v-if="codexTab === 'yi'">
     <!-- 周易:读过之后可以真的问一卦 -->
     <SectionTitle title="周易" hint="八卦为体,六十四卦为用" />
     <section class="card-ink px-4 py-3">
@@ -124,7 +130,9 @@
       </div>
     </section>
 
-    <!-- 待续:如实标注尚未实装的门类 -->
+    </template>
+
+    <template v-if="codexTab === 'ziwei'">
     <!-- 紫微:一世之格,与周易的「一时之机」分工 -->
     <SectionTitle title="紫微" hint="十二宫定一世之格,与问卦分工" />
     <section class="card-ink px-4 py-3">
@@ -150,7 +158,9 @@
         </p>
       </div>
     </section>
+    </template>
 
+    <template v-if="codexTab === 'xiang'">
     <!-- 星象:二十八宿值日,利一方界域 -->
     <SectionTitle title="星象" hint="二十八宿值日,分野为读、四象为用" />
     <section class="card-ink px-4 py-3">
@@ -178,7 +188,9 @@
         </template>
       </div>
     </section>
+    </template>
 
+    <template v-if="codexTab === 'qimen'">
     <!-- 奇门:九宫八门,择门而入 -->
     <SectionTitle title="奇门" hint="九宫八门,择门而入" />
     <section class="card-ink px-4 py-3">
@@ -201,8 +213,9 @@
         门的效果全部用既有的战斗规则表达,不另造字段 —— 不择门(走常道)时,规则与从前逐字相同。
       </p>
     </section>
+    </template>
 
-    <template v-if="PLANNED_SCHOOLS.length">
+    <template v-if="codexTab === 'todo' && PLANNED_SCHOOLS.length">
       <SectionTitle title="待续" hint="已列入路线、尚未实装的经典门类" />
       <section class="card-ink divide-y divide-ink/7 px-4">
       <div v-for="p in PLANNED_SCHOOLS" :key="p.name" class="flex items-start gap-2 py-2.5">
@@ -236,10 +249,23 @@
   import type { WorldId } from '@/types'
   import { modsText } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
+  import InkTabs from '@/components/common/InkTabs.vue'
 
   const player = usePlayerStore()
   const game = useGameStore()
   const ui = useUiStore()
+
+  /** 分册:六门各占一册 —— 页越长越该分,免得一路拉到底找不着北 */
+  type CodexTab = 'realm' | 'classics' | 'yi' | 'ziwei' | 'xiang' | 'qimen' | 'todo'
+  const CODEX_TABS: { id: CodexTab; label: string }[] = [
+    { id: 'realm', label: '界域' },
+    { id: 'classics', label: '典籍' },
+    { id: 'yi', label: '周易' },
+    { id: 'ziwei', label: '紫微' },
+    { id: 'xiang', label: '星象' },
+    { id: 'qimen', label: '奇门' }
+  ]
+  const codexTab = ref<CodexTab>('realm')
 
   const showAllHex = ref(false)
 
