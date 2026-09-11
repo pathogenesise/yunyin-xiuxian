@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 84,
+  "round": 85,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:37:57+00:00",
+  "updated_at": "2026-09-11T19:42:25+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 77,
+      "touched_round": 84,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -4152,6 +4152,52 @@
       "source": "后期夹具实测读数:真仙起常规/极限档区域 100% 压制(顶区 5.8x/7.2x),随缘档自神人起 100%,末两境 95%;九页正文无 NaN/Infinity/undefined(commit 8a19f84)",
       "summary": "后期平衡口径被量出来了:区域碾压是设计结果,主战场在天界;上界已由新守卫钉住",
       "confidence": 0.85
+    },
+    "ISS-061": {
+      "id": "ISS-061",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:42:13+00:00",
+      "updated_at": "2026-09-11T19:42:18+00:00",
+      "touched_round": 84,
+      "summary": "秘境敌人按层级绝对值生成(makeEnemySnap),与远征/试炼的玩家相对口径(worldFoeSnap)不一致:刚飞升未换装的真仙进天界秘境会撞上 tier 21 绝对数值,付了 30~50 道源却被两场逐出 —— 副本成了换装检查,而不是考验",
+      "severity": 0.5,
+      "confidence": 0.9
+    },
+    "CHG-108": {
+      "id": "CHG-108",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:42:14+00:00",
+      "updated_at": "2026-09-11T19:42:14+00:00",
+      "touched_round": 84,
+      "commit": "bbc6682",
+      "summary": "秘境敌人改按玩家缩放(抽 secretLayerFoe 接缝);highTierSmoke 补镇压与天界秘境两条后期产线"
+    },
+    "EV-064": {
+      "id": "EV-064",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:42:18+00:00",
+      "updated_at": "2026-09-11T19:42:18+00:00",
+      "touched_round": 84,
+      "source": "secretRealm.spec 新增:裸装玩家在真仙/神人两处秘境的敌我比值同量级(<3x 差异)、敌人倍率全程 <5x、结算文案无 NaN;故障注入改回按层级绝对值 → 五条用例红(commit bbc6682)",
+      "summary": "副本类内容统一为玩家相对口径;以「敌我比值不随境界陡增」为判据",
+      "confidence": 0.9
+    },
+    "HYP-020": {
+      "id": "HYP-020",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:42:24+00:00",
+      "updated_at": "2026-09-11T19:42:24+00:00",
+      "touched_round": 84,
+      "confidence": 0.85,
+      "summary": "同一类内容(一次性副本:远征/试炼/秘境)必须共用同一套难度口径(按玩家缩放);口径分叉会让其中一个默默变成换装检查 —— 判据是「同一名玩家在不同境界遇到的敌我比值不随境界陡增」"
     }
   },
   "edges": [
@@ -5775,6 +5821,24 @@
       "to": "COMP-013",
       "type": "located_in",
       "created_at": "2026-09-11T19:37:52+00:00"
+    },
+    {
+      "from": "CHG-108",
+      "to": "ISS-061",
+      "type": "resolves",
+      "created_at": "2026-09-11T19:42:18+00:00"
+    },
+    {
+      "from": "ISS-061",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T19:42:18+00:00"
+    },
+    {
+      "from": "EV-064",
+      "to": "HYP-020",
+      "type": "validates",
+      "created_at": "2026-09-11T19:42:25+00:00"
     }
   ]
 }
