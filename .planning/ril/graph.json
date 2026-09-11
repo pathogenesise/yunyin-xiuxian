@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 52,
+  "round": 53,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:35:53+00:00",
+  "updated_at": "2026-09-11T15:38:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2621,6 +2621,41 @@
       "source": "故障注入:道音丹改成掉落(去方)→ 法则H 与结清断言齐红;恢复后 115 files / 1092 tests 绿",
       "summary": "结清状态有可打红的断言守着",
       "confidence": 1.0
+    },
+    "ISS-047": {
+      "id": "ISS-047",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T15:38:22+00:00",
+      "updated_at": "2026-09-11T15:38:22+00:00",
+      "touched_round": 52,
+      "summary": "多处 data 头注释旧计数(词条 118 实为 110、法宝 20 实为 26、装备 50 实为 77、天赋 30 实为 33)——之前一次批量替换在断言处中止,后续文件未改到;此类「看着像事实的注释」比没有注释更坏",
+      "severity": 0.3,
+      "confidence": 1.0
+    },
+    "CHG-067": {
+      "id": "CHG-067",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:38:22+00:00",
+      "updated_at": "2026-09-11T15:38:22+00:00",
+      "touched_round": 52,
+      "summary": "清四处旧表头 + 新增 dataHeaderAudit:读源码头注释声明的规模数字,与真实数组长度逐一比对(9 类数据表);登记分类报告",
+      "commit": "0d3a2a0"
+    },
+    "EV-034": {
+      "id": "EV-034",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:38:22+00:00",
+      "updated_at": "2026-09-11T15:38:22+00:00",
+      "touched_round": 52,
+      "source": "故障注入:词条表头改 999 → 即红;恢复后 116 files / 1093 tests 绿",
+      "summary": "表头计数腐烂有一道会红的守卫",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -3668,6 +3703,12 @@
       "to": "ISS-046",
       "type": "resolves",
       "created_at": "2026-09-11T15:35:53+00:00"
+    },
+    {
+      "from": "CHG-067",
+      "to": "ISS-047",
+      "type": "resolves",
+      "created_at": "2026-09-11T15:38:22+00:00"
     }
   ]
 }
