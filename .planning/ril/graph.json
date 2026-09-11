@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 102,
+  "round": 103,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T23:02:34+00:00",
+  "updated_at": "2026-09-11T23:13:52+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1535,7 +1535,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 93,
+      "touched_round": 102,
       "summary": "藏经阁钻研/认知系统(loreService.ts + lore store)"
     },
     "COMP-010": {
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 95,
+      "touched_round": 102,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -4630,7 +4630,7 @@
       "version": 1,
       "created_at": "2026-09-11T20:58:01+00:00",
       "updated_at": "2026-09-11T20:58:01+00:00",
-      "touched_round": 93,
+      "touched_round": 102,
       "summary": "「境界是不是只是数值台阶」可以用一条结构判据提前发现:每个境界至少要有一条门槛恰好落在该境的内容(本项目取功法 —— 参悟池按 minRealm ≤ 当前+1 过滤,表里有就一定会撞见);判据读表而不读感觉,故内容缺哪一境会立刻点名",
       "confidence": 0.7
     },
@@ -5135,6 +5135,56 @@
       "touched_round": 101,
       "summary": "修行页修为行可点开「来路」:基础(境界/层/灵根)× (1 + 各来源)= 速率,来源读 finalStats.breakdown;statBreakdown.spec 增「三个数乘得回来」用例",
       "commit": "2b6c2cd"
+    },
+    "ISS-077": {
+      "id": "ISS-077",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:06:33+00:00",
+      "updated_at": "2026-09-11T23:13:51+00:00",
+      "touched_round": 102,
+      "summary": "三境无本境丹药:神王(16)、混沌神魔(19)、混沌道祖(20)一味门槛落在本境的丹都没有(丹药库 47 味);且法则 B 只比品质高低,同品质的几味之间谁强谁弱无人管 —— 后面的丹比前面弱也看不出来",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-068": {
+      "id": "TASK-068",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:06:33+00:00",
+      "updated_at": "2026-09-11T23:13:52+00:00",
+      "touched_round": 102,
+      "summary": "补三味神品丹方(神悟丹/混元丹/道祖丹)填上三境空白;新增两条内容密度判据「每一境都有本境丹」「丹方越晚越强(同族同线按门槛比药力)」",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-082": {
+      "id": "EV-082",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:06:37+00:00",
+      "updated_at": "2026-09-11T23:06:37+00:00",
+      "touched_round": 102,
+      "summary": "contentDensity.spec 增两例:每境至少一味门槛落在该境的丹、丹方同族同线按门槛单调(补法则 B 只管品质的缺口);两次故障注入(神悟丹 16→15、道祖丹 wudao 150→40)各转红并点名;丹药库 47→50,七条定价法则(A/B/C/D/E/E2/F/H)与表头计数审计全绿;全量 134 文件 1383 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/contentDensity.spec.ts"
+    },
+    "CHG-126": {
+      "id": "CHG-126",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:13:51+00:00",
+      "updated_at": "2026-09-11T23:13:51+00:00",
+      "touched_round": 102,
+      "summary": "补三味神品丹方(神悟丹/混元丹/道祖丹),丹药库 47→50;contentDensity 增「每境一味丹」与「丹方同族同线按门槛单调」两例",
+      "commit": "bfa8997"
     }
   },
   "edges": [
@@ -7286,6 +7336,42 @@
       "to": "HYP-030",
       "type": "validates",
       "created_at": "2026-09-11T23:02:34+00:00"
+    },
+    {
+      "from": "ISS-077",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-11T23:13:51+00:00"
+    },
+    {
+      "from": "TASK-068",
+      "to": "ISS-077",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:13:51+00:00"
+    },
+    {
+      "from": "CHG-126",
+      "to": "TASK-068",
+      "type": "implements",
+      "created_at": "2026-09-11T23:13:51+00:00"
+    },
+    {
+      "from": "CHG-126",
+      "to": "ISS-077",
+      "type": "resolves",
+      "created_at": "2026-09-11T23:13:51+00:00"
+    },
+    {
+      "from": "EV-082",
+      "to": "HYP-026",
+      "type": "validates",
+      "created_at": "2026-09-11T23:13:51+00:00"
+    },
+    {
+      "from": "TASK-068",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:13:51+00:00"
     }
   ]
 }
