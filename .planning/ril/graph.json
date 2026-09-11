@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 56,
+  "round": 57,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:59:05+00:00",
+  "updated_at": "2026-09-11T16:12:51+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1823,7 +1823,7 @@
       "version": 1,
       "created_at": "2026-09-11T08:22:14+00:00",
       "updated_at": "2026-09-11T08:22:14+00:00",
-      "touched_round": 23,
+      "touched_round": 56,
       "summary": "修行目标系统(goal.ts 纯函数 + HomeView 指引卡):给方向不替玩家做决定"
     },
     "TASK-032": {
@@ -1921,7 +1921,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:10+00:00",
       "updated_at": "2026-09-11T14:03:10+00:00",
-      "touched_round": 55,
+      "touched_round": 57,
       "confidence": 0.85,
       "summary": "扩界可在保持 0-9 号境界曲线/索引/内容 gate 零改动的前提下落地,不破坏既有数值与内容审计"
     },
@@ -2777,6 +2777,80 @@
       "source": "故障注入:suppressYield 映射改空 → 物产/入库三例齐红;恢复后 118 files / 1114 tests 绿",
       "summary": "地界物产的映射与结算有可打红的守卫",
       "confidence": 1.0
+    },
+    "DEC-019": {
+      "id": "DEC-019",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:12:40+00:00",
+      "updated_at": "2026-09-11T16:12:40+00:00",
+      "touched_round": 56,
+      "summary": "转世继承判据收紧(DEC-019):保留=记忆/精神/灵魂(认知与丹方、履历成就、道果天赋宿慧、称号、师承、道源道痕、世界记忆、机缘记忆);重置=皮囊/外物(境界修为、灵石灵材、装备法宝丹药、灵兽、洞府建筑、灵脉投资、区域进度、本世之界、进行中的秘境/事件、逆旅契、连胜、灵根)。功法为『半留』:门类是记忆、层数是进度",
+      "rationale": "用户诉求:转世应主要是记忆/精神/灵魂类,装备法宝宠物秘境等外物一律从零。原实现里灵兽/称号/师承完整继承、洞府与功法层数折半、灵脉完整保留,与模块自身写下的原则(状态应重建)相冲突,也在 narrowingImpact 里被标记为『最易形成前几世必做固定路线』的缺陷",
+      "alternatives_rejected": "1)只改灵兽,保留洞府折半/灵脉完整:半截状态仍在,原则自相矛盾;2)连称号/师承也归零:荣誉与道统属记忆/精神,归零等于抹掉『我是谁』"
+    },
+    "CHG-071": {
+      "id": "CHG-071",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:12:40+00:00",
+      "updated_at": "2026-09-11T16:12:40+00:00",
+      "touched_round": 57,
+      "summary": "转世继承重做:player.rebirth() 统一外物归零(灵兽/洞府 resetForRebirth/灵脉),carryGongfa 层数归零回一层;继承清单补八行(秘境/区域事件/本世之界/机缘记忆/道友/逆旅契/连胜/灵根);新增覆盖度审计;连带撤销灵脉跨世加成与折半口径,删 REBIRTH_GONGFA_LEVEL_DIV",
+      "commit": "b137594"
+    },
+    "EV-038": {
+      "id": "EV-038",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:12:40+00:00",
+      "updated_at": "2026-09-11T16:12:40+00:00",
+      "touched_round": 57,
+      "source": "故障注入:从 HERITAGE 删掉 pet 行 → 覆盖度审计即红;恢复后 118 files / 1118 tests 绿",
+      "summary": "继承清单的最小完备有可打红的守卫",
+      "confidence": 1.0
+    },
+    "CHG-072": {
+      "id": "CHG-072",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:12:40+00:00",
+      "updated_at": "2026-09-11T16:12:40+00:00",
+      "touched_round": 57,
+      "summary": "界面整理:界域志归入人物(与修仙录同级),修行页去掉重复的界域总览,底部导航回到五栏",
+      "commit": "ef219fc"
+    },
+    "TASK-039": {
+      "id": "TASK-039",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:12:41+00:00",
+      "updated_at": "2026-09-11T16:12:41+00:00",
+      "touched_round": 57,
+      "category": "core-feature",
+      "summary": "转世继承的后续:①界面在轮回结算里明确列出『这一世带走什么/放下什么』(与清单同源)②评测新继承模型对多周目节奏的影响(灵脉归零后早期变慢,daoFruitCurve 假设已同步)",
+      "severity": 0.5,
+      "confidence": 0.7,
+      "effort": 5
+    },
+    "TASK-040": {
+      "id": "TASK-040",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:12:51+00:00",
+      "updated_at": "2026-09-11T16:12:51+00:00",
+      "touched_round": 57,
+      "category": "maintainability",
+      "summary": "界面整理后续:界域志入口与导航调整需在真机上确认(底部五栏、人物页两行入口排版)",
+      "severity": 0.25,
+      "confidence": 0.6,
+      "effort": 2
     }
   },
   "edges": [
@@ -3872,6 +3946,30 @@
       "to": "TASK-038",
       "type": "implements",
       "created_at": "2026-09-11T15:59:04+00:00"
+    },
+    {
+      "from": "DEC-019",
+      "to": "COMP-011",
+      "type": "governs",
+      "created_at": "2026-09-11T16:12:40+00:00"
+    },
+    {
+      "from": "CHG-071",
+      "to": "TASK-039",
+      "type": "implements",
+      "created_at": "2026-09-11T16:12:44+00:00"
+    },
+    {
+      "from": "EV-038",
+      "to": "HYP-005",
+      "type": "validates",
+      "created_at": "2026-09-11T16:12:44+00:00"
+    },
+    {
+      "from": "CHG-072",
+      "to": "TASK-040",
+      "type": "implements",
+      "created_at": "2026-09-11T16:12:51+00:00"
     }
   ]
 }
