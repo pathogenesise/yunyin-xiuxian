@@ -102,4 +102,24 @@ describe('离线结算同源吃天时(ISS-027 续)', () => {
     // 灵雨修炼 +10%:离线修为增益应显著高于无加成日(留余量,防修复方 double-count)
     expect(expLingyu).toBeGreaterThan(expQinghe * 1.05)
   })
+
+  /**
+   * 扩界冒烟:离线结算此前只在元婴期(major 3)验过。
+   * 高界的修为/灵气量级跨了十几个数量级,若某处仍按旧口径算,离线一结算就现形。
+   */
+  it('混沌道祖离线结算不崩:修为有增、数值有限', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    game.markStarted()
+    game.lastActiveAt = Date.now() - GAP_HOURS * 3600 * 1000
+    player.major = 20
+    player.sub = 9
+
+    const before = toNum(player.exp)
+    const summary = settleOffline(Date.now())
+
+    expect(summary, '高界离线应产出总结').not.toBeNull()
+    expect(toNum(player.exp), '高界离线修为未增长').toBeGreaterThan(before)
+    expect(Number.isFinite(toNum(player.exp))).toBe(true)
+  })
 })
