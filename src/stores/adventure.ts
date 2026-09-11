@@ -51,6 +51,31 @@ export const useAdventureStore = defineStore(
       mortalCleared.value = asStringArray(mortalCleared.value)
       cleared.value = asStringArray(cleared.value)
       session.value = asObjectOrNull<AdventureSession>(session.value)
+      /**
+       * 历练会话是引擎每 tick 都要读的活状态:endsAt/nextBattleAt 若为 NaN,
+       * 探索会永远不停(或立刻结束);regionId 认不得则整场都取不到区域。
+       * 故除形状外,值也要修 —— 认不得的区域直接结束会话,不硬撑。
+       */
+      if (session.value) {
+        const s = session.value
+        const regionOk = !!regionDef(s.regionId)
+        const endsAt = asFiniteNumber(s.endsAt, 0, 0)
+        if (!regionOk || endsAt <= 0) {
+          session.value = null
+        } else {
+          session.value = {
+            ...s,
+            mode: s.mode === 'deep' || s.mode === 'risky' ? s.mode : 'normal',
+            startedAt: asFiniteNumber(s.startedAt, 0, 0),
+            endsAt,
+            nextBattleAt: asFiniteNumber(s.nextBattleAt, 0, 0),
+            wins: Math.floor(asFiniteNumber(s.wins, 0, 0)),
+            losses: Math.floor(asFiniteNumber(s.losses, 0, 0)),
+            events: Math.floor(asFiniteNumber(s.events, 0, 0)),
+            itemGain: Math.floor(asFiniteNumber(s.itemGain, 0, 0))
+          }
+        }
+      }
       pendingEventId.value = typeof pendingEventId.value === 'string' ? pendingEventId.value : null
       pendingEventSince.value = asFiniteNumber(pendingEventSince.value, 0, 0)
       seenOnceEvents.value = asStringArray(seenOnceEvents.value)

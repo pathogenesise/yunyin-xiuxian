@@ -20,6 +20,7 @@ import { readingFromState, readingMods } from '@/core/divination'
 import { asFiniteNumber, asStringArray } from '@/utils/saveShape'
 import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
 import { DAOLU, STAGE_ORDER } from '@/data/daolu'
+import { regionDef } from '@/data/regions'
 import { fateChart, fateMods, fateSeed } from '@/core/fate'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
@@ -533,6 +534,17 @@ export const usePlayerStore = defineStore(
             intent: b.intent && Array.isArray(b.intent.sparks) && typeof b.intent.wish === 'string' ? b.intent : null
           }
         }
+      }
+      /**
+       * 区域动态事件:它靠 endsAt 自己过期(currentRegionEvent 里比较)。
+       * 坏了就有两种结果 —— endsAt=NaN 永不失效,或者负值当场失效,故按「认不出就清掉」处理。
+       */
+      if (regionEvent.value) {
+        const ev = regionEvent.value
+        const regionOk = !!regionDef(ev.regionId)
+        const endsAt = asFiniteNumber(ev.endsAt, 0, 0)
+        if (!regionOk || endsAt <= 0) regionEvent.value = null
+        else regionEvent.value = { ...ev, endsAt }
       }
       /**
        * 数组类字段先补形,再谈内容 —— 存档可能被改坏、写坏或在旧版本里根本没有这一栏。

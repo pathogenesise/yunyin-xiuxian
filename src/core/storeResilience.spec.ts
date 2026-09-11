@@ -153,3 +153,29 @@ describe('坏档韧性 · 复杂状态的值也要修回来(不只是"不炸")',
     expect(player.bond).toBeNull()
   })
 })
+
+describe('坏档韧性 · 活状态(引擎每 tick 都读的那些)', () => {
+  it('历练会话:区域认不得或时间戳坏了就结束会话,不硬撑', () => {
+    setActivePinia(createPinia())
+    const adventure = useAdventureStore()
+    adventure.$patch({
+      session: { regionId: 'nope', mode: 'normal', startedAt: 1, endsAt: 2, nextBattleAt: 3, wins: -1, losses: NaN, events: -5, stoneGain: {}, expGain: {}, itemGain: -2 }
+    } as never)
+    adventure.sanitize()
+    expect(adventure.session).toBeNull()
+
+    adventure.$patch({
+      session: { regionId: 'qingyun', mode: '怪', startedAt: -1, endsAt: NaN, nextBattleAt: 3, wins: -1, losses: 2.7, events: -5, stoneGain: {}, expGain: {}, itemGain: -2 }
+    } as never)
+    adventure.sanitize()
+    expect(adventure.session).toBeNull()
+  })
+
+  it('区域动态事件:endsAt 坏了就清掉(否则要么永不失效要么当场失效)', () => {
+    setActivePinia(createPinia())
+    const player = usePlayerStore()
+    player.$patch({ regionEvent: { regionId: 'qingyun', eventId: 'yaochao', endsAt: NaN } } as never)
+    player.sanitize()
+    expect(player.regionEvent).toBeNull()
+  })
+})

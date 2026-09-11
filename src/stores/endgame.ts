@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import type { CelestialWorldDef, DaoMark, DaoPathId, StatMods } from '@/types'
 import { persistConfig } from '@/utils/storage'
 import { mergeMods } from '@/core/statsCalc'
+import { celestialWorldDef } from '@/data/endgame'
 import { SOUL_SLOTS, soulMods as soulModsOf, type SoulInstance } from '@/data/souls'
 import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecordOf, asStringArray } from '@/utils/saveShape'
 
@@ -78,6 +79,30 @@ export const useEndgameStore = defineStore(
       )
       marks.value = asArray<DaoMark>(marks.value, [], m => !!m && typeof (m as DaoMark).targetId === 'string')
       worldRun.value = asObjectOrNull<WorldRunState>(worldRun.value)
+      /**
+       * 远征进行时同样是活状态(每一场都读 layer/carriedHpPct/winStacks):
+       * layer 越界会跳到不存在的层,carriedHpPct 越界会把开局算成 NaN 或无敌。
+       * 认不得的世界直接作废 —— 让它重新起程,比带着坏状态打下去安全。
+       */
+      if (worldRun.value) {
+        const run = worldRun.value
+        const worldOk = !!celestialWorldDef(run.worldId) || run.worldId === 'void'
+        if (!worldOk) {
+          worldRun.value = null
+        } else {
+          worldRun.value = {
+            ...run,
+            pactId: typeof run.pactId === 'string' ? run.pactId : null,
+            gateId: typeof run.gateId === 'string' ? run.gateId : null,
+            layer: Math.min(3, Math.max(0, Math.floor(asFiniteNumber(run.layer, 0, 0)))),
+            bonus: Math.floor(asFiniteNumber(run.bonus, 0, 0)),
+            rows: asArray<WorldRunState['rows'][number]>(run.rows, [], r => !!r && typeof (r as { foeName?: unknown }).foeName === 'string'),
+            carriedHpPct: Math.min(1, asFiniteNumber(run.carriedHpPct, 1, 0.05)),
+            totalRounds: Math.floor(asFiniteNumber(run.totalRounds, 0, 0)),
+            winStacks: Math.floor(asFiniteNumber(run.winStacks, 0, 0))
+          }
+        }
+      }
       voidWorld.value = asObjectOrNull<CelestialWorldDef>(voidWorld.value)
       dailyDoneDay.value =
         typeof dailyDoneDay.value === 'number' && Number.isFinite(dailyDoneDay.value) ? dailyDoneDay.value : null
