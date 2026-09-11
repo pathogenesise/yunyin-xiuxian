@@ -41,6 +41,52 @@ const SUPPRESS_YIELD_PER_HOUR = {
 }
 
 /**
+ * 地界物产 —— 灵石之外,按地界气质给一份次级产出。
+ *
+ * 为什么要有它:只给灵石的话,"镇压哪几处"退化成"挑层级最高的那几处",
+ * 没有取舍。接上物产后,火域出矿、林区出草、秘境出残页、天界以上出尘,
+ * 于是「我这一世缺什么,就镇守哪一片」才成为真问题。
+ *
+ * 取值按标签优先表逐条匹配(与地界自身标签顺序无关,保证确定),
+ * 产量随层级线性放大(灵材是小标量,不跟着灵石做指数)。
+ */
+type SuppressResource = 'herb' | 'ore' | 'page' | 'dust'
+
+const YIELD_BY_TAG: { tag: string; resource: SuppressResource; perHour: number }[] = [
+  { tag: 'forest', resource: 'herb', perHour: 6 },
+  { tag: 'water', resource: 'herb', perHour: 5 },
+  { tag: 'ice', resource: 'herb', perHour: 4 },
+  { tag: 'fire', resource: 'ore', perHour: 4 },
+  { tag: 'thunder', resource: 'ore', perHour: 3 },
+  { tag: 'mountain', resource: 'ore', perHour: 3 },
+  { tag: 'ruin', resource: 'page', perHour: 2 },
+  { tag: 'sword', resource: 'page', perHour: 2 },
+  { tag: 'dark', resource: 'dust', perHour: 2 },
+  { tag: 'sky', resource: 'dust', perHour: 2 },
+  { tag: 'immortal', resource: 'dust', perHour: 3 },
+  { tag: 'god', resource: 'page', perHour: 3 },
+  { tag: 'chaos', resource: 'dust', perHour: 4 }
+]
+
+const RESOURCE_NAMES: Record<SuppressResource, string> = {
+  herb: '灵草',
+  ore: '玄铁',
+  page: '功法残页',
+  dust: '器灵尘'
+}
+
+/** 某地界的物产(无匹配标签则无次级产出) */
+export function suppressYield(regionId: string): { id: SuppressResource; name: string; perHour: number } | null {
+  const region = regionDef(regionId)
+  if (!region) return null
+  const hit = YIELD_BY_TAG.find(y => region.eventTags.includes(y.tag))
+  if (!hit) return null
+  // 层级越高,同一物产的产出越丰(线性,不参与灵石的指数口径)
+  const perHour = Math.round(hit.perHour * (1 + region.tier * 0.15))
+  return { id: hit.resource, name: RESOURCE_NAMES[hit.resource], perHour }
+}
+
+/**
  * 判定玩家是否已镇压某区域
  * 条件:≥20 战,平均回合 ≤3,平均受伤 ≤10%
  */
@@ -66,6 +112,8 @@ export interface SuppressedYield {
   equipment: { name: string; quality: QualityId; recycled?: boolean }[]
   /** 未入包(自动回收/满包化尘)装备化作的器灵尘(由 acquireEquipment 记账) */
   recycledDust: number
+  /** 各地界的物产累计(灵草/玄铁/残页/器灵尘) */
+  resources: { id: SuppressResource; name: string; amount: number }[]
 }
 
 export function settleSuppressedRegions(dt: number): SuppressedYield | null {
@@ -75,7 +123,7 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
   if (player.suppressedRegions.length === 0) return null
 
   const hours = dt / 3600
-  const total: SuppressedYield = { stone: gnZero(), equipment: [], recycledDust: 0 }
+  const total: SuppressedYield = { stone: gnZero(), equipment: [], recycledDust: 0, resources: [] }
   const now = Date.now()
 
   // Phase 30.9:复苏判定 —— 镇压超过 72h 无活动,区域妖气再聚,自动解除镇压
@@ -110,6 +158,18 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
     const stoneYield = stoneByTier(region.tier, SUPPRESS_YIELD_PER_HOUR.stoneMultiplier * hours * yieldMult)
     resources.addStone(stoneYield)
     total.stone = add(total.stone, stoneYield)
+
+    // 物产:按地界气质给一份次级产出(灵材是小标量,随层级线性增长)
+    const yieldDef = suppressYield(regionId)
+    if (yieldDef) {
+      const amount = Math.floor(yieldDef.perHour * hours * yieldMult)
+      if (amount > 0) {
+        resources.addSmall(yieldDef.id, amount)
+        const row = total.resources.find(r => r.id === yieldDef.id)
+        if (row) row.amount += amount
+        else total.resources.push({ id: yieldDef.id, name: yieldDef.name, amount })
+      }
+    }
 
     // 装备掉落:次数期望结算(0.4件/h × 时长)。不能用 Math.random()<equipChance:
     // hours>2.5 时概率>1 恒真,离线一晚上每区只掉 1 件,与在线 0.4/h 的线性产出

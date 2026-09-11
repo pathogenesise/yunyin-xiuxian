@@ -5,11 +5,51 @@ import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { DECOMPOSE_DUST } from '@/data/constants'
 import { qualityDef } from '@/data/qualities'
-import { checkSuppression, settleSuppressedRegions } from './suppress'
+import { checkSuppression, settleSuppressedRegions, suppressYield } from './suppress'
 
 describe('区域镇压系统', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+  })
+
+  /**
+   * 地界物产:镇压收益不再只有灵石 —— 火域出矿、林区出草、天界以上出尘。
+   * 这样「镇守哪几片」才是一道取舍,而不是"挑层级最高的那几处"。
+   */
+  describe('地界物产(灵石之外的次级产出)', () => {
+    it('按地界气质给物产:林区出草、山地出矿、混沌之滨出尘', () => {
+      expect(suppressYield('wanyao')?.id).toBe('herb') // 万妖林:forest
+      expect(suppressYield('qingyun')?.id).toBe('ore') // 青云山麓:mountain
+      expect(suppressYield('hongmengbenyuan')?.id).toBe('dust') // 鸿蒙本源:sky
+      expect(suppressYield('guzhanchang')?.id).toBe('page') // 古战场遗迹:ruin
+    })
+
+    it('层级越高,同一物产产出越丰(线性,不随灵石做指数)', () => {
+      // 同为林区(灵草):黑风林 tier 3 vs 迷雾沼泽 tier 9
+      const low = suppressYield('heifeng')!
+      const high = suppressYield('miwu')!
+      expect(low.id).toBe('herb')
+      expect(high.id).toBe('herb')
+      expect(high.perHour).toBeGreaterThan(low.perHour)
+      // 线性口径:层级差 6,约多 6×15%
+      expect(high.perHour / low.perHour).toBeLessThan(1 + 0.15 * 8)
+    })
+
+    it('结算时物产真的进了库存,并记进产出清单', () => {
+      const player = usePlayerStore()
+      const resources = useResourcesStore()
+      player.suppressedRegions = ['wanyao']
+      player.suppressedSince = { wanyao: Date.now() }
+      const before = resources.herb
+
+      const total = settleSuppressedRegions(3600) // 一小时
+      expect(total).not.toBeNull()
+      expect(resources.herb, '林区镇压应产出灵草').toBeGreaterThan(before)
+      const row = total!.resources.find(r => r.id === 'herb')
+      expect(row, '产出清单应记下灵草').toBeDefined()
+      expect(row!.name).toBe('灵草')
+      expect(row!.amount).toBeGreaterThan(0)
+    })
   })
 
   /**

@@ -78,10 +78,13 @@
               >
                 转为镇压收益
               </button>
+              <span v-if="row.qualified" class="text-center text-[9px] leading-tight text-gold-ink">
+                {{ rateText(row.def) }}
+              </span>
             </div>
             <div v-else-if="row.suppressed" class="shrink-0 text-right">
               <span class="block text-[11px] text-gold-ink">
-                自动产出中 · {{ rateText(row.def) }}/时
+                自动产出中 · {{ rateText(row.def) }}
               </span>
               <button
                 class="-ml-1.5 mt-0.5 rounded-md px-1.5 py-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
@@ -181,6 +184,7 @@
   import { EXPLORE_MODES } from '@/data/constants'
   import { startExploration } from '@/core/exploration'
   import { stoneByTier } from '@/core/formulas'
+  import { suppressYield } from '@/core/suppress'
   import { regionRecallFor, prosperityName, isReviving } from '@/core/worldMemory'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, ecologyChips, ECO_LEVEL_NAMES, recommendForRegion, regionEcology, starsText } from '@/core/buildAdvisor'
@@ -318,9 +322,11 @@
     ui.toast(`你重掌${r?.name ?? '此地'}——镇压依旧,收益自取`, 'success')
   }
 
-  /** 镇压区域每小时灵石产出速率(展示给玩家) */
+  /** 镇压区域每小时产出(灵石 + 该地界物产,展示给玩家做取舍) */
   function rateText(r: RegionDef): string {
     const yieldPerHour = stoneByTier(r.tier, 150) // SUPPRESS_YIELD_PER_HOUR.stoneMultiplier
-    return formatGN(yieldPerHour)
+    const extra = suppressYield(r.id)
+    const stone = `${formatGN(yieldPerHour)}灵石/时`
+    return extra ? `${stone} · ${extra.name}${extra.perHour}/时` : stone
   }
 </script>

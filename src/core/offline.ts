@@ -88,7 +88,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   // 折扣豁免只豁免 0.9 效率,不平白豁免洞府离线上限本身
   const suppressYield = settleSuppressedRegions(capSec)
   if (suppressYield && !isZero(suppressYield.stone)) {
-    notes.push(`镇压诸域仍有余韵:灵石 +${formatGN(suppressYield.stone)}`)
+    const extra = suppressYield.resources.map(r => `${r.name} +${r.amount}`).join(' · ')
+    notes.push(`镇压诸域仍有余韵:灵石 +${formatGN(suppressYield.stone)}${extra ? ` · ${extra}` : ''}`)
     for (const eq of suppressYield.equipment) {
       equipmentGained.push(eq)
     }
