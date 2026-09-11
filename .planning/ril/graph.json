@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 85,
+  "round": 86,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:42:25+00:00",
+  "updated_at": "2026-09-11T19:45:44+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 84,
+      "touched_round": 85,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -4198,6 +4198,52 @@
       "touched_round": 84,
       "confidence": 0.85,
       "summary": "同一类内容(一次性副本:远征/试炼/秘境)必须共用同一套难度口径(按玩家缩放);口径分叉会让其中一个默默变成换装检查 —— 判据是「同一名玩家在不同境界遇到的敌我比值不随境界陡增」"
+    },
+    "ISS-062": {
+      "id": "ISS-062",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:45:34+00:00",
+      "updated_at": "2026-09-11T19:45:38+00:00",
+      "touched_round": 85,
+      "summary": "离线结算只在元婴期与混沌道祖两点验过『跑得通』,没验过折扣口径一致性:高界数值跨十几个数量级,若某处被 clamp 或精度丢失,增长率会悄悄偏离 0.9 而『有增长』依旧成立",
+      "severity": 0.35,
+      "confidence": 0.9
+    },
+    "CHG-109": {
+      "id": "CHG-109",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:45:34+00:00",
+      "updated_at": "2026-09-11T19:45:34+00:00",
+      "touched_round": 85,
+      "commit": "1cf5130",
+      "summary": "离线折扣全程一致性用例(0/9/14/20)+ 混沌道祖五条产线读数体检"
+    },
+    "EV-065": {
+      "id": "EV-065",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:45:38+00:00",
+      "updated_at": "2026-09-11T19:45:38+00:00",
+      "touched_round": 85,
+      "source": "offlineCap.spec 新增两条:四档境界增益比恒为 1.0000(容差 1e-3)、混沌道祖五条产线读数有限非负;故障注入让神人以上不打折 → 报偏离 1.1111(commit 1cf5130)",
+      "summary": "离线折扣与产线读数的全程一致性可被用例钉住",
+      "confidence": 0.85
+    },
+    "HYP-021": {
+      "id": "HYP-021",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:45:44+00:00",
+      "updated_at": "2026-09-11T19:45:44+00:00",
+      "touched_round": 85,
+      "confidence": 0.85,
+      "summary": "『数值体检』要比『有没有增长』更细一层:凡有折扣/倍率/封顶的产线,都应断言其**比率**(增益 ÷ 期望),因为高界量级下 clamp 与精度丢失只体现在比率上"
     }
   },
   "edges": [
@@ -5839,6 +5885,24 @@
       "to": "HYP-020",
       "type": "validates",
       "created_at": "2026-09-11T19:42:25+00:00"
+    },
+    {
+      "from": "CHG-109",
+      "to": "ISS-062",
+      "type": "resolves",
+      "created_at": "2026-09-11T19:45:38+00:00"
+    },
+    {
+      "from": "ISS-062",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T19:45:38+00:00"
+    },
+    {
+      "from": "EV-065",
+      "to": "HYP-021",
+      "type": "validates",
+      "created_at": "2026-09-11T19:45:44+00:00"
     }
   ]
 }
