@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 88,
+  "round": 89,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T19:53:10+00:00",
+  "updated_at": "2026-09-11T19:57:56+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3672,7 +3672,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:35:59+00:00",
       "updated_at": "2026-09-11T17:35:59+00:00",
-      "touched_round": 81,
+      "touched_round": 88,
       "confidence": 0.85,
       "summary": "可达性判据要按「发放点」倒推:凡内容表里的东西(称号/奖励/条件类型),都必须有一个真实的发放或求值点;没有就是看得见拿不到"
     },
@@ -4317,6 +4317,43 @@
       "touched_round": 87,
       "source": "secretRealm.spec(倍率/层数/层级三条)、suppress.spec(时长 3×)、dongfu.spec(等级 3×、零级不产出);故障注入三处各自变红(commit c8a6537)",
       "summary": "三处倍率都可算得出对;floor 取整会让长时长的余数失去比例,故取短时长",
+      "confidence": 0.85
+    },
+    "TASK-055": {
+      "id": "TASK-055",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:57:44+00:00",
+      "updated_at": "2026-09-11T19:57:56+00:00",
+      "touched_round": 88,
+      "category": "test-quality",
+      "severity": 0.35,
+      "confidence": 0.85,
+      "effort": 3,
+      "summary": "文案数值对账:变数/秘境规则/增益/契约四表的说明百分比与自带宽高负载对账(三种编码 + 反向措辞 + special 特例)"
+    },
+    "CHG-112": {
+      "id": "CHG-112",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:57:44+00:00",
+      "updated_at": "2026-09-11T19:57:44+00:00",
+      "touched_round": 88,
+      "commit": "25d760f",
+      "summary": "新增 dataTextAudit.spec(5 例):说明与实现不一致可被自动点名"
+    },
+    "EV-068": {
+      "id": "EV-068",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:57:56+00:00",
+      "updated_at": "2026-09-11T19:57:56+00:00",
+      "touched_round": 88,
+      "source": "dataTextAudit.spec(5 例):变数/秘境规则/增益/契约四表;故障注入三处(变数 28→30、增益 15→25、契约 25→30)各自被点名(commit 25d760f);另记反向结论:gongfa/artifacts/pills 等表只扫到 2 个百分比,不值得建判据",
+      "summary": "『说明与实现不一致』这一类可被自动点名;判据只适用于说明与数值同属一条目的表",
       "confidence": 0.85
     }
   },
@@ -6001,6 +6038,18 @@
       "to": "HYP-021",
       "type": "validates",
       "created_at": "2026-09-11T19:53:10+00:00"
+    },
+    {
+      "from": "CHG-112",
+      "to": "TASK-055",
+      "type": "implements",
+      "created_at": "2026-09-11T19:57:56+00:00"
+    },
+    {
+      "from": "EV-068",
+      "to": "HYP-016",
+      "type": "validates",
+      "created_at": "2026-09-11T19:57:56+00:00"
     }
   ]
 }
