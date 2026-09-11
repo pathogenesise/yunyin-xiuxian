@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 69,
+  "round": 70,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:16:40+00:00",
+  "updated_at": "2026-09-11T17:24:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 60,
+      "touched_round": 69,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -3475,6 +3475,52 @@
       "source": "samsaraAudit.spec「存档里的每个字段都登记了跨世去留 —— 从 $state 倒推」+ 弹窗同源断言;故障注入删掉 divination 映射立刻报该字段无结论(commit 9e90fd5)",
       "summary": "倒推式覆盖红线确有分辨力;手写 REQUIRED 清单漏掉七项正是反例",
       "confidence": 0.9
+    },
+    "ISS-052": {
+      "id": "ISS-052",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:24:31+00:00",
+      "updated_at": "2026-09-11T17:24:35+00:00",
+      "touched_round": 69,
+      "summary": "坏档会白屏:十二个持久化分片里只有四处有 sanitize,且那四处本身也没挡全(player.suppressedRegions、lore 的四张表缺栏即抛)。存档被写坏/手工改坏/旧版本缺栏时,渲染期在 Object.entries(null)/filter(undefined) 上抛错,玩家看到白屏而非「回到云隐山下」",
+      "severity": 0.7,
+      "confidence": 0.9
+    },
+    "CHG-089": {
+      "id": "CHG-089",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:24:31+00:00",
+      "updated_at": "2026-09-11T17:24:31+00:00",
+      "touched_round": 69,
+      "commit": "b0f08c4",
+      "summary": "utils/saveShape + 十二分片 sanitize + 读档统一兜底 + storeResilience 红线"
+    },
+    "EV-049": {
+      "id": "EV-049",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:24:35+00:00",
+      "updated_at": "2026-09-11T17:24:35+00:00",
+      "touched_round": 69,
+      "source": "src/core/storeResilience.spec.ts(12 分片 × 逐字段缺失后 sanitize + 计算属性求值);故障注入两处:去掉 gongfaBranch 修形报 Object.entries(null)、去掉 items 修形报 filter(undefined)(commit b0f08c4)",
+      "summary": "读档修形后,十二个分片在任一字段缺失时都能渲染;红线可故障注入",
+      "confidence": 0.9
+    },
+    "HYP-014": {
+      "id": "HYP-014",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:24:38+00:00",
+      "updated_at": "2026-09-11T17:24:38+00:00",
+      "touched_round": 69,
+      "confidence": 0.85,
+      "summary": "坏档韧性可以靠一条通用红线守住:对每个持久化分片的每个字段灌 undefined,再跑 sanitize 并求值所有计算属性 —— 只跑 sanitize 不够,白屏发生在渲染期读 computed"
     }
   },
   "edges": [
@@ -4828,6 +4874,24 @@
       "to": "HYP-013",
       "type": "validates",
       "created_at": "2026-09-11T17:16:40+00:00"
+    },
+    {
+      "from": "CHG-089",
+      "to": "ISS-052",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:24:35+00:00"
+    },
+    {
+      "from": "ISS-052",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:24:35+00:00"
+    },
+    {
+      "from": "EV-049",
+      "to": "HYP-014",
+      "type": "validates",
+      "created_at": "2026-09-11T17:24:38+00:00"
     }
   ]
 }
