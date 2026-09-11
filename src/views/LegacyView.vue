@@ -137,6 +137,21 @@
     </div>
 
     <!-- 行迹录(Phase 30.9 S3):事件余波 -->
+    <!-- 奇缘录(Phase 34.2):未了之缘,一世一世接下去 -->
+    <SectionTitle title="奇缘录" :hint="`未了之缘 ${unfinishedChains} 条`" />
+    <div class="card-ink divide-y divide-ink/6 px-4">
+      <template v-if="chainRows.length">
+        <p v-for="c in chainRows" :key="c.id" class="flex items-center gap-2 py-2 text-[12px]">
+          <span class="shrink-0 font-kai text-[13px]" :class="c.finished ? 'text-ink' : 'text-cinnabar'">{{ c.name }}</span>
+          <span class="min-w-0 truncate text-[10px] text-ink-faint">{{ c.hint }}</span>
+          <span class="ml-auto shrink-0 tabular text-[10px]" :class="c.finished ? 'text-jade' : 'text-ink-faint'">
+            {{ c.finished ? '已了' : `第 ${c.stage + 1}/${c.total} 程` }}
+          </span>
+        </p>
+      </template>
+      <p v-else class="py-4 text-center text-[11px] text-ink-ghost">尚无未了之缘。缘起于路上,不在名录里。</p>
+    </div>
+
     <SectionTitle title="行迹录" :hint="`际遇回响 ${lossRows.length} 则`" />
     <div class="card-ink divide-y divide-ink/6 px-4">
       <template v-if="lossRows.length">
@@ -177,6 +192,7 @@
   import { regionDef } from '@/data/regions'
   import { eventDef } from '@/data/events'
   import { isNemesis } from '@/core/worldMemory'
+  import { chainProgressRows } from '@/core/eventEngine'
   import { formatDate } from '@/utils/time'
   import SectionTitle from '@/components/common/SectionTitle.vue'
 
@@ -254,6 +270,10 @@
   )
 
   const profile = computed(() => cultivatorProfile(endgame.marks))
+
+  /** 奇缘录:只有起了头的缘才露面(往后的路不说破) */
+  const chainRows = computed(() => chainProgressRows())
+  const unfinishedChains = computed(() => chainRows.value.filter(c => !c.finished).length)
 
   const milestoneRows = computed(() =>
     [...endgame.milestones]

@@ -418,9 +418,12 @@ export const usePlayerStore = defineStore(
     }
 
     // Phase 28 前期玩法动作
-    function advanceEventChain(eventId: string): void {
-      const current = eventChains.value[eventId] ?? 0
-      eventChains.value = { ...eventChains.value, [eventId]: current + 1 }
+    /**
+     * 奇缘进度 = 已走完的程数(0 未起,等于该链条长度即已了)。
+     * 推进与断绝都只是"把它设到哪一程",故只留这一个写入口。
+     */
+    function setEventChain(chainId: string, stage: number): void {
+      eventChains.value = { ...eventChains.value, [chainId]: Math.max(0, Math.floor(stage)) }
     }
 
     function incrementWinStreak(): void {
@@ -589,7 +592,7 @@ export const usePlayerStore = defineStore(
       markDead,
       rebirth,
       sanitize,
-      advanceEventChain,
+      setEventChain,
       incrementWinStreak,
       resetWinStreak,
       markCaveEventToday,

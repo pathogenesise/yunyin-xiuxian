@@ -439,6 +439,8 @@ export interface EventChoice {
   cond?: EventCond
   outcomes: EventOutcome[]
   isDefault?: boolean
+  /** 选了此项,所属奇缘就此断掉(后续几程不会再出现);仅对奇缘阶段事件有意义 */
+  endsChain?: boolean
 }
 
 /** 区域兴衰状态(Phase 30.9 S1):混乱 → 稳定 → 繁盛 */

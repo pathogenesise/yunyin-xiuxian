@@ -11,7 +11,6 @@ import type { EnlightenmentEvent, EnlightenmentOption, CaveEvent } from '@/types
 import {
   ENLIGHTENMENT_OPTIONS,
   CAVE_EVENT_POOL,
-  CHAIN_EVENT_IDS,
   WIN_STREAK_REWARDS,
   BREAKTHROUGH_PREP_OPTIONS,
   earlyEventDecay
@@ -332,15 +331,4 @@ export function dismissCaveEvent(): void {
 
 function applyCaveBuff(buffId: string, cult: ReturnType<typeof useCultivationStore>, now: number) {
   cult.addBuff(buffId, now)
-}
-
-/** 检查事件是否为连锁事件 */
-export function isChainEvent(eventId: string): boolean {
-  return CHAIN_EVENT_IDS.some(id => eventId.startsWith(id))
-}
-
-/** 获取事件连锁阶段 */
-export function getEventChainStage(eventId: string): number {
-  const player = usePlayerStore()
-  return player.eventChains[eventId] ?? 0
 }

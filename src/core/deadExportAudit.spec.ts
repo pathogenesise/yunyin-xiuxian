@@ -6,7 +6,8 @@
  *
  *   - isSoftCapped 写了半年没人调,软阈值就成了"面板暗改";
  *   - RULESET_CHANGELOG 写好了没人读,玩家问不到"天道变了什么";
- *   - CHAIN_EVENT_IDS 列着五个连锁事件的 id,而那五个事件根本不存在。
+ *   - 早先的 CHAIN_EVENT_IDS 列着五个连锁事件的 id,而那五个事件根本不存在
+ *     (现已实装为 data/chains.ts,旧的死导出随之删除)。
  *
  * 这三条都是本轮清扫出来的真事,共同点不是"代码写得差",而是
  * **没有任何机制阻止死导出继续躺在那里**。故本文件把这件事变成红线:
@@ -37,9 +38,6 @@ const ALLOWLIST: Record<string, string> = {
   // 决策留档:接口先立、遥测后接(图谱里决策节点写的是"留",不是"删")
   analyzeChoices: '选择分析遥测:接口与判据先固化,等有真实遥测数据源再消费',
   valueGap: '与 analyzeChoices 同模块,同一决策下保留',
-  // 未实装机制:链路一落地就接线,并从本名单销账
-  isChainEvent: '奇遇连锁尚未实装(CHAIN_EVENT_IDS 列的是待建内容);实装即接线,届时应从本名单删除',
-  getEventChainStage: '同上,与 isChainEvent 成对',
   // 已被别的审计钉住的两端
   studyBlueprint: '炼器图纸骨架:contentReachabilityAudit 已钉"读与给必须一起接",此处不重复扣押'
 }

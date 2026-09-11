@@ -1,5 +1,6 @@
-/** 随机事件库 —— 58 个随机事件 + 11 条机缘,数据驱动,按区域标签匹配 */
+/** 随机事件库 —— 70 个随机事件(含 12 个奇遇连锁阶段) + 11 条机缘,数据驱动,按区域标签匹配 */
 import type { EventChoice, EventDef, EventEffect, EventOutcome } from '@/types'
+import { CHAIN_EVENTS } from './chains'
 
 function o(weight: number, text: string, ...effects: EventEffect[]): EventOutcome {
   return { weight, text, effects: effects.length ? effects : [{ type: 'nothing' }] }
@@ -23,6 +24,8 @@ function ev(
 const leave = (text = '你摇了摇头,转身离去。') => c('离开', [o(1, text)], { isDefault: true })
 
 export const EVENTS: EventDef[] = [
+  // 奇遇连锁的阶段事件:一律带 chain 标签,只有 pickChainStageEvent 能把它们请出来
+  ...CHAIN_EVENTS,
   ev(
     'ev_jade_slip',
     '古老玉简',
