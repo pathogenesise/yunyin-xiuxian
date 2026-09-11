@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 105,
+  "round": 106,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T23:42:12+00:00",
+  "updated_at": "2026-09-11T23:54:10+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 104,
+      "touched_round": 105,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 104,
+      "touched_round": 105,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -5296,6 +5296,67 @@
       "touched_round": 104,
       "summary": "progressionSim 假设拆成 cultMultParts 并新增 BUILDING_CULT_CAP(从建筑表推导),洞府假设 1.2→0.76;progressionSim.spec 增「每项假设不超过真实上限」四路校验",
       "commit": "f4891de"
+    },
+    "ISS-080": {
+      "id": "ISS-080",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:46:11+00:00",
+      "updated_at": "2026-09-11T23:54:10+00:00",
+      "touched_round": 105,
+      "summary": "解析模型从未与真实档对过账:progressionSim 的曲线一直当基准用,但没有任何用例拿真存档(走装备/功法/建筑/灵脉/灵根/天时/命格的完整通路)量一版,所以模型偏乐观或偏悲观都不会被任何人发现",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-071": {
+      "id": "TASK-071",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:46:11+00:00",
+      "updated_at": "2026-09-11T23:54:10+00:00",
+      "touched_round": 105,
+      "summary": "真实档节奏对账:用真 store 量「裸档」与「满配」两条曲线,判据是包夹(满配 ≤ 模型 ≤ 裸档),并登记进分类报告",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "HYP-034": {
+      "id": "HYP-034",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:46:16+00:00",
+      "updated_at": "2026-09-11T23:46:16+00:00",
+      "touched_round": 105,
+      "summary": "「基准模型有多真」可以写成一条包夹判据:满配真实档 ≤ 模型 ≤ 裸档真实档。左端拦「模型乐观到连满配都达不到」,右端拦「模型悲观到比裸档还慢」;两侧都用真实 store 通路量,而不是照公式再抄一遍 —— 抄一遍只会得到同义反复",
+      "confidence": 0.85
+    },
+    "EV-085": {
+      "id": "EV-085",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:46:16+00:00",
+      "updated_at": "2026-09-11T23:46:16+00:00",
+      "touched_round": 105,
+      "summary": "realPacing.spec:界外 12 境各量裸档/满配/模型,判据「满配 ≤ 模型 ≤ 裸档(且裸档至少慢 1.5×,满配须快于裸档)」;实测 m=9→20:满配/模型 0.73~0.86,裸/模型 3.0~4.5,与文件里「真实约为估算 1.5~3 倍」自洽;两个方向各注入一次(kit 抬到满配之上 → 左端红「满配真实档比模型还慢 1.69×」;kit 清空 → 右端红「裸档只比模型慢 1.33×」);全量 135 文件 1388 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/realPacing.spec.ts"
+    },
+    "CHG-129": {
+      "id": "CHG-129",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:54:10+00:00",
+      "updated_at": "2026-09-11T23:54:10+00:00",
+      "touched_round": 105,
+      "summary": "新增 realPacing.spec(1 例,界外 12 境):用真 store 量裸档与满配,判据「满配 ≤ 模型 ≤ 裸档」;登记进 Progression 分类",
+      "commit": "a4272d4"
     }
   },
   "edges": [
@@ -7555,6 +7616,42 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T23:42:12+00:00"
+    },
+    {
+      "from": "ISS-080",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-11T23:54:10+00:00"
+    },
+    {
+      "from": "TASK-071",
+      "to": "ISS-080",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:54:10+00:00"
+    },
+    {
+      "from": "CHG-129",
+      "to": "TASK-071",
+      "type": "implements",
+      "created_at": "2026-09-11T23:54:10+00:00"
+    },
+    {
+      "from": "CHG-129",
+      "to": "ISS-080",
+      "type": "resolves",
+      "created_at": "2026-09-11T23:54:10+00:00"
+    },
+    {
+      "from": "EV-085",
+      "to": "HYP-034",
+      "type": "validates",
+      "created_at": "2026-09-11T23:54:10+00:00"
+    },
+    {
+      "from": "TASK-071",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:54:10+00:00"
     }
   ]
 }
