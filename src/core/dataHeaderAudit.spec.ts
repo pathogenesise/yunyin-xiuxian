@@ -20,6 +20,7 @@ import { PILLS } from '@/data/pills'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import { EVENTS } from '@/data/events'
 import { CHAINS } from '@/data/chains'
+import { TRIGRAMS } from '@/data/yijing'
 
 const SOURCES = import.meta.glob('../data/*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
@@ -35,7 +36,8 @@ const TABLES: { file: string; label: string; length: number }[] = [
   { file: 'pills.ts', label: '丹药', length: PILLS.length },
   { file: 'achievements.ts', label: '成就', length: ACHIEVEMENTS.length },
   { file: 'events.ts', label: '随机事件(含奇缘阶段)', length: EVENTS.length },
-  { file: 'chains.ts', label: '奇缘', length: CHAINS.length }
+  { file: 'chains.ts', label: '奇缘', length: CHAINS.length },
+  { file: 'yijing.ts', label: '单卦', length: TRIGRAMS.length }
 ]
 
 describe('数据表头计数 · 与真实数组长度一致', () => {

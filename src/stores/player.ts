@@ -16,12 +16,14 @@ import { baseCultPerSec, baseQiRegen, expRequirement, qiCap } from '@/core/formu
 import { computeFinalStats, modOf } from '@/core/statsCalc'
 import { forgeSoul } from '@/core/gauntlet'
 import { todayWeather } from '@/core/weather'
+import { readingFromState, readingMods } from '@/core/divination'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
 import { useCultivationStore } from './cultivation'
 import { useDongfuStore } from './dongfu'
 import { useResourcesStore } from './resources'
 import { useEndgameStore } from './endgame'
+import { useGameStore } from './game'
 
 export const usePlayerStore = defineStore(
   'player',
@@ -102,6 +104,9 @@ export const usePlayerStore = defineStore(
     // Phase 31 S3 短期秘境(一次性内容容器,进行中状态)
     const secretRealm = ref<import('@/core/secretRealm').SecretRealmState | null>(null)
 
+    /** Phase 34.3 问卦所得之卦(一世一时之象,过期自散;转世不带) */
+    const divination = ref<import('@/core/divination').DivinationState | null>(null)
+
     // Phase 31.1 机缘链:机缘选择记忆(取/弃),影响师承推荐与未来同类机缘
     const fortuneChoices = ref<Record<string, FortuneChoice>>({})
 
@@ -152,6 +157,26 @@ export const usePlayerStore = defineStore(
      * 战斗/掉落/渡劫均读 finalStats.mods,故并入即可全链路生效,无需各自接线 */
     const weatherMods = computed<StatMods>(() => todayWeather().mods)
 
+    /**
+     * 在身之卦:与天时同法并入最终属性。
+     * 卦是"此一时的时机",故走环境通道,不动根基数值;过期即散。
+     *
+     * 过期要随时间自散,故借修行时长(引擎每秒推进)作依赖 ——
+     * 否则 computed 只会记住第一次算出的结果,卦会一直留在身上。
+     */
+    const activeDivination = computed(() => {
+      // 读一次心跳:过期判定要随引擎推进被重新计算(见 engine 的 addPlayTime)
+      void useGameStore().totalPlaySec
+      const state = divination.value
+      return state && state.expiresAt > Date.now() ? state : null
+    })
+    const divinationMods = computed<StatMods>(() => {
+      const state = activeDivination.value
+      if (!state) return {}
+      const reading = readingFromState(state)
+      return reading ? readingMods(reading) : {}
+    })
+
     const qiCapValue = computed(() => {
       // 聚灵阵(qiCapMult)与「修复阵法」类 buff(qiCapPct)都能抬高灵气上限
       const buffPct = 1 + modOf(cultivation.buffMods, 'qiCapPct')
@@ -176,6 +201,7 @@ export const usePlayerStore = defineStore(
           mentorMods.value,
           petMods.value,
           weatherMods.value,
+          divinationMods.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -210,6 +236,7 @@ export const usePlayerStore = defineStore(
           mentorMods.value,
           petMods.value,
           weatherMods.value,
+          divinationMods.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -386,6 +413,8 @@ export const usePlayerStore = defineStore(
       lastCaveEventDay.value = 0
       secretRealm.value = null
       regionEvent.value = null
+      // 卦是此一时的时机,不是"我是谁":转世即散
+      divination.value = null
       // 外物随皮囊散去:灵兽、洞府建筑、灵脉投资都是「我拥有多少」,不是「我是谁」
       petId.value = null
       dongfu.resetForRebirth()
@@ -402,6 +431,17 @@ export const usePlayerStore = defineStore(
       const count = Number.isFinite(r?.count) ? Math.max(0, r.count) : 0
       // 旧存档没有「镇压资格」一栏:已有的镇压区域视为已取得资格,不让老玩家掉档
       if (!Array.isArray(suppressQualified.value)) suppressQualified.value = []
+      // 旧存档没有卦象一栏(Phase 34.3);形状不对的直接作废,不让坏数据进属性汇总
+      if (divination.value) {
+        const d = divination.value
+        const ok =
+          Array.isArray(d.lines) &&
+          d.lines.length === 6 &&
+          Array.isArray(d.changingAt) &&
+          typeof d.expiresAt === 'number' &&
+          !!readingFromState(d)
+        if (!ok) divination.value = null
+      }
       for (const id of suppressedRegions.value) {
         if (!suppressQualified.value.includes(id)) suppressQualified.value.push(id)
       }
@@ -520,6 +560,11 @@ export const usePlayerStore = defineStore(
       secretRealm.value = state
     }
 
+    // ---------- Phase 34.3 问卦 ----------
+    function setDivination(state: import('@/core/divination').DivinationState | null): void {
+      divination.value = state
+    }
+
     // ---------- Phase 31.1 机缘链 ----------
     function setFortuneChoices(choices: Record<string, FortuneChoice>): void {
       fortuneChoices.value = choices
@@ -549,6 +594,7 @@ export const usePlayerStore = defineStore(
       mentor,
       regionEvent,
       secretRealm,
+      divination,
       fortuneChoices,
       realm,
       realmName,
@@ -566,6 +612,8 @@ export const usePlayerStore = defineStore(
       qiRich,
       finalStats,
       celestialStats,
+      activeDivination,
+      divinationMods,
       cultPerSec,
       qiRegenPerSec,
       lifespanMax,
@@ -605,6 +653,7 @@ export const usePlayerStore = defineStore(
       adoptMentor,
       setRegionEvent,
       setSecretRealm,
+      setDivination,
       setFortuneChoices
     }
   },
