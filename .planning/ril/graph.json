@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 75,
+  "round": 76,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:39:30+00:00",
+  "updated_at": "2026-09-11T17:45:10+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1745,11 +1745,11 @@
     "ISS-034": {
       "id": "ISS-034",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T08:07:29+00:00",
-      "updated_at": "2026-09-11T08:07:29+00:00",
-      "touched_round": 22,
+      "updated_at": "2026-09-11T17:45:02+00:00",
+      "touched_round": 75,
       "summary": "短期秘境(Phase 31.0 S3, secretRealm.ts)设计未接线且存在自相矛盾:入口门槛 realmUnlock=major>=3(元婴),入口代价 entryCost 用道源,而道源仅真仙终局可得(endgameUnlocked=major>=MAX_MAJOR,furnace/远征/试炼/裂隙全部门控)——元婴玩家永远无法持道源进秘境,两条件互斥;3层(事件/战斗/抉择)玩法与宝藏路径亦无实现",
       "severity": 0.5,
       "confidence": 1.0
@@ -1757,11 +1757,11 @@
     "TASK-031": {
       "id": "TASK-031",
       "type": "task",
-      "status": "stale",
-      "version": 2,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-11T08:07:29+00:00",
-      "updated_at": "2026-09-11T16:27:57+00:00",
-      "touched_round": 22,
+      "updated_at": "2026-09-11T17:45:02+00:00",
+      "touched_round": 75,
       "summary": "短期秘境接线前需产品定夺内容位:元婴(门槛降为灵石/药材代价) 还是 真仙终局(维持道源代价,与远征/试炼并列)?决定后可沿 challengeTrial/runGauntlet 范式接 3 层玩法+宝藏(复用 resolveCombat/EventDef/loot,源注释明言不新建数值体系)",
       "category": "core-feature",
       "severity": 0.5,
@@ -3672,7 +3672,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:35:59+00:00",
       "updated_at": "2026-09-11T17:35:59+00:00",
-      "touched_round": 74,
+      "touched_round": 75,
       "confidence": 0.85,
       "summary": "可达性判据要按「发放点」倒推:凡内容表里的东西(称号/奖励/条件类型),都必须有一个真实的发放或求值点;没有就是看得见拿不到"
     },
@@ -3712,6 +3712,56 @@
       "source": "dataIntegrity.spec(3 例);故障注入把命题 minStage 改成 9 → 报「要第 9 阶,而阶位只到 4」;另用 vue-tsc 实测确认属性键拼错会被类型系统拦下(Did you mean)(commit 7147059)",
       "summary": "门槛类静默失效可被倒推红线拦住;而属性键拼错交给类型系统更准 —— 自写的正则版已删",
       "confidence": 0.85
+    },
+    "CHG-095": {
+      "id": "CHG-095",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:44:56+00:00",
+      "updated_at": "2026-09-11T17:44:56+00:00",
+      "touched_round": 75,
+      "commit": "e0610b8",
+      "summary": "短期秘境实装:入口(灵石代价)+三层+随机规则(落到 CombatRules)+最终宝藏;历练页加入口卡"
+    },
+    "DEC-026": {
+      "id": "DEC-026",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:44:56+00:00",
+      "updated_at": "2026-09-11T17:44:56+00:00",
+      "touched_round": 75,
+      "summary": "短期秘境入口经济(暂定):按既有 minMajor=3 取灵石代价(按地界层级折算),而非原稿的「元婴门槛+道源代价」—— 道源真仙才有,元婴付不出等于进不去。若日后改真仙终局版,把 minMajor 改 9、代价换回道源即可,玩法循环不动",
+      "rationale": "骨架里同时写着 minMajor=3 与 entryCost(道源),两者互斥:门槛境界拿不到道源。取 minMajor 一侧为准则改动最小,且使内容在其设定的境界真的可玩;真仙终局版是同一循环换个门槛与货币,属数据级切换",
+      "alternatives_rejected": [
+        "继续挂着不接(玩家进不去,轮回清单却在交代它的去留 —— 骨架空转)",
+        "直接实现真仙终局版(把 minMajor 抬到 9,元婴玩家白等一个空栏目)",
+        "保留纯文本规则(文本说一套、引擎做一套)"
+      ]
+    },
+    "EV-054": {
+      "id": "EV-054",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:45:05+00:00",
+      "updated_at": "2026-09-11T17:45:05+00:00",
+      "touched_round": 75,
+      "source": "secretRealm.spec(12 例);行为验收:付灵石进门、掷 1~2 条不重复规则、规则并进 secretFightRules(枯荣古境 healMult≥2、三层凶险递增)、打到终局必清状态、连败两次出局;另有一条源码级判据要求 UI 真的调用 enter/fight/abandon(commit e0610b8)",
+      "summary": "骨架变实体:秘境有非 spec 入口,规则可生效,循环有出口",
+      "confidence": 0.9
+    },
+    "HYP-017": {
+      "id": "HYP-017",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:45:05+00:00",
+      "updated_at": "2026-09-11T17:45:05+00:00",
+      "touched_round": 75,
+      "confidence": 0.85,
+      "summary": "『骨架空转』可以用一条判据提前发现:凡有持久化状态的功能,必须存在非 spec 的入口调用(writer/action 在 views/components 里被调用),否则就是声明在前实现没跟"
     }
   },
   "edges": [
@@ -5149,6 +5199,36 @@
       "to": "HYP-016",
       "type": "validates",
       "created_at": "2026-09-11T17:39:30+00:00"
+    },
+    {
+      "from": "CHG-095",
+      "to": "TASK-031",
+      "type": "implements",
+      "created_at": "2026-09-11T17:44:59+00:00"
+    },
+    {
+      "from": "DEC-026",
+      "to": "TASK-031",
+      "type": "governs",
+      "created_at": "2026-09-11T17:44:59+00:00"
+    },
+    {
+      "from": "CHG-095",
+      "to": "ISS-034",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:44:59+00:00"
+    },
+    {
+      "from": "EV-054",
+      "to": "HYP-017",
+      "type": "validates",
+      "created_at": "2026-09-11T17:45:09+00:00"
+    },
+    {
+      "from": "EV-054",
+      "to": "HYP-016",
+      "type": "validates",
+      "created_at": "2026-09-11T17:45:09+00:00"
     }
   ]
 }
