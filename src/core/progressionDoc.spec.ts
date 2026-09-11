@@ -6,12 +6,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
+  COST_CURVES,
   PROGRESSION_AXES,
   PROGRESSION_NOTES,
   MORTAL_TIME_PER_MAJOR,
   OUTER_TIME_PER_MAJOR
 } from '@/data/progressionDoc'
-import { baseCultPerSec, expRequirement, qiCap, realmScale } from './formulas'
+import { baseCultPerSec, buildingCost, expRequirement, gongfaUpCost, qiCap, realmScale, stoneByTier, upgradeCost } from './formulas'
 import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { toNum } from '@/utils/gnum'
 
@@ -55,5 +56,25 @@ describe('数值体系说明 · 与公式同源', () => {
     expect(PROGRESSION_NOTES.tribulationCapMajor).toBeGreaterThan(0)
     expect(PROGRESSION_NOTES.banking.length).toBeGreaterThanOrEqual(3)
     expect(PROGRESSION_NOTES.basis.length).toBe(4)
+  })
+
+  it('花费曲线同样是复利,且文档倍率 = 公式实际环比', () => {
+    const curve = (id: string) => COST_CURVES.find(c => c.id === id)!
+
+    // 洞府建筑:每级灵石 ×BUILDING_COST_GROWTH
+    const b = toNum(buildingCost(100, 5)) / toNum(buildingCost(100, 4))
+    expect(b).toBeCloseTo(curve('building').growth, 5)
+
+    // 功法参悟:每层悟道点 ×GONGFA_UP_GROWTH(取整,故给 2% 相对容差)
+    const g = gongfaUpCost(4, 5) / gongfaUpCost(4, 4)
+    expect(Math.abs(g - curve('gongfa').growth) / curve('gongfa').growth).toBeLessThan(0.02)
+
+    // 装备强化:每级器灵尘 ×UPGRADE_DUST_GROWTH(品质系数同级相消;取整,给 2% 容差)
+    const u = upgradeCost(5, 10, 3, 0).dust / upgradeCost(4, 10, 3, 0).dust
+    expect(Math.abs(u - curve('equipLevel').growth) / curve('equipLevel').growth).toBeLessThan(0.02)
+
+    // 灵石掉落:每层 ×STONE_TIER_GROWTH
+    const s = toNum(stoneByTier(11, 10)) / toNum(stoneByTier(10, 10))
+    expect(s).toBeCloseTo(curve('stoneTier').growth, 5)
   })
 })

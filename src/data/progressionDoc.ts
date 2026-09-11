@@ -11,9 +11,11 @@
  *   3. 修为与灵气可**积余**:卡在某一境时仍继续累积,越过需求的部分带走
  */
 import {
+  BUILDING_COST_GROWTH,
   COMBAT_MAJOR_GROWTH,
   CULT_MAJOR_SPEED_GROWTH,
   EXP_MAJOR_GROWTH,
+  GONGFA_UP_GROWTH,
   LATE_COMBAT_GROWTH,
   LATE_CULT_SPEED_GROWTH,
   LATE_EXP_GROWTH,
@@ -22,7 +24,9 @@ import {
   QI_BANK_MULT,
   QI_CAP_MAJOR_GROWTH,
   QI_REGEN_MAJOR_GROWTH,
-  TRIBULATION_DIFFICULTY_CAP_MAJOR
+  STONE_TIER_GROWTH,
+  TRIBULATION_DIFFICULTY_CAP_MAJOR,
+  UPGRADE_DUST_GROWTH
 } from './constants'
 import { WORLD_BREAK_MAJOR } from './realms'
 
@@ -71,6 +75,24 @@ export const PROGRESSION_AXES: ProgressionAxis[] = [
 /** 净耗时倍率 = 修为需求 / 修炼速度:这才是玩家真正感受到的「难度」 */
 export const MORTAL_TIME_PER_MAJOR = EXP_MAJOR_GROWTH / CULT_MAJOR_SPEED_GROWTH
 export const OUTER_TIME_PER_MAJOR = LATE_EXP_GROWTH / LATE_CULT_SPEED_GROWTH
+
+export interface CostCurve {
+  id: string
+  name: string
+  /** 每单位(级 / 层)倍率 */
+  growth: number
+  /** 计量单位 */
+  unit: '等级' | '层级'
+  note: string
+}
+
+/** 各处花费同样是复利(不是线性),由 progressionDoc.spec 对着公式复核 */
+export const COST_CURVES: CostCurve[] = [
+  { id: 'building', name: '洞府建筑升级', growth: BUILDING_COST_GROWTH, unit: '等级', note: '每升一级,灵石开销 ×该倍率' },
+  { id: 'gongfa', name: '功法参悟', growth: GONGFA_UP_GROWTH, unit: '等级', note: '每上一层,悟道点开销 ×该倍率' },
+  { id: 'equipLevel', name: '装备强化', growth: UPGRADE_DUST_GROWTH, unit: '等级', note: '每强化一级,器灵尘开销 ×该倍率(灵石按层级另计)' },
+  { id: 'stoneTier', name: '灵石掉落', growth: STONE_TIER_GROWTH, unit: '层级', note: '每上一层地界,灵石产出 ×该倍率,与花费同速' }
+]
 
 /** 供界面展示的固定说明(不含可变数字) */
 export const PROGRESSION_NOTES = {
