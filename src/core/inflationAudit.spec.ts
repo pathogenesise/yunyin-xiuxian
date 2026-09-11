@@ -153,6 +153,30 @@ describe('膨胀治理 · 内容覆盖', () => {
     expect(dujie.crushRatio).toBeLessThan(1)
     console.log(`\n随缘档渡劫:压制 ${dujie.crushed}/${dujie.reachable} 区,顶区战力比 ${dujie.topPowerRatio.toFixed(1)}x`)
   })
+
+  /**
+   * 扩界之后,0-9 号境界的曲线有专门守卫,10-20(神界/混沌海)却从来只被"打印"过 ——
+   * contentCoverageAudit 会算到 MAX_MAJOR,但没有一条断言看那一半。故补两条上界守卫:
+   * 顶区战力比必须是有限数,且有上界。下界(内容死亡点)已有专门用例,这里守上界。
+   */
+  it('全程顶区战力比都是有限数 —— 后期数值不许算出 NaN/Infinity', () => {
+    for (const profile of GEAR_PROFILES) {
+      for (const r of contentCoverageAudit(profile)) {
+        expect(Number.isFinite(r.topPowerRatio), `[${profile.name}] ${REALMS[r.major]!.name} 顶区战力比不是有限数`).toBe(true)
+        expect(Number.isFinite(r.crushRatio), `[${profile.name}] ${REALMS[r.major]!.name} 压制比不是有限数`).toBe(true)
+      }
+    }
+  })
+
+  it('顶区战力比全程有上界:任何境界都不该碾到「区域战斗彻底失去意义」', () => {
+    // 实测(治理后):全程最高出现在真仙附近,常规档 5.8x、极限档 7.2x。
+    // 取 12x 作为红线:留出余量,又能挡住"新界一加、补偿没跟上"的跑飞。
+    for (const profile of GEAR_PROFILES) {
+      for (const r of contentCoverageAudit(profile)) {
+        expect(r.topPowerRatio, `[${profile.name}] ${REALMS[r.major]!.name} 顶区战力比 ${r.topPowerRatio.toFixed(1)}x 超过上界`).toBeLessThan(12)
+      }
+    }
+  })
 })
 
 describe('膨胀治理 · 乘区来源归因', () => {

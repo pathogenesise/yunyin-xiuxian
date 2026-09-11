@@ -35,6 +35,8 @@ const DEPTH = depthArg > 0 ? Number(process.argv[depthArg + 1]) || 12 : 12
 const LATE = process.argv.includes('--late')
 
 const ROUTES = ['/', '/cultivation', '/adventure', '/inventory', '/character', '/codex', '/souls', '/titles', '/settings']
+/** 正文里不该出现的数字/占位泄漏 */
+const NUMERIC_LEAK = ['NaN', 'Infinity', 'undefined']
 /** 破坏性/离开型按钮:冒烟盘上不点 */
 const SKIP = /分解|删除|清空|重置|兵解|转世|散尽|导出|导入|隐私|关于我们|出 秘 境|暂别/
 
@@ -110,6 +112,19 @@ async function clickInsideModal(route) {
 for (const route of ROUTES) {
   await page.goto(INDEX + '#' + route, { waitUntil: 'load' })
   await page.waitForTimeout(600)
+  /**
+   * 数字体检:正文里出现 NaN / Infinity / undefined 一律算失败。
+   * 这类泄漏在单元测试里看不出来(函数返回了"数字"),到了百万级数值与
+   * 除法密集的后期界面才现形 —— 后期夹具正是为它准备的。
+   */
+  const leaked = await page.evaluate((patterns) => {
+    const text = document.body.innerText
+    return patterns.filter(p => text.includes(p)).map(p => {
+      const i = text.indexOf(p)
+      return `${p}@…${text.slice(Math.max(0, i - 24), i + 24).replace(/\n/g, '↵')}…`
+    })
+  }, NUMERIC_LEAK)
+  for (const l of leaked) errors.push({ where: `${route} 正文泄漏`, msg: l })
   const buttons = await page.getByRole('button').all()
   for (const b of buttons.slice(0, DEPTH)) {
     const label = ((await b.innerText().catch(() => '')) || '').replace(/\s+/g, ' ').trim()
