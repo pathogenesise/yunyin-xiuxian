@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 104,
+  "round": 105,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T23:26:48+00:00",
+  "updated_at": "2026-09-11T23:42:12+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1984,7 +1984,7 @@
       "version": 1,
       "created_at": "2026-09-11T14:03:17+00:00",
       "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 103,
+      "touched_round": 104,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 101,
+      "touched_round": 104,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -5235,6 +5235,67 @@
       "touched_round": 103,
       "summary": "补神界「代天一行」与混沌海「本源一滴」两条奇缘(各三程),奇缘 6→8 条、15→21 程,事件表 73→79;chainProgression 判据升级为「四界各有其缘」;contentDensity 矩阵加奇缘起点列;contentGateAudit 事件占比口径改为仅区域随机池",
       "commit": "0cfd5a4"
+    },
+    "ISS-079": {
+      "id": "ISS-079",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:33:22+00:00",
+      "updated_at": "2026-09-11T23:42:12+00:00",
+      "touched_round": 104,
+      "summary": "节奏模型算得出玩家凑不出的加成:progressionSim 把洞府建筑按 Math.min(1.2, 0.1+0.09m) 估,而建筑表满级合计只有 76%(洞府 4 级 ×4% + 聚灵阵 20 级 ×3%)—— 高界凭空多出 44 个百分点。方向与「真实约为估算的 1.5~3 倍」一致,故一直没被发现;但模型是节奏基准,它假设的 kit 必须真实可凑",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-070": {
+      "id": "TASK-070",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T23:33:22+00:00",
+      "updated_at": "2026-09-11T23:42:12+00:00",
+      "touched_round": 104,
+      "summary": "把节奏模型的假设拆成具名分项(cultMultParts),洞府那一项改从建筑表推导;新增红线「每一项假设都不超过真实内容能给的上限」(洞府/功法+辅修/装备/灵根)",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "HYP-033": {
+      "id": "HYP-033",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:33:27+00:00",
+      "updated_at": "2026-09-11T23:33:27+00:00",
+      "touched_round": 104,
+      "summary": "凡「估算/基准模型」,它的每一分假设都必须能从真实数据里找到出处,并在测试里与真实上限比对 —— 模型算得出玩家凑不出的加成,不会报错、也不会崩,只会让所有以它为基准的结论一路偏下去(而且是朝乐观方向偏,最不易被发现)",
+      "confidence": 0.8
+    },
+    "EV-084": {
+      "id": "EV-084",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:33:27+00:00",
+      "updated_at": "2026-09-11T23:33:27+00:00",
+      "touched_round": 104,
+      "summary": "progressionSim 增 cultMultParts(假设分项具名)+ BUILDING_CULT_CAP(从建筑表算);progressionSim.spec 增「每一项假设不超过真实上限」:洞府 ≤ 建筑表满级(0.76)、功法+辅修 ≤ 该境可凑(含秘术占位与悟道分支)、装备 ≤ 六部位各一条顶级修速词条、灵根按典型值;两次注入(洞府改回 1.2 → 报「境界 9:模型假设洞府给 0.91,建筑表满级只有 0.76」;功法加到 5.0 → 报「假设 6.00,真实最多凑 2.23」)均转红;原有节奏断言(增幅 2~6 / 界外 (1,2))在修正后仍全绿;全量 134 文件 1387 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/progressionSim.spec.ts"
+    },
+    "CHG-128": {
+      "id": "CHG-128",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T23:42:11+00:00",
+      "updated_at": "2026-09-11T23:42:11+00:00",
+      "touched_round": 104,
+      "summary": "progressionSim 假设拆成 cultMultParts 并新增 BUILDING_CULT_CAP(从建筑表推导),洞府假设 1.2→0.76;progressionSim.spec 增「每项假设不超过真实上限」四路校验",
+      "commit": "f4891de"
     }
   },
   "edges": [
@@ -7458,6 +7519,42 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T23:26:48+00:00"
+    },
+    {
+      "from": "ISS-079",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-11T23:42:11+00:00"
+    },
+    {
+      "from": "TASK-070",
+      "to": "ISS-079",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:42:11+00:00"
+    },
+    {
+      "from": "CHG-128",
+      "to": "TASK-070",
+      "type": "implements",
+      "created_at": "2026-09-11T23:42:12+00:00"
+    },
+    {
+      "from": "CHG-128",
+      "to": "ISS-079",
+      "type": "resolves",
+      "created_at": "2026-09-11T23:42:12+00:00"
+    },
+    {
+      "from": "EV-084",
+      "to": "HYP-033",
+      "type": "validates",
+      "created_at": "2026-09-11T23:42:12+00:00"
+    },
+    {
+      "from": "TASK-070",
+      "to": "ISS-038",
+      "type": "addresses",
+      "created_at": "2026-09-11T23:42:12+00:00"
     }
   ]
 }
