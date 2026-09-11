@@ -98,6 +98,41 @@ describe('内容可达性 · 敌人', () => {
   })
 })
 
+describe('内容可达性 · 区域解锁链', () => {
+  it('从青云山麓出发,每一处区域都能沿 requireCleared 链走到', () => {
+    // 根节点:无前置
+    const roots = REGIONS.filter(r => !r.requireCleared)
+    expect(roots.map(r => r.id)).toEqual(['qingyun'])
+
+    const reached = new Set<string>(['qingyun'])
+    let grew = true
+    while (grew) {
+      grew = false
+      for (const r of REGIONS) {
+        if (reached.has(r.id)) continue
+        if (r.requireCleared && reached.has(r.requireCleared)) {
+          reached.add(r.id)
+          grew = true
+        }
+      }
+    }
+    const unreachable = REGIONS.filter(r => !reached.has(r.id)).map(r => `${r.name}(${r.id})`)
+    expect(unreachable).toEqual([])
+    expect(reached.size).toBe(REGIONS.length)
+  })
+
+  it('前置区域必须真实存在,且链上层级与境界门槛单调不回退', () => {
+    const byId = new Map(REGIONS.map(r => [r.id, r]))
+    for (const r of REGIONS) {
+      if (!r.requireCleared) continue
+      const prev = byId.get(r.requireCleared)
+      expect(prev, `${r.id} 的前置 ${r.requireCleared} 不存在`).toBeDefined()
+      expect(r.tier, `${r.id} 层级低于前置 ${prev!.id}`).toBeGreaterThan(prev!.tier)
+      expect(r.minRealm, `${r.id} 境界门槛低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.minRealm)
+    }
+  })
+})
+
 describe('内容可达性 · 功法', () => {
   it('修到顶再一路参悟下去,三十余部功法一部不落', () => {
     // 行为验证:真去藏经阁参悟到池空。从前这里复刻了 gongfaService 的池条件

@@ -11,6 +11,9 @@ import { useEndgameStore } from '@/stores/endgame'
 // ---------- 修行节点:跨世不灭的「首次」 ----------
 
 export const MILESTONE_DEFS: { id: string; name: string; desc: string }[] = [
+  { id: 'first_immortal', name: '飞升仙界', desc: '首次踏破人间界,飞升入仙' },
+  { id: 'first_god', name: '破界入神', desc: '首次自仙界踏入神界' },
+  { id: 'first_chaos', name: '归返混沌', desc: '首次踏入混沌海,重归大道本源' },
   { id: 'first_dao', name: '初立道途', desc: '于天穹之下立誓,择一道而行' },
   { id: 'first_world', name: '初破一界', desc: '首次踏破特殊规则世界' },
   { id: 'first_ni', name: '逆命破界', desc: '主流派核心尽封,仍以余技破界' },

@@ -1093,6 +1093,113 @@ export const FORTUNE_EVENTS: EventDef[] = [
       c('掩埋龟甲', [o(1, '此物不祥,你掘土掩埋,心念一清。')], { isDefault: true })
     ],
     { element: 'dark' }
+  ),
+
+  // ============ 仙界及以上机缘(仅以界域标签出现,不会落到人间界)============
+  ev(
+    'ft_xianmen_guqin',
+    '仙门古琴',
+    '废弃仙门的大殿中,一张古琴横陈案上。弦上无尘,似有人日日拂拭。',
+    ['immortal'],
+    [
+      c(
+        '抚琴一曲',
+        [
+          o(45, '琴音入神,你于道之一途豁然开朗。', { type: 'material', id: 'wudao', amount: 35 }),
+          o(35, '一曲未终,琴弦骤断,反震之力伤了你经脉。', { type: 'buff', id: 'injury' }, { type: 'exp', reqPct: 0.06 }),
+          o(20, '琴中封着一段仙诀,你将其记下。', { type: 'gongfa' })
+        ]
+      ),
+      c('拂尘而去', [o(1, '琴音未起,你却觉心中更静。')], { isDefault: true })
+    ]
+  ),
+  ev(
+    'ft_yunduan_xianzun',
+    '云端仙尊',
+    '云海之上,一位仙尊负手而立,像是等了很久:「你来得比我算的晚了些。」',
+    ['immortal'],
+    [
+      c(
+        '拜入门下',
+        [
+          o(55, '仙尊随手一点,你修为暴涨。', { type: 'exp', reqPct: 0.12 }),
+          o(30, '仙尊赐你一枚仙丹。', { type: 'pill', id: 'p_taichu', count: 1 }),
+          o(15, '仙尊摇头:「道不同。」拂袖而去,只留你一人在云端。', { type: 'nothing' })
+        ]
+      ),
+      c('不拜', [o(1, '仙尊笑道:「罢了,各走各路。」')], { isDefault: true })
+    ],
+    { element: 'light' }
+  ),
+  ev(
+    'ft_shenyu_wangzuo',
+    '神域王座',
+    '神域废墟中央悬着一座无主王座,坐上去的人,要么登临,要么被神威碾碎。',
+    ['god'],
+    [
+      c(
+        '登座一试',
+        [
+          o(40, '神威认可了你,一件神兵自空中落下。', { type: 'equipment', minQualityRank: 7 }),
+          o(35, '王座上的神威压得你气血翻涌,你咬牙撑住,却落下一身伤。', { type: 'buff', id: 'injury' }, { type: 'material', id: 'wudao', amount: 45 }),
+          o(25, '你被神威掀飞,却也摸到了这座神域的脉络。', { type: 'material', id: 'ore', amount: 70 })
+        ]
+      ),
+      c('绕座而行', [o(1, '无主之物,未必无主之威。你选择绕行。')], { isDefault: true })
+    ]
+  ),
+  ev(
+    'ft_faze_zhixin',
+    '法则之心',
+    '一枚跳动的光核悬于虚空,那是这方神域曾遵循过的、唯一的一条法则。',
+    ['god'],
+    [
+      c(
+        '纳心入体',
+        [
+          o(50, '法则之心融入经脉,你的身体记住了它。', { type: 'material', id: 'wudao', amount: 55 }),
+          o(35, '法则太过霸道,你只摄住一角,便已气血崩裂。', { type: 'buff', id: 'injury' }, { type: 'exp', reqPct: 0.1 }),
+          o(15, '光核竟再度跳动起来,认你为主。', { type: 'buff', id: 'buff_shenwei' })
+        ]
+      ),
+      c('不动其心', [o(1, '你只是看,不去碰。有些法则,旁观亦是修行。')], { isDefault: true })
+    ],
+    { element: 'chaos' }
+  ),
+  ev(
+    'ft_hundun_zhong',
+    '混沌之种',
+    '混沌之中,一粒种子悬浮不堕。它既是开始,也是某种未曾发生的结束。',
+    ['chaos'],
+    [
+      c(
+        '吞种入腹',
+        [
+          o(45, '种子在你体内生根,修为随之奔涌。', { type: 'exp', reqPct: 0.18 }),
+          o(30, '混沌之气冲乱经脉,你强压下来,却留下暗伤。', { type: 'buff', id: 'injury' }, { type: 'material', id: 'wudao', amount: 60 }),
+          o(25, '种子化开,一缕本源融入神魂。', { type: 'buff', id: 'buff_hundun' })
+        ]
+      ),
+      c('将其埋回混沌', [o(1, '你将它埋回原处 —— 尚未发生的事,不该由你来催。')], { isDefault: true })
+    ],
+    { element: 'chaos' }
+  ),
+  ev(
+    'ft_hongmeng_xiantai',
+    '鸿蒙先台',
+    '万道未生之时,似有人在此立过一座台。台上无字,却刻着与你有关的那一笔。',
+    ['chaos'],
+    [
+      c(
+        '登台观碑',
+        [
+          o(50, '碑上无字,你看见的却是自己此生的路。', { type: 'material', id: 'wudao', amount: 90 }),
+          o(30, '石碑反噬,你神魂震荡,却也窥见大道一角。', { type: 'buff', id: 'injury' }, { type: 'exp', reqPct: 0.15 }),
+          o(20, '你于台上静立良久,寿元悄然增了数千年。', { type: 'lifespan', years: 3000 })
+        ]
+      ),
+      c('不登此台', [o(1, '你退开一步。那笔账,你还没打算现在就结。')], { isDefault: true })
+    ]
   )
 ]
 const FORTUNE_BY_ID = new Map(FORTUNE_EVENTS.map(x => [x.id, x]))

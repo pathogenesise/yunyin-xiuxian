@@ -55,6 +55,30 @@ const FORTUNE_ECHO_TEXTS: Record<string, { form: EchoForm; line: string }> = {
   ft_blood_contract: {
     form: 'traces',
     line: '染血的龟甲埋在你亲手挖的土坑里——你曾将它掩埋于此。'
+  },
+  ft_xianmen_guqin: {
+    form: 'traces',
+    line: '古琴仍在案上,弦上依旧无尘。你曾在这里坐了一晌,终究没有伸手。'
+  },
+  ft_yunduan_xianzun: {
+    form: 'recognize',
+    line: '云端那位仙尊又在负手而立,瞥见你时笑了笑:「这回,还是不来?」'
+  },
+  ft_shenyu_wangzuo: {
+    form: 'fate-over',
+    line: '王座依旧悬在神域中央。你曾绕它而行,如今它认得你的脚步了。'
+  },
+  ft_faze_zhixin: {
+    form: 'traces',
+    line: '那枚光核还在跳动。你曾只是看着它,没有碰。'
+  },
+  ft_hundun_zhong: {
+    form: 'recognize',
+    line: '混沌之种回到你眼前,像是认得那个把它埋回去的人。'
+  },
+  ft_hongmeng_xiantai: {
+    form: 'fate-over',
+    line: '先台无字,那与你有关的一笔,还空着。你曾选择不去看它。'
   }
 }
 

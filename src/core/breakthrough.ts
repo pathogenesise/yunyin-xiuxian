@@ -3,7 +3,7 @@
  */
 import { mulberry32, rng } from '@/utils/random'
 import { formatPercent } from '@/utils/format'
-import { realmDef, realmLabel } from '@/data/realms'
+import { realmDef, realmLabel, worldOf, isWorldEntry } from '@/data/realms'
 import { BT_FAIL_EXP_LOSS, BT_QI_COST_RATIO } from '@/data/constants'
 import { breakthroughBaseRate, clampRate } from './formulas'
 import { modOf } from './statsCalc'
@@ -13,6 +13,7 @@ import { tribulationDef, TRIBULATIONS, type TribulationKind } from '@/data/tribu
 import { NO_RELIEF, type TribulationRelief } from '@/data/linggenAffinity'
 import { reliefFelt } from './linggenAffinity'
 import { track, trackRealm, checkStateAchievements } from './progress'
+import { recordMilestone } from './identity'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useCultivationStore } from '@/stores/cultivation'
@@ -182,13 +183,23 @@ export function attemptBreakthrough(): BreakthroughView | null {
     checkStateAchievements()
     playSfx('breakthrough')
     const realm = player.realm
+    // 跨界飞升:渡劫→真仙入仙界,大罗→神人入神界,神帝→混沌真灵入混沌海。
+    // 这三步是全流程仅有的「换一片天」,给独立叙事与跨世节点(人间界入口不算)
+    const crossedWorld = info.isMajor && player.major > 0 && isWorldEntry(player.major)
+    const world = crossedWorld ? worldOf(player.major) : null
+    if (world) recordMilestone(`first_${world.id}`)
+    const baseMessage = `境界跃迁,天地翻覆。${realm.desc}。寿元增至 ${player.lifespanMax} 载。`
     view = {
       success: true,
       fromLabel,
       toLabel: player.realmName,
       isMajor: info.isMajor,
       tribulationLog,
-      message: info.isMajor ? `境界跃迁,天地翻覆。${realm.desc}。寿元增至 ${player.lifespanMax} 载。` : '灵台清明,经脉拓宽,修为更上一层。'
+      message: !info.isMajor
+        ? '灵台清明,经脉拓宽,修为更上一层。'
+        : world
+          ? `天地改换,山河重立。你踏入${world.name}——${world.desc}。${realm.desc},寿元增至 ${player.lifespanMax} 载。`
+          : baseMessage
     }
   } else {
     const mods = player.finalStats.mods

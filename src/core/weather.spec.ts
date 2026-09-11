@@ -5,9 +5,10 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { todayWeather, weatherDef, WEATHERS } from './weather'
+import { todayWeather, weatherDef, WEATHERS, WORLD_WEATHERS } from './weather'
 import { useGameStore } from '@/stores/game'
 import { usePlayerStore } from '@/stores/player'
+import { worldOf } from '@/data/realms'
 import { currentTribulationPlan, waveDamage } from './tribulationDecision'
 import { tribulationDef } from '@/data/tribulations'
 import { NO_RELIEF } from '@/data/linggenAffinity'
@@ -153,5 +154,70 @@ describe('渡劫难度随天时(雷鸣日 +8%)', () => {
     const b = currentTribulationPlan()
     expect(a.kind).toBe(b.kind)
     expect(a.expectedRate).toBeGreaterThan(0)
+  })
+})
+
+// ---- 界域专属天象(Phase 34):让 12 个新境界各有自己的天 ----
+
+describe('界域天象(weather · 仙界及以上)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('每个界域都有自己的天象池,且不少于三种', () => {
+    for (const w of ['immortal', 'god', 'chaos'] as const) {
+      const pool = WORLD_WEATHERS[w]
+      expect(pool.length, `${w} 的天象池`).toBeGreaterThanOrEqual(3)
+      for (const def of pool) {
+        expect(def.desc).toBeTruthy()
+        // 池内天象必须能回查(界面按 id 取材),且界域名与 realms 一致
+        expect(weatherDef(def.id)?.name).toBe(def.name)
+      }
+    }
+    expect(worldOf(9).name).toBe('仙界')
+    expect(worldOf(14).name).toBe('神界')
+    expect(worldOf(18).name).toBe('混沌海')
+  })
+
+  it('人间界玩家仍取五日天时(既有行为零改动)', () => {
+    const player = usePlayerStore()
+    player.major = 0
+    const mortalIds = new Set(WEATHERS.map(w => w.id))
+    const game = useGameStore()
+    for (let d = 0; d < 20; d += 1) {
+      game.$patch({ totalPlaySec: d * 86400 })
+      expect(mortalIds.has(todayWeather().id)).toBe(true)
+    }
+  })
+
+  it('仙界/神界/混沌海玩家只取本界天象,且同一天确定不换', () => {
+    const player = usePlayerStore()
+    const game = useGameStore()
+    for (const [major, world] of [
+      [9, 'immortal'],
+      [14, 'god'],
+      [18, 'chaos']
+    ] as const) {
+      player.major = major
+      const poolIds = new Set(WORLD_WEATHERS[world].map(w => w.id))
+      for (let d = 1; d <= 12; d += 1) {
+        game.$patch({ totalPlaySec: d * 86400 })
+        const a = todayWeather()
+        const b = todayWeather()
+        expect(a.id).toBe(b.id) // 同日内确定
+        expect(poolIds.has(a.id), `${world} 取到了他界天象 ${a.id}`).toBe(true)
+      }
+    }
+  })
+
+  it('界域天象确实并入最终属性(不是只放着看)', () => {
+    const player = usePlayerStore()
+    player.major = 18 // 混沌海:混沌潮/本源涌动/道音 三者皆给加成
+    const mods = player.finalStats.mods
+    const anyPositive =
+      (mods.cultivationSpeed ?? 0) > 0 ||
+      (mods.attackPct ?? 0) > 0 ||
+      (mods.luck ?? 0) > 0
+    expect(anyPositive).toBe(true)
   })
 })
