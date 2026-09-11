@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 73,
+  "round": 74,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:32:44+00:00",
+  "updated_at": "2026-09-11T17:35:59+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 69,
+      "touched_round": 73,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -3629,6 +3629,52 @@
       "confidence": 0.9,
       "effort": 1,
       "summary": "模型类模块必须写明口径(比值可用/绝对值不可用):lootSim 此前是唯一漏网"
+    },
+    "ISS-054": {
+      "id": "ISS-054",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:35:51+00:00",
+      "updated_at": "2026-09-11T17:35:55+00:00",
+      "touched_round": 73,
+      "summary": "称号「炼气修士」(ti_lianqi)定义在册却无任何发放点:称号页看得见、desc 写着获取条件,玩家永远拿不到。同源死代码:evalCond 的 realm_<major>_<sub> 分支因 checkAchievements 一律跳过 custom 而从未被求值,「修至本境圆满」类成就写不出来",
+      "severity": 0.4,
+      "confidence": 0.95
+    },
+    "CHG-093": {
+      "id": "CHG-093",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:35:51+00:00",
+      "updated_at": "2026-09-11T17:35:51+00:00",
+      "touched_round": 73,
+      "commit": "9fd2a84",
+      "summary": "checkAchievements 放过 realm 型 custom;新增「炼气圆满」成就发放 ti_lianqi;rewardReachability 红线"
+    },
+    "EV-052": {
+      "id": "EV-052",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:35:55+00:00",
+      "updated_at": "2026-09-11T17:35:55+00:00",
+      "touched_round": 73,
+      "source": "rewardReachability.spec(5 例);行为验收:major=0 sub=9 → trackRealm() → a_lianqi_full 解锁且 titlesOwned 含 ti_lianqi;故障注入(继续跳过 custom)后两条红(commit 9fd2a84)",
+      "summary": "称号可达性与 realm 型条件都被红线钉住,且举一反三证明了死分支的存在",
+      "confidence": 0.9
+    },
+    "HYP-016": {
+      "id": "HYP-016",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:35:59+00:00",
+      "updated_at": "2026-09-11T17:35:59+00:00",
+      "touched_round": 73,
+      "confidence": 0.85,
+      "summary": "可达性判据要按「发放点」倒推:凡内容表里的东西(称号/奖励/条件类型),都必须有一个真实的发放或求值点;没有就是看得见拿不到"
     }
   },
   "edges": [
@@ -5036,6 +5082,24 @@
       "to": "TASK-047",
       "type": "implements",
       "created_at": "2026-09-11T17:32:44+00:00"
+    },
+    {
+      "from": "CHG-093",
+      "to": "ISS-054",
+      "type": "resolves",
+      "created_at": "2026-09-11T17:35:55+00:00"
+    },
+    {
+      "from": "ISS-054",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T17:35:55+00:00"
+    },
+    {
+      "from": "EV-052",
+      "to": "HYP-016",
+      "type": "validates",
+      "created_at": "2026-09-11T17:35:59+00:00"
     }
   ]
 }
