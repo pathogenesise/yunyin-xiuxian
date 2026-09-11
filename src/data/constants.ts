@@ -83,6 +83,20 @@ export const BT_FAIL_EXP_LOSS = 0.18
 export const BT_QI_COST_RATIO = 0.4
 /** 天劫波次基数(实际 = 基数 + 大境界序号) */
 export const TRIBULATION_BASE_WAVES = 3
+/**
+ * 天劫难度的境界封顶点(扩界)。
+ *
+ * 伤害与波次原本 = 0.15 + major×0.02(逐波) + wave×0.03,波次 = 3 + major,
+ * 这套口径是为「major ≤ 8(渡劫)」设的:彼时封顶的减伤/护持绝对值(减伤 55%、
+ * 抗性 80%)足以应付。扩界后若让 major 一路线性涨到 20,总量会翻几倍,
+ * 而减伤类词条是**有绝对上限**的——结果就是连设计者自己那套「四维皆优」
+ * 参考构筑(见 tribulationSpace.spec 的 maxed)都在神帝以上 0/5 可渡,
+ * 天劫从「解法空间」退化成「必须堆满硬顶」的墙。
+ *
+ * 故难度在 TRIBULATION_DIFFICULTY_CAP_MAJOR 处封顶:≤ 此境者一律不变,
+ * 其上的境界沿用同一难度基线;上界的威压由区域/首领与绝对上限的构筑要求承担。
+ */
+export const TRIBULATION_DIFFICULTY_CAP_MAJOR = 9
 
 // ============ 战斗基础 ============
 export const COMBAT_ATK_BASE = 12

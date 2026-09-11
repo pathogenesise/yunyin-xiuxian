@@ -30,6 +30,7 @@ import {
   QI_REGEN_MAJOR_GROWTH,
   STONE_DROP_BASE,
   STONE_TIER_GROWTH,
+  TRIBULATION_DIFFICULTY_CAP_MAJOR,
   BT_MAJOR_BASE_RATE,
   BT_MAJOR_DECAY,
   BT_MAX_RATE,
@@ -185,7 +186,9 @@ export function winChanceFromRatio(r: number): number {
 
 /** 天劫单波伤害占玩家最大生命比例(裸装首劫约五成生还,备战后稳过) */
 export function tribulationWaveDamage(targetMajor: number, wave: number, resist: number): number {
-  const base = 0.15 + targetMajor * 0.02 + wave * 0.03
+  // 境界项封顶(见 constants:难度口径只为 major ≤ 8 设,减伤有绝对上限)
+  const m = Math.min(targetMajor, TRIBULATION_DIFFICULTY_CAP_MAJOR)
+  const base = 0.15 + m * 0.02 + wave * 0.03
   return Math.max(0.04, base * (1 - resist))
 }
 

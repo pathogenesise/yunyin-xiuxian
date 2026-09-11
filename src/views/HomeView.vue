@@ -53,7 +53,7 @@
 
     <!-- 天界入口(真仙) -->
     <RouterLink
-      v-if="player.major >= 9"
+      v-if="player.major >= WORLD_BREAK_MAJOR"
       to="/celestial"
       class="card-ink flex items-center gap-3 border-cinnabar/40 px-4 py-3 active:scale-99"
     >
@@ -129,6 +129,7 @@
   import { useQuestsStore } from '@/stores/quests'
   import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
   import { VEIN_UNLOCK_MAJOR } from '@/data/constants'
+  import { WORLD_BREAK_MAJOR } from '@/data/realms'
   import { todayWeather } from '@/core/weather'
   import { generateCurrentGoal, type Goal } from '@/core/goal'
   import SectionTitle from '@/components/common/SectionTitle.vue'

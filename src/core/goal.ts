@@ -21,6 +21,7 @@ import { detectBuild } from './buildDetect'
 import { realmLabel } from '@/data/realms'
 import { REGIONS } from '@/data/regions'
 import { EQUIP_SLOT_NAMES } from '@/data/equipment'
+import { SUB_LEVELS } from '@/data/constants'
 import type { EquipSlot } from '@/types'
 
 export type GoalType = 'breakthrough' | 'equipment' | 'explore' | 'material' | 'build'
@@ -55,7 +56,7 @@ export function generateCurrentGoal(player: ReturnType<typeof usePlayerStore>): 
 
   // 2. 修为接近突破(最高优先级)
   if (player.expProgress >= 0.85) {
-    const next = realmLabel(player.major, Math.min(player.sub + 1, 9))
+    const next = realmLabel(player.major, Math.min(player.sub + 1, SUB_LEVELS - 1))
     return {
       type: 'breakthrough',
       text: `尝试突破「${next}」`,
@@ -64,7 +65,7 @@ export function generateCurrentGoal(player: ReturnType<typeof usePlayerStore>): 
     }
   }
   if (player.expProgress >= 0.5) {
-    const next = realmLabel(player.major, Math.min(player.sub + 1, 9))
+    const next = realmLabel(player.major, Math.min(player.sub + 1, SUB_LEVELS - 1))
     return {
       type: 'breakthrough',
       text: `向「${next}」迈进`,

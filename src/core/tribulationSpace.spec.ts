@@ -16,6 +16,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildTribulationPlan, SOULREND_BURST_RELIEF } from './tribulationDecision'
 import { TRIBULATIONS, type TribulationKind } from '@/data/tribulations'
+import { MAX_MAJOR, REALMS } from '@/data/realms'
 import type { StatMods } from '@/types'
 
 /** 代表性构筑形态:每一条对应一条真实路数,而非枚举数值 */
@@ -57,6 +58,25 @@ function planOf(shape: Shape, kind: TribulationKind) {
 }
 
 describe('天劫解法空间审计', () => {
+  /**
+   * 扩界守卫:天劫难度不得随境界失控。
+   *
+   * 伤害公式(0.15 + major×0.02 逐波,波次 3+major)是为 major ≤ 8 设的;
+   * 扩界后若让 major 一路线性涨到 20,而减伤类词条有绝对上限,连本文件那套
+   * 「四维皆优」参考构筑都会在神帝以上 0/5 可渡 —— 天劫从解法空间退化成硬墙。
+   * 这条要求:凡需渡劫的境界,四维皆优的参考构筑必能渡任一劫型。
+   */
+  it('四维皆优的参考构筑,在每一个需渡劫的境界都能渡任一劫型', () => {
+    const maxed = SHAPES.find(s => s.key === 'maxed')!
+    for (let major = 1; major <= MAX_MAJOR; major += 1) {
+      if (!REALMS[major]!.tribulation) continue // 无需渡劫的境界(如真仙)跳过
+      for (const t of TRIBULATIONS) {
+        const p = buildTribulationPlan(major, maxed.mods, t.id)
+        expect(PASS.has(p.verdict), `${REALMS[major]!.name}·${t.name}劫:四维皆优仍不可渡`).toBe(true)
+      }
+    }
+  })
+
   it('矩阵总览(构筑 × 劫型 → 劫势)', () => {
     const head = TRIBULATIONS.map(t => t.name.padEnd(4)).join(' ')
     console.log(`\n  major=${AUDIT_MAJOR} 波次=${3 + AUDIT_MAJOR}`)

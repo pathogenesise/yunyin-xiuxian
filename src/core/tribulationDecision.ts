@@ -20,7 +20,7 @@ import { tribulationDef, TRIBULATIONS, type TribulationDef, type TribulationKind
 import { NO_RELIEF, type TribulationRelief } from '@/data/linggenAffinity'
 import { rootElements, tribulationRelief } from './linggenAffinity'
 import { todayWeather } from './weather'
-import { TRIBULATION_BASE_WAVES } from '@/data/constants'
+import { TRIBULATION_BASE_WAVES, TRIBULATION_DIFFICULTY_CAP_MAJOR } from '@/data/constants'
 import { tribulationWaveDamage } from './formulas'
 import { mulberry32 } from '@/utils/random'
 import { usePlayerStore } from '@/stores/player'
@@ -70,7 +70,7 @@ export function rollTribulation(targetMajor: number): TribulationKind {
 
 /** 天劫总波次 */
 export function tribulationWaves(targetMajor: number): number {
-  return TRIBULATION_BASE_WAVES + targetMajor
+  return TRIBULATION_BASE_WAVES + Math.min(targetMajor, TRIBULATION_DIFFICULTY_CAP_MAJOR)
 }
 
 /** 准备度分档阈值:四维共用一张表,改这里 UI 与结算同时跟进 */
