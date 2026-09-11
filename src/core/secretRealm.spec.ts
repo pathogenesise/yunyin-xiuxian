@@ -106,14 +106,28 @@ describe('秘境 · 规则是真的', () => {
     }
   })
 
-  it('本境规则与层数递进都并进战斗:枯荣古境治疗翻倍、三层更凶', () => {
-    ready(3)
-    enterSecretRealm('sr_kurong')
-    const st = currentRealm()!
-    const rules = secretFightRules(st)
-    expect(rules.healMult ?? 0).toBeGreaterThanOrEqual(2)
-    const l1 = secretFightRules(st, 1)
-    const l3 = secretFightRules(st, SECRET_LAYERS)
+  it('本境规则与随机规则都并进战斗(逐条隔离验证,不吃随机掷的运气)', () => {
+    // 用固定状态逐条验:随机规则是掷出来的,拿真实一跳去断言会时红时绿
+    const base = {
+      realmId: 'sr_kurong',
+      enteredAt: 0,
+      layer: 1,
+      wins: 0,
+      losses: 0,
+      spoils: [],
+      rules: [] as string[],
+      carriedHpPct: 1,
+      finished: false
+    }
+    // 枯荣古境自带:治疗 ×2
+    expect(secretFightRules(base).healMult).toBe(2)
+    // 随机规则并入:回合上限
+    expect(secretFightRules({ ...base, rules: ['回合上限 20'] }).maxRounds).toBe(20)
+    // 两条规则叠乘(合并是乘区,不是覆盖):×2 与「治疗减半」相遇即回落到 ×1
+    expect(secretFightRules({ ...base, rules: ['治疗减半'] }).healMult).toBe(1)
+    // 层数递进:第三层比第一层更凶
+    const l1 = secretFightRules(base, 1)
+    const l3 = secretFightRules(base, SECRET_LAYERS)
     expect(l3.enemyAtkMult!).toBeGreaterThan(l1.enemyAtkMult!)
     expect(l3.enemyHpMult!).toBeGreaterThan(l1.enemyHpMult!)
   })
