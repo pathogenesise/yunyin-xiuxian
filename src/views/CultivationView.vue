@@ -41,6 +41,16 @@
           color="var(--color-azure)"
           :height="8"
         />
+        <!-- 以灵气疗伤(修复):灵气积余的用途,代价随境界指数增长 -->
+        <button
+          v-if="repair.injured"
+          type="button"
+          class="btn-seal mt-2 w-full !py-2 !text-[12px]"
+          :disabled="!repair.affordable"
+          @click="repairWithQi()"
+        >
+          {{ repair.affordable ? `引气疗伤 · 耗灵气 ${formatNum(repair.cost)}` : `灵气不足(需 ${formatNum(repair.cost)})` }}
+        </button>
       </div>
 
       <div class="ink-divider my-4" />
@@ -274,6 +284,7 @@
   import { reliefElements, rootElements } from '@/core/linggenAffinity'
   import { comprehendGongfa } from '@/core/gongfaService'
   import { usePill } from '@/core/pillService'
+  import { qiRepairView, repairWithQi } from '@/core/qiRepair'
   import { useNow } from '@/composables/useNow'
   import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
   import { gongfaDef } from '@/data/gongfa'
@@ -333,6 +344,9 @@
   const PREP_NAMES = { guard: '护持', sustain: '恢复', resist: '抗性', burst: '爆发' } as const
   const PREP_STARS = ['·', '✧', '✧✧', '✧✧✧'] as const
   const tribPlan = computed(() => (btInfo.value.needTribulation ? currentTribulationPlan() : null))
+
+  /** 灵气疗伤(修复)状态:负伤时才出现入口,代价随灵气容量指数增长 */
+  const repair = computed(() => qiRepairView())
 
   /** 界域总览:四界 21 境,按界域分组并标出所处位置 */
   const worldRows = computed(() =>

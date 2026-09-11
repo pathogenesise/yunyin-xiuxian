@@ -22,7 +22,7 @@ const CATEGORIES = [
     match: ['buildSim', 'buildSearch', 'buildDetect', 'buildAdvisor', 'equipSet', 'gongfaBranch', 'softCapAudit', 'linggenAffinity', 'linggenRole']
   },
   { name: 'Progression 成长曲线', match: ['realms.spec', 'realmBanking', 'progressionSim', 'breakthrough', 'inflationAudit', 'samsaraAudit', 'daoFruitCurve', 'saveCalibration', 'rebirthRoi', 'deepCultivationRoi', 'contentGateAudit', 'shallowRebirthGains', 'narrowingImpact', 'impactSurface', 'compoundingAudit', 'daoFruitRoles', 'fruitOutlets', 'lifeTrialService', 'trialMotivation', 'motivationType', 'mortalWorldGen', 'mortalIdentity', 'mortalGate', 'mortalRouteAccess', 'overviewNecessity', 'contentTakeover', 'bossUnique', 'worldNaming', 'worldSemantics', 'player.rebirth'] },
-  { name: 'Economy     资源经济', match: ['economySim', 'lootSim', 'loot.spec', 'petLuck', 'pillValue', 'veinEconomyAudit', 'veinVisibility', 'resourceGuidance', 'offlineCap', 'veinService'] },
+  { name: 'Economy     资源经济', match: ['economySim', 'lootSim', 'loot.spec', 'petLuck', 'pillValue', 'veinEconomyAudit', 'veinVisibility', 'resourceGuidance', 'offlineCap', 'veinService', 'qiRepair'] },
   {
     name: 'Regression  服务与归因',
     match: ['loadoutService', 'battleAnalysis', 'loreService', 'contentReachability', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform']
