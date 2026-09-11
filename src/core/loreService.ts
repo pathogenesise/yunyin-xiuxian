@@ -240,8 +240,12 @@ export function studyTick(dtSec: number): void {
     }
   }
   if (target !== null) {
-    const gain = lore.studyFrac
-    lore.studyFrac = 0
+    // 贴着这张方子还差的量吃,不整袋倒光:临近完成的方子(如 0.999)吃不下全部
+    // studyFrac 时,超出的部分留在 studyFrac 里,下一拍继续喂下一张最生的方子,
+    // 而不是 clamp 到 1 后把整段钻研连同溢出一起归零(那是进度蒸发)
+    const room = 1 - lore.recipeMastery(target)
+    const gain = Math.min(room, lore.studyFrac)
+    lore.studyFrac -= gain
     lore.addRecipeMastery(target, gain)
     return
   }

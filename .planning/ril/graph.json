@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 16,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T02:43:53+00:00",
+  "updated_at": "2026-09-11T03:02:13+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1547,6 +1547,23 @@
       "updated_at": "2026-09-11T02:43:18+00:00",
       "touched_round": 16,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
+    },
+    "TASK-027": {
+      "id": "TASK-027",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-11T03:00:36+00:00",
+      "updated_at": "2026-09-11T03:02:13+00:00",
+      "touched_round": 16,
+      "summary": "studyTick 吸收 studyFrac 时弃尾:目标丹方临近完成(余量不足)时,超出部分随 studyFrac 归零被吞,钻研进度蒸发",
+      "category": "correctness",
+      "severity": 0.15,
+      "confidence": 0.8,
+      "effort": 1,
+      "priority_score": 1.2,
+      "lock_owner": "yunyin-session",
+      "lock_until": "2026-09-11T03:32:13+00:00"
     }
   },
   "edges": [
@@ -2108,6 +2125,12 @@
       "to": "COMP-010",
       "type": "located_in",
       "created_at": "2026-09-11T02:43:53+00:00"
+    },
+    {
+      "from": "TASK-027",
+      "to": "ISS-029",
+      "type": "addresses",
+      "created_at": "2026-09-11T03:02:13+00:00"
     }
   ]
 }
