@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 66,
+  "round": 67,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:05:46+00:00",
+  "updated_at": "2026-09-11T17:10:02+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3367,6 +3367,43 @@
       "touched_round": 65,
       "confidence": 0.8,
       "summary": "『声明而未实现』可被词表级覆盖判定拦住;但**数据字段级**(对象属性是否被读)不可靠 —— 动态取键(Record 查表、modOf(mods,'key'))太多,静态判定会产出大量误报"
+    },
+    "TASK-044": {
+      "id": "TASK-044",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:09:51+00:00",
+      "updated_at": "2026-09-11T17:09:57+00:00",
+      "touched_round": 66,
+      "category": "docs",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "数值体系说明补术数四门(五层分工与数字同源)"
+    },
+    "CHG-086": {
+      "id": "CHG-086",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:09:57+00:00",
+      "updated_at": "2026-09-11T17:09:57+00:00",
+      "touched_round": 66,
+      "commit": "0819196",
+      "summary": "数值体系说明补术数四门:SORCERY_LAYERS/SORCERY_SUMMARY + 弹窗展示 + 6 例同源审计"
+    },
+    "EV-047": {
+      "id": "EV-047",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:10:02+00:00",
+      "updated_at": "2026-09-11T17:10:02+00:00",
+      "touched_round": 66,
+      "source": "src/core/progressionDoc.spec.ts 术数四门 6 例(逐项对照 DIVINATION_COST/CHANGING_TIERS/MANSION_EVENT_LUCK/各模块条数);故障注入:写死悟道点 3、星象加成 12% 各自变红(commit 0819196)",
+      "summary": "说明页上的每个数字都能追到模块真值,改常数忘改文案会红",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -4690,6 +4727,12 @@
       "to": "HYP-012",
       "type": "validates",
       "created_at": "2026-09-11T17:05:46+00:00"
+    },
+    {
+      "from": "CHG-086",
+      "to": "TASK-044",
+      "type": "implements",
+      "created_at": "2026-09-11T17:09:57+00:00"
     }
   ]
 }
