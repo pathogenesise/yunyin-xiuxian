@@ -42,14 +42,19 @@ describe('灵兽性格 · 掉落倾向(dropLuck 接入 afterWin)', () => {
     if (petId) player.setPet(petId)
   }
 
+  /** 品质 luck 里还叠着命格等常驻底色 —— 这里钉的是「性格贡献了多少」 */
+  function luckExceptFate(): number {
+    const call = vi.mocked(generateEquipment).mock.calls.at(-1)!
+    const kwargs = call[2] as { luck: number; minQualityRank: number } | undefined
+    return (kwargs?.luck ?? 0) - (usePlayerStore().fateMods.luck ?? 0)
+  }
+
   it('贪宝灵兽把性格倾向并入装备品质 luck', () => {
     seedPet('pet_qingyu') // greedy → dropLuck 0.06,自身 mods 不带 luck
     const region = regionDef('qingyun')!
     afterWin(region, 1, true)
 
-    const call = vi.mocked(generateEquipment).mock.calls.at(-1)!
-    const kwargs = call[2] as { luck: number; minQualityRank: number } | undefined
-    expect(kwargs?.luck).toBeCloseTo(0.06)
+    expect(luckExceptFate()).toBeCloseTo(0.06)
   })
 
   it('无灵兽时品质 luck 不着性格加成', () => {
@@ -57,9 +62,7 @@ describe('灵兽性格 · 掉落倾向(dropLuck 接入 afterWin)', () => {
     const region = regionDef('qingyun')!
     afterWin(region, 1, true)
 
-    const call = vi.mocked(generateEquipment).mock.calls.at(-1)!
-    const kwargs = call[2] as { luck: number; minQualityRank: number } | undefined
-    expect(kwargs?.luck).toBe(0)
+    expect(luckExceptFate()).toBe(0)
   })
 
   it('谨慎灵兽(dropLuck 为负)拉低品质 luck', () => {
@@ -67,8 +70,6 @@ describe('灵兽性格 · 掉落倾向(dropLuck 接入 afterWin)', () => {
     const region = regionDef('qingyun')!
     afterWin(region, 1, true)
 
-    const call = vi.mocked(generateEquipment).mock.calls.at(-1)!
-    const kwargs = call[2] as { luck: number; minQualityRank: number } | undefined
-    expect(kwargs?.luck).toBeCloseTo(-0.02)
+    expect(luckExceptFate()).toBeCloseTo(-0.02)
   })
 })

@@ -85,15 +85,17 @@ describe('典籍志 · 与境界 lore 双向对得上', () => {
 
 describe('典籍志 · 未实装门类如实标注', () => {
   it('待续清单非空,且每条都注明未实装', () => {
-    expect(PLANNED_SCHOOLS.length).toBeGreaterThanOrEqual(3)
+    // 清单会随实装变短 —— 故只要求"还剩什么就如实标什么",不设下限
+    expect(PLANNED_SCHOOLS.length).toBeGreaterThanOrEqual(1)
     for (const p of PLANNED_SCHOOLS) {
       expect(p.name).toBeTruthy()
       expect(p.note, `${p.name} 未注明状态`).toContain('未实装')
     }
   })
 
-  it('实装了就得从待续里出来:周易已在,不再挂着「未实装」', () => {
+  it('实装了就得从待续里出来:周易与紫微已在,不再挂着「未实装」', () => {
     expect(PLANNED_SCHOOLS.some(p => p.name.includes('周易'))).toBe(false)
+    expect(PLANNED_SCHOOLS.some(p => p.name.includes('紫微'))).toBe(false)
     expect(TRIGRAMS.length).toBe(8)
     expect(HEXAGRAMS.length).toBe(64)
   })

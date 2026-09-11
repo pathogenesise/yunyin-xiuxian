@@ -125,6 +125,32 @@
     </section>
 
     <!-- 待续:如实标注尚未实装的门类 -->
+    <!-- 紫微:一世之格,与周易的「一时之机」分工 -->
+    <SectionTitle title="紫微" hint="十二宫定一世之格,与问卦分工" />
+    <section class="card-ink px-4 py-3">
+      <p class="text-[11px] leading-relaxed text-ink-faint">
+        紫微斗数本当以生辰起五行局再安诸星,游戏内没有生辰 ——
+        故此门只取**十二宫所主**与**十四主星的星性**,按灵根与轮回归属安星:是取象义,不是排盘。
+        卦是一时之机(可问、有时限),命是一世之格(常驻、转世重算,力薄为底色)。
+      </p>
+      <p class="mt-2 font-kai text-[13px] leading-relaxed text-ink">{{ fateLordLineText }}</p>
+      <p class="mt-1 text-[11px] text-azure">命格之力:{{ fateModsText }}</p>
+      <div class="mt-2.5 divide-y divide-ink/6">
+        <div v-for="row in fateRows" :key="row.palace.id" class="flex items-baseline gap-2 py-1.5">
+          <span class="w-14 shrink-0 font-kai text-[12px] text-ink-soft">{{ row.palace.name }}</span>
+          <span class="w-24 shrink-0 text-[11px] text-cinnabar/90">{{ row.starNames }}</span>
+          <span class="min-w-0 text-[11px] leading-relaxed text-ink-faint">{{ row.palace.domain }} · {{ row.palace.use }}</span>
+        </div>
+      </div>
+      <div class="mt-2 border-t border-ink/10 pt-2">
+        <p class="text-[10px] text-ink-ghost">十四主星</p>
+        <p v-for="s in STARS" :key="s.id" class="mt-1 text-[11px] leading-relaxed text-ink-soft">
+          <span class="font-kai text-ink">{{ s.name }}</span>
+          <span class="text-ink-faint"> · {{ s.nature }} · {{ s.gist }}</span>
+        </p>
+      </div>
+    </section>
+
     <SectionTitle title="待续" hint="已列入路线、尚未实装的经典门类" />
     <section class="card-ink divide-y divide-ink/7 px-4">
       <div v-for="p in PLANNED_SCHOOLS" :key="p.name" class="flex items-start gap-2 py-2.5">
@@ -148,6 +174,8 @@
   import { HEXAGRAMS, TRIGRAMS, trigramDef } from '@/data/yijing'
   import { DIVINATION_COST, drawLines, readingCounsel, readingFromState } from '@/core/divination'
   import { askDivination } from '@/core/divinationService'
+  import { STARS } from '@/data/ziwei'
+  import { fateLordLine } from '@/core/fate'
   import { modsText } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
 
@@ -185,6 +213,16 @@
     const r = out.reading!
     ui.toast(`得「${r.hexagram.name}」卦${r.changed ? `,之${r.changed.name}` : ''}`, 'info')
   }
+
+  // 命格:一世不变的一张盘(转世重算),故不必计时,直接读 player 的派生值
+  const fateLordLineText = computed(() => fateLordLine(player.fateChart))
+  const fateModsText = computed(() => modsText(player.fateMods))
+  const fateRows = computed(() =>
+    player.fateChart.palaces.map(p => ({
+      palace: p.palace,
+      starNames: p.stars.map(s => `${s.name}(${s.nature})`).join('、')
+    }))
+  )
 
   const worldRows = computed(() =>
     WORLDS.map(w => ({

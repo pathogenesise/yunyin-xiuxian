@@ -70,8 +70,10 @@ describe('天时词条并入最终属性(mods 源)', () => {
     game.$patch({ totalPlaySec: 0 }) // day 0 = 灵雨:cultivationSpeed+0.1, qiRegen+0.2
     const day0 = todayWeather()
     expect(day0.id).toBe('lingyu')
-    expect(player.finalStats.mods.cultivationSpeed ?? 0).toBeCloseTo(0.1)
-    expect(player.finalStats.mods.qiRegen ?? 0).toBeCloseTo(0.2)
+    // 总属性里还叠着命格等常驻底色,故这里钉的是「天时贡献了多少」,不是总数
+    const fate = player.fateMods
+    expect((player.finalStats.mods.cultivationSpeed ?? 0) - (fate.cultivationSpeed ?? 0)).toBeCloseTo(0.1)
+    expect((player.finalStats.mods.qiRegen ?? 0) - (fate.qiRegen ?? 0)).toBeCloseTo(0.2)
   })
 
   it('赤阳日:attackPct/damageBonus 生效;月蚀日:luck/dropRate 生效', () => {
@@ -80,12 +82,13 @@ describe('天时词条并入最终属性(mods 源)', () => {
     // day2=赤阳,day3=月蚀(确定性种子,见 weather.ts)
     game.$patch({ totalPlaySec: 2 * 86400 })
     expect(todayWeather().id).toBe('chiyang')
-    expect(player.finalStats.mods.attackPct ?? 0).toBeCloseTo(0.05)
-    expect(player.finalStats.mods.damageBonus ?? 0).toBeCloseTo(0.05)
+    const fate = player.fateMods
+    expect((player.finalStats.mods.attackPct ?? 0) - (fate.attackPct ?? 0)).toBeCloseTo(0.05)
+    expect((player.finalStats.mods.damageBonus ?? 0) - (fate.damageBonus ?? 0)).toBeCloseTo(0.05)
     game.$patch({ totalPlaySec: 3 * 86400 })
     expect(todayWeather().id).toBe('yueshi')
-    expect(player.finalStats.mods.luck ?? 0).toBeCloseTo(0.05)
-    expect(player.finalStats.mods.dropRate ?? 0).toBeCloseTo(0.05)
+    expect((player.finalStats.mods.luck ?? 0) - (fate.luck ?? 0)).toBeCloseTo(0.05)
+    expect((player.finalStats.mods.dropRate ?? 0) - (fate.dropRate ?? 0)).toBeCloseTo(0.05)
   })
 
   it('雷鸣日:tribulationResist 生效(渡劫变难),attackPct 生效', () => {
@@ -93,8 +96,9 @@ describe('天时词条并入最终属性(mods 源)', () => {
     const player = usePlayerStore()
     game.$patch({ totalPlaySec: 1 * 86400 })
     expect(todayWeather().id).toBe('leiming')
-    expect(player.finalStats.mods.tribulationResist ?? 0).toBeCloseTo(-0.05)
-    expect(player.finalStats.mods.attackPct ?? 0).toBeCloseTo(0.05)
+    const fate = player.fateMods
+    expect((player.finalStats.mods.tribulationResist ?? 0) - (fate.tribulationResist ?? 0)).toBeCloseTo(-0.05)
+    expect((player.finalStats.mods.attackPct ?? 0) - (fate.attackPct ?? 0)).toBeCloseTo(0.05)
   })
 
   it('灵雨日:cultPerSec/qiRegenPerSec 带上天时(离线结算同源,不再仅在线生效)', () => {
@@ -117,8 +121,13 @@ describe('天时词条并入最终属性(mods 源)', () => {
     const baseCult = player.cultPerSec
     const baseQi = player.qiRegenPerSec
     game.$patch({ totalPlaySec: lingyuDay * 86400 })
-    expect(player.cultPerSec).toBeCloseTo(baseCult * 1.1, 6)
-    expect(player.qiRegenPerSec).toBeCloseTo(baseQi * 1.2, 6)
+    // 两日之间唯一的差别是天时那几项;常驻底色(命格等)两日相同,按倍数折算回去
+    const fate = player.fateMods
+    const lingyuMods = weatherDef('lingyu')!.mods
+    const cultBase = 1 + (fate.cultivationSpeed ?? 0)
+    const qiBase = 1 + (fate.qiRegen ?? 0)
+    expect(player.cultPerSec).toBeCloseTo(baseCult * (cultBase + (lingyuMods.cultivationSpeed ?? 0)) / cultBase, 6)
+    expect(player.qiRegenPerSec).toBeCloseTo(baseQi * (qiBase + (lingyuMods.qiRegen ?? 0)) / qiBase, 6)
   })
 })
 

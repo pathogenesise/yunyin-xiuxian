@@ -17,6 +17,7 @@ import { computeFinalStats, modOf } from '@/core/statsCalc'
 import { forgeSoul } from '@/core/gauntlet'
 import { todayWeather } from '@/core/weather'
 import { readingFromState, readingMods } from '@/core/divination'
+import { fateChart, fateMods, fateSeed } from '@/core/fate'
 import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
 import { useCultivationStore } from './cultivation'
@@ -177,6 +178,13 @@ export const usePlayerStore = defineStore(
       return reading ? readingMods(reading) : {}
     })
 
+    /**
+     * 本世命格(紫微十二宫):由灵根与转世数确定性推出,不落状态、不耗时日。
+     * 一世不变,转世重算 —— 与"一时之卦"分工明确。
+     */
+    const chart = computed(() => fateChart(fateSeed(linggen.value, reincarnation.value.count)))
+    const fateModsValue = computed<StatMods>(() => fateMods(chart.value))
+
     const qiCapValue = computed(() => {
       // 聚灵阵(qiCapMult)与「修复阵法」类 buff(qiCapPct)都能抬高灵气上限
       const buffPct = 1 + modOf(cultivation.buffMods, 'qiCapPct')
@@ -202,6 +210,7 @@ export const usePlayerStore = defineStore(
           petMods.value,
           weatherMods.value,
           divinationMods.value,
+          fateModsValue.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -237,6 +246,7 @@ export const usePlayerStore = defineStore(
           petMods.value,
           weatherMods.value,
           divinationMods.value,
+          fateModsValue.value,
           ...talentMods.value
         ],
         equipFlats: inventory.equipFlats,
@@ -614,6 +624,8 @@ export const usePlayerStore = defineStore(
       celestialStats,
       activeDivination,
       divinationMods,
+      fateChart: chart,
+      fateMods: fateModsValue,
       cultPerSec,
       qiRegenPerSec,
       lifespanMax,
