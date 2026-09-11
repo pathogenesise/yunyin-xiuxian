@@ -4,11 +4,13 @@
  * 一切装备在进入行囊前都要先过一遍回收裁决;
  * 命中回收规则(分解勾选档 / 智能收纳判无缘)的,不入包、直接化尘。
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { mulberry32, RandomService } from '@/utils/random'
+import { mulberry32, RandomService, rng } from '@/utils/random'
 import { generateEquipment } from './equipGen'
-import { acquireEquipment } from './loot'
+import { afterWin, acquireEquipment } from './loot'
+import { regionDef } from '@/data/regions'
+import { usePlayerStore } from '@/stores/player'
 import { shouldAutoRecycle } from './smartKeep'
 import { useInventoryStore } from '@/stores/inventory'
 import { useResourcesStore } from '@/stores/resources'
@@ -31,6 +33,25 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
   function bagUids(): string[] {
     return useInventoryStore().items.map(it => it.uid)
   }
+
+  // ISS-030:rng.chance 不钳制(rand()<p),法宝 ×6×luck / doubleDropRate 等倍率堆叠
+  // 一旦把 p 堆出 (0,1) 就会变成"必然掉落"或"永不掉落"。此不变量兜住任何未来平衡数据。
+  it('ISS-030:afterWin 里每个概率输入都钳在 [0,1] 内', () => {
+    const player = usePlayerStore()
+    player.initCharacter('概率钳制', { roots: [] } as never)
+    const spy = vi.spyOn(rng, 'chance').mockImplementation((p: number) => {
+      expect(p).toBeGreaterThanOrEqual(0)
+      expect(p).toBeLessThanOrEqual(1)
+      return false
+    })
+    try {
+      const region = regionDef('qingyun')!
+      afterWin(region, 1, true)
+      expect(spy).toHaveBeenCalled()
+    } finally {
+      vi.restoreAllMocks()
+    }
+  })
 
   it('凡良(分解勾选档)拾取即化尘,不入行囊,器灵尘到账', () => {
     const resources = useResourcesStore()

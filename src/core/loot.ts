@@ -129,6 +129,15 @@ export function randomDropArtifact(tier: number): string | null {
   return rng.weighted(pool, a => 100 / (1 + qualityDef(a.quality).rank * 1.5)).id
 }
 
+/**
+ * 概率输入钳到 [0,1]:rng.chance 不钳制(rand()<p),法宝 ×(isBoss?6:1)×(1+luck)、
+ * doubleDropRate、书页/丹药倍率堆叠出界时,>1 会变成"必然掉落"、<0 会"永不掉落"。
+ * 此处与 equipChance 的 Math.min(0.9, ...) 同一纪律:概率在进判定前先归一。
+ */
+function capChance(p: number): number {
+  return Math.min(1, Math.max(0, p))
+}
+
 /** 战斗胜利掉落 */
 export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean): DropSummary {
   const player = usePlayerStore()
@@ -138,7 +147,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   const lines: string[] = []
   const tier = region.tier
   const bossMult = isBoss ? 4 : 1
-  const doubled = rng.chance(modOf(mods, 'doubleDropRate')) ? 2 : 1
+  const doubled = rng.chance(capChance(modOf(mods, 'doubleDropRate'))) ? 2 : 1
   if (doubled === 2) lines.push('福缘深厚,战利品翻倍!')
 
   // 灵石
@@ -161,7 +170,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
     resources.addSmall('ore', n)
     harvestMaterials(tier, 'ore', n)
   }
-  if (rng.chance(PAGE_DROP_CHANCE * rewardMult)) {
+  if (rng.chance(capChance(PAGE_DROP_CHANCE * rewardMult))) {
     const n = rng.int(1, 2) * doubled
     resources.addSmall('page', n)
     lines.push(`功法残页×${n}`)
@@ -179,7 +188,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   }
 
   // 丹药
-  if (rng.chance(PILL_DROP_CHANCE * rewardMult * (isBoss ? 3 : 1))) {
+  if (rng.chance(capChance(PILL_DROP_CHANCE * rewardMult * (isBoss ? 3 : 1)))) {
     const pillId = randomDropPill(player.major)
     if (pillId) {
       inventory.addPill(pillId, 1)
@@ -189,8 +198,8 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
     }
   }
 
-  // 法宝(稀有)
-  if (rng.chance(ARTIFACT_DROP_CHANCE * (isBoss ? 6 : 1) * (1 + luck))) {
+  // 法宝(稀有)——(1+luck) 可被叠加的 luck 推高,必须进判定前归一到 [0,1](ISS-030)
+  if (rng.chance(capChance(ARTIFACT_DROP_CHANCE * (isBoss ? 6 : 1) * (1 + luck)))) {
     const artId = randomDropArtifact(tier)
     if (artId) lines.push(acquireArtifact(artId))
   }
