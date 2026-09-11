@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 60,
+  "round": 61,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:33:01+00:00",
+  "updated_at": "2026-09-11T16:41:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 5,
+      "touched_round": 60,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -2696,12 +2696,12 @@
       "id": "TASK-037",
       "type": "task",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-11T15:46:16+00:00",
-      "updated_at": "2026-09-11T15:46:16+00:00",
-      "touched_round": 54,
+      "updated_at": "2026-09-11T16:41:35+00:00",
+      "touched_round": 60,
       "category": "core-feature",
-      "summary": "界域志续写:按 DEC-017 引入 周易八卦/紫微斗数/奇门遁甲/星象 等经典门类(典籍条目 + 对应玩法/词条/事件),把「待续」清单如实转成内容",
+      "summary": "界域志续写(周易已实装):余 紫微斗数/奇门遁甲/星象分野 三门,各自需典籍条目 + 用得上的一层玩法(依 DEC-021:要么真进属性/规则/事件,要么继续如实标未实装)",
       "severity": 0.5,
       "confidence": 0.6,
       "effort": 8
@@ -2971,6 +2971,89 @@
       "touched_round": 59,
       "commit": "a7d090c",
       "summary": "奇遇连锁实装:5 条缘 12 程 + 池外契约 + 奇缘录"
+    },
+    "COMP-012": {
+      "id": "COMP-012",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:15+00:00",
+      "updated_at": "2026-09-11T16:41:15+00:00",
+      "touched_round": 60,
+      "summary": "界域志/经典系统(classics.ts 典籍志 + yijing.ts 易 + RealmCodexView):承载传统经典的阅读与术数玩法"
+    },
+    "CHG-078": {
+      "id": "CHG-078",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:17+00:00",
+      "updated_at": "2026-09-11T16:41:17+00:00",
+      "touched_round": 60,
+      "commit": "6edbe85",
+      "summary": "周易数据与问卦机制:八卦/六十四卦/三钱摇卦/卦力并属性"
+    },
+    "CHG-079": {
+      "id": "CHG-079",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:17+00:00",
+      "updated_at": "2026-09-11T16:41:17+00:00",
+      "touched_round": 60,
+      "commit": "67acd43",
+      "summary": "界域志周易门:读卦、问卦、六十四卦全表;周易出待续名单"
+    },
+    "DEC-021": {
+      "id": "DEC-021",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:23+00:00",
+      "updated_at": "2026-09-11T16:41:23+00:00",
+      "touched_round": 60,
+      "summary": "术数类门(周易/紫微/奇门/星象)只做「用得上」的实装:要么真进属性/规则/事件,要么继续留在待续名单里如实标注;卦力由八卦象数推出(下卦为身、上卦为境),不手写六十四套数值",
+      "rationale": "手写 64 套数值必与卦义打架且无人能同时校对;而只有文本没有机制的门,正是本轮清扫出的『看得见拿不到』。故取值只写在八卦(8 处可校),重卦由象数自然得出,并有三钱摇卦→本卦/之卦→并入 finalStats 的完整链路",
+      "alternatives_rejected": [
+        "给六十四卦各手写一套加成(不可校对,迟早与卦义矛盾)",
+        "只把卦名卦辞做成可读文本(与用户要的经典栏目形似,玩家用不上)",
+        "一次把紫微/奇门/星象都铺开(四个半成品,不如一门做实)"
+      ]
+    },
+    "EV-040": {
+      "id": "EV-040",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:27+00:00",
+      "updated_at": "2026-09-11T16:41:27+00:00",
+      "touched_round": 60,
+      "source": "src/core/divination.spec.ts(21 例,其中『成卦:扣悟道点、卦在身、卦力入 finalStats』断言 readingMods 的每个通道都出现在 player.finalStats.mods;commit 6edbe85)",
+      "summary": "问卦之力确实并入最终属性,且过期借引擎心跳重新判定",
+      "confidence": 0.9
+    },
+    "HYP-007": {
+      "id": "HYP-007",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:30+00:00",
+      "updated_at": "2026-09-11T16:41:30+00:00",
+      "touched_round": 60,
+      "confidence": 0.8,
+      "summary": "术数类门可以做到『合卦义』与『可校验』兼得:数值只写在八卦,重卦由上下相叠推出,故 64 卦之力天然自洽,无需逐卦校数"
+    },
+    "ISS-049": {
+      "id": "ISS-049",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:41:32+00:00",
+      "updated_at": "2026-09-11T16:41:32+00:00",
+      "touched_round": 60,
+      "summary": "全量并行跑测试时,savePersistence『读己所写:尚未落盘也能立刻读回最新值』出现过一次红(未捕获断言原文);此后单跑与连续 4 次全量均绿,未能复现 —— 疑似并行负载下的偶发,不可当已修",
+      "severity": 0.2,
+      "confidence": 0.3
     }
   },
   "edges": [
@@ -4150,6 +4233,42 @@
       "to": "ISS-048",
       "type": "resolves",
       "created_at": "2026-09-11T16:32:58+00:00"
+    },
+    {
+      "from": "CHG-078",
+      "to": "TASK-037",
+      "type": "implements",
+      "created_at": "2026-09-11T16:41:19+00:00"
+    },
+    {
+      "from": "CHG-079",
+      "to": "TASK-037",
+      "type": "implements",
+      "created_at": "2026-09-11T16:41:19+00:00"
+    },
+    {
+      "from": "DEC-021",
+      "to": "COMP-012",
+      "type": "governs",
+      "created_at": "2026-09-11T16:41:27+00:00"
+    },
+    {
+      "from": "DEC-021",
+      "to": "TASK-037",
+      "type": "governs",
+      "created_at": "2026-09-11T16:41:27+00:00"
+    },
+    {
+      "from": "EV-040",
+      "to": "HYP-007",
+      "type": "validates",
+      "created_at": "2026-09-11T16:41:30+00:00"
+    },
+    {
+      "from": "ISS-049",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T16:41:35+00:00"
     }
   ]
 }
