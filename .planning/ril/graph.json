@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 55,
+  "round": 56,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:56:04+00:00",
+  "updated_at": "2026-09-11T15:59:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2754,6 +2754,29 @@
       "severity": 0.3,
       "confidence": 0.8,
       "effort": 4
+    },
+    "CHG-070": {
+      "id": "CHG-070",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:59:04+00:00",
+      "updated_at": "2026-09-11T15:59:04+00:00",
+      "touched_round": 55,
+      "summary": "镇压收益按地界物产分化:suppressYield 按标签优先表给次级产出(林→草/火·山→矿/遗迹·剑冢→残页/天界以上→器灵尘),随层级线性;结算真正入库并进产出清单;离线总结与历练页同源展示",
+      "commit": "fc52616"
+    },
+    "EV-037": {
+      "id": "EV-037",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:59:04+00:00",
+      "updated_at": "2026-09-11T15:59:04+00:00",
+      "touched_round": 55,
+      "source": "故障注入:suppressYield 映射改空 → 物产/入库三例齐红;恢复后 118 files / 1114 tests 绿",
+      "summary": "地界物产的映射与结算有可打红的守卫",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -3843,6 +3866,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T15:56:04+00:00"
+    },
+    {
+      "from": "CHG-070",
+      "to": "TASK-038",
+      "type": "implements",
+      "created_at": "2026-09-11T15:59:04+00:00"
     }
   ]
 }
