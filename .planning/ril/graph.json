@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 21,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T06:25:42+00:00",
+  "updated_at": "2026-09-11T06:28:57+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1235,13 +1235,13 @@
       "id": "ISS-024",
       "type": "issue",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-10T15:04:39+00:00",
-      "updated_at": "2026-09-10T15:04:39+00:00",
-      "touched_round": 13,
+      "updated_at": "2026-09-11T06:28:57+00:00",
+      "touched_round": 21,
       "severity": 0.4,
       "confidence": 0.7,
-      "summary": "闭关机制未接线:startRetreat/isRetreating/retreat buff/retreatEndTime 无调用方,需先定玩法承载(UI/收益/在线关系)再接线"
+      "summary": "闭关机制未接线。现状核查(round 21):设计清单大半已存在——① earlyGameService.startRetreat 注释明说 5分钟/修炼+150%/禁止探索,isRetreating 计时器逻辑齐全;② data/earlyGame.EARLY_EVENT_DECAY.shortRetreat 有专属衰减曲线(1.0→0.6,注释明确'中期仍自由选择不做强制衰减');③ 唯独缺三件:retreat buff 注册(现在 addBuff('retreat') 查无定义静默空转)、UI 入口、探索禁令的消费点。DEC-011 判设计未定暂缓,此三件留待产品定夺后再接线"
     },
     "DEC-008": {
       "id": "DEC-008",
