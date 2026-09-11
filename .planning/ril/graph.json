@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 22,
+  "round": 23,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T07:56:12+00:00",
+  "updated_at": "2026-09-11T08:08:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 21,
+      "touched_round": 22,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1729,6 +1729,57 @@
       "summary": "DEC-011 判'设计未定'前提已被推翻:round21 设计清单 + 本轮代码核实确认闭关设计 100% 钉死在代码注释与数据里(5分钟/+150%/禁探索、shortRetreat 曲线·中期自由选择不做强制衰减),缺的三件(buff 注册/UI 入口/禁令消费)是机械接线而非新玩法设计;接线完成、108 文件测试全绿",
       "rationale": "设计清单齐全后,闭关不再是无既有设计可依的死功能;强行等着产品定夺会持续空耗一个已完全规格化的机制,接线完全可回滚",
       "alternatives_rejected": "1)继续依 DEC-011 搁置已规格化功能待产品定夺(功能继续死);2)把 shortRetreat 曲线接成硬性衰减门(与自身注释'不做强制衰减'相悖,属凭空造机制)"
+    },
+    "EV-014": {
+      "id": "EV-014",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:07:29+00:00",
+      "updated_at": "2026-09-11T08:07:29+00:00",
+      "touched_round": 22,
+      "source": "全库 grep:createSecretRealm/abandonRealm/realmUnlock/currentRealm 仅 secretRealm.spec.ts+phase31LinkAudit.spec.ts 引用,zero app 消费;secretRealm.spec 已测这些从未被游玩的 state 函数",
+      "summary": "短期秘境(Phase 31.0 S3)整模块+player store 状态(setSecretRealm)+专门 spec 齐全,但零调用方零 UI,玩家不可达;SECRET_REALMS 三条目(枯荣古境/剑冢幻境/苦海渡舟)均只存在于数据与审计断言中",
+      "confidence": 1.0
+    },
+    "ISS-034": {
+      "id": "ISS-034",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:07:29+00:00",
+      "updated_at": "2026-09-11T08:07:29+00:00",
+      "touched_round": 22,
+      "summary": "短期秘境(Phase 31.0 S3, secretRealm.ts)设计未接线且存在自相矛盾:入口门槛 realmUnlock=major>=3(元婴),入口代价 entryCost 用道源,而道源仅真仙终局可得(endgameUnlocked=major>=MAX_MAJOR,furnace/远征/试炼/裂隙全部门控)——元婴玩家永远无法持道源进秘境,两条件互斥;3层(事件/战斗/抉择)玩法与宝藏路径亦无实现",
+      "severity": 0.5,
+      "confidence": 1.0
+    },
+    "TASK-031": {
+      "id": "TASK-031",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:07:29+00:00",
+      "updated_at": "2026-09-11T08:07:29+00:00",
+      "touched_round": 22,
+      "summary": "短期秘境接线前需产品定夺内容位:元婴(门槛降为灵石/药材代价) 还是 真仙终局(维持道源代价,与远征/试炼并列)?决定后可沿 challengeTrial/runGauntlet 范式接 3 层玩法+宝藏(复用 resolveCombat/EventDef/loot,源注释明言不新建数值体系)",
+      "category": "core-feature",
+      "severity": 0.5,
+      "confidence": 0.5,
+      "effort": 4,
+      "priority_score": 0.75
+    },
+    "DEC-014": {
+      "id": "DEC-014",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:08:13+00:00",
+      "updated_at": "2026-09-11T08:08:13+00:00",
+      "touched_round": 22,
+      "summary": "短期秘境(TASK-031/ISS-034)接线前需产品定夺内容位——与 DEC-011 闭关同理:非机械接线,涉及'元婴 vs 真仙终局'的玩法位置与代价经济两难;沿 challengeTrial/runGauntlet 现成范式可实现,但先决条件未定时盲建,等于替产品做内容排布决策",
+      "rationale": "道源仅真仙可得(furnace/远征/试炼全部门控于 endgameUnlocked),而秘境入口门槛写在元婴——两条件互斥,接线必然要先改写其一,方向属产品排布而非工程机械活",
+      "alternatives_rejected": "1)直接按元婴门槛把代价从道源改成灵石/药材(擅自改经济代价);2)直接按真仙终局把门槛抬到 MAX_MAJOR 接 3 层玩法(擅自定内容位置,且与 minMajor=3/4 数据抵触)"
     }
   },
   "edges": [
@@ -2410,6 +2461,24 @@
       "to": "TASK-024",
       "type": "governs",
       "created_at": "2026-09-11T07:55:26+00:00"
+    },
+    {
+      "from": "ISS-034",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-11T08:08:13+00:00"
+    },
+    {
+      "from": "TASK-031",
+      "to": "ISS-034",
+      "type": "addresses",
+      "created_at": "2026-09-11T08:08:13+00:00"
+    },
+    {
+      "from": "DEC-014",
+      "to": "TASK-031",
+      "type": "governs",
+      "created_at": "2026-09-11T08:08:13+00:00"
     }
   ]
 }
