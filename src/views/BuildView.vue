@@ -32,6 +32,19 @@
           <span>成路于:</span>
           <span v-for="name in buildSourceNames" :key="name" class="text-azure">{{ name }}</span>
         </p>
+        <!-- 五维评级(Phase 30.2):读懂构筑"形状",不看战力总数 -->
+        <div class="mt-2.5 rounded-md bg-paper-deep/60 px-3 py-2">
+          <p class="text-[10px] text-ink-faint">五维评级 —— 读的是形状,不是排名</p>
+          <div class="mt-1 grid grid-cols-1 gap-0.5">
+            <p v-for="l in powerRating.labels" :key="l.key" class="flex items-center justify-between text-[11px]">
+              <span class="text-ink-soft">{{ l.name }}</span>
+              <span class="tabular tracking-widest text-gold-ink">{{ ratingStars(l.stars) }}</span>
+            </p>
+          </div>
+          <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
+            同一星级的两个构筑谁更强,由环境与相性决定 —— 所以这里给的是形状,不是名次。
+          </p>
+        </div>
         <!-- 组合技:两条道路交汇处的一式神通 -->
         <div v-if="comboInfo" class="mt-2.5 rounded-md px-3 py-2" :class="comboInfo.active ? 'bg-violet-ink/8' : 'bg-ink/4'">
           <p class="flex items-center gap-2">
@@ -151,6 +164,7 @@
   import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
   import { detectBuild, buildSources } from '@/core/buildDetect'
+  import { ratePower, ratingStars } from '@/core/powerRating'
   import { matchComboArt, COMBO_SECONDARY_MIN } from '@/data/comboArts'
   import { measureResilience, resilienceText } from '@/core/resilience'
   import { buildPlayerSnap } from '@/core/playerSnap'
@@ -169,6 +183,8 @@
   const loadouts = useLoadoutsStore()
 
   const build = computed(() => detectBuild(player.finalStats.mods))
+  /** 五维评级:进攻/生存/身法/恢复/机制 —— 让玩家读懂构筑形状而非只盯战力总数 */
+  const powerRating = computed(() => ratePower(player.finalStats))
   const buildSourceNames = computed(() => (build.value ? buildSources(build.value.style) : []))
 
   /** 主副体系凑对时展示组合技(未达门槛也展示,作为构筑目标) */
