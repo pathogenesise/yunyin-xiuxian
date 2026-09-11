@@ -85,6 +85,10 @@
         <span class="text-[13px] text-ink-soft">隐私政策</span>
         <span class="text-[11px] text-ink-faint">查看 →</span>
       </button>
+      <button class="flex w-full items-center justify-between py-3 active:opacity-60" @click="progressionOpen = true">
+        <span class="text-[13px] text-ink-soft">数值体系</span>
+        <span class="text-[11px] text-ink-faint">查看 →</span>
+      </button>
     </div>
 
     <!-- 关于我们 -->
@@ -92,6 +96,9 @@
 
     <!-- 隐私政策 -->
     <PrivacyDialog :open="privacyOpen" @close="privacyOpen = false" />
+
+    <!-- 数值体系(可解释性:各数值轴的复利倍率 / 净耗时 / 积余 / 命名出处) -->
+    <ProgressionDialog :open="progressionOpen" @close="progressionOpen = false" />
 
     <!-- 重置确认(弹窗期间引擎暂停) -->
     <BaseModal :open="resetConfirm" title="重置游戏" @close="closeReset">
@@ -124,6 +131,7 @@
   import BaseModal from '@/components/common/BaseModal.vue'
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
   import AboutDialog from '@/components/common/AboutDialog.vue'
+  import ProgressionDialog from '@/components/common/ProgressionDialog.vue'
 
   const settings = useSettingsStore()
   const game = useGameStore()
@@ -138,6 +146,7 @@
   const resetConfirm = ref(false)
   const privacyOpen = ref(false)
   const aboutOpen = ref(false)
+  const progressionOpen = ref(false)
   const fileInput = ref<HTMLInputElement | null>(null)
 
   /** 导出存档:Web/Electron 走浏览器下载,原生端写 Documents(见 savePlatform) */

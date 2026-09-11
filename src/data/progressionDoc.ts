@@ -1,0 +1,90 @@
+/**
+ * 数值体系说明 —— 单一事实源
+ *
+ * 界面里要给玩家一个「这游戏怎么长」的可解释说明,但文案最容易与代码脱节:
+ * 手写「每境 ×3.46」,回头把常数一改就成了谎话。故此处不写死数字,
+ * 一律从 constants 里取真值,由 progressionDoc.spec 对着公式复核(改常数即同步)。
+ *
+ * 三条口径:
+ *   1. 每个大境界的**数值**按复利增长(修为需求 / 灵气容量 / 灵气回复 / 战力)
+ *   2. 每个大境界的**净耗时**增长慢于数值 —— 阶梯因此可达
+ *   3. 修为与灵气可**积余**:卡在某一境时仍继续累积,越过需求的部分带走
+ */
+import {
+  COMBAT_MAJOR_GROWTH,
+  CULT_MAJOR_SPEED_GROWTH,
+  EXP_MAJOR_GROWTH,
+  LATE_COMBAT_GROWTH,
+  LATE_CULT_SPEED_GROWTH,
+  LATE_EXP_GROWTH,
+  LATE_QI_CAP_GROWTH,
+  LATE_QI_REGEN_GROWTH,
+  QI_BANK_MULT,
+  QI_CAP_MAJOR_GROWTH,
+  QI_REGEN_MAJOR_GROWTH,
+  TRIBULATION_DIFFICULTY_CAP_MAJOR
+} from './constants'
+import { WORLD_BREAK_MAJOR } from './realms'
+
+export interface ProgressionAxis {
+  id: string
+  name: string
+  /** 人间界每境倍率 */
+  mortal: number
+  /** 界外每境倍率 */
+  outer: number
+  note: string
+}
+
+/** 各数值轴的真实复利倍率(直接取常数,不在文档里手写) */
+export const PROGRESSION_AXES: ProgressionAxis[] = [
+  {
+    id: 'exp',
+    name: '修为需求',
+    mortal: EXP_MAJOR_GROWTH,
+    outer: LATE_EXP_GROWTH,
+    note: '突破所需修为。越过需求的部分存为积余,突破时随境界带走'
+  },
+  {
+    id: 'qiCap',
+    name: '灵气容量',
+    mortal: QI_CAP_MAJOR_GROWTH,
+    outer: LATE_QI_CAP_GROWTH,
+    note: `标称容量。灵气可积到容量的 ${QI_BANK_MULT} 倍,不为卡境而空耗`
+  },
+  {
+    id: 'qiRegen',
+    name: '灵气回复',
+    mortal: QI_REGEN_MAJOR_GROWTH,
+    outer: LATE_QI_REGEN_GROWTH,
+    note: '回复速率略慢于容量,故越往上越要「存」而不是「等」'
+  },
+  {
+    id: 'attack',
+    name: '战力(攻击/防御/生命)',
+    mortal: COMBAT_MAJOR_GROWTH,
+    outer: LATE_COMBAT_GROWTH,
+    note: '与同期内容同速成长,只与「境界 + 构筑」对齐,不单方面膨胀'
+  }
+]
+
+/** 净耗时倍率 = 修为需求 / 修炼速度:这才是玩家真正感受到的「难度」 */
+export const MORTAL_TIME_PER_MAJOR = EXP_MAJOR_GROWTH / CULT_MAJOR_SPEED_GROWTH
+export const OUTER_TIME_PER_MAJOR = LATE_EXP_GROWTH / LATE_CULT_SPEED_GROWTH
+
+/** 供界面展示的固定说明(不含可变数字) */
+export const PROGRESSION_NOTES = {
+  worldBreakMajor: WORLD_BREAK_MAJOR,
+  tribulationCapMajor: TRIBULATION_DIFFICULTY_CAP_MAJOR,
+  banking: [
+    '修为不封顶:卡在某一境(等突破、等灵气、渡劫失败)时,修为仍继续增长',
+    '突破只扣「刚走完那一境」的需求,积余带入下一境 —— 等待不是浪费',
+    `灵气可越过标称容量,积到容量的 ${QI_BANK_MULT} 倍;负伤时还能耗灵气当场疗伤(修复)`
+  ],
+  basis: [
+    '人间界九境取内丹术与佛道之序:炼气、筑基、金丹、元婴、化神、炼虚、合体、大乘、渡劫',
+    '仙界五境取道教仙阶:真仙、玄仙、金仙、太乙、大罗',
+    '神界四境取网文常用神阶:神人、神将、神王、神帝',
+    '混沌海三境取道家宇宙论:混沌真灵、混沌神魔、混沌道祖'
+  ]
+}
