@@ -48,7 +48,7 @@ export const useCultivationStore = defineStore(
       learned.value = fixedLearned
       if (typeof mainGongfa.value !== 'string' || !fixedLearned[mainGongfa.value]) mainGongfa.value = null
       subGongfa.value = asStringArray(subGongfa.value).filter(id => fixedLearned[id] !== undefined)
-      buffs.value = asArray(buffs.value)
+      buffs.value = asArray<BuffInstance>(buffs.value, [], b => !!b && typeof (b as BuffInstance).defId === 'string')
       gongfaBranch.value = asRecord<string>(gongfaBranch.value)
     }
 

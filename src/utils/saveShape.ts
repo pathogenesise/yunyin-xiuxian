@@ -11,9 +11,17 @@
  * 形状不对就用兜底值,而不是抛错。
  */
 
-/** 是数组就用它,否则兜底(元素不过滤) */
-export function asArray<T>(v: unknown, fallback: T[] = []): T[] {
-  return Array.isArray(v) ? (v as T[]) : fallback
+/**
+ * 是数组就用它,否则兜底。
+ *
+ * 元素也要过一遍:存档里出现 `[null]` 这种"数组形状对、元素是垃圾"的情形时,
+ * 后面的 `.filter(it => it.uid)` / `.defId` 会在渲染期抛错(实测三处)。
+ * isValid 省略时只丢掉 null/undefined。
+ */
+export function asArray<T>(v: unknown, fallback: T[] = [], isValid?: (x: unknown) => boolean): T[] {
+  if (!Array.isArray(v)) return fallback
+  const keep = isValid ?? ((x: unknown) => x !== null && x !== undefined)
+  return (v as T[]).filter(keep)
 }
 
 /** 字符串数组:顺带滤掉混进去的非字符串 */
@@ -24,6 +32,18 @@ export function asStringArray(v: unknown): string[] {
 /** 是对象(且不是数组/null)就用它,否则兜底 */
 export function asRecord<T>(v: unknown, fallback: Record<string, T> = {}): Record<string, T> {
   return v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, T>) : fallback
+}
+
+/**
+ * 记录里只留下"值还像样"的条目。
+ * 键对、值烂(如 `{ a: null }`)同样会在渲染期炸 —— 例如 trialRecords.a.clears。
+ */
+export function asRecordOf<T>(v: unknown, isValid: (x: unknown) => boolean): Record<string, T> {
+  const out: Record<string, T> = {}
+  for (const [k, raw] of Object.entries(asRecord<T>(v))) {
+    if (isValid(raw)) out[k] = raw
+  }
+  return out
 }
 
 /** 有限数字就用它,否则兜底;可选下限 */

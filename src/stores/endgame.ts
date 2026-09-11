@@ -5,7 +5,7 @@ import type { CelestialWorldDef, DaoMark, DaoPathId, StatMods } from '@/types'
 import { persistConfig } from '@/utils/storage'
 import { mergeMods } from '@/core/statsCalc'
 import { SOUL_SLOTS, soulMods as soulModsOf, type SoulInstance } from '@/data/souls'
-import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecord, asStringArray } from '@/utils/saveShape'
+import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecordOf, asStringArray } from '@/utils/saveShape'
 
 export interface TrialRecord {
   clears: number
@@ -72,15 +72,25 @@ export const useEndgameStore = defineStore(
       daoPath.value = typeof daoPath.value === 'string' ? daoPath.value : null
       daoSource.value = asFiniteNumber(daoSource.value, 0, 0)
       worldClears.value = asNumberRecord(worldClears.value, 0)
-      trialRecords.value = asRecord(trialRecords.value)
-      marks.value = asArray<DaoMark>(marks.value)
+      trialRecords.value = asRecordOf<TrialRecord>(
+        trialRecords.value,
+        r => !!r && typeof r === 'object' && Number.isFinite((r as TrialRecord).clears)
+      )
+      marks.value = asArray<DaoMark>(marks.value, [], m => !!m && typeof (m as DaoMark).targetId === 'string')
       worldRun.value = asObjectOrNull<WorldRunState>(worldRun.value)
       voidWorld.value = asObjectOrNull<CelestialWorldDef>(voidWorld.value)
       dailyDoneDay.value =
         typeof dailyDoneDay.value === 'number' && Number.isFinite(dailyDoneDay.value) ? dailyDoneDay.value : null
-      milestones.value = asArray(milestones.value)
-      records.value = asRecord(records.value)
-      souls.value = asArray(souls.value)
+      milestones.value = asArray<{ id: string; life: number; at: number }>(
+        milestones.value,
+        [],
+        m => !!m && typeof (m as { id?: unknown }).id === 'string'
+      )
+      records.value = asRecordOf<{ value: number; life: number; note: string }>(
+        records.value,
+        r => !!r && typeof r === 'object' && Number.isFinite((r as { value?: unknown }).value as number)
+      )
+      souls.value = asArray<SoulInstance>(souls.value, [], s => !!s && typeof (s as SoulInstance).uid === 'string')
       equippedSouls.value = asStringArray(equippedSouls.value)
     }
 

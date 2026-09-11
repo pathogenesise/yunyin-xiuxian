@@ -22,10 +22,10 @@ export const useInventoryStore = defineStore(
 
     /** 存档修复:行囊/丹药/法宝被写坏时,装备合计与图鉴会在渲染期抛错 */
     function sanitize(): void {
-      items.value = asArray<EquipmentInstance>(items.value)
+      items.value = asArray<EquipmentInstance>(items.value, [], it => !!it && typeof (it as EquipmentInstance).uid === 'string')
       equipped.value = asRecord<string>(equipped.value)
       pills.value = asNumberRecord(pills.value, 0)
-      artifacts.value = asArray<ArtifactOwned>(artifacts.value)
+      artifacts.value = asArray<ArtifactOwned>(artifacts.value, [], a => !!a && typeof (a as ArtifactOwned).defId === 'string')
       equippedArtifacts.value = asStringArray(equippedArtifacts.value)
     }
 

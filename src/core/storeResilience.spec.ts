@@ -80,3 +80,39 @@ describe('坏档韧性 · 每个字段被抹掉后 sanitize 都要跑得完', ()
     })
   }
 })
+
+/** 坏档不只"缺字段":也可能是形状对、内容是垃圾(数组里塞 null、记录值塞 null) */
+const HOSTILE: unknown[] = [null, 0, -1, NaN, '', 'x', [], {}, [null], { a: null }, true, [{ uid: null }]]
+
+describe('坏档韧性 · 恶意值也不该炸', () => {
+  for (const { name, use } of STORES) {
+    it(`${name}:每个字段灌一遍恶意值,sanitize + 计算属性都不许抛`, () => {
+      setActivePinia(createPinia())
+      const keys = Object.keys(use().$state)
+
+      const failures: string[] = []
+      for (const key of keys) {
+        for (const hostile of HOSTILE) {
+          setActivePinia(createPinia())
+          const store = use()
+          try {
+            store.$patch({ [key]: hostile } as never)
+            store.sanitize()
+            for (const prop of Object.keys(store)) {
+              const v = (store as unknown as Record<string, unknown>)[prop]
+              if (typeof v === 'function') continue
+              try {
+                JSON.stringify(v)
+              } catch {
+                // 循环引用不是坏档问题
+              }
+            }
+          } catch (e) {
+            failures.push(`${key} = ${JSON.stringify(hostile) ?? String(hostile)} → ${(e as Error).message}`)
+          }
+        }
+      }
+      expect(failures, `${name} 在这些恶意值下会抛错:\n${[...new Set(failures)].join('\n')}`).toEqual([])
+    })
+  }
+})
