@@ -19,11 +19,22 @@ import { PILLS } from '@/data/pills'
 import { GONGFA } from '@/data/gongfa'
 import { REGIONS } from '@/data/regions'
 import { EVENTS } from '@/data/events'
+import { chainOfEvent } from '@/data/chains'
 import { PETS } from '@/data/pets'
 import { MENTORS } from '@/data/mentors'
 import { WORLD_BREAK_MAJOR } from '@/data/realms'
 import { qualityDef } from '@/data/qualities'
 import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
+
+/**
+ * 区域随机池里的事件 —— **不含奇缘阶段**。
+ *
+ * 奇缘阶段与普通事件同表(引擎的需要),但它不属于任何地界、也不进随机池
+ * (见 eventEngine.regionEventPoolFor)。故谈「事件内容的门槛」时不能把它算进来:
+ * 高界的缘门槛再高,也不影响「金丹能不能走到事件这条线」——
+ * 那是两套系统,混在一起算会把这条判据变成一个随内容量浮动的数。
+ */
+const POOL_EVENTS = EVENTS.filter(e => chainOfEvent(e.id) === null)
 
 /** 门槛的三种性质——它们可能完全不同 */
 export type GateKind =
@@ -123,8 +134,8 @@ export const CONTENT_GATES: ContentGate[] = [
     kind: 'trigger',
     minMajor: 3,
     evidence:
-      `EVENTS ${EVENTS.length} 个中 ${EVENTS.filter(e => e.minRealm !== undefined).length} 个带 minRealm` +
-      `(入门 2 个 · 仙界及以上 7 个),其余无门槛`,
+      `随机池 ${POOL_EVENTS.length} 个事件中 ${POOL_EVENTS.filter(e => e.minRealm !== undefined).length} 个带 minRealm` +
+      `(入门 2 个 · 仙界及以上 7 个),其余无门槛;另有奇缘阶段不计入(不分地界)`,
     reachableByGoldRebirth: false,
     bypass: '绝大多数事件无门槛;仅问道石(元婴)真正需要深修',
     qualifies: false
@@ -162,7 +173,7 @@ export function reachabilityTable(): ReachabilityRow[] {
     // 入门灵兽(天品及以下)无门槛;神品/仙品神兽由神界及以上事件发放
     pet: { total: PETS.length, gold: PETS.filter(p => qualityDef(p.quality).rank <= 6).length },
     mentor: { total: MENTORS.length, gold: MENTORS.length },
-    event: { total: EVENTS.length, gold: EVENTS.filter(e => (e.minRealm ?? 0) <= GOLD).length }
+    event: { total: POOL_EVENTS.length, gold: POOL_EVENTS.filter(e => (e.minRealm ?? 0) <= GOLD).length }
   }
   return CONTENT_GATES.map(gate => {
     const c = counts[gate.id]

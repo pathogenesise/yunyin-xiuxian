@@ -21,7 +21,7 @@ import { RandomService, mulberry32 } from '@/utils/random'
 import { CHAINS, CHAIN_EVENTS, CHAIN_TAG, chainOfEvent } from '@/data/chains'
 import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
 import { REGIONS } from '@/data/regions'
-import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
+import { MAX_MAJOR, WORLDS, WORLD_BREAK_MAJOR, worldOf } from '@/data/realms'
 import {
   chainProgressRows,
   pendingChainStages,
@@ -114,11 +114,15 @@ describe('奇缘 · 结一程才轮到下一程', () => {
     }
   })
 
-  it('奇缘不止起于人间:高界也该有自己的缘', () => {
-    // 从前五条缘的起点都在人间寻常处,真仙之上能走的只有凡间的旧账。
-    // 这条守的是那次补充:至少有一条缘的起点在仙界以上(而非把凡间那条拉长)。
-    const starts = CHAINS.map(c => eventDef(c.stages[0]!)!.minRealm ?? 0)
-    expect(Math.max(...starts), '全部奇缘仍起于人间').toBeGreaterThanOrEqual(WORLD_BREAK_MAJOR)
+  it('四个界域各有其缘 —— 高界不该只能走凡间的旧账', () => {
+    // 最初五条缘的起点全在人间:真仙之上能走的只有凡间的旧账。此后陆续补了
+    // 仙界(云海故碑)/神界(代天一行)/混沌海(本源一滴)。这条按界域核,
+    // 而不是只看「最大值够高」—— 只补一条仙界缘也会满足后者。
+    const worldsWithStart = new Set(CHAINS.map(c => worldOf(eventDef(c.stages[0]!)!.minRealm ?? 0).id))
+    for (const w of WORLDS) {
+      expect(worldsWithStart.has(w.id), `${w.name} 没有一条属于自己的缘`).toBe(true)
+    }
+    expect(Math.max(...CHAINS.map(c => eventDef(c.stages[0]!)!.minRealm ?? 0))).toBeGreaterThanOrEqual(WORLD_BREAK_MAJOR)
   })
 
   it('解了哪一程,那条缘才往前一程', () => {

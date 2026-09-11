@@ -1,4 +1,4 @@
-/** 随机事件库 —— 73 个随机事件(含 15 个奇缘阶段) + 11 条机缘,数据驱动,按区域标签匹配 */
+/** 随机事件库 —— 79 个随机事件(含 21 个奇缘阶段) + 11 条机缘,数据驱动,按区域标签匹配 */
 import type { EventChoice, EventDef, EventEffect, EventOutcome } from '@/types'
 import { CHAIN_EVENTS } from './chains'
 

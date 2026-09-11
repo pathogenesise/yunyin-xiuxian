@@ -27,6 +27,8 @@ import { pillFamily, pillGainSecAt } from '@/core/pillValue'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
 import { ARTIFACTS, ARTIFACT_MAX_SLOTS } from '@/data/artifacts'
 import { SECRET_REALMS } from '@/data/secretRealms'
+import { CHAINS } from '@/data/chains'
+import { eventDef } from '@/data/events'
 import { WORLD_WEATHERS } from '@/core/weather'
 
 /** 某境界的地界所占的层级 */
@@ -119,11 +121,13 @@ describe('内容密度 · 每一境都得有新东西', () => {
         world: w.name,
         装备模板: inWorld(EQUIPMENT_TEMPLATES, t => t.minTier),
         法宝: inWorld(ARTIFACTS, a => a.minTier),
-        秘境: SECRET_REALMS.filter(s => (s.gate === 'celestial' ? 'immortal' : 'mortal') === w.id).length
+        // 奇缘按**起点**所属界域记:高界有没有自己的缘,看这一列
+       秘境: SECRET_REALMS.filter(s => (s.gate === 'celestial' ? 'immortal' : 'mortal') === w.id).length
       }
     })
-    console.log('界域\t装备模板\t法宝\t秘境(仅两阶)')
-    for (const r of rows) console.log(`${r.world}\t${r.装备模板}\t${r.法宝}\t${r.秘境}`)
+    const chainStarts = WORLDS.map(w => CHAINS.filter(c => worldOf(eventDef(c.stages[0]!)?.minRealm ?? 0).id === w.id).length)
+    console.log('界域\t装备模板\t法宝\t秘境(仅两阶)\t奇缘起点')
+    rows.forEach((r, i) => console.log(`${r.world}\t${r.装备模板}\t${r.法宝}\t${r.秘境}\t${chainStarts[i]}`))
     // 每个界域都该有该界的装备与法宝(秘境是明确的两阶内容,不在此列)
     for (const r of rows) {
       expect(r.装备模板, `${r.world} 没有专属装备模板`).toBeGreaterThan(0)
