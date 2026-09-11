@@ -31,6 +31,7 @@ import { MATERIALS } from '@/data/materials'
 import { ENEMIES } from '@/data/enemies'
 import { REGIONS } from '@/data/regions'
 import { GONGFA } from '@/data/gongfa'
+import { EVENTS } from '@/data/events'
 import { REALMS, MAX_MAJOR } from '@/data/realms'
 import { DAO_NAMES, SKILL_IDS, recipeCraft, skillDef, type SkillDef, type SkillId } from '@/data/crafting'
 import { ELEMENT_AFFINITY } from '@/data/linggenAffinity'
@@ -130,6 +131,43 @@ describe('内容可达性 · 区域解锁链', () => {
       // 同层第二处地界与正区同 tier(同难度带),故只要求不回退
       expect(r.tier, `${r.id} 层级低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.tier)
       expect(r.minRealm, `${r.id} 境界门槛低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.minRealm)
+    }
+  })
+})
+
+describe('内容可达性 · 事件点名发放的灵兽', () => {
+  /**
+   * once 事件一旦触发即被标记为「已见」,此后再不出现。
+   * 若点名发放的灵兽只是概率分支,运气差的一份存档就永久少一只神兽 ——
+   * 这不是稀有,是死内容。要么事件可重复,要么该选项必得。
+   */
+  it('一次性事件不得把点名灵兽放在概率分支里', () => {
+    for (const ev of EVENTS) {
+      if (!ev.once) continue
+      for (const ch of ev.choices) {
+        const grantsNamedPet = ch.outcomes.some(o => o.effects.some(e => e.type === 'pet' && e.id))
+        if (!grantsNamedPet) continue
+        expect(ch.outcomes.length, `${ev.id} 是 once 事件,却把点名灵兽放在概率分支里`).toBe(1)
+      }
+    }
+  })
+
+  it('点名灵兽终有获得路径:存在可重复(或必得)的发放事件', () => {
+    const grantable = new Set<string>()
+    for (const ev of EVENTS) {
+      for (const ch of ev.choices) {
+        for (const o of ch.outcomes) {
+          for (const e of o.effects) {
+            if (e.type !== 'pet' || !e.id) continue
+            const guaranteed = ch.outcomes.length === 1 || !ev.once
+            if (guaranteed) grantable.add(e.id)
+          }
+        }
+      }
+    }
+    // 扩界新增的四只神兽都必须有可重复/必得的来源
+    for (const id of ['pet_yinglong', 'pet_qilin', 'pet_kunpeng', 'pet_taotie']) {
+      expect(grantable.has(id), `${id} 没有任何可重复或必得的发放路径`).toBe(true)
     }
   })
 })

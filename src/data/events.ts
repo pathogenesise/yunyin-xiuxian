@@ -896,7 +896,7 @@ export const EVENTS: EventDef[] = [
       ),
       c('取匾额残金', [o(1, '匾额由仙金铸成,你敲下一块。', { type: 'material', id: 'ore', amount: 40 })])
     ],
-    { minRealm: 9, once: true }
+    { minRealm: 9 }
   ),
   ev(
     'ev_yaochi_xianpai',
@@ -936,7 +936,7 @@ export const EVENTS: EventDef[] = [
       ),
       c('收归宗门', [o(1, '你以重器封存碎片,带回宗门换得灵石。', { type: 'stone', tierAmount: 220 })])
     ],
-    { minRealm: 14, once: true }
+    { minRealm: 14 }
   ),
   ev(
     'ev_shenbing_canfeng',
@@ -972,7 +972,7 @@ export const EVENTS: EventDef[] = [
       ),
       c('静观天道', [o(1, '观鲲鹏化形,若有所悟。', { type: 'material', id: 'wudao', amount: 30 })])
     ],
-    { minRealm: 18, once: true }
+    { minRealm: 18 }
   ),
   ev(
     'ev_taotie_xiong',
@@ -990,7 +990,7 @@ export const EVENTS: EventDef[] = [
       ),
       c('避其锋芒', [o(1, '你收敛气机,悄然绕开。')])
     ],
-    { minRealm: 19, once: true }
+    { minRealm: 19 }
   ),
   ev(
     'ev_hongmeng_benyuan',
