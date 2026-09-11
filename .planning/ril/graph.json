@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 64,
+  "round": 65,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:54:37+00:00",
+  "updated_at": "2026-09-11T17:02:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2695,11 +2695,11 @@
     "TASK-037": {
       "id": "TASK-037",
       "type": "task",
-      "status": "active",
-      "version": 4,
+      "status": "resolved",
+      "version": 5,
       "created_at": "2026-09-11T15:46:16+00:00",
-      "updated_at": "2026-09-11T16:50:42+00:00",
-      "touched_round": 62,
+      "updated_at": "2026-09-11T17:02:21+00:00",
+      "touched_round": 64,
       "category": "core-feature",
       "summary": "界域志续写(周易/紫微/星象已实装):余 奇门遁甲 一门(九宫八门)。设计取向:做「择时之门」——在突破/渡劫这类关键一掷前择门,给一次性修正,与卦(一时之机·环境)、命(一世之格·常驻)、星象(一方界域·日更)各占一层,不重复",
       "severity": 0.5,
@@ -3011,7 +3011,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:41:23+00:00",
       "updated_at": "2026-09-11T16:41:23+00:00",
-      "touched_round": 60,
+      "touched_round": 64,
       "summary": "术数类门(周易/紫微/奇门/星象)只做「用得上」的实装:要么真进属性/规则/事件,要么继续留在待续名单里如实标注;卦力由八卦象数推出(下卦为身、上卦为境),不手写六十四套数值",
       "rationale": "手写 64 套数值必与卦义打架且无人能同时校对;而只有文本没有机制的门,正是本轮清扫出的『看得见拿不到』。故取值只写在八卦(8 处可校),重卦由象数自然得出,并有三钱摇卦→本卦/之卦→并入 finalStats 的完整链路",
       "alternatives_rejected": [
@@ -3247,6 +3247,78 @@
       "source": "src/core/earlyGameService.spec.ts『冷却随档:重开页面刷不出顿悟』;故障注入(冷却不读 store / 触发后不记时刻)立刻变红(commit 867ccd3)",
       "summary": "冷却持久化后,刷新不再能刷悟道点;全库模块态逐个复核完毕",
       "confidence": 0.9
+    },
+    "CHG-084": {
+      "id": "CHG-084",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:01:57+00:00",
+      "updated_at": "2026-09-11T17:01:57+00:00",
+      "touched_round": 64,
+      "commit": "e9970cd",
+      "summary": "奇门遁甲:九宫八门与择门入界;expeditionRules 抽出为预估/实战共用的一份规则"
+    },
+    "EV-045": {
+      "id": "EV-045",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:02:00+00:00",
+      "updated_at": "2026-09-11T17:02:00+00:00",
+      "touched_round": 64,
+      "source": "src/core/qimen.spec.ts(13 例:据九宫/吉平凶俱全/不夺契约之职(数据无 sourceMult)/常道与从前逐字相同/预估即实战/道痕带门);两处故障注入(规则合并去掉门、run 不记门)均红;commit e9970cd",
+      "summary": "四门俱有真机制;择门只用既有 CombatRules,未择门时审计基线逐字不变",
+      "confidence": 0.9
+    },
+    "HYP-011": {
+      "id": "HYP-011",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:02:00+00:00",
+      "updated_at": "2026-09-11T17:02:00+00:00",
+      "touched_round": 64,
+      "confidence": 0.85,
+      "summary": "新玩法若只做既有规则/数据的组合,就能既有用又不扰动审计基线 —— 判据:不新增字段、不新增系统,且默认路径产出与从前逐字相同"
+    },
+    "COMP-014": {
+      "id": "COMP-014",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:02:06+00:00",
+      "updated_at": "2026-09-11T17:02:06+00:00",
+      "touched_round": 64,
+      "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
+    },
+    "DEC-024": {
+      "id": "DEC-024",
+      "type": "decision",
+      "status": "superseded",
+      "version": 2,
+      "created_at": "2026-09-11T17:02:06+00:00",
+      "updated_at": "2026-09-11T17:02:18+00:00",
+      "touched_round": 64,
+      "summary": "新机制先问「既有的哪一层已占此职」:能由既有规则/数据表达的,不新增字段、不新增系统;与既有层重复的一律不做(奇门择门因此不碰道源倍数 —— 那是契约的活)",
+      "rationale": "远征已有契约(风险换道源)与变数(随机规则),zeř若八门再做一份『苛刻规则换倍数』就是第三份契约。故门的定义收敛为:免费、改打法(续航/抢攻/守拙/速决)、纯 CombatRules;未择门时规则与从前逐字相同,审计基线不动",
+      "alternatives_rejected": "[\\\"把八门做成第三份契约(重复且让道源经济失控)\\\",\\\"给门新造规则字段(引擎与审计都要跟着改)\\\",\\\"只做八门文本(违 DEC-021,玩家用不上)\\\"]"
+    },
+    "DEC-025": {
+      "id": "DEC-025",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:02:15+00:00",
+      "updated_at": "2026-09-11T17:02:15+00:00",
+      "touched_round": 64,
+      "summary": "新机制先问「既有的哪一层已占此职」:能由既有规则/数据表达的,不新增字段、不新增系统;与既有层重复的一律不做(奇门择门因此不碰道源倍数 —— 那是契约的活)",
+      "rationale": "远征已有契约(风险换道源)与变数(随机规则);若八门再做一份『苛刻规则换倍数』,就是第三份契约。故门的定义收敛为:免费、改打法(续航/抢攻/守拙/速决)、纯 CombatRules;未择门时规则与从前逐字相同,审计基线不动",
+      "alternatives_rejected": [
+        "把八门做成第三份契约(重复,且让道源经济失控)",
+        "给门新造规则字段(引擎与审计都要跟着改)",
+        "只做八门文本(违 DEC-021,玩家用不上)"
+      ]
     }
   },
   "edges": [
@@ -4528,6 +4600,36 @@
       "to": "HYP-010",
       "type": "validates",
       "created_at": "2026-09-11T16:54:37+00:00"
+    },
+    {
+      "from": "CHG-084",
+      "to": "TASK-037",
+      "type": "implements",
+      "created_at": "2026-09-11T17:01:57+00:00"
+    },
+    {
+      "from": "EV-045",
+      "to": "HYP-011",
+      "type": "validates",
+      "created_at": "2026-09-11T17:02:06+00:00"
+    },
+    {
+      "from": "DEC-025",
+      "to": "DEC-024",
+      "type": "supersedes",
+      "created_at": "2026-09-11T17:02:15+00:00"
+    },
+    {
+      "from": "DEC-025",
+      "to": "COMP-014",
+      "type": "governs",
+      "created_at": "2026-09-11T17:02:18+00:00"
+    },
+    {
+      "from": "DEC-021",
+      "to": "COMP-014",
+      "type": "governs",
+      "created_at": "2026-09-11T17:02:18+00:00"
     }
   ]
 }
