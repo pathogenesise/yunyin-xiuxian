@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 65,
+  "round": 66,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T17:02:21+00:00",
+  "updated_at": "2026-09-11T17:05:46+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3319,6 +3319,54 @@
         "给门新造规则字段(引擎与审计都要跟着改)",
         "只做八门文本(违 DEC-021,玩家用不上)"
       ]
+    },
+    "TASK-043": {
+      "id": "TASK-043",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T17:05:36+00:00",
+      "updated_at": "2026-09-11T17:05:40+00:00",
+      "touched_round": 65,
+      "category": "test-quality",
+      "severity": 0.4,
+      "confidence": 0.85,
+      "effort": 3,
+      "summary": "声明即承诺:把事件效果/选项条件/计数器/属性键四处词汇表钉成源码级覆盖红线(新增 vocabularyCoverage.spec)"
+    },
+    "CHG-085": {
+      "id": "CHG-085",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:05:39+00:00",
+      "updated_at": "2026-09-11T17:05:39+00:00",
+      "touched_round": 65,
+      "commit": "23f81d6",
+      "summary": "新增 vocabularyCoverage.spec:事件效果/选项条件/计数器/属性键四处词汇表覆盖率红线"
+    },
+    "EV-046": {
+      "id": "EV-046",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:05:43+00:00",
+      "updated_at": "2026-09-11T17:05:43+00:00",
+      "touched_round": 65,
+      "source": "src/core/vocabularyCoverage.spec.ts(4 例);逐条故障注入(删 case / 删 track 写入 / 删属性读取点)均红;当下实测:11 种事件效果、3 种条件、19 个计数器、42 个属性键全部有实现或读取方(commit 23f81d6)",
+      "summary": "四处词汇表当下一处不缺;同类缺口可被源码级覆盖红线批量拦住,不必靠人工排查",
+      "confidence": 0.85
+    },
+    "HYP-012": {
+      "id": "HYP-012",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T17:05:43+00:00",
+      "updated_at": "2026-09-11T17:05:43+00:00",
+      "touched_round": 65,
+      "confidence": 0.8,
+      "summary": "『声明而未实现』可被词表级覆盖判定拦住;但**数据字段级**(对象属性是否被读)不可靠 —— 动态取键(Record 查表、modOf(mods,'key'))太多,静态判定会产出大量误报"
     }
   },
   "edges": [
@@ -4630,6 +4678,18 @@
       "to": "COMP-014",
       "type": "governs",
       "created_at": "2026-09-11T17:02:18+00:00"
+    },
+    {
+      "from": "CHG-085",
+      "to": "TASK-043",
+      "type": "implements",
+      "created_at": "2026-09-11T17:05:40+00:00"
+    },
+    {
+      "from": "EV-046",
+      "to": "HYP-012",
+      "type": "validates",
+      "created_at": "2026-09-11T17:05:46+00:00"
     }
   ]
 }
