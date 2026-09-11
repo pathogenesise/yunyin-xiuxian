@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 82,
+  "round": 83,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T18:33:55+00:00",
+  "updated_at": "2026-09-11T19:31:00+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -4065,7 +4065,7 @@
       "version": 1,
       "created_at": "2026-09-11T18:33:38+00:00",
       "updated_at": "2026-09-11T18:33:38+00:00",
-      "touched_round": 81,
+      "touched_round": 82,
       "confidence": 0.8,
       "summary": "『窄屏排版』可以自动核到一半:横向溢出/越界元素/导航项数/页面异常都能用无头浏览器在两种手机视口下量出来;但字体渲染与安全区仍需真机,自动化只能证明『不会横向溢出』"
     },
@@ -4080,6 +4080,43 @@
       "source": "bondEvents.spec「共命之险」四条:标注警示/关系不够则殒落/够则同生/另两条路永不致死;故障注入短路 peril 判定立刻红(commit f4f7242)",
       "summary": "不可逆后果三原则(玩家选择/事先写明/另有活路)可被用例逐条钉住",
       "confidence": 0.9
+    },
+    "TASK-052": {
+      "id": "TASK-052",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T19:30:50+00:00",
+      "updated_at": "2026-09-11T19:30:54+00:00",
+      "touched_round": 82,
+      "category": "test-quality",
+      "severity": 0.3,
+      "confidence": 0.8,
+      "effort": 3,
+      "summary": "界面冒烟:真浏览器逐页点按钮找运行时异常;带后期夹具存档覆盖终局界面"
+    },
+    "CHG-106": {
+      "id": "CHG-106",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:30:54+00:00",
+      "updated_at": "2026-09-11T19:30:54+00:00",
+      "touched_round": 82,
+      "commit": "12c92ae",
+      "summary": "ui-smoke.mjs:九页逐页点按钮(含弹窗内)+ --late 后期夹具存档"
+    },
+    "EV-062": {
+      "id": "EV-062",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T19:30:54+00:00",
+      "updated_at": "2026-09-11T19:30:54+00:00",
+      "touched_round": 82,
+      "source": "ui-smoke.mjs 两轮实测:默认模式 9 页 43 次点击、--late 后期夹具 45 次点击,均无 pageerror(commit 12c92ae);后期夹具已确认能进神人境、看到天界与秘境",
+      "summary": "点击级冒烟覆盖到终局界面且未发现运行时异常;后期模式因真实模拟而慢,已在脚本头注明",
+      "confidence": 0.8
     }
   },
   "edges": [
@@ -5679,6 +5716,18 @@
       "to": "TASK-040",
       "type": "implements",
       "created_at": "2026-09-11T18:33:55+00:00"
+    },
+    {
+      "from": "CHG-106",
+      "to": "TASK-052",
+      "type": "implements",
+      "created_at": "2026-09-11T19:30:54+00:00"
+    },
+    {
+      "from": "EV-062",
+      "to": "HYP-019",
+      "type": "validates",
+      "created_at": "2026-09-11T19:31:00+00:00"
     }
   ]
 }
