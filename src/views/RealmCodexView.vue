@@ -65,7 +65,7 @@
 
     <template v-if="codexTab === 'yi'">
     <!-- 周易:读过之后可以真的问一卦 -->
-    <SectionTitle title="周易" hint="八卦为体,六十四卦为用" />
+    <SectionTitle title="周易" :hint="`${cnNumber(TRIGRAMS.length)}卦为体,${cnNumber(HEXAGRAMS.length)}卦为用`" />
     <section class="card-ink px-4 py-3">
       <p class="text-[11px] leading-relaxed text-ink-faint">
         「易」不是书斋里的摆设:八卦各主一事之势,重卦由上下相叠 ——
@@ -119,7 +119,7 @@
     <!-- 六十四卦:全表可查,但不必时时铺开 -->
     <section class="card-ink px-4 py-3">
       <button class="flex w-full items-center justify-between text-left" @click="showAllHex = !showAllHex">
-        <span class="font-kai text-[13px] tracking-wider text-ink">六十四卦</span>
+        <span class="font-kai text-[13px] tracking-wider text-ink">{{ cnNumber(HEXAGRAMS.length) }}卦</span>
         <span class="text-[10px] text-azure">{{ showAllHex ? '收起' : `展开查看 ${HEXAGRAMS.length} 卦 →` }}</span>
       </button>
       <div v-if="showAllHex" class="mt-2 max-h-72 divide-y divide-ink/6 overflow-y-auto">
@@ -138,11 +138,11 @@
 
     <template v-if="codexTab === 'ziwei'">
     <!-- 紫微:一世之格,与周易的「一时之机」分工 -->
-    <SectionTitle title="紫微" hint="十二宫定一世之格,与问卦分工" />
+    <SectionTitle title="紫微" :hint="`${cnNumber(PALACES.length)}宫定一世之格,与问卦分工`" />
     <section class="card-ink px-4 py-3">
       <p class="text-[11px] leading-relaxed text-ink-faint">
         紫微斗数本当以生辰起五行局再安诸星,游戏内没有生辰 ——
-        故此门只取**十二宫所主**与**十四主星的星性**,按灵根与轮回归属安星:是取象义,不是排盘。
+        故此门只取**{{ cnNumber(PALACES.length) }}宫所主**与**{{ cnNumber(STARS.length) }}主星的星性**,按灵根与轮回归属安星:是取象义,不是排盘。
         卦是一时之机(可问、有时限),命是一世之格(常驻、转世重算,力薄为底色)。
       </p>
       <p class="mt-2 font-kai text-[13px] leading-relaxed text-ink">{{ fateLordLineText }}</p>
@@ -155,7 +155,7 @@
         </div>
       </div>
       <div class="mt-2 border-t border-ink/10 pt-2">
-        <p class="text-[10px] text-ink-ghost">十四主星</p>
+        <p class="text-[10px] text-ink-ghost">{{ cnNumber(STARS.length) }}主星</p>
         <p v-for="s in STARS" :key="s.id" class="mt-1 text-[11px] leading-relaxed text-ink-soft">
           <span class="font-kai text-ink">{{ s.name }}</span>
           <span class="text-ink-faint"> · {{ s.nature }} · {{ s.gist }}</span>
@@ -166,19 +166,19 @@
 
     <template v-if="codexTab === 'xiang'">
     <!-- 星象:二十八宿值日,利一方界域 -->
-    <SectionTitle title="星象" hint="二十八宿值日,分野为读、四象为用" />
+    <SectionTitle title="星象" :hint="`${cnNumber(MANSIONS.length)}宿值日,分野为读、四象为用`" />
     <section class="card-ink px-4 py-3">
       <p class="font-kai text-[13px] leading-relaxed text-ink">{{ mansionLine }}</p>
       <p class="mt-1 text-[11px] leading-relaxed text-ink-faint">
         分野依《晋书·天文志》(诸家小异)只作来历读 —— 游戏里的地界不是九州。
-        管用的是下面这条**游戏约定**:四象配四界(东配人间、南配仙、西配神、北配混沌),
+        管用的是下面这条**游戏约定**:{{ cnNumber(IMAGES.length) }}象配{{ cnNumber(WORLDS.length) }}界({{ imageWorldMap }}),
         值日之宿所属之象,所配界域今日际遇更易(乘在际遇概率上 +{{ Math.round(MANSION_EVENT_LUCK * 100) }}%),他处不加。
       </p>
       <p class="mt-1.5 text-[11px] text-azure">
         今日利 <span class="text-gold-ink">{{ favoredWorldName }}</span> —— 与天时不同:天时是全境之气,星象只利一方。
       </p>
       <button class="mt-2 w-full text-left text-[10px] text-azure" @click="showAllMansions = !showAllMansions">
-        {{ showAllMansions ? '收起二十八宿' : `展开查看 ${MANSIONS.length} 宿 →` }}
+        {{ showAllMansions ? `收起${cnNumber(MANSIONS.length)}宿` : `展开查看 ${MANSIONS.length} 宿 →` }}
       </button>
       <div v-if="showAllMansions" class="mt-2 divide-y divide-ink/6">
         <template v-for="img in IMAGES" :key="img.id">
@@ -196,11 +196,10 @@
 
     <template v-if="codexTab === 'qimen'">
     <!-- 奇门:九宫八门,择门而入 -->
-    <SectionTitle title="奇门" hint="九宫八门,择门而入" />
+    <SectionTitle title="奇门" :hint="`九宫${cnNumber(GATES.length)}门,择门而入`" />
     <section class="card-ink px-4 py-3">
       <p class="text-[11px] leading-relaxed text-ink-faint">
-        八门依洛书九宫排布:坎一北休、坤二西南死、震三东伤、巽四东南杜、中五无门、
-        乾六西北开、兑七西惊、艮八东北生、离九南景。
+        {{ cnNumber(GATES.length) }}门依洛书九宫排布:{{ luoshuGatesText }}。
         远征启程前可择一门入界 —— 不是与天道立契(那换的是道源),
         择门改的是这一趟的**打法**:续航、抢攻、守拙或速决。
       </p>
@@ -244,10 +243,11 @@
   import { HEXAGRAMS, TRIGRAMS, trigramDef } from '@/data/yijing'
   import { DIVINATION_COST, drawLines, readingCounsel, readingFromState } from '@/core/divination'
   import { askDivination } from '@/core/divinationService'
-  import { STARS } from '@/data/ziwei'
+  import { PALACES, STARS } from '@/data/ziwei'
   import { fateLordLine } from '@/core/fate'
   import { IMAGES, MANSIONS, type ImageId } from '@/data/xiangxiu'
   import { GATES } from '@/data/qimen'
+  import { cnNumber } from '@/utils/format'
   import { MANSION_EVENT_LUCK, favoredWorld, todayMansion, todayMansionLine } from '@/core/astronomy'
   import { worldDef } from '@/data/realms'
   import type { WorldId } from '@/types'
@@ -322,6 +322,24 @@
   function mansionsOf(image: ImageId) {
     return MANSIONS.filter(m => m.image === image)
   }
+
+  /**
+   * 洛书九宫的排布句 —— **从 GATES 表推出来,不手写**。
+   *
+   * 这句话本质是一张地图(哪一门坐哪一宫、朝哪一方),手写一份就等于把
+   * 八门的方向抄了第二遍:改门的位置或加一门,句子会开始说假话。
+   * 中五无门是九宫的固有事实(不是一张门),故由循环补出。
+   */
+  const luoshuGatesText = computed(() =>
+    Array.from({ length: 9 }, (_, i) => {
+      const palace = i + 1
+      const gate = GATES.find(g => g.palace === palace)
+      return gate ? `${gate.gua}${cnNumber(palace)}${gate.direction}${gate.fullName}` : `中${cnNumber(palace)}无门`
+    }).join('、')
+  )
+
+  /** 四象各配哪一界 —— 游戏约定写在 IMAGES 表里,这句只是把它读出来 */
+  const imageWorldMap = computed(() => IMAGES.map(i => `${i.direction}配${worldName(i.world)}`).join('、'))
 
   const worldRows = computed(() =>
     WORLDS.map(w => ({

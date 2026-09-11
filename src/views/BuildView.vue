@@ -34,7 +34,7 @@
         </p>
         <!-- 五维评级(Phase 30.2):读懂构筑"形状",不看战力总数 -->
         <div class="mt-2.5 rounded-md bg-paper-deep/60 px-3 py-2">
-          <p class="text-[10px] text-ink-faint">五维评级 —— 读的是形状,不是排名</p>
+          <p class="text-[10px] text-ink-faint">{{ cnNumber(powerRating.labels.length) }}维评级 —— 读的是形状,不是排名</p>
           <div class="mt-1 grid grid-cols-1 gap-0.5">
             <p v-for="l in powerRating.labels" :key="l.key" class="flex items-center justify-between text-[11px]">
               <span class="text-ink-soft">{{ l.name }}</span>
@@ -173,7 +173,7 @@
   import { useEndgameStore } from '@/stores/endgame'
   import { applyLoadout, captureLoadout, deleteLoadout } from '@/core/loadoutService'
   import { useLoadoutsStore, MAX_LOADOUTS } from '@/stores/loadouts'
-  import { formatPercent } from '@/utils/format'
+  import { cnNumber, formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import GameIcon from '@/components/common/GameIcon.vue'

@@ -371,3 +371,18 @@ export const ARTIFACT_LEVEL_BONUS = 0.08
 export const ARTIFACT_MAX_LEVEL = 9
 export const ARTIFACT_UP_WUDAO_BASE = 6
 export const ARTIFACT_UP_STONE_TIER = 40
+
+/**
+ * 法宝位:开局 1 位,元婴(第 3 大境界)起再开 1 位。
+ *
+ * 这条规则此前写在两处(界面的槽位显示、切换构筑时的截断),数字各写各的;
+ * 界面还会把门槛写成「元婴境开启第二法宝位」——境界改名或门槛挪动,文案就撒谎。
+ * 故门槛与上限一并放这里,两边都读同一份。
+ */
+export const ARTIFACT_SLOT_UNLOCK_MAJOR = 3
+export const ARTIFACT_MAX_SLOTS = 2
+
+/** 某大境界下可用几个法宝位 */
+export function artifactSlotsFor(major: number): number {
+  return major >= ARTIFACT_SLOT_UNLOCK_MAJOR ? ARTIFACT_MAX_SLOTS : 1
+}

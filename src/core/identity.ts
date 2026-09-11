@@ -58,9 +58,12 @@ const mode = <T>(xs: T[]): T | undefined => {
   return [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
 }
 
-/** 从道痕生成画像;样本不足(<5 则)返回 null */
+/** 画像成形所需的最少道痕数 —— 界面上的「道痕未满 N 则」读这里,不手写 */
+export const PROFILE_MIN_MARKS = 5
+
+/** 从道痕生成画像;样本不足(不足 PROFILE_MIN_MARKS 则)返回 null */
 export function cultivatorProfile(marks: DaoMark[]): CultivatorProfile | null {
-  if (marks.length < 5) return null
+  if (marks.length < PROFILE_MIN_MARKS) return null
   // 道途分布
   const daoCount = new Map<DaoPathId, number>()
   for (const m of marks) {

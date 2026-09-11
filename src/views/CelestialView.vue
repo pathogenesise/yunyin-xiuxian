@@ -131,7 +131,7 @@
             </div>
             <div class="ink-divider my-2.5" />
             <!-- 择路 -->
-            <template v-if="run.layer <= 2 && currentNodes">
+            <template v-if="run.layer < EXPEDITION_ROUTE_LAYERS && currentNodes">
               <p class="mb-1.5 text-[11px] text-ink-faint">第 {{ run.layer + 1 }} 重 · 两径择一(层间可回凡界换构筑)</p>
               <div class="stagger-in grid grid-cols-2 gap-2">
                 <button
@@ -149,8 +149,8 @@
               </div>
             </template>
             <!-- 界主 -->
-            <template v-else-if="run.layer === 3">
-              <p class="mb-1.5 text-[11px] text-ink-faint">三重已过,界主临阵。可先回凡界整备,再来决战。</p>
+            <template v-else-if="run.layer === EXPEDITION_GUARDIAN_LAYER">
+              <p class="mb-1.5 text-[11px] text-ink-faint">{{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重已过,界主临阵。可先回凡界整备,再来决战。</p>
               <p v-if="guardianPreview" class="mb-1.5 text-[10px] text-violet-ink">
                 天机:{{ guardianPreview.winText }} · {{ guardianPreview.skillLines.join(' / ') }}
               </p>
@@ -175,7 +175,7 @@
                 <span v-if="endgame.worldClears[world.id]" class="chip-ink border-jade/60 text-[9px] text-jade">
                   已破 ×{{ endgame.worldClears[world.id] }}
                 </span>
-                <span class="ml-auto tabular text-[11px] text-ink-faint">入界+三重+界主</span>
+                <span class="ml-auto tabular text-[11px] text-ink-faint">入界+{{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重+界主</span>
               </p>
               <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{{ world.desc }}</p>
               <p class="mt-1 flex flex-wrap gap-x-3 text-[10px] text-violet-ink">
@@ -262,7 +262,7 @@
               </div>
             </template>
             <template v-else>
-              <p class="text-[11px] leading-relaxed text-ink-faint">天道无常,规则无定。窥探本次变数,再决定是否应战——六连战,规则叠加。</p>
+              <p class="text-[11px] leading-relaxed text-ink-faint">天道无常,规则无定。窥探本次变数,再决定是否应战——{{ cnNumber(MUTATION_FIGHTS) }}连战,规则叠加。</p>
               <button class="btn-ghost mt-2 w-full !py-2 !text-[12px]" @click="mutationDraw = rollMutators()">窥探变数</button>
             </template>
           </div>
@@ -436,7 +436,7 @@
     <BaseModal :open="prepWorld !== null" :title="prepWorld ? `远征 · ${prepWorld.name}` : ''" @close="prepWorldId = null">
       <template v-if="prepWorld">
         <p class="text-[11px] leading-relaxed text-ink-faint">
-          入界一战 → 三重择路(沿途道源)→ 界主。层间可回凡界换构筑。启程前,可与天道立契——风险换道源。
+          入界一战 → {{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重择路(沿途道源)→ 界主。层间可回凡界换构筑。启程前,可与天道立契——风险换道源。
         </p>
         <div class="mt-2 space-y-1.5">
           <button
@@ -709,7 +709,16 @@
   import { useInventoryStore } from '@/stores/inventory'
   import { useEndgameStore } from '@/stores/endgame'
   import { SOUL_SLOTS } from '@/data/souls'
-  import { DAO_PATHS, CELESTIAL_WORLDS, TRIALS, FURNACE_RATES, DAO_SOURCE_PER_FRUIT, daoPathDef } from '@/data/endgame'
+  import {
+    CELESTIAL_WORLDS,
+    DAO_PATHS,
+    DAO_SOURCE_PER_FRUIT,
+    EXPEDITION_GUARDIAN_LAYER,
+    EXPEDITION_ROUTE_LAYERS,
+    FURNACE_RATES,
+    TRIALS,
+    daoPathDef
+  } from '@/data/endgame'
   import { PACTS, pactDef } from '@/data/pacts'
   import { GATES, gateDef } from '@/data/qimen'
   import { MUTATORS, mutatorDef } from '@/data/mutators'
@@ -737,6 +746,7 @@
     forecastExpedition,
     MUTATION_BASE_REWARD,
     MUTATION_ENTRY_COST,
+    MUTATION_FIGHTS,
     previewFight,
     rerollVoidWorld,
     resolveWorld,
@@ -755,7 +765,7 @@
     type ChallengeDraft,
     type ChallengeVerdict
   } from '@/core/challenge'
-  import { formatGN, formatNum } from '@/utils/format'
+  import { cnNumber, formatGN, formatNum } from '@/utils/format'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -848,8 +858,11 @@
   /** 页签行:远征在途时挂朱点提醒 */
   const celTabRows = computed(() => CEL_TABS.map(t => ({ ...t, dot: t.id === 'exped' && !!endgame.worldRun })))
 
-  /** 远征行程四站(layer 0~2 为三重择路,3 为界主) */
-  const RUN_STAGES = ['一重', '二重', '三重', '界主']
+  /** 远征行程点列:重层择路 + 界主(层号与 EXPEDITION_* 同源,不另外数) */
+  const RUN_STAGES = [
+    ...Array.from({ length: EXPEDITION_ROUTE_LAYERS }, (_, i) => `${cnNumber(i + 1)}重`),
+    '界主'
+  ]
 
   /** 剑道:当前剑意层数与纯度构成 */
   const swordInfo = computed(() => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, formatGN, formatPercent } from './format'
+import { cnNumber, formatDuration, formatGN, formatPercent } from './format'
 import { gn, powN } from './gnum'
 
 describe('数值格式化', () => {
@@ -74,5 +74,35 @@ describe('数值格式化', () => {
     expect(formatPercent(-0.00001)).toBe('0%')
     expect(formatPercent(-0.005)).toBe('-0.5%')
     expect(formatPercent(0.125)).toBe('12.5%')
+  })
+})
+
+describe('汉字数字(页面上的数量从来源数出来)', () => {
+  it('一位数与十位', () => {
+    expect(cnNumber(0)).toBe('零')
+    expect(cnNumber(4)).toBe('四')
+    expect(cnNumber(8)).toBe('八')
+    expect(cnNumber(10)).toBe('十')
+    expect(cnNumber(12)).toBe('十二')
+    expect(cnNumber(14)).toBe('十四')
+    expect(cnNumber(20)).toBe('二十')
+    expect(cnNumber(21)).toBe('二十一')
+    expect(cnNumber(64)).toBe('六十四')
+  })
+
+  it('百千位与内零', () => {
+    expect(cnNumber(100)).toBe('一百')
+    expect(cnNumber(101)).toBe('一百零一')
+    expect(cnNumber(110)).toBe('一百一十')
+    expect(cnNumber(999)).toBe('九百九十九')
+    expect(cnNumber(1000)).toBe('一千')
+    expect(cnNumber(1005)).toBe('一千零五')
+    expect(cnNumber(1050)).toBe('一千零五十')
+  })
+
+  it('超出范围原样返回(此处的数字本就不该写成汉字)', () => {
+    expect(cnNumber(10000)).toBe('10000')
+    expect(cnNumber(-1)).toBe('-1')
+    expect(cnNumber(1.5)).toBe('1.5')
   })
 })

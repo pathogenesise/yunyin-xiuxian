@@ -22,6 +22,17 @@ import { BUFFS } from '@/data/buffs'
 import { PACTS } from '@/data/pacts'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { cnNumber } from '@/utils/format'
+import { REALMS, WORLDS } from '@/data/realms'
+import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
+import { PALACES, STARS } from '@/data/ziwei'
+import { MANSIONS } from '@/data/xiangxiu'
+import { GATES } from '@/data/qimen'
+import { SECRET_LAYERS } from '@/data/secretRealms'
+import { ARTIFACT_MAX_SLOTS, ARTIFACT_SLOT_UNLOCK_MAJOR } from '@/data/artifacts'
+import { EXPEDITION_ROUTE_LAYERS } from '@/data/endgame'
+import { MUTATION_FIGHTS } from '@/core/expedition'
+import { PROFILE_MIN_MARKS } from '@/core/identity'
 
 /** 文案里的百分比是否能在同一条目的数值里找到对应 */
 function percentBacked(percent: number, nums: number[]): boolean {
@@ -163,6 +174,103 @@ describe('文案数值对账 · 视图不手抄数字', () => {
     expect(view, '闭关时长与加成应读 buff 定义').toContain("buffDef('retreat')")
     expect(view).not.toContain('5 分钟,修炼速度 +150%')
     expect(view).not.toContain('5分钟 修炼 +150%')
+  })
+})
+
+/**
+ * 数量也要对账 —— 「四界二十一境」「六十四卦」「三层」这类写法,数字同样是手抄的。
+ *
+ * 与百分比不同:数量不会自己变,只有**内容增长**时才变 —— 那正是最容易漏的时刻
+ * (加了界域、加了卦,没人会想起界面上还有一句写着旧数字)。故这里逐处钉:
+ * 页面写的数量必须由来源表数出来,且原来的字面量必须消失。
+ *
+ * 判据同时钉住「值没变」:算法换了,玩家看到的还得是原来那句(四界二十一境、
+ * 六十四卦、三层……),否则接线就成了改文案的借口。
+ */
+describe('文案数值对账 · 视图不手抄数量', () => {
+  const src = (from: string): string =>
+    readFileSync(resolve(__dirname, from), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+
+  it('接线换的是算法,不是玩家看到的数', () => {
+    expect(`${cnNumber(WORLDS.length)}界${cnNumber(REALMS.length)}境`).toBe('四界二十一境')
+    expect(cnNumber(TRIGRAMS.length)).toBe('八')
+    expect(cnNumber(HEXAGRAMS.length)).toBe('六十四')
+    expect(cnNumber(PALACES.length)).toBe('十二')
+    expect(cnNumber(STARS.length)).toBe('十四')
+    expect(cnNumber(MANSIONS.length)).toBe('二十八')
+    expect(cnNumber(GATES.length)).toBe('八')
+    expect(cnNumber(SECRET_LAYERS)).toBe('三')
+    expect(cnNumber(EXPEDITION_ROUTE_LAYERS)).toBe('三')
+    expect(cnNumber(MUTATION_FIGHTS)).toBe('六')
+    expect(cnNumber(PROFILE_MIN_MARKS)).toBe('五')
+    expect(cnNumber(ARTIFACT_MAX_SLOTS)).toBe('二')
+    expect(REALMS[ARTIFACT_SLOT_UNLOCK_MAJOR]?.name, '法宝位门槛写的是第几个境界,名字得从境界表取').toBe('元婴')
+  })
+
+  it('洛书排布句是一张地图:八门各占一宫、中五无门', () => {
+    // 视图把这句从 GATES 推出来;表里若出现两门同宫、或门落到中五,那句话就会说谎
+    const palaces = GATES.map(g => g.palace)
+    expect(new Set(palaces).size, '两门同宫 —— 排布句会漏掉一门').toBe(GATES.length)
+    expect(palaces.every(p => p >= 1 && p <= 9)).toBe(true)
+    expect(palaces.includes(5), '中五无门,不得有门占中宫').toBe(false)
+  })
+
+  it('界域志入口的数量取自 REALMS / WORLDS', () => {
+    const view = src('../views/CharacterView.vue')
+    expect(view).toContain('cnNumber(WORLDS.length)')
+    expect(view).toContain('cnNumber(REALMS.length)')
+    expect(view).not.toContain('四界二十一境')
+  })
+
+  it('界域志各门的数量取自各自的表(易 / 紫微 / 星象 / 奇门)', () => {
+    const view = src('../views/RealmCodexView.vue')
+    for (const ref of ['TRIGRAMS.length', 'HEXAGRAMS.length', 'PALACES.length', 'STARS.length', 'MANSIONS.length', 'GATES.length']) {
+      expect(view, `界域志应读 ${ref}`).toContain(ref)
+    }
+    expect(view, '洛书排布句应由 GATES 推出').toContain('luoshuGatesText')
+    expect(view, '四象配四界那句应由 IMAGES 推出').toContain('imageWorldMap')
+    for (const hand of ['六十四卦', '十二宫所主', '十四主星', '二十八宿']) {
+      expect(view, `手抄的「${hand}」应改成从表里数`).not.toContain(hand)
+    }
+  })
+
+  it('秘境层数取自 SECRET_LAYERS(凡境与天界共用一张卡)', () => {
+    const card = src('../components/adventure/SecretRealmCard.vue')
+    expect(card).toContain('cnNumber(SECRET_LAYERS)')
+    expect(card).not.toContain('三层 · 出则散')
+  })
+
+  it('远征行程与变数连战数取自 EXPEDITION_* / MUTATION_FIGHTS', () => {
+    const view = src('../views/CelestialView.vue')
+    expect(view).toContain('cnNumber(EXPEDITION_ROUTE_LAYERS)')
+    expect(view).toContain('cnNumber(MUTATION_FIGHTS)')
+    expect(view, '界主层判定读常数,不写 3').toContain('EXPEDITION_GUARDIAN_LAYER')
+    expect(view, '行程点列不该自己数一遍重数').not.toContain("'一重', '二重', '三重'")
+    expect(view).not.toContain('三重已过')
+    expect(view).not.toContain('六连战')
+  })
+
+  it('法宝位与门槛取自 artifacts.ts,界面与切换构筑共用一份', () => {
+    const view = src('../views/InventoryView.vue')
+    expect(view).toContain('artifactSlotsFor(player.major)')
+    expect(view).toContain('ARTIFACT_SLOT_UNLOCK_MAJOR')
+    expect(view).not.toContain('元婴境开启第二法宝位')
+    expect(view, '法宝位规则不该在界面里再写一遍').not.toMatch(/major >= 3 \? 2 : 1/)
+    const svc = src('./loadoutService.ts')
+    expect(svc, '切换构筑的截断也读同一份规则').toContain('artifactSlotsFor(player.major)')
+    expect(svc).not.toMatch(/major >= 3 \? 2 : 1/)
+  })
+
+  it('画像门槛与构筑维度取自各自模块', () => {
+    const legacy = src('../views/LegacyView.vue')
+    expect(legacy).toContain('cnNumber(PROFILE_MIN_MARKS)')
+    expect(legacy).not.toContain('道痕未满五则')
+    const build = src('../views/BuildView.vue')
+    expect(build).toContain('cnNumber(powerRating.labels.length)')
+    expect(build).not.toContain('五维评级 ——')
   })
 })
 

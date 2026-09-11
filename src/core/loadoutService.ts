@@ -4,6 +4,7 @@
 import type { EquipSlot } from '@/types'
 import { uid } from '@/utils/id'
 import { equipmentTemplate } from '@/data/equipment'
+import { artifactSlotsFor } from '@/data/artifacts'
 import { gongfaDef } from '@/data/gongfa'
 import { usePlayerStore } from '@/stores/player'
 import { useInventoryStore } from '@/stores/inventory'
@@ -75,7 +76,7 @@ export function applyLoadout(id: string): boolean {
   missing += loadout.subGongfa.length - validSubs.length
   cultivation.subGongfa = validSubs
   // 法宝
-  const artifactCap = player.major >= 3 ? 2 : 1
+  const artifactCap = artifactSlotsFor(player.major)
   const owned = new Set(inventory.artifacts.map(a => a.defId))
   const validArts = loadout.artifactIds.filter(a => owned.has(a)).slice(0, artifactCap)
   missing += loadout.artifactIds.length - validArts.length

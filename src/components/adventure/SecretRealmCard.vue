@@ -3,7 +3,7 @@
   <section v-if="unlocked" class="card-ink px-4 py-3">
     <p class="flex items-center gap-2">
       <span class="font-kai text-[14px] tracking-[0.2em] text-ink">秘境</span>
-      <span class="chip-ink !text-[9px]">{{ gate === 'celestial' ? '天界秘境' : '凡境秘境' }} · 三层 · 出则散</span>
+      <span class="chip-ink !text-[9px]">{{ gate === 'celestial' ? '天界秘境' : '凡境秘境' }} · {{ cnNumber(SECRET_LAYERS) }}层 · 出则散</span>
       <span v-if="state" class="ml-auto text-[10px] tabular text-gold-ink">第 {{ state.layer }}/{{ SECRET_LAYERS }} 层</span>
     </p>
 
@@ -54,6 +54,7 @@
   import { useUiStore } from '@/stores/ui'
   import { useEndgameStore } from '@/stores/endgame'
   import { secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
+  import { cnNumber } from '@/utils/format'
   import {
     SECRET_LAYERS,
     abandonRealm,

@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { CelestialWorldDef, DaoMark, DaoPathId, StatMods } from '@/types'
 import { persistConfig } from '@/utils/storage'
 import { mergeMods } from '@/core/statsCalc'
-import { celestialWorldDef } from '@/data/endgame'
+import { EXPEDITION_GUARDIAN_LAYER, celestialWorldDef } from '@/data/endgame'
 import { SOUL_SLOTS, soulMods as soulModsOf, type SoulInstance } from '@/data/souls'
 import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecordOf, asStringArray } from '@/utils/saveShape'
 
@@ -94,7 +94,7 @@ export const useEndgameStore = defineStore(
             ...run,
             pactId: typeof run.pactId === 'string' ? run.pactId : null,
             gateId: typeof run.gateId === 'string' ? run.gateId : null,
-            layer: Math.min(3, Math.max(0, Math.floor(asFiniteNumber(run.layer, 0, 0)))),
+            layer: Math.min(EXPEDITION_GUARDIAN_LAYER, Math.max(0, Math.floor(asFiniteNumber(run.layer, 0, 0)))),
             bonus: Math.floor(asFiniteNumber(run.bonus, 0, 0)),
             rows: asArray<WorldRunState['rows'][number]>(run.rows, [], r => !!r && typeof (r as { foeName?: unknown }).foeName === 'string'),
             carriedHpPct: Math.min(1, asFiniteNumber(run.carriedHpPct, 1, 0.05)),

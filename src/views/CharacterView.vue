@@ -152,7 +152,7 @@
     <RouterLink to="/codex" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
       <span class="min-w-0 grow">
         <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">界域志</span>
-        <span class="block truncate text-[10px] text-ink-faint tabular">四界二十一境 · 每一境的来路与典籍</span>
+        <span class="block truncate text-[10px] text-ink-faint tabular">{{ cnNumber(WORLDS.length) }}界{{ cnNumber(REALMS.length) }}境 · 每一境的来路与典籍</span>
       </span>
       <span class="text-[11px] text-ink-soft">查阅 →</span>
     </RouterLink>
@@ -421,6 +421,7 @@
   import { GONGFA } from '@/data/gongfa'
   import { PILLS } from '@/data/pills'
   import { ARTIFACTS } from '@/data/artifacts'
+  import { REALMS, WORLDS } from '@/data/realms'
   import { EVENTS } from '@/data/events'
   import { prepareReincarnation, MANUAL_REBIRTH_MIN_MAJOR } from '@/core/reincarnation'
   import { detectBuild } from '@/core/buildDetect'
@@ -435,7 +436,7 @@
   import { mentorHint } from '@/core/fortuneChain'
   import { buildIdentity } from '@/core/identityService'
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
-  import { formatGN, formatPercent } from '@/utils/format'
+  import { cnNumber, formatGN, formatPercent } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
   import { STAT_NAMES } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'

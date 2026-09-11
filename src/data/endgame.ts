@@ -491,3 +491,12 @@ export const FURNACE_STONE_DAO_SOURCE = 5
 
 /** 道源凝道果:数值成长唯一出口,受道果软上限约束 */
 export const DAO_SOURCE_PER_FRUIT = 100
+
+/**
+ * 远征行程:0 ~ ROUTE_LAYERS-1 为「重」层择路,ROUTE_LAYERS 为界主层。
+ *
+ * 层号就是规则本身(择路函数只认 0..2、界主判定认 3),故把它抽成常数:
+ * 界面上的「三重」、行程点列、以及越界守卫都读同一份,改行程不必四处找数字。
+ */
+export const EXPEDITION_ROUTE_LAYERS = 3
+export const EXPEDITION_GUARDIAN_LAYER = EXPEDITION_ROUTE_LAYERS

@@ -87,3 +87,36 @@ export function formatYears(y: number): string {
   if (y >= 10000) return formatNum(Math.floor(y)) + '载'
   return `${Math.floor(y)}载`
 }
+
+/**
+ * 小数字 → 汉字(4 → 四,21 → 二十一)。
+ *
+ * 用途只有一个:**页面上写「四界二十一境」「六十四卦」这类数量时,数字得从来源数出来**,
+ * 而不是手打。手打的数字在内容增长那天就变成谎话(加了第 5 个界域,文案还写四界),
+ * 且没有任何地方会因此报错。
+ *
+ * 只做到 9999:此范围之外说明这个数字不该以汉字出现,原样返回阿拉伯数字更诚实。
+ */
+export function cnNumber(n: number): string {
+  if (!Number.isInteger(n) || n < 0 || n > 9999) return String(n)
+  const DIGITS = '零一二三四五六七八九'
+  const UNITS = ['', '十', '百', '千']
+  if (n < 10) return DIGITS[n]!
+  const str = String(n)
+  const len = str.length
+  let out = ''
+  let pendingZero = false
+  for (let i = 0; i < len; i++) {
+    const digit = Number(str[i])
+    if (digit === 0) {
+      pendingZero = true
+      continue
+    }
+    if (pendingZero && out) out += DIGITS[0]
+    pendingZero = false
+    // 十、十二、十四……前导的「一」不成词
+    if (!(len === 2 && i === 0 && digit === 1)) out += DIGITS[digit]
+    out += UNITS[len - 1 - i]
+  }
+  return out
+}

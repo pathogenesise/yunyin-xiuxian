@@ -8,7 +8,7 @@ import { mulberry32, RandomService } from '@/utils/random'
 import { celestialWorldDef } from '@/data/endgame'
 import { PACTS, pactDef } from '@/data/pacts'
 import { MUTATORS } from '@/data/mutators'
-import { MUTATION_FOES } from '@/data/endgame'
+import { EXPEDITION_GUARDIAN_LAYER, EXPEDITION_ROUTE_LAYERS, MUTATION_FOES } from '@/data/endgame'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
 import { mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
@@ -167,7 +167,7 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   next.winStacks += 1
   if (node) next.bonus += node.bonus
 
-  const wasGuardian = run.layer === 3
+  const wasGuardian = run.layer === EXPEDITION_GUARDIAN_LAYER
   if (wasGuardian) {
     endgame.worldRun = next
     const reward = settle(next, world, true, false)
@@ -225,11 +225,11 @@ export function startWorldExpedition(worldId: string, pactId: string | null, gat
   return fightStep(run, world, world.foes[0]!)
 }
 
-/** 择路进层(layer 0..2) */
+/** 择路进层(layer 0..EXPEDITION_ROUTE_LAYERS-1) */
 export function chooseRouteNode(choice: 0 | 1): StepOutcome | null {
   const endgame = useEndgameStore()
   const run = endgame.worldRun
-  if (!run || run.layer < 0 || run.layer > 2) return null
+  if (!run || run.layer < 0 || run.layer >= EXPEDITION_ROUTE_LAYERS) return null
   const world = resolveWorld(run.worldId)
   if (!world) return null
   const node = world.routes[run.layer]?.[choice]

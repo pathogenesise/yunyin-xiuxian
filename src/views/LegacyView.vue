@@ -43,7 +43,7 @@
       </div>
       <p class="mt-1.5 text-[9px] text-ink-ghost">画像全部来自真实道痕统计,不可人工修饰。</p>
     </div>
-    <p v-else class="card-ink px-4 py-6 text-center text-[11px] text-ink-ghost">道痕未满五则,画像尚不成形。</p>
+    <p v-else class="card-ink px-4 py-6 text-center text-[11px] text-ink-ghost">道痕未满{{ cnNumber(PROFILE_MIN_MARKS) }}则,画像尚不成形。</p>
 
     <!-- 轮回录(Phase 32.5):第 N 世与第 1 世的实质区别 -->
     <SectionTitle title="轮回录" :hint="`宿慧 ${insight}`" />
@@ -185,7 +185,8 @@
   import { usePlayerStore } from '@/stores/player'
   import { useAdventureStore } from '@/stores/adventure'
   import { useLoreStore } from '@/stores/lore'
-  import { cultivatorProfile, MILESTONE_DEFS, milestoneDef, RECORD_DEFS } from '@/core/identity'
+  import { cnNumber } from '@/utils/format'
+  import { cultivatorProfile, MILESTONE_DEFS, milestoneDef, PROFILE_MIN_MARKS, RECORD_DEFS } from '@/core/identity'
   import { currentStage, totalInsight, vowProgress, vowResult } from '@/core/samsaraService'
   import { nextStageAfter } from '@/data/samsara'
   import { lifeThemeDef } from '@/data/lifeThemes'

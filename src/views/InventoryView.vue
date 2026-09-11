@@ -120,7 +120,7 @@
     <template v-else>
       <p class="mt-3 px-1 text-[11px] text-ink-faint tabular">
         法宝位 {{ inventory.equippedArtifacts.length }}/{{ artifactSlots }}
-        <template v-if="artifactSlots < 2">· 元婴境开启第二法宝位</template>
+        <template v-if="artifactSlots < ARTIFACT_MAX_SLOTS">· {{ artifactUnlockRealm }}境开启第{{ cnNumber(ARTIFACT_MAX_SLOTS) }}法宝位</template>
       </p>
       <div v-if="artifactRows.length" class="mt-2 space-y-2.5">
         <div v-for="row in artifactRows" :key="row.def.id" class="card-ink px-4 py-3">
@@ -359,7 +359,8 @@
   import { useSettingsStore } from '@/stores/settings'
   import { qualityDef, QUALITIES } from '@/data/qualities'
   import { pillDef } from '@/data/pills'
-  import { artifactDef, ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
+  import { artifactDef, ARTIFACT_LEVEL_BONUS, ARTIFACT_MAX_SLOTS, ARTIFACT_SLOT_UNLOCK_MAJOR, artifactSlotsFor } from '@/data/artifacts'
+  import { REALMS } from '@/data/realms'
   import { EQUIP_SLOT_NAMES, equipmentTemplate } from '@/data/equipment'
   import { BAG_CAPACITY } from '@/data/constants'
   import { usePill, availableRecipes, craftPill, pillCraftCost } from '@/core/pillService'
@@ -369,7 +370,7 @@
   import { equipSetDef, setCounts, type EquipSetDef } from '@/core/equipSet'
   import { useLoreStore } from '@/stores/lore'
   import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
-  import { formatGN, formatNum, formatPercent } from '@/utils/format'
+  import { cnNumber, formatGN, formatNum, formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import type { AnyStatKey, EquipSlot, GNum, PillDef } from '@/types'
   import SectionTitle from '@/components/common/SectionTitle.vue'
@@ -542,7 +543,9 @@
     if (!pillRows.value.some(r => r.def?.id === id)) pillDetail.value = null
   }
 
-  const artifactSlots = computed(() => (player.major >= 3 ? 2 : 1))
+  const artifactSlots = computed(() => artifactSlotsFor(player.major))
+  /** 开第二法宝位的那一境的名字 —— 门槛挪动时文案跟着走,不手写「元婴」 */
+  const artifactUnlockRealm = computed(() => REALMS[ARTIFACT_SLOT_UNLOCK_MAJOR]?.name ?? '')
 
   const artifactRows = computed(() =>
     inventory.artifacts.map(a => ({
