@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 80,
+  "round": 81,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T18:10:59+00:00",
+  "updated_at": "2026-09-11T18:14:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -425,7 +425,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:46:51+00:00",
       "updated_at": "2026-09-09T14:46:51+00:00",
-      "touched_round": 68,
+      "touched_round": 80,
       "summary": "转世/轮回系统(reincarnation.ts + player store 跨世字段)"
     },
     "ISS-016": {
@@ -3941,6 +3941,41 @@
       "confidence": 0.85,
       "effort": 2,
       "summary": "凡新增进档状态,必须同时补读档修形并纳入 storeResilience 红线(秘境的 secretRealm 就是先漏了这一环)"
+    },
+    "CHG-100": {
+      "id": "CHG-100",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:14:04+00:00",
+      "updated_at": "2026-09-11T18:14:04+00:00",
+      "touched_round": 80,
+      "commit": "f2ec76a",
+      "summary": "道侣状态读档修形(三维夹回/阶段回落/数组净化/坏 id 作废/坏意图丢弃)+ 值级红线用例"
+    },
+    "ISS-059": {
+      "id": "ISS-059",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T18:14:04+00:00",
+      "updated_at": "2026-09-11T18:14:08+00:00",
+      "touched_round": 80,
+      "summary": "storeResilience 红线只保证『不抛错』,复杂状态被改坏后仍可不抛错地算歪:道侣 trust=NaN 会让门槛判定跑偏、stage 非法会让 STAGE_NAMES 查空、doneEvents 混数字会让同一事件重复触发",
+      "severity": 0.35,
+      "confidence": 0.85
+    },
+    "EV-059": {
+      "id": "EV-059",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T18:14:08+00:00",
+      "updated_at": "2026-09-11T18:14:08+00:00",
+      "touched_round": 80,
+      "source": "storeResilience.spec『复杂状态的值也要修回来』用例;故障注入去掉 fate 夹取立刻红(commit f2ec76a)",
+      "summary": "读档修形从『不抛错』推进到『值可信』;道侣三维与阶段都被钉住",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -5486,6 +5521,18 @@
       "to": "HYP-014",
       "type": "validates",
       "created_at": "2026-09-11T18:10:59+00:00"
+    },
+    {
+      "from": "CHG-100",
+      "to": "ISS-059",
+      "type": "resolves",
+      "created_at": "2026-09-11T18:14:08+00:00"
+    },
+    {
+      "from": "ISS-059",
+      "to": "COMP-003",
+      "type": "located_in",
+      "created_at": "2026-09-11T18:14:08+00:00"
     }
   ]
 }
