@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 19,
+  "round": 20,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T06:00:19+00:00",
+  "updated_at": "2026-09-11T06:03:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1405,11 +1405,11 @@
     "HYP-004": {
       "id": "HYP-004",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T00:59:44+00:00",
-      "updated_at": "2026-09-11T00:59:44+00:00",
-      "touched_round": 15,
+      "updated_at": "2026-09-11T06:03:22+00:00",
+      "touched_round": 20,
       "confidence": 0.9,
       "summary": "天时词条未接线根因:weather 设计为'环境 mod 源',但从未被并入 finalStats.modSources(engine 只手动接 cultivationSpeed/qiRegen),导致 combat/loot/渡劫读 finalStats.mods 时拿不到天气;tribulationMult 则根本没有对应消费点",
       "detail": "evidence EV-010:weather.ts desc 承诺战斗/渡劫效果,spec 断言 tribulationMult>1,但 player.ts:149-159 的 modSources 无天气、tribulationDecision.waveDamage/traceTribulation/runTribulation 无 tribulationMult 消费"
@@ -1647,6 +1647,17 @@
       "confidence": 1.0,
       "effort": 2,
       "summary": "BREAKTHROUGH_PREP_OPTIONS 单源化:prepareBreakthrough 与 CultivationView 按钮/药价改读数据表,消除 0.08/180/80/0.05 硬编码双份定义"
+    },
+    "CHANGE-033": {
+      "id": "CHANGE-033",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T06:01:27+00:00",
+      "updated_at": "2026-09-11T06:01:27+00:00",
+      "touched_round": 19,
+      "commit": "85a0728",
+      "summary": "EARLY_EVENT_DECAY 接线到顿悟/巡游触发 + BREAKTHROUGH_PREP_OPTIONS 数据单源化(prepareBreakthrough 与 CultivationView 读表)"
     }
   },
   "edges": [
@@ -2250,6 +2261,30 @@
       "to": "ISS-032",
       "type": "addresses",
       "created_at": "2026-09-11T05:37:16+00:00"
+    },
+    {
+      "from": "CHANGE-033",
+      "to": "TASK-028",
+      "type": "implements",
+      "created_at": "2026-09-11T06:01:27+00:00"
+    },
+    {
+      "from": "CHANGE-033",
+      "to": "TASK-029",
+      "type": "implements",
+      "created_at": "2026-09-11T06:01:27+00:00"
+    },
+    {
+      "from": "CHANGE-033",
+      "to": "ISS-031",
+      "type": "resolves",
+      "created_at": "2026-09-11T06:01:27+00:00"
+    },
+    {
+      "from": "CHANGE-033",
+      "to": "ISS-032",
+      "type": "resolves",
+      "created_at": "2026-09-11T06:01:27+00:00"
     }
   ]
 }
