@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 49,
+  "round": 50,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:23:05+00:00",
+  "updated_at": "2026-09-11T15:25:19+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1956,7 +1956,7 @@
       "version": 2,
       "created_at": "2026-09-11T14:03:14+00:00",
       "updated_at": "2026-09-11T15:08:49+00:00",
-      "touched_round": 48,
+      "touched_round": 49,
       "category": "core-feature",
       "summary": "界外长尾节奏实测调优:扩界后真仙→混沌道祖约 58x 真仙耗时(progressionSim 口径),需在真实存档口径上验证四界是否符合放置节奏并可调 LATE_* 常数",
       "severity": 0.5,
@@ -2540,6 +2540,17 @@
       "touched_round": 48,
       "summary": "出处与天劫口径上前台:大关进阶叙事附该境「出处类别+出自」;数值体系弹窗补天劫封顶说明;endgameService.spec 断言飞升文案含出处",
       "commit": "83ab707"
+    },
+    "CHG-064": {
+      "id": "CHG-064",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:25:19+00:00",
+      "updated_at": "2026-09-11T15:25:19+00:00",
+      "touched_round": 49,
+      "summary": "数值体系补「突破与天劫」段:说明小层成功率不作无限下降(惩罚≠难度)、难度落在修为需求与天劫、天劫在指定境界封顶、失败损失可减免且积余留存;弹窗展示;审计绑定封顶境界名",
+      "commit": "8b237df"
     }
   },
   "edges": [
@@ -3563,6 +3574,12 @@
       "to": "TASK-034",
       "type": "implements",
       "created_at": "2026-09-11T15:23:05+00:00"
+    },
+    {
+      "from": "CHG-064",
+      "to": "TASK-034",
+      "type": "implements",
+      "created_at": "2026-09-11T15:25:19+00:00"
     }
   ]
 }
