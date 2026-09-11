@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 51,
+  "round": 52,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T15:32:47+00:00",
+  "updated_at": "2026-09-11T15:35:53+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2586,6 +2586,41 @@
       "source": "故障注入:reforge.ts 的 1.5 改 2.0 → 次数递增用例即红;恢复后 115 files / 1090 tests 绿",
       "summary": "重铸成本递增由恒真占位改为可打红的行为验证",
       "confidence": 1.0
+    },
+    "ISS-046": {
+      "id": "ISS-046",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T15:35:53+00:00",
+      "updated_at": "2026-09-11T15:35:53+00:00",
+      "touched_round": 51,
+      "summary": "pillValue 的「未处置的账」已过期:仍称悟道/修速可炼线止于玄品/精品(内容缺口),而扩界已补仙品道音丹/神品本源丹/仙品仙泉玉液;第1条「跨一百余倍」也随新丹方失真",
+      "severity": 0.35,
+      "confidence": 1.0
+    },
+    "CHG-066": {
+      "id": "CHG-066",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:35:53+00:00",
+      "updated_at": "2026-09-11T15:35:53+00:00",
+      "touched_round": 51,
+      "summary": "丹药审计账目校正:结清的缺口改为如实记录;新增「五族可炼顶端越过掉落顶端」断言锁住;清掉三十二味等旧计数",
+      "commit": "a5828d3"
+    },
+    "EV-033": {
+      "id": "EV-033",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T15:35:53+00:00",
+      "updated_at": "2026-09-11T15:35:53+00:00",
+      "touched_round": 51,
+      "source": "故障注入:道音丹改成掉落(去方)→ 法则H 与结清断言齐红;恢复后 115 files / 1092 tests 绿",
+      "summary": "结清状态有可打红的断言守着",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -3627,6 +3662,12 @@
       "to": "HYP-005",
       "type": "validates",
       "created_at": "2026-09-11T15:32:47+00:00"
+    },
+    {
+      "from": "CHG-066",
+      "to": "ISS-046",
+      "type": "resolves",
+      "created_at": "2026-09-11T15:35:53+00:00"
     }
   ]
 }
