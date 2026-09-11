@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 62,
+  "round": 63,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:46:04+00:00",
+  "updated_at": "2026-09-11T16:50:42+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2696,12 +2696,12 @@
       "id": "TASK-037",
       "type": "task",
       "status": "active",
-      "version": 3,
+      "version": 4,
       "created_at": "2026-09-11T15:46:16+00:00",
-      "updated_at": "2026-09-11T16:46:04+00:00",
-      "touched_round": 61,
+      "updated_at": "2026-09-11T16:50:42+00:00",
+      "touched_round": 62,
       "category": "core-feature",
-      "summary": "界域志续写(周易+紫微已实装):余 奇门遁甲(九宫八门→布阵/探索)与 星象分野(二十八宿→天时/地域)两门,依 DEC-021 需真进属性/规则/事件",
+      "summary": "界域志续写(周易/紫微/星象已实装):余 奇门遁甲 一门(九宫八门)。设计取向:做「择时之门」——在突破/渡劫这类关键一掷前择门,给一次性修正,与卦(一时之机·环境)、命(一世之格·常驻)、星象(一方界域·日更)各占一层,不重复",
       "severity": 0.5,
       "confidence": 0.6,
       "effort": 8
@@ -3114,6 +3114,40 @@
         "不加命格属性只留文本:违 DEC-021(术数门必须用得上)",
         "每次加常驻源就改所有相关断言为新的绝对数:契约越改越脆"
       ]
+    },
+    "CHG-081": {
+      "id": "CHG-081",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:50:36+00:00",
+      "updated_at": "2026-09-11T16:50:36+00:00",
+      "touched_round": 62,
+      "commit": "bf8f8b7",
+      "summary": "星象分野:二十八宿值日,四象配四界,所利界域际遇 +10%;历练页与界域志可见"
+    },
+    "EV-042": {
+      "id": "EV-042",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:50:39+00:00",
+      "updated_at": "2026-09-11T16:50:39+00:00",
+      "touched_round": 62,
+      "source": "src/core/astronomy.spec.ts(11 例:四象各七宿/二十八日一轮/只利一方/接线)与 commit bf8f8b7;故障注入两处(拔掉 exploration 接线、把加成改成全体)均被打红",
+      "summary": "值日宿的所利是局部而非全局:同日仅所配界域之地 +10%,他处为 0",
+      "confidence": 0.9
+    },
+    "HYP-009": {
+      "id": "HYP-009",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:50:39+00:00",
+      "updated_at": "2026-09-11T16:50:39+00:00",
+      "touched_round": 62,
+      "confidence": 0.85,
+      "summary": "日更的术数玩法可以彼此不重复:天时管全境之气、星象管一方界域之利、卦管自己一时的机 —— 三者各占一层,不互相顶替"
     }
   },
   "edges": [
@@ -4347,6 +4381,18 @@
       "to": "COMP-013",
       "type": "governs",
       "created_at": "2026-09-11T16:46:02+00:00"
+    },
+    {
+      "from": "CHG-081",
+      "to": "TASK-037",
+      "type": "implements",
+      "created_at": "2026-09-11T16:50:36+00:00"
+    },
+    {
+      "from": "EV-042",
+      "to": "HYP-009",
+      "type": "validates",
+      "created_at": "2026-09-11T16:50:42+00:00"
     }
   ]
 }
