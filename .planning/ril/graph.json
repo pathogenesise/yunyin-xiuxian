@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 23,
+  "round": 24,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T08:08:38+00:00",
+  "updated_at": "2026-09-11T08:23:59+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1780,6 +1780,78 @@
       "summary": "短期秘境(TASK-031/ISS-034)接线前需产品定夺内容位——与 DEC-011 闭关同理:非机械接线,涉及'元婴 vs 真仙终局'的玩法位置与代价经济两难;沿 challengeTrial/runGauntlet 现成范式可实现,但先决条件未定时盲建,等于替产品做内容排布决策",
       "rationale": "道源仅真仙可得(furnace/远征/试炼全部门控于 endgameUnlocked),而秘境入口门槛写在元婴——两条件互斥,接线必然要先改写其一,方向属产品排布而非工程机械活",
       "alternatives_rejected": "1)直接按元婴门槛把代价从道源改成灵石/药材(擅自改经济代价);2)直接按真仙终局把门槛抬到 MAX_MAJOR 接 3 层玩法(擅自定内容位置,且与 minMajor=3/4 数据抵触)"
+    },
+    "EV-015": {
+      "id": "EV-015",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:22:13+00:00",
+      "updated_at": "2026-09-11T08:22:13+00:00",
+      "touched_round": 23,
+      "summary": "修行目标(goal.ts)接线前状态:generateCurrentGoal 纯函数 Phase 29 设计完整(给方向不替玩家做决定/只复用现有状态),但全库零 UI 消费、零测试;且只实现 breakthrough/build 两类,低优先级 explore/material/equipment 原实现直接 return null(注释'此处作为兜底')",
+      "source": "a2ae6ad 前全库 grep: goal.ts 除自身外无任何 import/调用;无 goal.spec.ts",
+      "confidence": 1.0
+    },
+    "ISS-035": {
+      "id": "ISS-035",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T08:22:13+00:00",
+      "updated_at": "2026-09-11T08:22:37+00:00",
+      "touched_round": 23,
+      "summary": "修行目标(Phase 29)从未接线:玩家界面没有任何'现在该干什么'的指引;且低优先级(explore/material/equipment)未实现,新手期(修为<50%且无 Build)时 generateCurrentGoal 恒返 null,指引完全沉默",
+      "severity": 0.4,
+      "confidence": 1.0
+    },
+    "CHG-035": {
+      "id": "CHG-035",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:22:13+00:00",
+      "updated_at": "2026-09-11T08:22:13+00:00",
+      "touched_round": 23,
+      "summary": "修行目标接线:HomeView 顶部新增目标卡(文字+进度+hint)接 generateCurrentGoal;goal.ts 补 explore 低优先级目标(adventure.unlocked 且未 cleared 的可入地界,数据取自旧链,不新造阈值)让新手期也有目标;新增 goal.spec.ts 锁定契约(7 用例)",
+      "commit": "a2ae6ad"
+    },
+    "COMP-011": {
+      "id": "COMP-011",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:22:14+00:00",
+      "updated_at": "2026-09-11T08:22:14+00:00",
+      "touched_round": 23,
+      "summary": "修行目标系统(goal.ts 纯函数 + HomeView 指引卡):给方向不替玩家做决定"
+    },
+    "TASK-032": {
+      "id": "TASK-032",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:22:14+00:00",
+      "updated_at": "2026-09-11T08:22:14+00:00",
+      "touched_round": 23,
+      "summary": "goal.ts 剩余两类低优先级目标未实现:material(材料不足→采集XX) 与 equipment(装备槽有空位→寻法器)——阈值未定,宁缺毋滥暂不硬塞,设计阈值后即可接(复用资源/装备槽状态)",
+      "category": "core-feature",
+      "severity": 0.3,
+      "confidence": 0.7,
+      "effort": 2,
+      "priority_score": 0.9
+    },
+    "ISS-036": {
+      "id": "ISS-036",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T08:23:30+00:00",
+      "updated_at": "2026-09-11T08:23:30+00:00",
+      "touched_round": 23,
+      "summary": "修行目标低优先级两类缺口:material(材料不足→采集XX)与 equipment(装备槽有空位→寻法器)在 goal.ts 无实现(阈值未定宁缺毋滥),新手与无 Build 期指引维度仍偏窄",
+      "severity": 0.3,
+      "confidence": 0.8
     }
   },
   "edges": [
@@ -2479,6 +2551,30 @@
       "to": "TASK-031",
       "type": "governs",
       "created_at": "2026-09-11T08:08:13+00:00"
+    },
+    {
+      "from": "CHG-035",
+      "to": "ISS-035",
+      "type": "resolves",
+      "created_at": "2026-09-11T08:22:37+00:00"
+    },
+    {
+      "from": "ISS-035",
+      "to": "COMP-011",
+      "type": "located_in",
+      "created_at": "2026-09-11T08:22:37+00:00"
+    },
+    {
+      "from": "TASK-032",
+      "to": "ISS-036",
+      "type": "addresses",
+      "created_at": "2026-09-11T08:23:30+00:00"
+    },
+    {
+      "from": "ISS-036",
+      "to": "COMP-011",
+      "type": "located_in",
+      "created_at": "2026-09-11T08:23:30+00:00"
     }
   ]
 }
