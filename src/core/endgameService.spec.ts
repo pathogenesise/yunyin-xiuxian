@@ -79,4 +79,28 @@ describe('真仙终局服务', () => {
     expect(challengeWorld('chiyan')).toBeNull()
     expect(endgame.daoSource).toBe(50) // 未扣费
   })
+
+  /**
+   * 扩界后真仙不再是大道的尽头 —— 它只是仙界的门槛。
+   * 这条守住「继续攀登」与「天界常开」两件事:门槛改锚后,上面还有境界可走,
+   * 而终局内容在整个仙界/神界/混沌海期间始终可用(不因境界升高而关闭)。
+   */
+  it('真仙之上仍可继续攀登,且天界始终开启', () => {
+    const player = usePlayerStore()
+    ascend() // 至真仙(仙界门槛)
+    expect(player.realm.name).toBe('真仙')
+    expect(player.worldName).toBe('仙界')
+    expect(endgameUnlocked()).toBe(true)
+
+    // 从真仙沿真实突破继续推进(每大境界九层 + 跨境,共十步)
+    let guard = 0
+    while (!player.atMaxRealm && guard < 500) {
+      player.advanceRealm()
+      guard += 1
+    }
+    expect(player.atMaxRealm).toBe(true)
+    expect(player.realm.name).toBe('混沌道祖')
+    expect(player.worldName).toBe('混沌海')
+    expect(endgameUnlocked()).toBe(true) // 越往高处走,天界只会更开,不会关
+  })
 })
