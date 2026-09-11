@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 100,
+  "round": 101,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T22:37:59+00:00",
+  "updated_at": "2026-09-11T22:49:18+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 99,
+      "touched_round": 100,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -5009,7 +5009,7 @@
       "version": 1,
       "created_at": "2026-09-11T22:29:17+00:00",
       "updated_at": "2026-09-11T22:29:17+00:00",
-      "touched_round": 99,
+      "touched_round": 100,
       "summary": "凡「清单决定范围」的地方(存档分片、清档、迁移、扫描),判断范围都不能靠人手维护 —— 必须从真实来源倒推(store 源码里的 persistConfig)。手写清单的失效方式总是静默的:新加的东西不在范围内,不报错、不提示,只是悄悄少一块;而往返一致性(导出→导入)是这类契约最直接的端到端验证",
       "confidence": 0.85
     },
@@ -5035,6 +5035,56 @@
       "touched_round": 99,
       "summary": "PERSISTED_STORES 补上 pacing(节奏遥测分片);新增 saveRoundTrip.spec 4 例:从 store 源码倒推分片清单双向比对、清档清干净、真持久化插件下的导出→清档→导入逐片对账与状态回归、坏文本导入不污染;登记进分类报告",
       "commit": "cdb3f97"
+    },
+    "ISS-075": {
+      "id": "ISS-075",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:42:01+00:00",
+      "updated_at": "2026-09-11T22:49:18+00:00",
+      "touched_round": 100,
+      "summary": "坏档韧性清单也是手写的:storeResilience 里那张 12 个 store 的表靠人维护,新加的持久化 store 忘了补一行就少测一片而测试照旧全绿 —— pacingTelemetry 正是如此漏掉的,它落盘却没有 sanitize,而 record() 直接对可能为 null 的 events 调 slice",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-066": {
+      "id": "TASK-066",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-11T22:42:01+00:00",
+      "updated_at": "2026-09-11T22:49:18+00:00",
+      "touched_round": 100,
+      "summary": "坏档清单改从源码倒推(凡 persistConfig 的 store 都要取得到并写了 sanitize),给遥测补 sanitize 修形,并加行为用例「events 写坏后 record 仍能记」",
+      "category": "robustness",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-080": {
+      "id": "EV-080",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:42:05+00:00",
+      "updated_at": "2026-09-11T22:42:05+00:00",
+      "touched_round": 100,
+      "summary": "storeResilience 清单改为 import.meta.glob 读 store 源码倒推(persistConfig → 找到其 store 导出);新增两条判据「每个持久化 store 都取得到且写了 sanitize」「分片键唯一且解析得出」,并给 pacingTelemetry 补 sanitize(events 逐项验形、enabled 转布尔)与行为用例(坏 events → 修形 → record 仍可记);两次注入(去掉 sanitize 导出、把 sanitize 改成只过滤 null)各转红;全量 134 文件 1380 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/storeResilience.spec.ts"
+    },
+    "CHG-124": {
+      "id": "CHG-124",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T22:49:18+00:00",
+      "updated_at": "2026-09-11T22:49:18+00:00",
+      "touched_round": 100,
+      "summary": "storeResilience 的 store 清单改为从 store 源码倒推(import.meta.glob + persistConfig 扫描,$id 判定 store 导出);新增「持久化 store 必须有 sanitize」与「分片键唯一」两条判据;pacingTelemetry 补 sanitize 与行为用例",
+      "commit": "bf51683"
     }
   },
   "edges": [
@@ -7126,6 +7176,36 @@
       "to": "HYP-032",
       "type": "validates",
       "created_at": "2026-09-11T22:37:59+00:00"
+    },
+    {
+      "from": "ISS-075",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-11T22:49:18+00:00"
+    },
+    {
+      "from": "TASK-066",
+      "to": "ISS-075",
+      "type": "addresses",
+      "created_at": "2026-09-11T22:49:18+00:00"
+    },
+    {
+      "from": "CHG-124",
+      "to": "TASK-066",
+      "type": "implements",
+      "created_at": "2026-09-11T22:49:18+00:00"
+    },
+    {
+      "from": "CHG-124",
+      "to": "ISS-075",
+      "type": "resolves",
+      "created_at": "2026-09-11T22:49:18+00:00"
+    },
+    {
+      "from": "EV-080",
+      "to": "HYP-032",
+      "type": "validates",
+      "created_at": "2026-09-11T22:49:18+00:00"
     }
   ]
 }
