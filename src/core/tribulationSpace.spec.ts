@@ -17,6 +17,8 @@ import { describe, it, expect } from 'vitest'
 import { buildTribulationPlan, SOULREND_BURST_RELIEF } from './tribulationDecision'
 import { TRIBULATIONS, type TribulationKind } from '@/data/tribulations'
 import { MAX_MAJOR, REALMS } from '@/data/realms'
+import { WEATHERS, WORLD_WEATHERS } from './weather'
+import { NO_RELIEF } from '@/data/linggenAffinity'
 import type { StatMods } from '@/types'
 
 /** 代表性构筑形态:每一条对应一条真实路数,而非枚举数值 */
@@ -68,10 +70,12 @@ describe('天劫解法空间审计', () => {
    */
   it('四维皆优的参考构筑,在每一个需渡劫的境界都能渡任一劫型', () => {
     const maxed = SHAPES.find(s => s.key === 'maxed')!
+    // 取最凶的天时(雷鸣/仙劫日/神威日等,最高 ×1.12)——渡劫难度不能靠"那天恰好清和"成立
+    const worstWeather = Math.max(...[...WEATHERS, ...Object.values(WORLD_WEATHERS).flat()].map(w => w.tribulationMult))
     for (let major = 1; major <= MAX_MAJOR; major += 1) {
       if (!REALMS[major]!.tribulation) continue // 无需渡劫的境界(如真仙)跳过
       for (const t of TRIBULATIONS) {
-        const p = buildTribulationPlan(major, maxed.mods, t.id)
+        const p = buildTribulationPlan(major, maxed.mods, t.id, NO_RELIEF, worstWeather)
         expect(PASS.has(p.verdict), `${REALMS[major]!.name}·${t.name}劫:四维皆优仍不可渡`).toBe(true)
       }
     }
