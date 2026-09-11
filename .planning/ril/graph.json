@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 58,
+  "round": 59,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T16:15:23+00:00",
+  "updated_at": "2026-09-11T16:27:57+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1757,10 +1757,10 @@
     "TASK-031": {
       "id": "TASK-031",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T08:07:29+00:00",
-      "updated_at": "2026-09-11T08:07:29+00:00",
+      "updated_at": "2026-09-11T16:27:57+00:00",
       "touched_round": 22,
       "summary": "短期秘境接线前需产品定夺内容位:元婴(门槛降为灵石/药材代价) 还是 真仙终局(维持道源代价,与远征/试炼并列)?决定后可沿 challengeTrial/runGauntlet 范式接 3 层玩法+宝藏(复用 resolveCombat/EventDef/loot,源注释明言不新建数值体系)",
       "category": "core-feature",
@@ -2744,11 +2744,11 @@
     "TASK-038": {
       "id": "TASK-038",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T15:55:57+00:00",
-      "updated_at": "2026-09-11T15:55:57+00:00",
-      "touched_round": 55,
+      "updated_at": "2026-09-11T16:27:54+00:00",
+      "touched_round": 58,
       "category": "core-feature",
       "summary": "死导出清扫(余 15 项):ARCHETYPE_BY_ECOLOGY/RESPONSE_NAMES/RULESET_CHANGELOG/choiceAnalysis(analyzeChoices+valueGap)/clearMortalWorld/emptyFlats/isSoftCapped/gainSkill/getBreakthroughPrepRemaining/getEventChainStage/isChainEvent/isPreparingBreakthrough/nemesisFor/recordDef —— 逐个判断「接线」还是「删除」",
       "severity": 0.3,
@@ -2862,6 +2862,104 @@
       "touched_round": 57,
       "summary": "轮回结算交割清单:回顾页按 随神魂带走/折损带走/随皮囊放下 三组列出继承项(悬停显示代码依据);heritageGroups() 为分组单一来源;补审计『一行不漏一行不重』",
       "commit": "b81c628"
+    },
+    "HYP-006": {
+      "id": "HYP-006",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:26:24+00:00",
+      "updated_at": "2026-09-11T16:26:24+00:00",
+      "touched_round": 58,
+      "confidence": 0.95,
+      "summary": "奇遇连锁是声明式空壳:earlyGame.ts 的 CHAIN_EVENT_IDS 列了 5 条链(自注 2~3 阶段),但 events 数据里这 5 个 id 零命中;player.eventChains 只有 advanceEventChain 写、无任何读点(除死导出);player.rebirth.spec 仍断言转世继承它"
+    },
+    "EV-039": {
+      "id": "EV-039",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:26:26+00:00",
+      "updated_at": "2026-09-11T16:26:26+00:00",
+      "touched_round": 58,
+      "source": "rg 'old_man_stone|sword_in_lake|wounded_fox|ancient_tree|night_lantern' src → 仅 src/data/earlyGame.ts:156-160 与 player.rebirth.spec.ts 命中,src/data/events.ts 零命中;rg 'eventChains' 非 spec 命中仅 stores/player.ts(advanceEventChain 写)+ earlyGameService.getEventChainStage(死导出)",
+      "summary": "连锁事件 id 无对应内容、状态只写不读",
+      "confidence": 0.95
+    },
+    "ISS-048": {
+      "id": "ISS-048",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:26:27+00:00",
+      "updated_at": "2026-09-11T16:26:27+00:00",
+      "touched_round": 58,
+      "summary": "奇遇连锁宣而不实:旧版注释承诺「青石上的老者 3 阶段」等多段奇遇,玩家一次也遇不到;转世继承清单把 eventChains 列为「世界记得你的选择」,继承的却是一份永远为空的状态",
+      "severity": 0.5,
+      "confidence": 0.95
+    },
+    "TASK-041": {
+      "id": "TASK-041",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:26:29+00:00",
+      "updated_at": "2026-09-11T16:26:29+00:00",
+      "touched_round": 58,
+      "category": "core-feature",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 6,
+      "summary": "奇遇连锁最小完备:两条正当出路择一——①实装(为 5 条链补齐阶段事件,接进 pickEventFor 的权重/门槛与 resolveEventChoice 的推进,完成后有可感回报,并把 isChainEvent/getEventChainStage 接上、从 deadExportAudit 名单销账);②如实摘除(删 CHAIN_EVENT_IDS/eventChains/死导出与 player.rebirth.spec 里的继承断言,不留假承诺)。推荐①:用户的取向是内容更全,且 samsaraAudit「世界记得你的选择」已把它列进继承清单"
+    },
+    "CHG-074": {
+      "id": "CHG-074",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:27:48+00:00",
+      "updated_at": "2026-09-11T16:27:48+00:00",
+      "touched_round": 58,
+      "commit": "aca902c",
+      "summary": "本轮 TASK-038 清扫与接线(aca902c)"
+    },
+    "CHG-075": {
+      "id": "CHG-075",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:27:48+00:00",
+      "updated_at": "2026-09-11T16:27:48+00:00",
+      "touched_round": 58,
+      "commit": "8266c63",
+      "summary": "本轮 TASK-038 清扫与接线(8266c63)"
+    },
+    "CHG-076": {
+      "id": "CHG-076",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:27:48+00:00",
+      "updated_at": "2026-09-11T16:27:48+00:00",
+      "touched_round": 58,
+      "commit": "bad5dd0",
+      "summary": "本轮 TASK-038 清扫与接线(bad5dd0)"
+    },
+    "DEC-020": {
+      "id": "DEC-020",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-11T16:27:52+00:00",
+      "updated_at": "2026-09-11T16:27:52+00:00",
+      "touched_round": 58,
+      "summary": "死导出零容忍:顶层导出要么有人接,要么删除;确有理由先留的必须登记在 deadExportAudit 的 ALLOWLIST 并写明原因与销账条件,名单会自动失效(被接上即变红)",
+      "rationale": "本轮清扫发现三类真事故都是死导出造成的:isSoftCapped 无人调→面板暗改、RULESET_CHANGELOG 无人读→玩家问不到天道变了什么、CHAIN_EVENT_IDS 列着不存在的事件→假承诺。仅靠人工周期性排查不可持续,故固化成语法树级红线",
+      "alternatives_rejected": [
+        "每轮人工扫一遍死导出(依赖记性,事故会反复)",
+        "只在评审规范里写一条约定(没有能把人拦下来的机制)",
+        "一律删除所有无人引用的导出(会误杀审计骨架与未实装机制的种子)"
+      ]
     }
   },
   "edges": [
@@ -3987,6 +4085,48 @@
       "to": "TASK-039",
       "type": "implements",
       "created_at": "2026-09-11T16:15:23+00:00"
+    },
+    {
+      "from": "EV-039",
+      "to": "HYP-006",
+      "type": "validates",
+      "created_at": "2026-09-11T16:26:31+00:00"
+    },
+    {
+      "from": "TASK-041",
+      "to": "ISS-048",
+      "type": "addresses",
+      "created_at": "2026-09-11T16:26:31+00:00"
+    },
+    {
+      "from": "CHG-074",
+      "to": "TASK-038",
+      "type": "implements",
+      "created_at": "2026-09-11T16:27:49+00:00"
+    },
+    {
+      "from": "CHG-075",
+      "to": "TASK-038",
+      "type": "implements",
+      "created_at": "2026-09-11T16:27:49+00:00"
+    },
+    {
+      "from": "CHG-076",
+      "to": "TASK-038",
+      "type": "implements",
+      "created_at": "2026-09-11T16:27:49+00:00"
+    },
+    {
+      "from": "DEC-020",
+      "to": "TASK-038",
+      "type": "governs",
+      "created_at": "2026-09-11T16:27:54+00:00"
+    },
+    {
+      "from": "DEC-020",
+      "to": "TASK-041",
+      "type": "governs",
+      "created_at": "2026-09-11T16:27:57+00:00"
     }
   ]
 }
