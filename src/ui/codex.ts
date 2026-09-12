@@ -27,6 +27,7 @@ import { GONGFA_TYPE_NAMES, gongfaDef } from '@/data/gongfa'
 import { qualityDef } from '@/data/qualities'
 import { useLoreStore } from '@/stores/lore'
 import { useCultivationStore } from '@/stores/cultivation'
+import type { CollectionCategory } from '@/stores/quests'
 import { modsText } from './statNames'
 
 /** 图鉴条目 —— 收藏图鉴九类共用的呈现形状 */
@@ -55,7 +56,27 @@ export interface CodexCat {
   name: string
   /** 标题右侧的计数。各类层级口径不同,在此写死成人话而非 have/total */
   hint: string
+  /**
+   * 这一册的东西**从哪来**。
+   *
+   * 未收录的条目在界面上只是一片「???」—— 玩家看得出还差多少,却不知道去哪儿找。
+   * 故每册带一句来源说明,由 codexSource.spec 对着真实的 collect 调用点核:
+   * 说「历练掉落」,就得真有一处在历练里 collect('equip')。
+   */
+  source: string
   entries: CodexEntry[]
+}
+
+/** 七类收藏册的来源说明(灵材谱与悟道录在各自构造函数里另给) */
+export const CODEX_SOURCES: Record<CollectionCategory, string> = {
+  equip: '来源:历练掉落 —— 强敌与首领更易出',
+  gongfa: '来源:藏经阁参悟 —— 用功法残页逐部撞见',
+  // 三处:掉落(loot)、炼丹(pillService)、际遇赠丹(eventEngine)—— 由 codexSource.spec 对着 collect 点核
+  pill: '来源:三处 —— 历练掉落、丹房照方炼出,际遇里也有人赠',
+  artifact: '来源:历练掉落 —— 高阶地界才出得上品',
+  pet: '来源:历练际遇 —— 结缘而非猎取',
+  event: '来源:历练际遇与奇缘 —— 走到哪,遇见什么',
+  talent: '来源:转世择姿 —— 每一世选一个'
 }
 
 // ============ 灵材谱 ============
@@ -123,7 +144,13 @@ export function materialCodex(): CodexCat {
   )
   const known = entries.filter(e => e.stage >= 1).length
   const mastered = entries.filter(e => e.stage >= LORE_MAX).length
-  return { key: 'material', name: '灵材谱', hint: `已辨识 ${known}/${MATERIALS.length} · 通晓 ${mastered}`, entries }
+  return {
+    key: 'material',
+    name: '灵材谱',
+    hint: `已辨识 ${known}/${MATERIALS.length} · 通晓 ${mastered}`,
+    source: '来源:采集、掉落,以及真把它用进一炉丹',
+    entries
+  }
 }
 
 // ============ 悟道录 ============
@@ -183,5 +210,11 @@ export function branchCodex(): CodexCat {
   )
   const seen = entries.filter(e => e.stage >= 1).length
   const picked = entries.filter(e => e.stage >= BRANCH_STAGE_MAX).length
-  return { key: 'branch', name: '悟道录', hint: `已见 ${seen}/${GONGFA_BRANCHES.length} · 已择 ${picked}`, entries }
+  return {
+    key: 'branch',
+    name: '悟道录',
+    hint: `已见 ${seen}/${GONGFA_BRANCHES.length} · 已择 ${picked}`,
+    source: '来源:把一部功法修至圆满,再择一条道走下去',
+    entries
+  }
 }

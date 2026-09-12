@@ -27,6 +27,8 @@
     <template v-else>
       <section v-for="cat in collectionCats" :key="cat.key">
         <SectionTitle :title="cat.name" :hint="cat.hint" />
+        <!-- 未收录的条目只是一片「???」—— 得告诉玩家去哪儿找,否则这一册只能干瞪眼 -->
+        <p class="mt-1 text-[10px] text-ink-ghost">{{ cat.source }}</p>
         <div class="card-ink mt-2 flex flex-wrap gap-1.5 px-3.5 py-3">
           <template v-for="entry in cat.entries" :key="entry.id">
             <button
@@ -38,7 +40,7 @@
               {{ entry.name }}
               <span v-if="entry.badge" class="text-[9px] opacity-70">{{ entry.badge }}</span>
             </button>
-            <span v-else class="chip-ink border-ink/15 text-ink-ghost" title="尚未收录">???</span>
+            <span v-else class="chip-ink border-ink/15 text-ink-ghost" :title="`尚未收录 · ${cat.source}`">???</span>
           </template>
         </div>
       </section>
@@ -83,7 +85,7 @@
   import { chainOfEvent } from '@/data/chains'
   import { TALENTS, TALENT_GRADE_COLORS } from '@/data/talents'
   import { qualityDef } from '@/data/qualities'
-  import { branchCodex, materialCodex, type CodexCat, type CodexEntry } from '@/ui/codex'
+  import { CODEX_SOURCES, branchCodex, materialCodex, type CodexCat, type CodexEntry } from '@/ui/codex'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -141,7 +143,7 @@
         foot: { label: '收录时间', value: collectedTime(quests.collectedAt[`${key}:${d.id}`]) }
       }))
       .sort((a, b) => b.stage - a.stage)
-    return { key, name, hint: `${ownedIds.length}/${defs.length}`, entries }
+    return { key, name, hint: `${ownedIds.length}/${defs.length}`, source: CODEX_SOURCES[key], entries }
   }
 
   function collectedTime(ts: number | undefined): string {
