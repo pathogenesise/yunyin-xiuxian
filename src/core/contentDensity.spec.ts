@@ -18,7 +18,7 @@
  * 秘境明确只做凡境(元婴·灵石)与天界(真仙·道源)两阶,不是漏做。
  */
 import { describe, expect, it } from 'vitest'
-import { MAX_MAJOR, REALMS, WORLDS, worldOf } from '@/data/realms'
+import { MAX_MAJOR, REALMS, WORLDS, WORLD_BREAK_MAJOR, worldOf } from '@/data/realms'
 import { REGIONS } from '@/data/regions'
 import { ENEMIES } from '@/data/enemies'
 import { GONGFA } from '@/data/gongfa'
@@ -71,6 +71,36 @@ describe('内容密度 · 每一境都得有新东西', () => {
       if (!PILLS.some(p => p.minRealm === m)) empty.push(`${m} ${REALMS[m]!.name}`)
     }
     expect(empty, `这些境界没有任何本境丹药:${empty.join('、')}`).toEqual([])
+  })
+
+  /**
+   * 扩界的账要一次结清:新境界**每一境**的内容条数,不得低于人间界最薄的那一境。
+   *
+   * 人间界前段本来就厚(炼气 22 条:2 区域 + 6 敌人 + 7 功法 + 7 丹方),拿中位数去要求
+   * 新界不合理 —— 它的尾巴(大乘/渡劫)也是 10 条。所以底线取**人间界最小值**:
+   * 要守的是「扩界别留下比旧界最薄的境界还薄的境界」,而不是让后段长得和前段一样厚。
+   */
+  it('新界每一境都不薄于人间界最薄的一境(逐境条数有底线)', () => {
+    const totalOf = (m: number): number => {
+      const regions = REGIONS.filter(r => r.minRealm === m)
+      const tiers = new Set(regions.map(r => r.tier))
+      return (
+        regions.length +
+        ENEMIES.filter(e => tiers.has(e.tier)).length +
+        GONGFA.filter(g => g.minRealm === m).length +
+        PILLS.filter(p => p.minRealm === m).length
+      )
+    }
+    const mortal = Array.from({ length: WORLD_BREAK_MAJOR }, (_, m) => totalOf(m))
+    const floor = Math.min(...mortal)
+    const beyond = Array.from({ length: MAX_MAJOR - WORLD_BREAK_MAJOR + 1 }, (_, i) => totalOf(WORLD_BREAK_MAJOR + i))
+    console.log(`\n逐境条数:人间界 min ${floor} / 中位 ${[...mortal].sort((a, b) => a - b)[Math.floor(mortal.length / 2)]}` +
+      ` · 新界 min ${Math.min(...beyond)} / 中位 ${[...beyond].sort((a, b) => a - b)[Math.floor(beyond.length / 2)]}`)
+    for (let i = 0; i < beyond.length; i++) {
+      const m = WORLD_BREAK_MAJOR + i
+      expect(beyond[i]!, `${REALMS[m]!.name} 只有 ${beyond[i]} 条内容,薄于人间界最薄的 ${floor} 条`).toBeGreaterThanOrEqual(floor)
+    }
+    expect(floor, '人间界本身没有一条底线,判据形同虚设').toBeGreaterThan(0)
   })
 
   it('丹方越晚越强:同族同线里,门槛更高的那一味药力不更低', () => {
