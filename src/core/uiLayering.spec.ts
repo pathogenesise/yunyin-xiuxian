@@ -88,4 +88,13 @@ describe('界面分层 · 浮层只有一个出处', () => {
     }
     expect(stuck, '这些弹窗既没有 @close 也没写明 :closable="false" —— 关闭键与 Esc 都会静默失效').toEqual([])
   })
+
+  it('视图里不许裸 back() —— 冷启动时它会把人送出游戏', () => {
+    // 判据:站内没有上一页时(书签 / deep link / PWA 冷启动恢复路由),
+    // history.state.back 为 null,裸 back() 会退到 about:blank,界面整个消失。
+    // 统一走 router/goBack.ts 的 goBack(router, 父页)。
+    const offenders = FILES.filter(f => /\.back\(\)/.test(f.src))
+      .map(f => f.path)
+    expect(offenders, '这些视图直接调了 back() —— 改用 @/router/goBack 的 goBack(router, 父页)').toEqual([])
+  })
 })

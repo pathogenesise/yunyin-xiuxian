@@ -20,6 +20,8 @@
  *      pointer-events:none 继承掉(继承了就永远只能等超时)。
  *   八 引擎按概率触发的两扇弹窗(顿悟 / 洞府巡游):把概率钉成必中再量一遍 ——
  *      它们正常巡页碰不到,正是最容易悄悄退回「自己铺一层浮层」的角落。
+ *   九 冷启动落在子页时,「返回」要回父页而不是退出游戏(书签 / deep link /
+ *      PWA 恢复上次路由都会走到这个处境)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -101,10 +103,29 @@ async function auditModalControls(page) {
   })
 }
 
+/**
+ * 收集页面异常 —— 只认本项目代码抛的。
+ *
+ * 站点里挂了一段第三方统计脚本(51.la)。它自己抛的异常与游戏无关,却会把
+ * 「无 pageerror」判否掉 —— 实测:把 Math.random 钉成常量(为了确定性地触发
+ * 引擎事件)之后,那段脚本会抛 `TypeError: Invalid UUID`,而游戏本身一切正常。
+ * 故按堆栈里的脚本来路分流:第三方脚本的异常只打印、不计入失败。
+ */
+function watchPageErrors(page, sink) {
+  page.on('pageerror', e => {
+    const stack = String(e.stack || e.message || '')
+    if (/sdk\.51\.la/.test(stack)) {
+      console.log(`  (第三方统计脚本异常,不计入失败:${String(e.message).slice(0, 60)})`)
+      return
+    }
+    sink.push(String(e).slice(0, 160))
+  })
+}
+
 for (const vp of VIEWPORTS) {
   const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr })
   const pageErrors = []
-  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  watchPageErrors(page, pageErrors)
 
   await page.goto(INDEX, { waitUntil: 'load' })
   // 建号:同意隐私 → 传送门(约 2.5s)→ 命名 → 踏入仙途
@@ -250,7 +271,7 @@ for (const vp of VIEWPORTS) {
 {
   const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
   const pageErrors = []
-  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
   await page.locator('input[type=checkbox]').first().check()
@@ -282,7 +303,7 @@ for (const vp of VIEWPORTS) {
 {
   const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
   const pageErrors = []
-  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
   await page.locator('input[type=checkbox]').first().check()
@@ -306,6 +327,10 @@ for (const vp of VIEWPORTS) {
    */
   await page.evaluate(() => {
     for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+    // 把随机事件钉死:顿悟那一刻若正好浮上来,它是一整层浮盖,会把「关于」挡住
+    // (实测复现四次里挂三次,挡路的正是「悟道顿悟」)。这条场景测的是弹窗焦点契约,
+    // 不是引擎的随机事件 —— 让随机事件在场只会制造假红。
+    Math.random = () => 1
   })
   await page.waitForTimeout(400)
 
@@ -370,7 +395,7 @@ for (const vp of VIEWPORTS) {
 {
   const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
   const pageErrors = []
-  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
   await page.locator('input[type=checkbox]').first().check()
@@ -416,7 +441,7 @@ for (const vp of VIEWPORTS) {
 {
   const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
   const pageErrors = []
-  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
   await page.locator('input[type=checkbox]').first().check()
@@ -470,7 +495,7 @@ for (const vp of VIEWPORTS) {
 {
   const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
   const pageErrors = []
-  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
   await page.locator('input[type=checkbox]').first().check()
@@ -514,6 +539,57 @@ for (const vp of VIEWPORTS) {
   }
   if (pageErrors.length) failures.push(`[375] 引擎事件场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await page.close()
+}
+
+// ---- 第九件事:冷启动落在子页时,「返回」不该把人送出游戏 ----
+/*
+ * 书签、外部 deep link、PWA 冷启动恢复上次路由,都会让**第一次**导航就落在
+ * 子页上;此时站内没有上一页,裸 router.back() 会退到 about:blank ——
+ * 实测整个界面连同这一局的上下文一起消失,而玩家只觉得「点了一下返回,游戏没了」。
+ * 复现要用同一 context 里新开的一页:它共享存档(localStorage),但历史是全新的。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } })
+  const boot = await ctx.newPage()
+  await boot.goto(INDEX, { waitUntil: 'load' })
+  await boot.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  await boot.locator('input[type=checkbox]').first().check()
+  await boot.getByRole('button', { name: /同意并开始/ }).first().click()
+  await boot.waitForTimeout(3200)
+  await boot.locator('input:not([type=file]):not([type=checkbox])').first().fill('返回自检')
+  await boot.getByRole('button', { name: /踏\s*入\s*仙\s*途/ }).first().click()
+  await boot.waitForTimeout(1200)
+  await boot.close()
+
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  // 这一页的第一次导航就是子页 —— 正是冷启动的处境
+  await page.goto(INDEX + '#/dongfu', { waitUntil: 'load' })
+  await page.waitForTimeout(1800)
+  // 同上:别让随机浮上来的引擎事件挡住「返回」
+  await page.evaluate(() => { Math.random = () => 1 })
+  checked += 1
+  const coldBack = await page.evaluate(() => ({
+    back: (window.history.state || {}).back ?? null,
+    hasBack: !!document.querySelector('main button')
+  }))
+  if (coldBack.back) failures.push(`[375] 冷启动场景:第一次导航就落在子页,history.state.back 竟是 ${coldBack.back}(复现条件没搭对)`)
+  const backBtn = page.locator('main button', { hasText: /返\s*回/ }).first()
+  if ((await backBtn.count()) === 0) {
+    failures.push('[375] 冷启动场景:子页上没有「返回」入口,判据没跑到东西')
+  } else {
+    await backBtn.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(900)
+    const after = await page.evaluate(() => ({
+      hash: location.hash,
+      alive: !!document.querySelector('#app')?.firstElementChild
+    }))
+    if (!after.alive) failures.push('[375] 冷启动场景:点「返回」把游戏退出了(界面没了,退到站外)')
+    else if (after.hash !== '#/' && after.hash !== '') failures.push(`[375] 冷启动场景:点「返回」落在 ${after.hash},父页应是 #/`)
+  }
+  if (pageErrors.length) failures.push(`[375] 冷启动场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
 }
 
 await browser.close()

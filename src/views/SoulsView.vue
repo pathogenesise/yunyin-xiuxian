@@ -15,7 +15,8 @@
     <template v-else>
       <!-- 抬头 -->
       <div class="card-ink flex items-center justify-between gap-2 px-4 py-3">
-        <button class="-my-1.5 py-1.5 text-left text-[12px] text-ink-faint" @click="router.back()">← 天界</button>
+        <!-- 同洞府:标签写着「天界」,冷启动时也得真的去天界,而不是退出游戏 -->
+        <button class="-my-1.5 py-1.5 text-left text-[12px] text-ink-faint" @click="goBack(router, { name: 'celestial' })">← 天界</button>
         <p class="font-kai text-[15px] tracking-[0.3em] text-ink">器 魂</p>
         <div class="text-right">
           <span class="block text-[10px] leading-tight text-ink-ghost">道源</span>
@@ -166,6 +167,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import { goBack } from '@/router/goBack'
   import { formatNum } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import type { AnyStatKey } from '@/types'
