@@ -28,6 +28,8 @@
  *      (每个玩家反复看的那一屏,此前从没被渲染过)。
  *   十二 走完一次转世(寿元将尽 → 此生已矣 → 轮回 → 新的一世):唯一会把存档
  *      推倒重来的仪式,此前一步都没被真浏览器走过。
+ *   十三 挂机玩法真的在挂着跑:顶栏灵气只给 1 点,真等两轮看它自己涨不涨 ——
+ *      「应用启动后引擎有没有跑起来」只有真浏览器能答。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1060,6 +1062,78 @@ for (const vp of VIEWPORTS) {
     console.log(`\n转世:${[death?.title, review?.title, next?.title].filter(Boolean).join(' → ')} → 新的一世(${after.text.slice(0, 24)}…)`)
   }
   if (pageErrors.length) failures.push(`[390] 转世场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第十三件事:挂机游戏真的在挂着跑(页面上的数自己在涨) ----
+/*
+ * 引擎每秒推进修为、灵气与洞府产出 —— 这是放置玩法的根,可此前没有被端到端看过一眼:
+ * 单元用例直接调引擎,而「应用启动之后引擎到底跑起来没有」只有真浏览器能答。
+ * 若哪天 engine.start() 被条件挡住、或 tick 被谁掐了,界面会安静地冻在那里,
+ * 而所有单测照样全绿。故这里真等两轮:灵气只给 1 点,看它自己涨不涨。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: {
+      major: 5,
+      sub: 3,
+      exp: gn(1, 2),
+      age: 40,
+      lifespanBonusYears: 0,
+      dead: false,
+      reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] },
+      linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 }
+    },
+    resources: { spiritStone: gn(1, 5), qi: 1, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2200)
+  await clearOverlays(page)
+  checked += 1
+  /** 读顶栏灵气:文本按 formatGN 的档位(万/亿/兆…)还原成数值 */
+  const readQi = () =>
+    page.evaluate(() => {
+      const el = document.querySelector('[title="灵气"]')
+      if (!el) return { text: '(找不到灵气)', value: null }
+      const text = (el.textContent || '').trim().replace(/,/g, '')
+      const UNITS = ['万', '亿', '兆', '京', '垓', '秭', '穰', '沟', '涧', '正', '载', '极']
+      const m = /([\d][\d]*(?:\.\d+)?)\s*(万|亿|兆|京|垓|秭|穰|沟|涧|正|载|极)?/.exec(text)
+      if (!m) return { text, value: null }
+      const unit = m[2] ? Math.pow(10, 4 * (UNITS.indexOf(m[2]) + 1)) : 1
+      return { text, value: parseFloat(m[1]) * unit }
+    })
+  const first = await readQi()
+  await page.waitForTimeout(3200)
+  const second = await readQi()
+  await page.waitForTimeout(3200)
+  const third = await readQi()
+  const nums = [first.value, second.value, third.value]
+  if (nums.some(v => v === null || !Number.isFinite(v))) {
+    failures.push(`[390] 挂机场景:顶栏灵气读数解析不出来 —— ${[first, second, third].map(x => x.text).join(' / ')}`)
+  } else if (!(nums[2] > nums[0] && nums[0] <= nums[1] && nums[1] <= nums[2])) {
+    // 判据是「一直在涨、至少涨了一截」——不要求每步都严格变大:灵气涨到上限会平下来
+    failures.push(`[390] 挂机场景:灵气没有在涨(页面上的数冻住了 —— 引擎没跑?) ${nums.join(' → ')}`)
+  } else {
+    console.log(`\n挂机 6 秒:灵气 ${first.text} → ${second.text} → ${third.text}(页面上的数自己在涨)`)
+  }
+  if (pageErrors.length) failures.push(`[390] 挂机场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
