@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 108,
+  "round": 109,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T00:21:26+00:00",
+  "updated_at": "2026-09-12T00:35:32+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 106,
+      "touched_round": 108,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -5441,6 +5441,67 @@
       "touched_round": 107,
       "summary": "扩界内容密度收口:contentDensity 增「新界每境条数 ≥ 人间界最薄一境」底线判据(逐境条数表随测试打印);配合此前 CHG-117/118/126/127 的功法/法宝/丹方/奇缘补齐与 CHG-128/129 的模型分项与真实档包夹,ISS-038 的两条指控(内容密度偏低、长尾节奏未在真实存档口径验证)均已闭合",
       "commit": "0c0ce8f"
+    },
+    "ISS-082": {
+      "id": "ISS-082",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:26:10+00:00",
+      "updated_at": "2026-09-12T00:35:32+00:00",
+      "touched_round": 108,
+      "summary": "半损坏档的导入路没有端到端验证:各 store 自己有 sanitize(storeResilience 管),往返一致性有 saveRoundTrip 管,但「导入一份信封合法、分片是垃圾的档」这条路(校验 → 落盘 → 水合 → 修形)之前没人跑过 —— 玩家手改存档或跨版本搬档时走的正是它",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-073": {
+      "id": "TASK-073",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:26:10+00:00",
+      "updated_at": "2026-09-12T00:35:32+00:00",
+      "touched_round": 108,
+      "summary": "把半损坏档的导入路写成红线:坏分片要么被明确拒绝(且不动现有存档)、要么被修成形进游戏(水合不抛、字段类型可用),并覆盖 8 种坏法",
+      "category": "robustness",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-088": {
+      "id": "EV-088",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:26:14+00:00",
+      "updated_at": "2026-09-12T00:26:14+00:00",
+      "touched_round": 108,
+      "summary": "importCorruption.spec 9 例:信封合法但分片为 null/数组/空对象/字段全垃圾/背包形状不对 → 导入通过且水合不抛,字段被修成可用类型(境界是界内整数、背包是数组);分片为字符串/数字、game 缺失 → 导入前校验明确拒绝且现有存档原样;整段非存档(纯文本/空串/{}/[])只报错不炸;两次注入(去掉校验的 player/game 检查、把背包修形改成硬转)各转红;全量 136 文件 1398 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/importCorruption.spec.ts"
+    },
+    "HYP-036": {
+      "id": "HYP-036",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:26:14+00:00",
+      "updated_at": "2026-09-12T00:26:14+00:00",
+      "touched_round": 108,
+      "summary": "「坏档进得了游戏」是三层契约,缺一层都测不全:①导入校验(明确拒绝还是接受)、②落盘(拒绝时不许动现有档)、③水合与修形(接受后不许抛、字段类型可用)。前两层各有旧例,第三层要在真 pinia + 真持久化插件下跑才算数 —— 光测 store.sanitize 不等于测这条路",
+      "confidence": 0.8
+    },
+    "CHG-132": {
+      "id": "CHG-132",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:35:32+00:00",
+      "updated_at": "2026-09-12T00:35:32+00:00",
+      "touched_round": 108,
+      "summary": "新增 importCorruption.spec(9 例):信封合法但分片为垃圾的导入路全链路验证(校验/落盘/水合/修形),覆盖 8 种坏法;登记进 Regression 分类",
+      "commit": "703dd3d"
     }
   },
   "edges": [
@@ -7784,6 +7845,36 @@
       "to": "HYP-026",
       "type": "validates",
       "created_at": "2026-09-12T00:21:19+00:00"
+    },
+    {
+      "from": "ISS-082",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T00:35:32+00:00"
+    },
+    {
+      "from": "TASK-073",
+      "to": "ISS-082",
+      "type": "addresses",
+      "created_at": "2026-09-12T00:35:32+00:00"
+    },
+    {
+      "from": "CHG-132",
+      "to": "TASK-073",
+      "type": "implements",
+      "created_at": "2026-09-12T00:35:32+00:00"
+    },
+    {
+      "from": "CHG-132",
+      "to": "ISS-082",
+      "type": "resolves",
+      "created_at": "2026-09-12T00:35:32+00:00"
+    },
+    {
+      "from": "EV-088",
+      "to": "HYP-036",
+      "type": "validates",
+      "created_at": "2026-09-12T00:35:32+00:00"
     }
   ]
 }
