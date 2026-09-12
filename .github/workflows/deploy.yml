@@ -26,6 +26,10 @@ jobs:
           bun-version: latest
       - name: 安装依赖
         run: bun install --frozen-lockfile
+      - name: 静态检查 + 单元测试
+        run: |
+          bun run check
+          bun run test
       - name: 构建
         run: bun run build
       - name: 配置 Pages
