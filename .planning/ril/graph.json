@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 110,
+  "round": 111,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T00:48:58+00:00",
+  "updated_at": "2026-09-12T01:09:34+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 108,
+      "touched_round": 110,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -5563,6 +5563,67 @@
       "touched_round": 109,
       "summary": "OfflineSummary 增 qi(实际差额)与 ageYears;offline.ts 记两项实时差;归来弹窗加「灵气 +X」行与「寿元流逝 N 载」说明;新增 offlineLedger.spec(2 例)并登记进 Economy 分类",
       "commit": "471b043"
+    },
+    "ISS-084": {
+      "id": "ISS-084",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:57:12+00:00",
+      "updated_at": "2026-09-12T01:09:34+00:00",
+      "touched_round": 110,
+      "summary": "可点元素普遍偏小:后期档实测 191 个可点元素里,47 个高度不足 24px、26 个不足 28px —— 顶栏设置(15px)、修行页三枚胶囊(23px)、人物页属性来源行(17px)、返回链接(18px)、背包收纳/分解(17px)、流派页五维行(17px)、设置页主题/速度胶囊(23px)。文字行直接当按钮,拇指按不准,而这些都不会报错",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-075": {
+      "id": "TASK-075",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:57:12+00:00",
+      "updated_at": "2026-09-12T01:09:34+00:00",
+      "touched_round": 110,
+      "summary": "把可点元素抬到拇指够得着:逐处补纵向内边距(保持视觉密度不变),并把「≥28px」写进排版自检",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-090": {
+      "id": "EV-090",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:57:16+00:00",
+      "updated_at": "2026-09-12T00:57:16+00:00",
+      "touched_round": 110,
+      "summary": "带装备后期档实测(375/320 两档,15 条路由 191 个可点元素):修前 47 个 <24px、26 个 <28px;逐处补纵向内边距后 <28px 归零(320 档最后一例「天道熔炉」是教学段里的内联链接,改成 inline-block + py-2 后也够高);layout-check 新增「可点元素不小于 28px」判据,当场又抓出称号页「佩戴」27px 并修掉;全量 137 文件 1400 用例绿",
+      "confidence": 0.9,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-038": {
+      "id": "HYP-038",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:57:16+00:00",
+      "updated_at": "2026-09-12T00:57:16+00:00",
+      "touched_round": 110,
+      "summary": "触控尺寸可以量、也值得守:无头浏览器能量每个可点元素的包围盒,「高度 < 28px」这一类离群值(实测 191 里 47 个)几乎全是「把文字行直接当按钮」;补纵向内边距即可,视觉密度几乎不变(负外边距抵掉占用),而拇指命中率明显改善",
+      "confidence": 0.85
+    },
+    "CHG-134": {
+      "id": "CHG-134",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:09:34+00:00",
+      "updated_at": "2026-09-12T01:09:34+00:00",
+      "touched_round": 110,
+      "summary": "12 个文件的可点元素补纵向内边距(设置图标/修行胶囊/属性来源行/返回链接/背包收纳分解/五维行/设置胶囊/称号佩戴/教学内联链接),视觉密度不变;layout-check 增「≥28px」判据",
+      "commit": "08e8106"
     }
   },
   "edges": [
@@ -7966,6 +8027,36 @@
       "to": "HYP-037",
       "type": "validates",
       "created_at": "2026-09-12T00:48:58+00:00"
+    },
+    {
+      "from": "ISS-084",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T01:09:34+00:00"
+    },
+    {
+      "from": "TASK-075",
+      "to": "ISS-084",
+      "type": "addresses",
+      "created_at": "2026-09-12T01:09:34+00:00"
+    },
+    {
+      "from": "CHG-134",
+      "to": "TASK-075",
+      "type": "implements",
+      "created_at": "2026-09-12T01:09:34+00:00"
+    },
+    {
+      "from": "CHG-134",
+      "to": "ISS-084",
+      "type": "resolves",
+      "created_at": "2026-09-12T01:09:34+00:00"
+    },
+    {
+      "from": "EV-090",
+      "to": "HYP-038",
+      "type": "validates",
+      "created_at": "2026-09-12T01:09:34+00:00"
     }
   ]
 }
