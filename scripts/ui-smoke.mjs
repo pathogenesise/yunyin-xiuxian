@@ -34,7 +34,27 @@ const depthArg = process.argv.indexOf('--depth')
 const DEPTH = depthArg > 0 ? Number(process.argv[depthArg + 1]) || 12 : 12
 const LATE = process.argv.includes('--late')
 
-const ROUTES = ['/', '/cultivation', '/adventure', '/inventory', '/character', '/codex', '/souls', '/titles', '/settings']
+/**
+ * 全量路由 —— 从前只点九页,流派/收藏/修仙录/洞府/本世之界/天界这六页
+ * 只被排版自检量过尺寸,没人戳过它们的按钮(点下去会不会炸、有没有 NaN 泄漏都没看过)。
+ */
+const ROUTES = [
+  '/',
+  '/cultivation',
+  '/adventure',
+  '/inventory',
+  '/character',
+  '/codex',
+  '/souls',
+  '/titles',
+  '/settings',
+  '/build',
+  '/collection',
+  '/legacy',
+  '/dongfu',
+  '/world',
+  '/celestial'
+]
 /** 正文里不该出现的数字/占位泄漏 */
 const NUMERIC_LEAK = ['NaN', 'Infinity', 'undefined']
 /** 破坏性/离开型按钮:冒烟盘上不点 */
@@ -174,7 +194,7 @@ for (const route of ROUTES) {
 }
 
 await browser.close()
-console.log(`\n界面冒烟:9 页,点击 ${clicked} 次(每页上限 ${DEPTH})`)
+console.log(`\n界面冒烟:${ROUTES.length} 页,点击 ${clicked} 次(每页上限 ${DEPTH})`)
 if (silent.length) {
   console.log(`点了没反应 ${silent.length} 处(读数,不判失败):`)
   for (const s of silent.slice(0, 20)) console.log(`  · ${s}`)
