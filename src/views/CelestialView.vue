@@ -427,7 +427,7 @@
               </button>
             </div>
           </div>
-          <p v-else class="card-ink mt-2 px-4 py-4 text-center text-[11px] text-ink-ghost">此页尚白。你在天界的每一战,都会留下痕迹。</p>
+          <p v-else class="card-ink mt-2 px-4 py-4 text-center text-[11px] text-ink-faint">此页尚白。你在天界的每一战,都会留下痕迹。</p>
         </section>
       </template>
     </template>

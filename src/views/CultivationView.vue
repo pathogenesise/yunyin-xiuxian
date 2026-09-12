@@ -16,7 +16,7 @@
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
           <button class="-my-1 py-1.5 text-left active:opacity-60" @click="showCultBreakdown = !showCultBreakdown">
             修为 +{{ formatRate(player.cultPerSec) }}
-            <span class="ml-0.5 text-[9px] text-ink-ghost">{{ showCultBreakdown ? '▾' : '▸' }}来路</span>
+            <span class="ml-0.5 text-[9px] text-ink-faint">{{ showCultBreakdown ? '▾' : '▸' }}来路</span>
           </button>
           <span>
             {{ formatGN(player.expFull ? player.expReq : player.exp) }} / {{ formatGN(player.expReq) }}

@@ -426,8 +426,15 @@ html[data-theme='dark'] {
 }
 
 .btn-seal:disabled {
-  background: var(--color-ink-ghost);
-  color: rgb(255 255 255 / 0.75);
+  /*
+   * 禁用态**不是装饰态**:按钮上的字往往正是「为什么不让我点」
+   * (「修为未至圆满」「灵石不足」「道源不足」)—— 那是玩家最需要读到的一句。
+   * 原先用最淡的 ink-ghost 打底 + 75% 白字,实测对比度只有 1.79:1,
+   * 在手机上基本看不见。改用 ink-faint 打底,对比度约 3.9:1,
+   * 「灰掉」的观感不变,字却读得出来。
+   */
+  background: var(--color-ink-faint);
+  color: rgb(255 255 255 / 0.92);
   box-shadow: none;
 }
 
@@ -454,7 +461,15 @@ html[data-theme='dark'] {
 }
 
 .btn-ghost:disabled {
-  opacity: 0.4;
+  /*
+   * 与 btn-seal 的禁用态同理:这里的字常常正是门槛本身(「需 筑基 境」「灵石不足」)。
+   * 原先整块压到 40% 透明 —— 实测前景对背景只剩 2.23:1,手机上读不出来。
+   * 改成压色不压字:底色淡下去、字保留 ink-soft,仍一眼看出「点不得」。
+   */
+  opacity: 1;
+  border-color: rgb(var(--color-ink-rgb) / 0.12);
+  color: var(--color-ink-faint);
+  background: rgb(var(--color-ink-rgb) / 0.04);
 }
 
 .chip-ink {

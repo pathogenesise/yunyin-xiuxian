@@ -62,7 +62,7 @@
               </span>
             </button>
           </div>
-          <p class="mt-1 text-[10px] text-ink-ghost">点一维看它由哪些词条凑出来。</p>
+          <p class="mt-1 text-[10px] text-ink-faint">点一维看它由哪些词条凑出来。</p>
           <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
             同一星级的两个构筑谁更强,由环境与相性决定 —— 所以这里给的是形状,不是名次。
           </p>
@@ -96,7 +96,7 @@
       <p v-else class="text-[12px] leading-relaxed text-ink-faint">
         道途尚未成路。凑齐同一路数的词条、功法与法宝,自成一派——
         <br />
-        <span class="text-ink-ghost">背水 / 罡盾 / 反震 / 连击 / 沐泽 / 锋芒,各有克制,亦各有天敌。</span>
+        <span class="text-ink-faint">背水 / 罡盾 / 反震 / 连击 / 沐泽 / 锋芒,各有克制,亦各有天敌。</span>
       </p>
     </div>
 
@@ -126,7 +126,7 @@
           </template>
         </div>
       </div>
-      <p v-else class="text-[10px] text-ink-ghost">尚无快照,存一套后可在此与各区域间从容切换。</p>
+      <p v-else class="text-[10px] text-ink-faint">尚无快照,存一套后可在此与各区域间从容切换。</p>
     </div>
 
     <!-- 双构筑对照:让实验成为研究(真仙可用) -->
@@ -161,7 +161,7 @@
           <p v-if="compareResult.diffLines.length" class="mt-1 text-[10px] text-azure tabular">
             彼相对于今:{{ compareResult.diffLines.join(' · ') }}
           </p>
-          <p class="mt-0.5 text-[10px] text-ink-ghost">两套方案各有其境,取舍在你。</p>
+          <p class="mt-0.5 text-[10px] text-ink-faint">两套方案各有其境,取舍在你。</p>
         </template>
       </div>
     </template>

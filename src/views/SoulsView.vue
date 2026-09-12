@@ -36,7 +36,7 @@
           </p>
           <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
             以凡器入炉,形销而意存,得器魂一缕。神魂只容 {{ SOUL_SLOTS }} 缕——取舍便是构筑。
-            <span class="text-ink-ghost">不凝器魂者,身上法器的词条由天道径直压平,压得更狠;凝了是主动掌控形意,略胜一筹。</span>
+            <span class="text-ink-faint">不凝器魂者,身上法器的词条由天道径直压平,压得更狠;凝了是主动掌控形意,略胜一筹。</span>
           </p>
         </div>
       </section>

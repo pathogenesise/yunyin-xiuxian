@@ -44,7 +44,7 @@
           </template>
         </div>
       </section>
-      <p class="text-center text-[10px] text-ink-ghost">点已收录的条目可看详情 —— 灵材与悟道另分深浅,愈用愈明</p>
+      <p class="text-center text-[10px] text-ink-faint">点已收录的条目可看详情 —— 灵材与悟道另分深浅,愈用愈明</p>
     </template>
 
     <!-- 图鉴详情 -->

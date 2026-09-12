@@ -23,7 +23,7 @@
             :fill-opacity="unlocked(p.nodeId) ? 0.85 : 0.35"
           />
         </svg>
-        <p class="mt-0.5 text-center text-[10px] text-ink-ghost">高处境深 · 远处路长 · 点大处事多</p>
+        <p class="mt-0.5 text-center text-[10px] text-ink-faint">高处境深 · 远处路长 · 点大处事多</p>
       </div>
 
       <SectionTitle title="本世地界" hint="这一世的路,按段而行" />

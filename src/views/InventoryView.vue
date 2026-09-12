@@ -47,7 +47,7 @@
           </template>
         </button>
       </div>
-      <p class="mt-2 text-center text-[10px] text-ink-ghost">点击部位查看候选,行囊满时新掉落自动折作器灵尘</p>
+      <p class="mt-2 text-center text-[10px] text-ink-faint">点击部位查看候选,行囊满时新掉落自动折作器灵尘</p>
 
       <!-- 全部藏品(含佩戴中):部位槽之下的完整清单 -->
       <div v-if="allItems.length" class="mt-4">
@@ -57,7 +57,7 @@
           <EquipmentCard v-for="row in allItems" :key="row.item.uid" :item="row.item" :equipped="row.equipped" @open="openDetail" />
         </div>
       </div>
-      <p v-else class="mt-8 text-center text-[12px] text-ink-ghost">行囊空空,去历练中寻些机缘吧</p>
+      <p v-else class="mt-8 text-center text-[12px] text-ink-faint">行囊空空,去历练中寻些机缘吧</p>
     </template>
 
     <!-- 丹药 -->
@@ -267,7 +267,7 @@
           <button v-else class="btn-seal shrink-0 !px-2.5 !py-1 !text-[11px]" @click="equipItem(row.item.uid)">换上</button>
         </div>
       </div>
-      <p v-else class="py-8 text-center text-[12px] text-ink-ghost">此部位尚无藏品,去历练中寻些机缘吧</p>
+      <p v-else class="py-8 text-center text-[12px] text-ink-faint">此部位尚无藏品,去历练中寻些机缘吧</p>
       <p class="mt-2 text-center text-[10px] text-ink-ghost">点名称可查看详情与对比</p>
     </BaseModal>
 

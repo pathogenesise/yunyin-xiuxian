@@ -224,6 +224,34 @@ async function measurePage(page) {
         .slice(0, 3)
         .map(({ el, r }) => `${Math.round(r.height)}px «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 12)}»`),
       /**
+       * 禁用按钮上的字也得读得出来。
+       *
+       * 禁用态往往正是「为什么不让我点」那句(「修为未至圆满」「灵石不足」),
+       * 而它此前用最淡的 ink-ghost 打底 + 75% 白字 —— 实测对比度 1.79:1,
+       * 在手机上基本看不见。这里量的是**算出来的**前景/背景对比度(两条都是不透明色)。
+       */
+      dimDisabled: [...document.querySelectorAll('.btn-seal:disabled, .btn-ghost:disabled')]
+        .map(el => {
+          const cs = getComputedStyle(el)
+          const lum = c => {
+            const m = /rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(c)
+            if (!m) return null
+            const f = v => {
+              const s = v / 255
+              return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+            }
+            return 0.2126 * f(+m[1]) + 0.7152 * f(+m[2]) + 0.0722 * f(+m[3])
+          }
+          const lf = lum(cs.color)
+          const lb = lum(cs.backgroundColor)
+          if (lf === null || lb === null) return null
+          const ratio = (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05)
+          return { ratio: Math.round(ratio * 100) / 100, text: (el.textContent || '').trim().slice(0, 12) }
+        })
+        .filter(x => x && x.ratio < 3)
+        .slice(0, 3)
+        .map(x => `${x.ratio}:1 «${x.text}»`),
+      /**
        * 选择型控件的选中态要对机器可读,且**每组恰有一个**。
        *
        * 此前主题/战报速度/页签的选中全靠边色,读屏用户与自动化都看不出选了哪个
@@ -277,6 +305,7 @@ function problemsOf(info) {
   if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
   if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
   if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
+  if (info.dimDisabled.length) problems.push(`禁用态的字读不出来(对比度不足):${info.dimDisabled.join(' | ')}`)
   if (info.badGroups.length) problems.push(`选择组没选中态:${info.badGroups.join(' | ')}`)
   if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
   return problems

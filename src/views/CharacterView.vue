@@ -69,7 +69,7 @@
             </span>
           </button>
         </div>
-        <p v-if="modRows.length" class="mt-1 text-[9px] text-ink-ghost">点一行看它从哪来</p>
+        <p v-if="modRows.length" class="mt-1 text-[9px] text-ink-faint">点一行看它从哪来</p>
         <div v-if="breakdownRows.length" class="mt-1.5 rounded-md bg-paper-deep/60 px-2.5 py-2">
           <p class="text-[10px] text-ink-soft">{{ STAT_NAMES[breakdownKey!] }} · 来源明细</p>
           <p v-for="c in breakdownRows" :key="c.name" class="mt-0.5 flex justify-between text-[10px]">
@@ -203,7 +203,7 @@
         <p v-if="identity.roots.fortunes.length" class="text-[11px] text-ink-faint">
           机缘印记:{{ identity.roots.fortunes.map(f => f.title).join(' · ') }}
         </p>
-        <p class="text-[10px] leading-relaxed text-ink-ghost">画像基于真实选择归纳——你玩成了什么样,它便描述什么。</p>
+        <p class="text-[10px] leading-relaxed text-ink-faint">画像基于真实选择归纳——你玩成了什么样,它便描述什么。</p>
       </div>
       <template #footer>
         <button class="btn-seal w-full" @click="identityOpen = false">收 卷</button>

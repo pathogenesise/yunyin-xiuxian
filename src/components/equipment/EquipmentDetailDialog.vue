@@ -11,7 +11,7 @@
       </div>
       <p class="mt-2 text-[12px] leading-relaxed text-ink-faint">{{ template.desc }}</p>
       <div class="ink-divider my-3" />
-      <p v-if="compareTarget" class="mb-1.5 text-[10px] text-ink-ghost tabular">对比当前佩戴:「{{ compareTarget.name }}」(绿升红降)</p>
+      <p v-if="compareTarget" class="mb-1.5 text-[10px] text-ink-faint tabular">对比当前佩戴:「{{ compareTarget.name }}」(绿升红降)</p>
       <div class="space-y-1.5">
         <p v-for="row in flatRows" :key="row.label" class="flex justify-between text-[13px]">
           <span class="text-ink-soft">{{ row.label }}</span>
@@ -100,7 +100,7 @@
           <p v-if="whatIf.modChanges.length" class="mt-1 text-[10px] text-azure tabular">
             主要变化:{{ whatIf.modChanges.map(c => `${c.label} ${c.delta > 0 ? '+' : ''}${Math.round(c.delta * 100)}%`).join(' · ') }}
           </p>
-          <p class="mt-0.5 text-[10px] text-ink-ghost">推演只述局面,不替你定夺。</p>
+          <p class="mt-0.5 text-[10px] text-ink-faint">推演只述局面,不替你定夺。</p>
         </template>
       </template>
     </div>
