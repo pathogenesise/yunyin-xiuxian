@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 156,
+  "round": 157,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T16:30:58+00:00",
+  "updated_at": "2026-09-12T17:16:30+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 155,
+      "touched_round": 156,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -8531,6 +8531,92 @@
       "touched_round": 155,
       "summary": "一键分解改「先勾后确认」(toggleRank 只标记,行囊内已存之物等点「分 解」)+ 新增 core/salvage.ts 让分解/回收返还强化投入八成(强化时记 invested,老档按标价补算,loot 自动回收与腾位同一条账)+ 批量化尘只报一次总账 + 详情页先写出返还;红线:salvage.spec 8 例、layout-check 第二十五件事",
       "commit": "5c0fadd"
+    },
+    "ISS-136": {
+      "id": "ISS-136",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-12T17:16:30+00:00",
+      "touched_round": 156,
+      "summary": "智能收纳会把「有投入的件」当垃圾:keepVerdict 只认品质/流派核心词条/组合技部件,从不读 level/reforgeCount/sealedAffixIds —— 强化过、重铸过、封存过词条的件照样判无缘;行囊满腾位与「一键清理行囊」都会把它们化尘(腾位那一瞬甚至能挤掉 +N 的件)",
+      "severity": 0.5,
+      "confidence": 0.95
+    },
+    "ISS-137": {
+      "id": "ISS-137",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-12T17:16:30+00:00",
+      "touched_round": 156,
+      "summary": "腾位不挑最弱的:满包时按「品质 rank」排序,同档就按行囊先后(先来先走),层级与词条完全不看 —— 层级 20 的与层级 1 的同样先走,该留下的反而可能被挤掉",
+      "severity": 0.3,
+      "confidence": 0.9
+    },
+    "TASK-127": {
+      "id": "TASK-127",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-12T17:16:30+00:00",
+      "touched_round": 156,
+      "summary": "智能收纳三条「当藏」:练过的件(强化/重铸/封存)一律不自动处置;成套共鸣件、词条条条近满件各配一个开关默认开,并排在新档「道途未成」之前",
+      "category": "economy",
+      "severity": 0.5,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-128": {
+      "id": "TASK-128",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-12T17:16:30+00:00",
+      "touched_round": 156,
+      "summary": "腾位比较键换成 compareEvictable:品质 → 层级 → 词条强弱,弱者先走;练过的件根本不在候选里",
+      "category": "economy",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "HYP-082": {
+      "id": "HYP-082",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-12T17:16:08+00:00",
+      "touched_round": 156,
+      "summary": "智能收纳建模时把「件上有没有玩家的投入」漏在外:投入只写在 level/reforgeCount/sealedAffixIds 三个字段上,而裁决里一个都没读过 —— 工具便默认「没提过就是可以扔」",
+      "confidence": 0.9
+    },
+    "EV-138": {
+      "id": "EV-138",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-12T17:16:08+00:00",
+      "touched_round": 156,
+      "summary": "故障注入:把三条新规则还原成旧行为 → layout-check 第二十六件事连报六条(确认框写「共 5 件」、清理后行囊 0 件、玄铁重剑/桃木簪/+3 那件全被清理)。撤销注入后:149 文件 1462 用例全绿、vue-tsc/eslint/构建绿、layout-check 101 组合绿、ui-smoke 日常+后期绿、分类报告 1462 过 0 败",
+      "source": "scripts/layout-check.mjs",
+      "confidence": 0.95
+    },
+    "CHG-181": {
+      "id": "CHG-181",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T17:16:30+00:00",
+      "updated_at": "2026-09-12T17:16:30+00:00",
+      "touched_round": 156,
+      "summary": "智能收纳:练过/成套/近满三类当藏(hasInvestment 与两条新规则,后两条配开关)+ 腾位改 compareEvictable 先挤最弱;smartKeep.spec 7 例、layout-check 第二十六件事、loot.spec 夹具确定性化",
+      "commit": "a665f77"
     }
   },
   "edges": [
@@ -12512,6 +12598,60 @@
       "to": "ISS-135",
       "type": "resolves",
       "created_at": "2026-09-12T16:30:55+00:00"
+    },
+    {
+      "from": "ISS-136",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T17:16:14+00:00"
+    },
+    {
+      "from": "ISS-137",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T17:16:14+00:00"
+    },
+    {
+      "from": "TASK-127",
+      "to": "ISS-136",
+      "type": "addresses",
+      "created_at": "2026-09-12T17:16:14+00:00"
+    },
+    {
+      "from": "TASK-128",
+      "to": "ISS-137",
+      "type": "addresses",
+      "created_at": "2026-09-12T17:16:15+00:00"
+    },
+    {
+      "from": "EV-138",
+      "to": "HYP-082",
+      "type": "validates",
+      "created_at": "2026-09-12T17:16:15+00:00"
+    },
+    {
+      "from": "CHG-181",
+      "to": "TASK-127",
+      "type": "implements",
+      "created_at": "2026-09-12T17:16:30+00:00"
+    },
+    {
+      "from": "CHG-181",
+      "to": "TASK-128",
+      "type": "implements",
+      "created_at": "2026-09-12T17:16:30+00:00"
+    },
+    {
+      "from": "CHG-181",
+      "to": "ISS-136",
+      "type": "resolves",
+      "created_at": "2026-09-12T17:16:30+00:00"
+    },
+    {
+      "from": "CHG-181",
+      "to": "ISS-137",
+      "type": "resolves",
+      "created_at": "2026-09-12T17:16:30+00:00"
     }
   ]
 }
