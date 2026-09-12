@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 125,
+  "round": 126,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T04:01:04+00:00",
+  "updated_at": "2026-09-12T04:06:32+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 124,
+      "touched_round": 125,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -6404,7 +6404,7 @@
       "version": 1,
       "created_at": "2026-09-12T04:00:56+00:00",
       "updated_at": "2026-09-12T04:00:56+00:00",
-      "touched_round": 124,
+      "touched_round": 125,
       "summary": "「效果词汇表是否只是换皮」可以这样判:取高界那批内容,要求至少一件使用的效果**不在基础集**里(基础集从既有内容归纳:打/回/盾/削)。这条比逐件看文案硬,也能顺手逼出「声明了却没人用」的死词汇 —— 新增机制时会一起变红",
       "confidence": 0.85
     },
@@ -6418,6 +6418,56 @@
       "touched_round": 124,
       "summary": "ArtifactEffect 增震慑(stun)并接入战斗;仙琴/镇神印改用震慑;新增 artifactEffects.spec(3 例:词汇表无死条目、高界不止数值放大、震慑真打断)",
       "commit": "556f35e"
+    },
+    "ISS-098": {
+      "id": "ISS-098",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:06:24+00:00",
+      "updated_at": "2026-09-12T04:06:24+00:00",
+      "touched_round": 125,
+      "summary": "法宝效果仍只有五种(震慑之后):高界 12 件里除两件震慑外,其余仍是打/回/盾/削四种的倍率放大 —— 「让它打不动你」有了,「让你打得动它」还缺(面对高界厚甲敌手,玩家没有拆甲的手段)",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-089": {
+      "id": "TASK-089",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:06:24+00:00",
+      "updated_at": "2026-09-12T04:06:24+00:00",
+      "touched_round": 125,
+      "summary": "加破甲效果(本场余下回合敌人防御按比例下降),接到神鞭上;红线:厚甲靶子同种子两遍对比,带破甲的回合数必须更少",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-105": {
+      "id": "EV-105",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:06:24+00:00",
+      "updated_at": "2026-09-12T04:06:24+00:00",
+      "touched_round": 125,
+      "summary": "ArtifactEffect 增 { type: \"sunder\"; pct },combat 增 Fighter.defSunder(0~0.5,取最大)+减伤读取;神鞭「裂星」改破甲(interval 3→4);artifactEffects.spec 增第 4 例:厚甲靶子(减伤约五成)同种子两遍,带破甲 12 回合 vs 不带 13;注入(defSunder 赋值掏空)即报「没有让敌人更好打」;全量 144 文件 1427 用例绿,战斗/平衡审计不受影响",
+      "confidence": 0.9,
+      "source": "src/core/artifactEffects.spec.ts"
+    },
+    "CHG-148": {
+      "id": "CHG-148",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:06:32+00:00",
+      "updated_at": "2026-09-12T04:06:32+00:00",
+      "touched_round": 125,
+      "summary": "新增破甲效果(sunder)并接到神鞭;artifactEffects.spec 增厚甲靶子对比用例(带破甲回合数更少)",
+      "commit": "5ee91a1"
     }
   },
   "edges": [
@@ -9247,6 +9297,36 @@
       "to": "HYP-050",
       "type": "validates",
       "created_at": "2026-09-12T04:01:04+00:00"
+    },
+    {
+      "from": "ISS-098",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T04:06:32+00:00"
+    },
+    {
+      "from": "TASK-089",
+      "to": "ISS-098",
+      "type": "addresses",
+      "created_at": "2026-09-12T04:06:32+00:00"
+    },
+    {
+      "from": "CHG-148",
+      "to": "TASK-089",
+      "type": "implements",
+      "created_at": "2026-09-12T04:06:32+00:00"
+    },
+    {
+      "from": "CHG-148",
+      "to": "ISS-098",
+      "type": "resolves",
+      "created_at": "2026-09-12T04:06:32+00:00"
+    },
+    {
+      "from": "EV-105",
+      "to": "HYP-050",
+      "type": "validates",
+      "created_at": "2026-09-12T04:06:32+00:00"
     }
   ]
 }
