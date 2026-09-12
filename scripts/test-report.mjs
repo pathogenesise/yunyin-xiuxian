@@ -14,7 +14,7 @@ import { readFileSync, rmSync } from 'node:fs'
 const CATEGORIES = [
   {
     name: 'Unit        数值纯函数',
-    match: ['gnum', 'format', 'formulas', 'linggenGen', 'equipGen', 'crypto', 'quests', 'codex', 'craftability', 'reforge', 'theme', 'savePersistence', 'dongfu.spec', 'ui.spec']
+    match: ['gnum', 'format', 'savePlaintext', 'formulas', 'linggenGen', 'equipGen', 'crypto', 'quests', 'codex', 'craftability', 'reforge', 'theme', 'savePersistence', 'dongfu.spec', 'ui.spec']
   },
   { name: 'Combat      战斗规则', match: ['combat.spec', 'highTierSmoke', 'ironwall', 'bossAudit', 'bossPhaseAudit', 'exploration.spec'] },
   {
