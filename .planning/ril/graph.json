@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 160,
+  "round": 161,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T21:56:07+00:00",
+  "updated_at": "2026-09-12T22:15:23+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -8884,11 +8884,11 @@
     "ISS-143": {
       "id": "ISS-143",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-12T21:01:50+00:00",
-      "updated_at": "2026-09-12T21:01:50+00:00",
-      "touched_round": 158,
+      "updated_at": "2026-09-12T22:15:23+00:00",
+      "touched_round": 160,
       "summary": "导入非原子:配额失败时旧档已清、新档半写,导入路径把「半清存档」风险做实(位置:clearAllSave 后逐片 setItem,无回滚)",
       "severity": 0.65,
       "confidence": 0.6
@@ -8979,6 +8979,31 @@
       "touched_round": 159,
       "summary": "previewFight 增 prep 上下文(世界/契约/奇门):出发前预览与首战同源合成 chainRules,CelestialView prep 弹层接上;新增 expeditionPrep.spec 钉住世界与契约规则可见",
       "commit": 1086009
+    },
+    "TASK-134": {
+      "id": "TASK-134",
+      "type": "task",
+      "status": "resolved",
+      "version": 3,
+      "created_at": "2026-09-12T22:13:02+00:00",
+      "updated_at": "2026-09-12T22:15:23+00:00",
+      "touched_round": 160,
+      "summary": "存档导入改原子写入:applyImportPayload 先快照现有各片,清档后逐片写,任一失败回滚旧档并抛错",
+      "category": "stability",
+      "severity": 0.65,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-185": {
+      "id": "CHG-185",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-12T22:13:02+00:00",
+      "updated_at": "2026-09-12T22:15:22+00:00",
+      "touched_round": 160,
+      "summary": "原子导入:快照→清档→逐片写→失败回滚;importSaveText 透出「原存档已保留」;importCorruption 增配额失败用例",
+      "commit": "df839ba"
     }
   },
   "edges": [
@@ -13182,6 +13207,24 @@
       "to": "ISS-145",
       "type": "resolves",
       "created_at": "2026-09-12T21:54:25+00:00"
+    },
+    {
+      "from": "CHG-185",
+      "to": "TASK-134",
+      "type": "implements",
+      "created_at": "2026-09-12T22:15:23+00:00"
+    },
+    {
+      "from": "CHG-185",
+      "to": "ISS-143",
+      "type": "resolves",
+      "created_at": "2026-09-12T22:15:23+00:00"
+    },
+    {
+      "from": "TASK-134",
+      "to": "ISS-143",
+      "type": "addresses",
+      "created_at": "2026-09-12T22:15:23+00:00"
     }
   ]
 }
