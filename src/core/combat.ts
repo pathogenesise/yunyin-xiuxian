@@ -144,6 +144,32 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     log.push({ t, side, text, dmg: dmg ? formatGN(dmg) : undefined, php: hpPct(p), ehp: hpPct(e) })
   }
 
+  /**
+   * 震慑落地前的最后一道门:受方若带着「净念」法宝,有机会当场挣脱。
+   *
+   * 三个落点(词条 stunRate、法宝震慑、敌人神通震慑)都走这里 —— 一处漏了,
+   * 净念就变成「只挡某一种摄魂」的半成品,而玩家从界面上看不出差别。
+   * 挣脱概率取自受方自己的法宝,与出手的一方无关。
+   */
+  const tryStun = (target: Fighter): boolean => {
+    const owned = (target.snap.artifacts ?? []).find(o => o.def.active.effect.type === 'purge')
+    if (owned) {
+      const eff = owned.def.active.effect
+      if (eff.type === 'purge') {
+        // 上限 0.9:留一丝「摄魂也不是吃素的」——满级也不该等于免疫
+        const chance = Math.min(0.9, eff.pct * (1 + owned.level * ARTIFACT_LEVEL_BONUS))
+        if (rng.chance(chance)) {
+          target.stats.artifactProcs += 1
+          const who = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
+          push('proc', target.snap.isPlayer ? 'p' : 'e', `${who}的【${owned.def.name}】灵光一照,摄魂之力散于无形。`)
+          return false
+        }
+      }
+    }
+    target.stunned = true
+    return true
+  }
+
   /** 护体灵光有极限:护盾总量不超过最大生命的一定比例(默认一半,可被世界规则覆盖) */
   const gainShield = (f: Fighter, amount: GNum): void => {
     f.shield = gnMin(add(f.shield, amount), mulN(f.snap.maxHp, shieldCap))
@@ -313,8 +339,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     }
     // 震慑
     if (!isZero(target.hp) && rng.chance(modOf(aMods, 'stunRate'))) {
-      target.stunned = true
-      push('proc', side, `${tName}被震得气血翻涌,一时难以动弹!`)
+      if (tryStun(target)) push('proc', side, `${tName}被震得气血翻涌,一时难以动弹!`)
     }
   }
 
@@ -332,10 +357,12 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     for (const owned of self.snap.artifacts ?? []) {
       if (isZero(foe.hp)) return
       const art = owned.def
+      const eff = art.active.effect
+      // 净念是随身被动,由 tryStun 在受慑的那一刻接管 —— 不走「每 N 回合出手」的节拍
+      if (eff.type === 'purge') continue
       if (round % art.active.interval !== 0) continue
       self.stats.artifactProcs += 1
       const levelMult = 1 + owned.level * ARTIFACT_LEVEL_BONUS
-      const eff = art.active.effect
       if (eff.type === 'damage') {
         const dmgAmt = mulN(self.snap.attack, eff.mult * levelMult)
         applyDamage(self, foe, dmgAmt)
@@ -347,8 +374,9 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
         healSelf(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
         push('heal', side, `【${art.name}】洒下灵光,${name}伤势恢复。`)
       } else if (eff.type === 'stun') {
-        foe.stunned = true
-        push('proc', side, `【${art.name}】摄住${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的心神,那一手没能出。`)
+        if (tryStun(foe)) {
+          push('proc', side, `【${art.name}】摄住${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的心神,那一手没能出。`)
+        }
       } else if (eff.type === 'sunder') {
         foe.defSunder = Math.min(0.5, Math.max(foe.defSunder, eff.pct * levelMult))
         push('proc', side, `【${art.name}】${art.active.name},${foe.snap.isPlayer ? '你的' : `【${foe.snap.name}】的`}护体被撕开一道口子。`)
@@ -389,7 +417,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
           strike(self, foe, mult * 0.45, label, round, { isSkill: true, skipFollowups: true })
         }
       } else if (effect === 'stun' && rng.chance(0.5)) {
-        foe.stunned = true
+        tryStun(foe)
       } else if (effect === 'drain') {
         healSelf(self, mulN(self.snap.maxHp, 0.06))
       } else if (effect === 'shield') {

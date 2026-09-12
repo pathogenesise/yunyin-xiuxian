@@ -1,5 +1,6 @@
+/* eslint-disable no-console -- 净念一例是"多少回合被救回来"的读数,打印出来便于复核 */
 /**
- * 法宝效果的两个承诺 —— 词汇表不虚设,震慑真打断
+ * 法宝效果的三个承诺 —— 词汇表不虚设,震慑真打断,净念真能挣脱
  *
  * 一、**声明即承诺**:ArtifactEffect 联合里写下的每种效果,都得有法宝在用。
  *     高界法宝此前一律是 damage/heal/shield/weaken 四种的数值放大(32 件里没有
@@ -9,7 +10,12 @@
  * 二、**效果要真的发生**:震慑不是文案 —— 它在敌人该出手时把那一手掐掉。
  *     故这里真打一场(仙琴每 4 回合摄神),数敌人的「被打断回合」。
  *
- * 故障注入:把仙琴的 stun 换回 weaken,两条同时红。
+ * 三、**防身型效果也要真的发生**:{ type: 'purge' } 是第一条「我扛得住你的阴招」。
+ *     此前玩家对震慑毫无还手之力:十三种敌人会摄魂,中了白丢一回合,而战后分析
+ *     只会说「N 个回合被震慑打断,节奏尽失」。故这里放一只必摄魂的敌人,
+ *     同一批种子跑两遍(带/不带无相念珠),数玩家自己被跳过的回合数。
+ *
+ * 故障注入:把仙琴的 stun 换回 weaken、把 tryStun 的挣脱判定掏空,对应判据即红。
  */
 import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -135,5 +141,74 @@ describe('法宝效果 · 破甲真让后续打得更疼', () => {
     const b = without()
     expect(a.text, '破甲的台词没出现 —— 效果没接上').toContain('护体被撕开')
     expect(a.rounds, `带破甲 ${a.rounds} 回合,不带 ${b} 回合 —— 破甲没有让敌人更好打`).toBeLessThan(b)
+  })
+})
+
+/**
+ * 一只「必定摄魂、但打不死人」的靶子:e_hog 的技能率拉到 100% 且带 stun,
+ * 于是玩家每回合都有约一半的机会被震慑(引擎里 stun 还要再过 50% 那一掷)。
+ * 攻击与气血都调成打不死彼此 —— 量的是「被跳过多少个回合」,不是谁赢。
+ */
+function stunningFoe(): ReturnType<typeof makeEnemySnap> {
+  const snap = makeEnemySnap(enemyDef('e_wolf')!, 1, 1)
+  snap.name = '摄魂靶子'
+  snap.skills = [{ name: '摄魂', mult: 1, rate: 1, effect: 'stun' }]
+  snap.attack = gn(1)
+  snap.defense = gn(1e12)
+  snap.maxHp = gn(1e12)
+  snap.speed = 1
+  snap.mods = {}
+  return snap
+}
+
+/** 打一场「打不死彼此」的对局,返回玩家被震慑跳过的回合数 */
+function stunnedTurnsAgainst(withPurge: boolean, seed: number): number {
+  const p = buildPlayerSnap()
+  p.mods = {}
+  p.attack = gn(1)
+  p.defense = gn(1e12)
+  p.maxHp = gn(1e12)
+  p.artifacts = withPurge ? [{ def: artifactDef('af_wuxiangzhu')!, level: 0 }] : []
+  return resolveCombat(p, stunningFoe(), seeded(seed)).stats!.player.stunnedTurns
+}
+
+describe('法宝效果 · 净念真能挣脱震慑', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('同一批种子:带无相念珠,被震慑跳过的回合明显更少', () => {
+    let bare = 0
+    let withPurge = 0
+    for (let seed = 1; seed <= 30; seed += 1) {
+      bare += stunnedTurnsAgainst(false, seed)
+      withPurge += stunnedTurnsAgainst(true, seed)
+    }
+    expect(bare, '靶子根本没摄住人,这条判据失去对象').toBeGreaterThan(0)
+    expect(
+      withPurge,
+      `30 场累计被跳过 ${withPurge} 回合,不带念珠是 ${bare} 回合 —— 净念没有让任何一手打出来`
+    ).toBeLessThan(bare)
+    console.log(`\n必摄魂靶子 × 30 场:不带念珠被跳过 ${bare} 回合,带念珠 ${withPurge} 回合`)
+  })
+
+  it('挣脱是真的发生:日志里留下「散于无形」,且不占出手节拍', () => {
+    const withPearls = (foe: ReturnType<typeof makeEnemySnap>, seed: number): ReturnType<typeof resolveCombat> => {
+      const p = buildPlayerSnap()
+      p.mods = {}
+      p.attack = gn(1)
+      p.defense = gn(1e12)
+      p.maxHp = gn(1e12)
+      p.artifacts = [{ def: artifactDef('af_wuxiangzhu')!, level: 0 }]
+      return resolveCombat(p, foe, seeded(seed))
+    }
+    const fight = withPearls(stunningFoe(), 7)
+    const text = fight.log.map(l => l.text).join('\n')
+    expect(text, '念珠一次的台词都没出现 —— 挣脱没接上').toContain('摄魂之力散于无形')
+    // 它是随身被动:对手不摄魂时,它一次都不该"出手"
+    // (若有人把 combat 里那句 purge 跳过删掉,它就会每回合掉进 weaken 分支刷满触发)
+    const noStun = withPearls(tankyWolf(), 7)
+    expect(
+      noStun.stats!.player.artifactProcs,
+      `对手不摄魂,念珠却"触发"了 ${noStun.stats!.player.artifactProcs} 次 —— 随身被动被当成每回合出手了`
+    ).toBe(0)
   })
 })

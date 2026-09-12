@@ -1,4 +1,4 @@
-/** 法宝池 —— 32 件,拥有被动属性与自动触发的主动神通 */
+/** 法宝池 —— 33 件,拥有被动属性与自动触发的主动神通 */
 import type { ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
 
 function f(
@@ -436,6 +436,27 @@ export const ARTIFACTS: ArtifactDef[] = [
     4,
     { type: 'weaken', pct: 0.2 },
     'sparkles'
+  ),
+  /*
+   * 第一件防身型法宝。
+   *
+   * 前面 32 件全在回答「我怎么打你」,没有一件回答「我扛得住你的阴招」。
+   * 而震慑是玩家唯一无从招架的状态(十三种敌人会摄魂,中了就是白丢一回合),
+   * 战后分析还会明说「N 个回合被震慑打断,节奏尽失」—— 报了病因,却无药可抓。
+   * interval 记 1:它不是「每 N 回合出手」,而是随身常在(见 combat.tryStun)。
+   */
+  f(
+    'af_wuxiangzhu',
+    '无相念珠',
+    'divine',
+    31,
+    '一串旧念珠,珠子已被摩得发亮',
+    { damageReduction: 0.05, maxHpPct: 0.06 },
+    '定念',
+    '受慑时以七成概率当场挣脱,那一手照出',
+    1,
+    { type: 'purge', pct: 0.7 },
+    'circle-dot'
   )
 ]
 
