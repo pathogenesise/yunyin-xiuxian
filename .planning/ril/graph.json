@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 136,
+  "round": 137,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T07:56:38+00:00",
+  "updated_at": "2026-09-12T08:14:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -448,7 +448,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:59:19+00:00",
       "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 126,
+      "touched_round": 136,
       "summary": "突破系统(breakthrough.ts + 突破准备数据)"
     },
     "ISS-017": {
@@ -7066,7 +7066,7 @@
       "version": 1,
       "created_at": "2026-09-12T07:09:32+00:00",
       "updated_at": "2026-09-12T07:09:32+00:00",
-      "touched_round": 135,
+      "touched_round": 136,
       "summary": "判据的样本也要和目标对齐:同一页面在空档与后期档是两副样子(长数字、满屏内容、在途状态),只用刚建号那份档去量,漏掉的恰恰是玩家看得最多的那一版 —— 巡页之前先问「该拿哪份档来巡」",
       "confidence": 0.85
     },
@@ -7223,6 +7223,66 @@
       "updated_at": "2026-09-12T07:56:16+00:00",
       "touched_round": 135,
       "summary": "「先动手、再读状态」是这类实时界面里最顺手也最容易写错的一行:实参求值顺序让「我改完状态再取名」看起来毫无问题,而收尾那一步恰恰会把状态清空。凡战报/结算的标题,都该在动作之前取",
+      "confidence": 0.85
+    },
+    "ISS-112": {
+      "id": "ISS-112",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T08:14:01+00:00",
+      "updated_at": "2026-09-12T08:14:05+00:00",
+      "touched_round": 136,
+      "summary": "突破结果弹窗(成败 / 渡劫雷数 / 寿元增至)从没被无头浏览器渲染过:空档修为不满按钮是灰的,后期档又未必卡在大关上 —— 而它是玩家反复看的一屏,渡劫那几步更是整局最要紧的演出",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-103": {
+      "id": "TASK-103",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T08:14:01+00:00",
+      "updated_at": "2026-09-12T08:14:01+00:00",
+      "touched_round": 136,
+      "summary": "另起一份「炼气圆满」夹具真打一次渡劫,判据只看形状:必须开出结果弹窗、写清成败与雷数、成功与页面境界对得上、收尾键能关掉;并让失败信息带上「此刻开着的是谁」",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-161": {
+      "id": "CHG-161",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T08:14:01+00:00",
+      "updated_at": "2026-09-12T08:14:01+00:00",
+      "touched_round": 136,
+      "summary": "layout-check 增第十一件事(渡劫突破真打一次,夹具:炼气圆满 + 修为灵气给足 + 寿元留够);结果面板只认带「突破成功/突破失败」的那一扇,失败信息附上此刻开着的浮层名",
+      "commit": "e808a11"
+    },
+    "EV-118": {
+      "id": "EV-118",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T08:14:01+00:00",
+      "updated_at": "2026-09-12T08:14:01+00:00",
+      "touched_round": 136,
+      "summary": "渡劫实测读数:成功 · 雷数有 · 页面境界 筑基;弹窗内四道天雷逐道报血(84%→64%→43%→20%),末句「渡劫,成了!」,并附该境出处。小层两档亦实测(四层→五层成功、九层→圆满失败,文案各自正确)。故障注入:让 attemptBreakthrough 不再写 ui.breakthrough → 「没有开出结果弹窗(此刻开着的是:无)」红;修回后 69 组全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-063": {
+      "id": "HYP-063",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T08:14:01+00:00",
+      "updated_at": "2026-09-12T08:14:01+00:00",
+      "touched_round": 136,
+      "summary": "判据要能自己指认「屏幕上现在是谁」:浮层场景里,拿错扇面板会把诊断指向无辜的人(顿悟被当成突破结果)。凡是「点一下应当开出某扇窗」的判据,都要按内容认窗,并在失败时列出当前所有开着的窗",
       "confidence": 0.85
     }
   },
@@ -10491,6 +10551,42 @@
       "to": "HYP-059",
       "type": "validates",
       "created_at": "2026-09-12T07:56:38+00:00"
+    },
+    {
+      "from": "ISS-112",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-12T08:14:05+00:00"
+    },
+    {
+      "from": "TASK-103",
+      "to": "ISS-112",
+      "type": "addresses",
+      "created_at": "2026-09-12T08:14:05+00:00"
+    },
+    {
+      "from": "CHG-161",
+      "to": "TASK-103",
+      "type": "implements",
+      "created_at": "2026-09-12T08:14:05+00:00"
+    },
+    {
+      "from": "CHG-161",
+      "to": "ISS-112",
+      "type": "resolves",
+      "created_at": "2026-09-12T08:14:05+00:00"
+    },
+    {
+      "from": "EV-118",
+      "to": "HYP-063",
+      "type": "validates",
+      "created_at": "2026-09-12T08:14:05+00:00"
+    },
+    {
+      "from": "EV-118",
+      "to": "HYP-059",
+      "type": "validates",
+      "created_at": "2026-09-12T08:14:05+00:00"
     }
   ]
 }
