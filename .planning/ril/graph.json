@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 116,
+  "round": 117,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T01:57:05+00:00",
+  "updated_at": "2026-09-12T02:08:40+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1535,7 +1535,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 114,
+      "touched_round": 116,
       "summary": "藏经阁钻研/认知系统(loreService.ts + lore store)"
     },
     "COMP-010": {
@@ -5891,6 +5891,67 @@
       "touched_round": 115,
       "summary": "新增 offlineScope.spec:离线前后逐键比对,玩家分片只许 {exp,age,bond}、终局分片一键不许动,并单独钉「道侣只攒机会点、关系三维不变」;登记进 Economy 分类",
       "commit": "d3089d7"
+    },
+    "ISS-089": {
+      "id": "ISS-089",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T02:08:33+00:00",
+      "updated_at": "2026-09-12T02:08:40+00:00",
+      "touched_round": 116,
+      "summary": "成就页是一张白纸:未达成者一律「???」+「尚未达成 —— 成时自见」,连方向都不给 —— 六十多个条目摆在那儿,玩家不知道哪一条与自己正在做的事有关(图鉴刚补过来源指路,成就在这里还是老样子)",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-080": {
+      "id": "TASK-080",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T02:08:33+00:00",
+      "updated_at": "2026-09-12T02:08:40+00:00",
+      "touched_round": 116,
+      "summary": "按条件给成就方向(藏名字不藏去处),并加红线:方向表与 CounterKey 联合类型双向对齐、每条成就都定得出方向、四类条件都接得住",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-096": {
+      "id": "EV-096",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:08:33+00:00",
+      "updated_at": "2026-09-12T02:08:33+00:00",
+      "touched_round": 116,
+      "summary": "ui/achievementHint.ts 给出计数器→方向映射(严格 Record<CounterKey,string>,不加强制转型)与 achievementDirection(cond);未达成条目显示「尚未达成 · 方向:境界精进」等;achievementHint.spec 4 例:每条成就都有方向、CounterKey 联合成员与方向表双向对齐(扫 types/index.ts)、四类条件都接得住;两次注入(删 events 方向、给 CounterKey 加新键不给方向)均转红;无头实证首屏 8 条方向渲染正确;全量 142 文件 1418 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/achievementHint.spec.ts"
+    },
+    "HYP-044": {
+      "id": "HYP-044",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:08:33+00:00",
+      "updated_at": "2026-09-12T02:08:33+00:00",
+      "touched_round": 116,
+      "summary": "「藏内容」与「不给线索」是两件事:成就藏名字是为了成时自现的惊喜,但方向(哪条路会推进它)该给。方向能从条件结构里推出来 —— 与其手写一张清单,不如让类型系统与源码扫描双向核(计数器联合 ↔ 方向表),这样新增条件必然带着方向一起进来",
+      "confidence": 0.85
+    },
+    "CHG-139": {
+      "id": "CHG-139",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:08:40+00:00",
+      "updated_at": "2026-09-12T02:08:40+00:00",
+      "touched_round": 116,
+      "summary": "新增 ui/achievementHint.ts(计数器→方向,严格 Record 类型)与 achievementHint.spec(4 例);成就页未达成条目显示「尚未达成 · 方向:…」;登记进 Regression 分类",
+      "commit": "24edcde"
     }
   },
   "edges": [
@@ -8450,6 +8511,36 @@
       "to": "HYP-043",
       "type": "validates",
       "created_at": "2026-09-12T01:57:05+00:00"
+    },
+    {
+      "from": "ISS-089",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-12T02:08:40+00:00"
+    },
+    {
+      "from": "TASK-080",
+      "to": "ISS-089",
+      "type": "addresses",
+      "created_at": "2026-09-12T02:08:40+00:00"
+    },
+    {
+      "from": "CHG-139",
+      "to": "TASK-080",
+      "type": "implements",
+      "created_at": "2026-09-12T02:08:40+00:00"
+    },
+    {
+      "from": "CHG-139",
+      "to": "ISS-089",
+      "type": "resolves",
+      "created_at": "2026-09-12T02:08:40+00:00"
+    },
+    {
+      "from": "EV-096",
+      "to": "HYP-044",
+      "type": "validates",
+      "created_at": "2026-09-12T02:08:40+00:00"
     }
   ]
 }
