@@ -53,7 +53,7 @@ import {
 import { usePlayerStore } from '@/stores/player'
 import { useQuestsStore } from '@/stores/quests'
 import { useUiStore } from '@/stores/ui'
-import { rng } from '@/utils/random'
+import { rng, type RandomService } from '@/utils/random'
 
 /** 本世与某人的关系(存档结构) */
 export interface BondState {
@@ -329,8 +329,12 @@ function weightFor(ev: BondEventDef, b: BondState): number {
  *
  * **不是随机抽取,而是情境筛选** —— 事件必须声明它属于哪一刻,
  * 声明为空的事件永远不会被提供(见 bondEvents.spec 的故障注入)
+ *
+ * 随机源可注入:生产用全局 rng,自检用带种子的 RandomService ——
+ * 「哪条路真的够得着」必须能被确定性地钉住,不然又会退化成
+ * 「功能写了但没人见过」(道侣陨落曾经就是这个病,见 RIL TASK-049)。
  */
-export function offerBondEvent(trigger: BondTrigger): BondEventDef | null {
+export function offerBondEvent(trigger: BondTrigger, rand: RandomService = rng): BondEventDef | null {
   const player = usePlayerStore()
   const b = player.bond
   if (!b || b.fallen || b.departed) return null
@@ -346,7 +350,7 @@ export function offerBondEvent(trigger: BondTrigger): BondEventDef | null {
     player.setBond({ ...b, opportunities: b.opportunities + 1 })
     return null
   }
-  const picked = rng.weighted(pool, e => weightFor(e, b))
+  const picked = rand.weighted(pool, e => weightFor(e, b))
   player.setBond({ ...b, opportunities: b.opportunities + 1, pendingEventId: picked.id })
   useUiStore().toast(`${currentDaolu()?.name ?? '她'}似乎有话要说`, 'info')
   return picked

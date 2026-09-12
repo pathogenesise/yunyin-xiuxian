@@ -17,8 +17,9 @@
  */
 import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { RandomService, mulberry32 } from '@/utils/random'
 import {
   BOND_EVENTS,
   LEAN_COUNTERS,
@@ -395,5 +396,57 @@ describe('共同事件 · 共命之险', () => {
       expect(r!.perished).toBeUndefined()
       expect(usePlayerStore().bond?.fallen, `${id} 不该致死`).toBe(false)
     }
+  })
+})
+
+/**
+ * 共命之险 · 在真实路径上够得着(Phase 34.11 补)
+ *
+ * 这一段是给「功能写了但没人见过」上的锁。道侣陨落曾长期挂在 SPEC_ONLY_ALLOWLIST 里:
+ * fall() 在、ending 在、界面「已殁」在,可没有任何一条路能把玩家送到它面前。
+ * 上面那段测试是**手摆状态**直接选的 —— 它证明逻辑对,证明不了够得着。
+ *
+ * 故这里钉两件事,都不用掷运气:
+ *   一 事件声明的每个「触发情境」,都必须真的在玩法代码里被调用
+ *      —— 声明了 nearDeath 却没人 offer,事件就永远不出现;
+ *   二 靠行为推到「知交」之后,「濒死」这一掷的池子里必须真的躺着「共劫」
+ *      —— 用带种子的随机源,同一颗种子每次结果相同,不是碰运气。
+ */
+describe('共命之险 · 在真实路径上够得着', () => {
+  it('每个声明的触发情境都真的被玩法调用(不是只写在类型里)', () => {
+    // 玩法源码(排除本文件与 daoluService 自身):谁真的在那一刻 offer,这里就找谁
+    const coreDir = resolve(__dirname)
+    const callers = readdirSync(coreDir)
+      .filter(f => f.endsWith('.ts') && !f.endsWith('.spec.ts') && f !== 'daoluService.ts')
+      .map(f => readFileSync(resolve(coreDir, f), 'utf-8'))
+      .join('\n')
+    const declared = new Set(BOND_EVENTS.flatMap(e => [...e.triggers]))
+    expect(declared.size).toBeGreaterThan(0)
+    for (const trig of declared) {
+      expect(callers, `没有任何玩法代码会 offer「${trig}」—— 声明了却从不发生`).toContain(`offerBondEvent('${trig}')`)
+    }
+  })
+
+  it('靠行为推到「知交」,「濒死」情境的一掷里真的有「共劫」', () => {
+    // 全程用行为推进,不手改 stage
+    meet('dl_qingli')
+    advanceBond({ fate: 40, trust: 30, shared: true })
+    advanceBond({ fate: 60, trust: 60, shared: true })
+    expect(currentBond()!.stage).toBe('confidant')
+
+    const peril = BOND_EVENTS.find(e => e.id === 'be_jie')!
+    expect(stageIdxOf(currentBond()!.stage)).toBeGreaterThanOrEqual(peril.minStageIndex)
+
+    // 带种子的随机源:池子是 [重伤, 共劫],足够多次抽样必然都见过
+    const rand = new RandomService(mulberry32(20260912))
+    const seen = new Set<string>()
+    for (let i = 0; i < 400 && !seen.has('be_jie'); i += 1) {
+      const b = currentBond()!
+      usePlayerStore().setBond({ ...b, pendingEventId: null, opportunities: 99, nextEventAt: 0 })
+      const e = offerBondEvent('nearDeath', rand)
+      if (e) seen.add(e.id)
+    }
+    expect(seen.has('be_jie'), '「共劫」够不着 —— 道侣陨落又成了没有触发路径的特例').toBe(true)
+    console.log(`\n历练「濒死」情境可遇:${[...seen].join('、')}`)
   })
 })
