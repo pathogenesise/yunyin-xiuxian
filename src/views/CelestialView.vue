@@ -892,7 +892,15 @@
   const selectedGate = computed(() => (prepGate.value ? gateDef(prepGate.value) : undefined))
   const prepWorld = computed(() => (prepWorldId.value ? resolveWorld(prepWorldId.value) : null))
   const selectedPact = computed(() => (prepPact.value ? pactDef(prepPact.value) : undefined))
-  const prepPreview = computed(() => (prepWorld.value ? previewFight(prepWorld.value.foes[0]!) : null))
+  const prepPreview = computed(() =>
+    prepWorld.value
+      ? previewFight(prepWorld.value.foes[0]!, undefined, undefined, {
+          worldId: prepWorldId.value!,
+          pactId: prepPact.value,
+          gateId: prepGate.value
+        })
+      : null
+  )
   /** 天道赌约:整程预估(随契约选择实时重算) */
   const prepForecast = computed(() =>
     prepWorldId.value ? forecastExpedition(prepWorldId.value, prepPact.value, prepGate.value) : null

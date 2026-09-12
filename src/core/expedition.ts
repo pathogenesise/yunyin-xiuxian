@@ -302,11 +302,16 @@ const EFFECT_WORDS: Record<string, string> = {
  * 而按实战规则只有一成,是「凶多吉少」)。
  * 随机源可注入,自检才能不掷运气地钉住这条口径。
  */
-export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode, rand: RandomService = rng): FightPreview | null {
+export function previewFight(
+  foeShape: WorldFoeShape,
+  node?: WorldRouteNode,
+  rand: RandomService = rng,
+  prep?: { worldId: string; pactId: string | null; gateId: string | null }
+): FightPreview | null {
   const endgame = useEndgameStore()
   if (endgame.daoPath !== 'fate') return null
   const run = endgame.worldRun
-  const world = run ? resolveWorld(run.worldId) : undefined
+  const world = run ? resolveWorld(run.worldId) : prep ? resolveWorld(prep.worldId) : undefined
   const player = usePlayerStore()
   const stats = player.finalStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
@@ -316,7 +321,14 @@ export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode, ran
     return `【${sk.name}】${tag} · ${RATE_WORDS(sk.rate)} · 威力 ${sk.mult.toFixed(1)} 倍`
   })
   if (foeShape.mods?.dodgeRate) skillLines.push(`身法诡谲,闪避约 ${Math.round(foeShape.mods.dodgeRate * 100)}%`)
-  const rules = world && run ? expeditionRules(world, run, node) : currentDaoRules()
+  // 实战(在途 run)吃 expeditionRules;出发前(run=null,带 prep)按首战那份规则合成:
+  // 道途 × 世界 × 所择契约 × 所择之门 —— 「先算后战」算的就是那一场仗,不是另一场
+  const rules =
+    world && run
+      ? expeditionRules(world, run, node)
+      : prep && world
+        ? chainRules(currentDaoRules(), world.rules, pactRules(prep.pactId ? pactDef(prep.pactId) : undefined), gateRulesOf(prep.gateId), node?.rules)
+        : currentDaoRules()
   // 危险时点:限时 / 杀意渐涨 / 重击预警 / 生机稀薄
   const riskLines: string[] = []
   if (rules?.maxRounds !== undefined) riskLines.push(`天时仅 ${rules.maxRounds} 回合,拖延即败`)
