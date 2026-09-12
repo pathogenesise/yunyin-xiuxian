@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 135,
+  "round": 136,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T07:32:07+00:00",
+  "updated_at": "2026-09-12T07:56:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 92,
+      "touched_round": 135,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -7066,7 +7066,7 @@
       "version": 1,
       "created_at": "2026-09-12T07:09:32+00:00",
       "updated_at": "2026-09-12T07:09:32+00:00",
-      "touched_round": 132,
+      "touched_round": 135,
       "summary": "判据的样本也要和目标对齐:同一页面在空档与后期档是两副样子(长数字、满屏内容、在途状态),只用刚建号那份档去量,漏掉的恰恰是玩家看得最多的那一版 —— 巡页之前先问「该拿哪份档来巡」",
       "confidence": 0.85
     },
@@ -7163,6 +7163,66 @@
       "updated_at": "2026-09-12T07:32:03+00:00",
       "touched_round": 134,
       "summary": "「钉死随机源」只在场景动手之前有效:引擎是按拍推进的,从进入游戏到判据动手之间它已经掷过骰子,浮上来的东西得当场收掉 —— 收拾取景要三件一起做(收提示条、钉随机、关已开浮层),少一件就还会偶发假红",
+      "confidence": 0.85
+    },
+    "ISS-111": {
+      "id": "ISS-111",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T07:56:16+00:00",
+      "updated_at": "2026-09-12T07:56:38+00:00",
+      "touched_round": 135,
+      "summary": "远征战报弹窗的标题是光秃秃的「远征」,而不是这一界的名字:实参从左往右求值,chooseRouteNode 先把这一场打完,而「连败被逐」「功成出界」都会把 worldRun 清成 null,轮到读 runWorld.value?.name 时它已经空了。这条只在「在途远征真被驱动一次」时才会露出来 —— 此前远征只在单元用例里跑过",
+      "severity": 0.25,
+      "confidence": 0.95
+    },
+    "TASK-102": {
+      "id": "TASK-102",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T07:56:16+00:00",
+      "updated_at": "2026-09-12T07:56:16+00:00",
+      "touched_round": 135,
+      "summary": "把在途远征接进后期档复核(真点一次择路,要求出战报或状态前移,且弹窗标题必须是界名),并修掉标题取值的时机",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-160": {
+      "id": "CHG-160",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:56:16+00:00",
+      "updated_at": "2026-09-12T07:56:16+00:00",
+      "touched_round": 135,
+      "summary": "CelestialView 抽 titleOfRun() 并在 pickNode/fightBoss 里先取名字再动手;layout-check 第十件事增在途远征推进(夹具补 worldRun,入口按「道源 +N」找)",
+      "commit": "25c0cc2"
+    },
+    "EV-117": {
+      "id": "EV-117",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:56:16+00:00",
+      "updated_at": "2026-09-12T07:56:16+00:00",
+      "touched_round": 135,
+      "summary": "后期档真点择路读数:修前弹窗标题「远征」,修后「赤炎天」;秘境那一步同屏读出「不敌 太乙雷尊 · 气血余 0%」。故障注入:标题改回先打后读 → 「远征战报弹窗标题是「远征」,应为这一界的名字(赤炎天)」红;修回后 68 组全绿,全量 146 文件 1441 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-062": {
+      "id": "HYP-062",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:56:16+00:00",
+      "updated_at": "2026-09-12T07:56:16+00:00",
+      "touched_round": 135,
+      "summary": "「先动手、再读状态」是这类实时界面里最顺手也最容易写错的一行:实参求值顺序让「我改完状态再取名」看起来毫无问题,而收尾那一步恰恰会把状态清空。凡战报/结算的标题,都该在动作之前取",
       "confidence": 0.85
     }
   },
@@ -10395,6 +10455,42 @@
       "to": "HYP-058",
       "type": "validates",
       "created_at": "2026-09-12T07:32:07+00:00"
+    },
+    {
+      "from": "ISS-111",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-12T07:56:38+00:00"
+    },
+    {
+      "from": "TASK-102",
+      "to": "ISS-111",
+      "type": "addresses",
+      "created_at": "2026-09-12T07:56:38+00:00"
+    },
+    {
+      "from": "CHG-160",
+      "to": "TASK-102",
+      "type": "implements",
+      "created_at": "2026-09-12T07:56:38+00:00"
+    },
+    {
+      "from": "CHG-160",
+      "to": "ISS-111",
+      "type": "resolves",
+      "created_at": "2026-09-12T07:56:38+00:00"
+    },
+    {
+      "from": "EV-117",
+      "to": "HYP-062",
+      "type": "validates",
+      "created_at": "2026-09-12T07:56:38+00:00"
+    },
+    {
+      "from": "EV-117",
+      "to": "HYP-059",
+      "type": "validates",
+      "created_at": "2026-09-12T07:56:38+00:00"
     }
   ]
 }
