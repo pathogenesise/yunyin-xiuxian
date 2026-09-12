@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 144,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T10:41:30+00:00",
+  "updated_at": "2026-09-12T10:41:45+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -11272,12 +11272,6 @@
     {
       "from": "EV-125",
       "to": "HYP-070",
-      "type": "validates",
-      "created_at": "2026-09-12T10:41:30+00:00"
-    },
-    {
-      "from": "EV-125",
-      "to": "HYP-056",
       "type": "validates",
       "created_at": "2026-09-12T10:41:30+00:00"
     }
