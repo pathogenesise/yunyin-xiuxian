@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 144,
+  "round": 145,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T10:41:45+00:00",
+  "updated_at": "2026-09-12T10:53:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 142,
+      "touched_round": 144,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -7731,6 +7731,66 @@
       "touched_round": 143,
       "summary": "「说过一次」不等于「交代清楚」:启动提示只活两三秒,而玩家发现异常的时机往往晚得多(先看见数字不对,再回来找原因)。凡是要玩家采取行动的坏消息(存档坏了、写不进去),都得在**他会去找答案的地方**常驻一条,并写清「哪一件坏了、原物还在不在、该做什么」",
       "confidence": 0.85
+    },
+    "ISS-121": {
+      "id": "ISS-121",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T10:53:01+00:00",
+      "updated_at": "2026-09-12T10:53:05+00:00",
+      "touched_round": 144,
+      "summary": "天机预览没算携带气血,玩家越残它报得越乐观:previewFight 只取 expeditionRules,没压实战那一层 playerStartHpPct=min(世界上限,携带气血)。实测(无相天第 2 重,同种子)满血时预览与真打口径一致;带到六成血以下预览仍报「约有七成胜算」,而按实战规则只有一成(凶多吉少)。天机道是玩家选了才有的道途,它给的就是「胜算」两个字",
+      "severity": 0.45,
+      "confidence": 0.95
+    },
+    "TASK-112": {
+      "id": "TASK-112",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T10:53:01+00:00",
+      "updated_at": "2026-09-12T10:53:01+00:00",
+      "touched_round": 144,
+      "summary": "抽出 withCarriedHp 作为「压携带气血」的唯一出处,fightStep 与 previewFight 都走它;FightPreview 增 rate 字段、previewFight 随机源可注入;新增 fatePreview.spec(此前零覆盖)",
+      "category": "core-feature",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 4
+    },
+    "CHG-169": {
+      "id": "CHG-169",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:53:01+00:00",
+      "updated_at": "2026-09-12T10:53:01+00:00",
+      "touched_round": 144,
+      "summary": "expedition.ts 抽 withCarriedHp(rules, run) 并让实战与预览同用;FightPreview.rate;previewFight(foe, node, rand=rng);新增 src/core/fatePreview.spec.ts(4 例)并登记进分类报告",
+      "commit": "fbff5d2"
+    },
+    "EV-126": {
+      "id": "EV-126",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:53:01+00:00",
+      "updated_at": "2026-09-12T10:53:01+00:00",
+      "touched_round": 144,
+      "summary": "实测读数(同一种子):满血 五五之数(0.40) vs 带一成半气血 凶多吉少(0.08);修前带伤仍是 0.40。故障注入:去掉 withCarriedHp → 「带一成半气血的预览报「五五之数,凶险参半」,与满血一样乐观」红。全量 147 文件 1446 用例、tsc/eslint 全绿;排版自检 91 组全绿(天机行照常渲染)",
+      "confidence": 0.95,
+      "source": "src/core/fatePreview.spec.ts"
+    },
+    "HYP-071": {
+      "id": "HYP-071",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:53:01+00:00",
+      "updated_at": "2026-09-12T10:53:01+00:00",
+      "touched_round": 144,
+      "summary": "「所报即所打」不只是规则同源,还包括**状态**同源:这一场从多少血开打、带没带上一场的势,都是结果的一部分。凡是「预估 / 预览 / 报价」类界面,都要对着**结算那一份输入**逐项对(规则、状态、随机源三样),少对一项就会出现「越糟越乐观」这种反向失真",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -11274,6 +11334,36 @@
       "to": "HYP-070",
       "type": "validates",
       "created_at": "2026-09-12T10:41:30+00:00"
+    },
+    {
+      "from": "ISS-121",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-12T10:53:05+00:00"
+    },
+    {
+      "from": "TASK-112",
+      "to": "ISS-121",
+      "type": "addresses",
+      "created_at": "2026-09-12T10:53:05+00:00"
+    },
+    {
+      "from": "CHG-169",
+      "to": "TASK-112",
+      "type": "implements",
+      "created_at": "2026-09-12T10:53:05+00:00"
+    },
+    {
+      "from": "CHG-169",
+      "to": "ISS-121",
+      "type": "resolves",
+      "created_at": "2026-09-12T10:53:05+00:00"
+    },
+    {
+      "from": "EV-126",
+      "to": "HYP-071",
+      "type": "validates",
+      "created_at": "2026-09-12T10:53:05+00:00"
     }
   ]
 }
