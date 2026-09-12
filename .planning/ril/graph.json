@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 154,
+  "round": 155,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T14:55:44+00:00",
+  "updated_at": "2026-09-12T15:26:00+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 153,
+      "touched_round": 154,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 150,
+      "touched_round": 154,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -7668,7 +7668,7 @@
       "version": 1,
       "created_at": "2026-09-12T10:24:10+00:00",
       "updated_at": "2026-09-12T10:24:10+00:00",
-      "touched_round": 142,
+      "touched_round": 154,
       "summary": "说明里写死的数字也是「声明」:凡是文案与数据各写一份的地方(「每 4 回合」vs interval、「回复五成」vs 0.5),都要有一条能解析出来的对账判据 —— 否则改一处忘另一处永远不会报错,而玩家不会去猜哪个是对的",
       "confidence": 0.85
     },
@@ -8344,6 +8344,81 @@
       "touched_round": 153,
       "summary": "「两种代价」最容易只写一半:实现里两笔都扣,界面却只报一笔,而玩家只会按标签算账。凡是多资源消耗的动作,按钮上要么都写、要么都不写(让玩家点开看价),绝不能写一半",
       "confidence": 0.9
+    },
+    "ISS-131": {
+      "id": "ISS-131",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T15:25:53+00:00",
+      "updated_at": "2026-09-12T15:26:00+00:00",
+      "touched_round": 154,
+      "summary": "法宝说明里的百分数没人对账:33 件的主动说明写着「32% 生命护盾」「260% 攻击伤害」「其攻击降低 20%」「七成概率」,而真正的账在 effect 里(pctMaxHp/mult/pct)—— 手写的数字不会跟着数据走(实测当前全对,属防回归)",
+      "severity": 0.25,
+      "confidence": 0.95
+    },
+    "ISS-132": {
+      "id": "ISS-132",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T15:25:54+00:00",
+      "updated_at": "2026-09-12T15:26:00+00:00",
+      "touched_round": 154,
+      "summary": "冒烟指纹只看正文首尾,漏掉「中段变化」:人物页点一行属性、来源明细在正文中段展开,首 120/末 80 字都没动 → 被记成「点了没反应」(读数噪声)",
+      "severity": 0.15,
+      "confidence": 0.95
+    },
+    "TASK-122": {
+      "id": "TASK-122",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T15:25:54+00:00",
+      "updated_at": "2026-09-12T15:25:54+00:00",
+      "touched_round": 154,
+      "summary": "把法宝说明里的数值与 effect 逐件对账(26 件受检,净念「七成」单独换算),并做故障注入",
+      "category": "content-consistency",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "TASK-123": {
+      "id": "TASK-123",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T15:25:54+00:00",
+      "updated_at": "2026-09-12T15:25:54+00:00",
+      "touched_round": 154,
+      "summary": "冒烟指纹改成全文哈希,读数 5 → 2,并把剩下两处核清(禁用按钮的标签即原因 / 重复点已选项)",
+      "category": "maintainability",
+      "severity": 0.15,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "CHG-179": {
+      "id": "CHG-179",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T15:25:54+00:00",
+      "updated_at": "2026-09-12T15:25:54+00:00",
+      "touched_round": 154,
+      "summary": "artifactEffects.spec 增「说明里的数值 = 数据里的数值」;ui-smoke.fingerprint 加全文哈希",
+      "commit": "315e5fc"
+    },
+    "EV-136": {
+      "id": "EV-136",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T15:25:54+00:00",
+      "updated_at": "2026-09-12T15:25:54+00:00",
+      "touched_round": 154,
+      "summary": "① 数值对账:26 件受检全对;故障注入(镇岳印说明改 240%)→「说明写 240%,数据是 340%」红;② 冒烟读数 5 → 2(「功法残页不足」是被禁用按钮、标签即原因;「×1」是重复点已选项);③ 顺带全面清查花销按钮:只有刚修的「炼化」只报一半价,其余或只花一种资源、或两种都写全",
+      "confidence": 0.95,
+      "source": "src/core/artifactEffects.spec.ts"
     }
   },
   "edges": [
@@ -12193,6 +12268,60 @@
       "to": "HYP-080",
       "type": "validates",
       "created_at": "2026-09-12T14:55:44+00:00"
+    },
+    {
+      "from": "ISS-131",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "ISS-132",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "TASK-122",
+      "to": "ISS-131",
+      "type": "addresses",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "TASK-123",
+      "to": "ISS-132",
+      "type": "addresses",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "CHG-179",
+      "to": "TASK-122",
+      "type": "implements",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "CHG-179",
+      "to": "TASK-123",
+      "type": "implements",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "CHG-179",
+      "to": "ISS-131",
+      "type": "resolves",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "CHG-179",
+      "to": "ISS-132",
+      "type": "resolves",
+      "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "EV-136",
+      "to": "HYP-069",
+      "type": "validates",
+      "created_at": "2026-09-12T15:26:00+00:00"
     }
   ]
 }
