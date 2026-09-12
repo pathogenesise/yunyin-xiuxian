@@ -341,6 +341,9 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
       } else if (eff.type === 'heal') {
         healSelf(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
         push('heal', side, `【${art.name}】洒下灵光,${name}伤势恢复。`)
+      } else if (eff.type === 'stun') {
+        foe.stunned = true
+        push('proc', side, `【${art.name}】摄住${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的心神,那一手没能出。`)
       } else {
         foe.weaken = Math.min(0.5, eff.pct * levelMult)
         push('proc', side, `【${art.name}】发威,${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的攻势被削弱了。`)

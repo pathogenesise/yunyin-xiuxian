@@ -246,6 +246,13 @@ export type ArtifactEffect =
   | { type: 'shield'; pctMaxHp: number }
   | { type: 'heal'; pctMaxHp: number }
   | { type: 'weaken'; pct: number }
+  /**
+   * 震慑:打断敌人下一手(跳过它的这一次行动)。
+   *
+   * 与「削弱」不同 —— 削弱是接下来几回合的攻势打折扣,震慑是**这一手根本不出**。
+   * 在高界尤其要紧:敌手的一次大招被掐掉,往往比少吃几成伤害更值。
+   */
+  | { type: 'stun' }
 
 export interface ArtifactDef {
   id: string

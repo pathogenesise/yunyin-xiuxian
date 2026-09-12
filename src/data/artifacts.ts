@@ -301,9 +301,9 @@ export const ARTIFACTS: ArtifactDef[] = [
     '琴音出则万籁寂,敌势为之一挫',
     { attackPct: 0.06, luck: 0.04 },
     '摄心',
-    '每 4 回合琴音摄神,敌人伤害降低 15%',
+    '每 4 回合琴音摄神,打断敌人这一手',
     4,
-    { type: 'weaken', pct: 0.15 },
+    { type: 'stun' },
     'scroll'
   ),
   f(
@@ -393,9 +393,9 @@ export const ARTIFACTS: ArtifactDef[] = [
     '一印落下,神域皆静',
     { damageReduction: 0.05, maxHpPct: 0.07 },
     '镇神',
-    '每 3 回合镇压四方,敌人伤害降低 18%',
-    3,
-    { type: 'weaken', pct: 0.18 },
+    '每 4 回合镇压四方,定住敌人这一手',
+    4,
+    { type: 'stun' },
     'gem'
   ),
   f(
