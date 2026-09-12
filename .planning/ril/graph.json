@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 129,
+  "round": 130,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T05:26:30+00:00",
+  "updated_at": "2026-09-12T06:00:02+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 128,
+      "touched_round": 129,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -6813,6 +6813,66 @@
       "updated_at": "2026-09-12T05:26:17+00:00",
       "touched_round": 128,
       "summary": "修前:按钮计算值 pointer-events=none,Playwright 点击直接超时,计数 2→2;修好 auto 后又量出点了 460ms 仍在原地(光晕 2.4s 无限动画)。修后:点击即刻进离场、≤250ms 消失。故障注入:去掉 pointer-events-auto → 「2 条提示条点了没反应」红;去掉显式 :duration → 「点了…1 秒内没消失」红。排版自检连跑两次全绿、界面冒烟 15 页无异常",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "ISS-105": {
+      "id": "ISS-105",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T05:59:53+00:00",
+      "updated_at": "2026-09-12T06:00:02+00:00",
+      "touched_round": 129,
+      "summary": "弹窗内的控件从未被量过:「有可访问名」「可点元素不小于 28px」这两条判据只在页面层跑,而弹窗没打开就不在 DOM 里。查出来四处 —— 共享关闭键(无名、26px,每个弹窗都有)、轮回弹窗的纯文字按钮「立契」(18px)、关于弹窗的仓库链接(命中区只有字体 14px)、隐私政策正文链接与「同意《隐私政策》」行内按钮(17px)",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-096": {
+      "id": "TASK-096",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T05:59:53+00:00",
+      "updated_at": "2026-09-12T05:59:53+00:00",
+      "touched_round": 129,
+      "summary": "把控件尺子伸进弹窗(隐私弹窗 × 3 档宽度 + 关于弹窗),并修掉查出的四处触面/可访问名",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-155": {
+      "id": "CHG-155",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:59:53+00:00",
+      "updated_at": "2026-09-12T05:59:53+00:00",
+      "touched_round": 129,
+      "summary": "BaseModal 关闭键补 aria-label 与 p-1.5/-m-1.5(26→30px);立契/仓库链接/GitHub Issues/《隐私政策》四处行内控件改内联块加内边距;layout-check 抽出 auditModalControls,在隐私弹窗与关于弹窗各量一遍",
+      "commit": "cb5ac4f"
+    },
+    "HYP-056": {
+      "id": "HYP-056",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:59:53+00:00",
+      "updated_at": "2026-09-12T05:59:53+00:00",
+      "touched_round": 129,
+      "summary": "判据的作用域要和界面的层级对齐:只在页面层跑的检查覆盖不到浮层 —— 凡是「打开才存在」的界面(弹窗/抽屉/浮层),都得在打开状态下再量一遍,否则共享组件里的问题会同时躲开所有页面级检查",
+      "confidence": 0.85
+    },
+    "EV-111": {
+      "id": "EV-111",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:59:53+00:00",
+      "updated_at": "2026-09-12T05:59:53+00:00",
+      "touched_round": 129,
+      "summary": "修前读数:关闭键 26px 且无名(每个弹窗)、立契 18px、仓库链接 14px、隐私政策链接 17px。修后排版自检 53 组全绿(较上轮 +4:隐私弹窗 ×3 + 关于弹窗)。故障注入:还原关闭键 → 「面板里有 1 个无名控件」+「26px «无名»」红;还原仓库链接 → 「14px «github.com/set»」红。全量 144 文件 1433 用例、界面冒烟 15 页、tsc/eslint 全绿",
       "confidence": 0.95,
       "source": "scripts/layout-check.mjs"
     }
@@ -9848,6 +9908,36 @@
       "to": "HYP-055",
       "type": "validates",
       "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "ISS-105",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T06:00:02+00:00"
+    },
+    {
+      "from": "TASK-096",
+      "to": "ISS-105",
+      "type": "addresses",
+      "created_at": "2026-09-12T06:00:02+00:00"
+    },
+    {
+      "from": "CHG-155",
+      "to": "TASK-096",
+      "type": "implements",
+      "created_at": "2026-09-12T06:00:02+00:00"
+    },
+    {
+      "from": "CHG-155",
+      "to": "ISS-105",
+      "type": "resolves",
+      "created_at": "2026-09-12T06:00:02+00:00"
+    },
+    {
+      "from": "EV-111",
+      "to": "HYP-056",
+      "type": "validates",
+      "created_at": "2026-09-12T06:00:02+00:00"
     }
   ]
 }
