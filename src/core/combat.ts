@@ -245,8 +245,16 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     const tName = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
     const side = attacker.snap.isPlayer ? 'p' : 'e'
 
-    // 闪避判定
-    if (rng.chance(modOf(tMods, 'dodgeRate'))) {
+    /*
+     * 闪避判定 —— 命中先抵掉一部分闪避。
+     *
+     * 闪避型首领的幻境一度是**无解**的:蜃楼幻境 55%、冰魄化身 50%,
+     * 玩家没有命中这个属性,只能眼看一半的出手落空,而战后分析还会明说
+     * 「N 次出手落空,连击与暴击难以衔接」。故这里让攻击方的命中按百分点
+     * 相减(不为负)——堆命中的代价是一整条词条位,换的是「打得中」。
+     */
+    const dodge = Math.max(0, modOf(tMods, 'dodgeRate') - modOf(aMods, 'accuracy'))
+    if (rng.chance(dodge)) {
       target.stats.dodges += 1
       attacker.stats.missedHits += 1
       push('dodge', side, `${aName}施展${label},却被${tName}身形一晃避开。`)

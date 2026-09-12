@@ -32,6 +32,7 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   executeDamage: '处决伤害',
   regenPerRound: '回合回复',
   dodgeRate: '闪避',
+  accuracy: '命中',
   lowHpReduction: '濒危减伤',
   breakRefund: '突破返还',
   doubleDropRate: '双倍战利',

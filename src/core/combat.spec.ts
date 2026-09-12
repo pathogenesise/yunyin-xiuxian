@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- 命中对闪避是"落空次数少了几成"的读数,打印出来便于复核 */
 import { describe, expect, it } from 'vitest'
 import type { CombatantSnap } from '@/types'
 import { gn } from '@/utils/gnum'
@@ -136,5 +137,42 @@ describe('自动战斗', () => {
     const result = resolveCombat(p, makeEnemySnap(enemyDef('e_bwking')!, 3, 1.2), seeded(7))
     const text = result.log.map(l => l.text).join('')
     expect(text.includes('离火珠') || text.includes('玄天镜')).toBe(true)
+  })
+
+  /**
+   * 命中对闪避 —— 幻影类敌手此前是无解的。
+   *
+   * 蜃楼之主幻境 55%、冰魄化身 50%、大罗化身 48%:玩家没有命中这个属性时,
+   * 面对这些敌手只能眼看一半的出手落空,战后分析还会说「连击与暴击难以衔接」。
+   * 故这里量同一批种子的出手落空数:带命中必须明显更少,且不是靠别的数值赢。
+   */
+  it('命中按百分点抵掉闪避:同一批种子,带命中的一方落空更少', () => {
+    /** 一只「只会闪、打不动、也打不死」的幻影靶子 */
+    const phantom = (): CombatantSnap => {
+      const e = makeEnemySnap(enemyDef('e_shen')!, 15, 1)
+      e.mods = { dodgeRate: 0.55 }
+      e.attack = gn(1)
+      e.defense = gn(1e12)
+      e.maxHp = gn(1e12)
+      e.skills = []
+      return e
+    }
+    const misses = (accuracy: number): number => {
+      let out = 0
+      for (let seed = 1; seed <= 20; seed += 1) {
+        const p = playerSnap(1)
+        p.mods = accuracy > 0 ? { accuracy } : {}
+        p.attack = gn(1)
+        p.maxHp = gn(1e12)
+        p.defense = gn(1e12)
+        out += resolveCombat(p, phantom(), seeded(seed)).stats!.player.missedHits
+      }
+      return out
+    }
+    const bare = misses(0)
+    const keen = misses(0.4)
+    expect(bare, '幻影一次都没闪开,这条判据失去对象').toBeGreaterThan(0)
+    expect(keen, `20 场累计落空:无命中 ${bare} 次,带四成命中 ${keen} 次 —— 命中没有换来出手`).toBeLessThan(bare)
+    console.log(`\n幻影(闪避 55%)× 20 场:无命中落空 ${bare} 次,带四成命中落空 ${keen} 次`)
   })
 })

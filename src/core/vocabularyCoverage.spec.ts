@@ -18,6 +18,12 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { AFFIXES } from '@/data/affixes'
+import { ARTIFACTS } from '@/data/artifacts'
+import { BUFFS } from '@/data/buffs'
+import { GONGFA_BRANCHES } from '@/data/gongfaBranches'
+import { TALENTS } from '@/data/talents'
+import { TITLES } from '@/data/titles'
 
 const SRC = resolve(__dirname, '..')
 
@@ -100,5 +106,37 @@ describe('声明即承诺 · 计数与属性', () => {
       return !asLiteral && !asField
     })
     expect(unread, `这些属性键无人读取(接上它,或从类型里删掉)`).toEqual([])
+  })
+
+  /**
+   * 反过来的那一半:**读得到,也得拿得到**。
+   *
+   * 上一条只保证「给了它有用」,不保证「拿得到它」。命中(accuracy)就是这么补的:
+   * 闪避型首领的幻境此前无解 —— 玩家没有命中这个属性,面对五成闪避只能靠运气,
+   * 战后分析照样会说「N 次出手落空,连击与暴击难以衔接」。若只加一个类型、
+   * 不加任何来源,玩家既看不见也拿不到,等于没加。
+   *
+   * 来源池 = 所有会发 StatMods 的数据表(词条 / 功法分支 / 法宝被动 / 天赋 / 称号 / buff)。
+   * 故障注入:把 accuracy 的三处来源(ac1~ac3 词条、庚金剑典·破妄、周天星盘被动)删掉,这里立刻红。
+   */
+  it('每个属性键都拿得到 —— 否则它只是一句谁也碰不到的类型声明', () => {
+    const sources = new Map<string, Set<string>>()
+    const note = (key: string, where: string): void => {
+      const set = sources.get(key) ?? new Set<string>()
+      set.add(where)
+      sources.set(key, set)
+    }
+    for (const a of AFFIXES) note(a.key, '装备词条')
+    for (const b of GONGFA_BRANCHES) for (const k of Object.keys(b.mods)) note(k, '功法分支')
+    for (const a of ARTIFACTS) for (const k of Object.keys(a.passive)) note(k, '法宝被动')
+    for (const t of TALENTS) for (const k of Object.keys(t.mods)) note(k, '天赋')
+    for (const t of TITLES) for (const k of Object.keys(t.mods)) note(k, '称号')
+    for (const b of BUFFS) for (const k of Object.keys(b.mods)) note(k, '临时状态')
+
+    const orphan = statKeys.filter(k => !sources.has(k))
+    expect(
+      orphan,
+      `这些属性键没有任何来源 —— 玩家一辈子拿不到它:${orphan.join('、')}`
+    ).toEqual([])
   })
 })

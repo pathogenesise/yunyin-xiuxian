@@ -63,6 +63,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   // ---- 主修:庚金剑典(精品·金) ----
   b('m_gengjin', 'b_gengjin_feng', '锋锐', '剑走极锋,一击断金', { critRate: 0.04, critDamage: 0.16 }),
   b('m_gengjin', 'b_gengjin_po', '破军', '剑压千军,甲胄如纸', { armorPen: 0.12, attackPct: 0.06 }),
+  b('m_gengjin', 'b_gengjin_poWang', '破妄', '剑照虚妄,幻影无所遁形', { accuracy: 0.06, attackPct: 0.05 }),
   b('m_gengjin', 'b_gengjin_yi', '剑意', '剑气纵横,一发不止', { comboRate: 0.08, comboDamage: 0.3, attackPct: 0.05 }),
 
   // ---- 主修:厚土不动明王功(精品·土) ----

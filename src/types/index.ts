@@ -120,6 +120,15 @@ export type SpecialKey =
   | 'executeDamage'
   | 'regenPerRound'
   | 'dodgeRate'
+  /**
+   * 命中:抵掉目标的闪避(两个百分点直接相减,不会把闪避压成负数)。
+   *
+   * 补它的理由与「净念」同源:闪避型首领(蜃楼之主幻境 55%、冰魄化身 50%、
+   * 大罗化身 48%……)此前是**无解**的 —— 玩家没有命中这个属性,面对幻影
+   * 只能靠运气,而战后分析照样会说「N 次出手落空,连击与暴击难以衔接」。
+   * 报得出病因、给不出药,就是内容缺口。
+   */
+  | 'accuracy'
   | 'lowHpReduction'
   | 'breakRefund'
   | 'doubleDropRate'

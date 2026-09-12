@@ -1,4 +1,4 @@
-/** 随机词条池 —— 110 条,通过权重与品质门槛控制稀有度 */
+/** 随机词条池 —— 113 条,通过权重与品质门槛控制稀有度 */
 import type { AffixDef, AnyStatKey, EquipSlot, AffixRarity } from '@/types'
 
 const W = ['weapon'] as EquipSlot[]
@@ -121,6 +121,10 @@ export const AFFIXES: AffixDef[] = [
   a('dg1', '轻身', 'dodgeRate', 2, 5, '闪避概率提升 {v}%', 70, { slots: ['boots', ...A] }),
   a('dg2', '虚步', 'dodgeRate', 5, 9, '闪避概率提升 {v}%', 30, { slots: ['boots'], minRank: 4 }),
   a('dg3', '化影', 'dodgeRate', 9, 14, '闪避概率提升 {v}%', 10, { slots: ['boots'], minRank: 7 }),
+  // ---- 特殊:命中(破除幻影 —— 闪避型首领的对照面) ----
+  a('ac1', '洞彻', 'accuracy', 2, 5, '无视目标 {v}% 闪避', 70, { slots: WJ }),
+  a('ac2', '破妄', 'accuracy', 5, 9, '无视目标 {v}% 闪避', 30, { slots: WJ, minRank: 4 }),
+  a('ac3', '明察', 'accuracy', 9, 14, '无视目标 {v}% 闪避', 10, { slots: WJ, minRank: 7 }),
   // ---- 特殊:濒危减伤 ----
   a('low1', '背水', 'lowHpReduction', 10, 20, '生命低于三成时受伤降低 {v}%', 70, { slots: A, decimals: 0 }),
   a('low2', '涅槃', 'lowHpReduction', 20, 35, '生命低于三成时受伤降低 {v}%', 30, { slots: A, minRank: 4, decimals: 0 }),

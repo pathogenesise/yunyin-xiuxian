@@ -28,6 +28,7 @@ const KEY_REFS: Partial<Record<AnyStatKey, number>> = {
   critRate: 0.18,
   critDamage: 0.48,
   dodgeRate: 0.11,
+  accuracy: 0.11,
   armorPen: 0.18,
   damageBonus: 0.18,
   damageReduction: 0.15,

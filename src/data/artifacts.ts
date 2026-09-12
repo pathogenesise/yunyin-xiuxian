@@ -180,7 +180,9 @@ export const ARTIFACTS: ArtifactDef[] = [
     'profound',
     13,
     '推演周天,窥探命数',
-    { luck: 0.06, cultivationSpeed: 0.06 },
+    // 推演得见的,自然打得中 —— 这是本池里唯一带命中的法宝,专治幻影(见 SpecialKey accuracy)
+    // 推演得见的,自然打得中 —— 这是本池里唯一带命中的法宝,专治幻影(见 SpecialKey accuracy)
+    { luck: 0.06, cultivationSpeed: 0.06, accuracy: 0.06 },
     '星辉',
     '每 4 回合引星辉入体,回复 24% 生命',
     4,

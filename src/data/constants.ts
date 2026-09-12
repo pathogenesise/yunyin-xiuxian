@@ -151,6 +151,7 @@ export const DIMINISH_KEYS = [
   'critRate',
   'critDamage',
   'dodgeRate',
+  'accuracy',
   'armorPen'
 ] as const
 /** 战报播放基础间隔(毫秒),实际 = 基础 / 播放倍速 */
@@ -166,6 +167,8 @@ export const COMBAT_PLAYBACK_MIN_MS = 90
 export const SOFT_CAPS: Partial<Record<import('@/types').AnyStatKey, { cap: number; diminish: number }>> = {
   critRate: { cap: 0.75, diminish: 0.5 },
   dodgeRate: { cap: 0.55, diminish: 0.4 },
+  // 与闪避对称:命中越上限也按四折计入 —— 堆满只够抹平同级的幻影,不该白送
+  accuracy: { cap: 0.55, diminish: 0.4 },
   damageReduction: { cap: 0.55, diminish: 0.4 },
   shieldOnStart: { cap: 0.8, diminish: 0.5 }
 }

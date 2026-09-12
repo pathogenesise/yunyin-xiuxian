@@ -486,6 +486,7 @@
     'damageBonus',
     'damageReduction',
     'dodgeRate',
+    'accuracy',
     'shieldOnStart',
     'luck',
     'explorationSpeed',
