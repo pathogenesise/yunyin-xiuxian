@@ -30,6 +30,8 @@
  *      推倒重来的仪式,此前一步都没被真浏览器走过。
  *   十三 挂机玩法真的在挂着跑:顶栏灵气只给 1 点,真等两轮看它自己涨不涨 ——
  *      「应用启动后引擎有没有跑起来」只有真浏览器能答。
+ *   十四 存档往返:导出 → 投灵脉花掉灵石 → 导入回来,必须回到导出那一刻
+ *      (最后一道保险,此前没人按过这两个按钮)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -37,7 +39,7 @@
  */
 import { chromium } from 'playwright'
 import CryptoJS from 'crypto-js'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -161,6 +163,20 @@ async function clearOverlays(page) {
     await page.waitForTimeout(350)
   }
   return page.evaluate(() => [...document.querySelectorAll('.modal-panel')].map(p => (p.querySelector('h3')?.textContent || p.getAttribute('aria-label') || '?').trim()))
+}
+
+/** 把 formatGN 渲染出来的文本还原成数值(万/亿/兆…按 10^4 递进) */
+async function readFormatted(page, title) {
+  return page.evaluate(t => {
+    const el = document.querySelector(`[title="${t}"]`)
+    if (!el) return { text: `(找不到 ${t})`, value: null }
+    const text = (el.textContent || '').trim().replace(/,/g, '')
+    const UNITS = ['万', '亿', '兆', '京', '垓', '秭', '穰', '沟', '涧', '正', '载', '极']
+    const m = /([\d][\d]*(?:\.\d+)?)\s*(万|亿|兆|京|垓|秭|穰|沟|涧|正|载|极)?/.exec(text)
+    if (!m) return { text, value: null }
+    const unit = m[2] ? Math.pow(10, 4 * (UNITS.indexOf(m[2]) + 1)) : 1
+    return { text, value: parseFloat(m[1]) * unit }
+  }, title)
 }
 
 /**
@@ -1108,17 +1124,7 @@ for (const vp of VIEWPORTS) {
   await clearOverlays(page)
   checked += 1
   /** 读顶栏灵气:文本按 formatGN 的档位(万/亿/兆…)还原成数值 */
-  const readQi = () =>
-    page.evaluate(() => {
-      const el = document.querySelector('[title="灵气"]')
-      if (!el) return { text: '(找不到灵气)', value: null }
-      const text = (el.textContent || '').trim().replace(/,/g, '')
-      const UNITS = ['万', '亿', '兆', '京', '垓', '秭', '穰', '沟', '涧', '正', '载', '极']
-      const m = /([\d][\d]*(?:\.\d+)?)\s*(万|亿|兆|京|垓|秭|穰|沟|涧|正|载|极)?/.exec(text)
-      if (!m) return { text, value: null }
-      const unit = m[2] ? Math.pow(10, 4 * (UNITS.indexOf(m[2]) + 1)) : 1
-      return { text, value: parseFloat(m[1]) * unit }
-    })
+  const readQi = () => readFormatted(page, '灵气')
   const first = await readQi()
   await page.waitForTimeout(3200)
   const second = await readQi()
@@ -1134,6 +1140,127 @@ for (const vp of VIEWPORTS) {
     console.log(`\n挂机 6 秒:灵气 ${first.text} → ${second.text} → ${third.text}(页面上的数自己在涨)`)
   }
   if (pageErrors.length) failures.push(`[390] 挂机场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第十四件事:导出 → 改动 → 导入回来(存档备份这条路真的走得通吗) ----
+/*
+ * 「存档只在本地」是这个游戏反复向玩家交代的一条(设置页也这么写),故「导出备份、
+ * 事后导入救回来」是最后一道保险。单元用例测过 payload 的形状,却没人真按过这两个按钮:
+ * 下载走的是 Blob + a[download],导入走 FileReader + 校验 + 写盘 + 重载,
+ * 任何一环断了,玩家都要等到真丢档那天才知道。
+ *
+ * 判据用**不会自己变的数**(灵石;夹具里没有洞府产出):
+ *   导出时的灵石 S0 → 投一点灵脉把灵石花掉(S1 < S0)→ 导入 → 必须回到 S0。
+ *
+ * 坑记一笔:这种会触发重载的场景,夹具**必须只种一次**
+ * (addInitScript 每次导航都会跑,不加闸就会在重载时把刚导入的存档盖回夹具 —— 实测踩过)。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, acceptDownloads: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '存读自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  const savePath = '/tmp/layout-roundtrip.save'
+  /** 磁盘上那一份灵石(解密 resources 分片;GNum 是 m×10^e) */
+  const storedStone = async () => {
+    const cipher = await page.evaluate(() => localStorage.getItem('yunyin.resources') || '')
+    if (!cipher) return null
+    const plain = CryptoJS.AES.decrypt(cipher, SAVE_SECRET).toString(CryptoJS.enc.Utf8)
+    if (!plain) return null
+    const v = JSON.parse(plain).spiritStone
+    return typeof v === 'number' ? v : v.m * Math.pow(10, v.e)
+  }
+  await page.goto(INDEX + '#' + '/settings', { waitUntil: 'load' })
+  await page.waitForTimeout(2200)
+  await clearOverlays(page)
+  checked += 1
+  const s0 = await readFormatted(page, '灵石')
+  let downloaded = ''
+  try {
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 8000 }),
+      page.getByRole('button', { name: /导出存档/ }).first().click()
+    ])
+    downloaded = download.suggestedFilename()
+    await download.saveAs(savePath)
+  } catch (err) {
+    failures.push(`[390] 存读场景:点「导出存档」没有拿到下载(${String(err).split('\n')[0]?.slice(0, 60)})`)
+  }
+  if (downloaded && !/\.save$/.test(downloaded)) failures.push(`[390] 存读场景:导出的文件名不像存档(${downloaded})`)
+
+  // 动一下不会自己变的数:投一点灵脉,把灵石花掉
+  await page.goto(INDEX + '#' + '/', { waitUntil: 'load' })
+  await page.waitForTimeout(900)
+  await page.getByRole('button', { name: /灵脉投资/ }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(400)
+  const invest = page.locator('.modal-panel button.btn-ghost:not([disabled])').first()
+  let spent = null
+  if ((await invest.count()) === 0) failures.push('[390] 存读场景:灵脉弹窗里没有可投的脉(判据没跑到东西)')
+  else {
+    await invest.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(700)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(300)
+    spent = await readFormatted(page, '灵石')
+    if (!(spent.value < s0.value)) {
+      failures.push(`[390] 存读场景:投了灵脉灵石却没少(${s0.text} → ${spent.text}),后面的导入就证明不了什么`)
+    }
+    /*
+     * 关键一步:等节流把这次改动**真写进磁盘**再导入。
+     * 否则「导入后回到 S0」与「压根没写进去」在读数上分不出来 —— 注入验证时正是这么骗过判据的
+     * (跳掉导入落盘,状态照样显示 100万,因为那次投入还躺在待刷队列里)。
+     */
+    await page.waitForTimeout(5600)
+    const onDisk = await storedStone()
+    if (spent.value !== null && (onDisk === null || Math.abs(onDisk - spent.value) > spent.value * 0.01)) {
+      failures.push(`[390] 存读场景:投入之后磁盘上的灵石是 ${onDisk},页面上是 ${spent.text} —— 改动没落盘,这条判据没搭对`)
+    }
+  }
+
+  // 导入回来:应当回到导出那一刻(灵石回到 S0)
+  await page.goto(INDEX + '#' + '/settings', { waitUntil: 'load' })
+  await page.waitForTimeout(1000)
+  await page.evaluate(() => {
+    window.__beforeImport = 'alive'
+  })
+  await page.locator('input[type=file]').first().setInputFiles(savePath)
+  await page.waitForTimeout(700)
+  const toast = await page.evaluate(() => [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|'))
+  await page.waitForTimeout(2600)
+  const after = await readFormatted(page, '灵石')
+  const reloaded = await page.evaluate(() => window.__beforeImport === undefined)
+  if (!/导入成功/.test(toast)) failures.push(`[390] 存读场景:导入没有成功提示(${toast || '无提示'})`)
+  if (!reloaded) failures.push('[390] 存读场景:导入之后没有重新入定(页面没重载,内存里还是旧的一世)')
+  if (spent && after.value !== null && Math.abs(after.value - s0.value) > s0.value * 0.001) {
+    failures.push(`[390] 存读场景:导入后灵石 ${after.text},导出时是 ${s0.text}(存档没救回来)`)
+  }
+  const diskAfter = await storedStone()
+  if (spent && diskAfter !== null && Math.abs(diskAfter - s0.value) > s0.value * 0.001) {
+    failures.push(`[390] 存读场景:导入后磁盘上的灵石是 ${diskAfter},导出时是 ${s0.value}(写盘那份没换回来)`)
+  }
+  if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
+  rmSync(savePath, { force: true })
   await ctx.close()
 }
 
