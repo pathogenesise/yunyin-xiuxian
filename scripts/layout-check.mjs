@@ -32,6 +32,8 @@
  *      「应用启动后引擎有没有跑起来」只有真浏览器能答。
  *   十四 存档往返:导出 → 投灵脉花掉灵石 → 导入回来,必须回到导出那一刻
  *      (最后一道保险,此前没人按过这两个按钮)。
+ *   十五 后期档再走一遍 320 窄屏:「长数字 + 满屏内容 + 最窄屏」这个组合
+ *      此前没量过(主巡页的 320 用的是刚建号的空档)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -766,12 +768,13 @@ for (const vp of VIEWPORTS) {
       theme: 'dark'
     }
   }
-  await ctx.addInitScript(
-    data => {
-      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
-    },
-    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
-  )
+  // 夹具 payload 只做一次,后面 320 那一遍复用;播种加闸(见第十四件事的坑)
+  const latePayload = Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  await ctx.addInitScript(decisivePayload => {
+    if (localStorage.getItem('__layoutSeeded')) return
+    for (const [k, v] of Object.entries(decisivePayload)) localStorage.setItem(k, v)
+    localStorage.setItem('__layoutSeeded', '1')
+  }, latePayload)
   const page = await ctx.newPage()
   const pageErrors = []
   watchPageErrors(page, pageErrors)
@@ -903,6 +906,37 @@ for (const vp of VIEWPORTS) {
   }
   if (pageErrors.length) failures.push(`[390] 后期档页面异常(远征):${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
+
+  /*
+   * (五)同一份后期档在 320 窄屏再过一遍。
+   *
+   * 主巡页在 320 量的是刚建号的空档(数字短、内容少);「长数字 + 满屏内容 + 最窄屏」
+   * 这个组合此前没量过,而这正是最容易撑破的地方(实测当前全绿,故这一条是防回归)。
+   */
+  {
+    const narrow = await browser.newContext({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+    await narrow.addInitScript(decisivePayload => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(decisivePayload)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    }, latePayload)
+    const p = await narrow.newPage()
+    const errs = []
+    watchPageErrors(p, errs)
+    await p.goto(INDEX, { waitUntil: 'load' })
+    await p.waitForTimeout(2400)
+    await clearOverlays(p)
+    for (const route of ROUTES) {
+      await p.goto(INDEX + '#' + route, { waitUntil: 'load' })
+      await p.waitForTimeout(600)
+      const info = await measurePage(p)
+      checked += 1
+      const problems = problemsOf(info)
+      if (problems.length) failures.push(`[320-late] ${route} → ${problems.join(' / ')}`)
+    }
+    if (errs.length) failures.push(`[320] 后期档页面异常:${[...new Set(errs)].join(' | ')}`)
+    await narrow.close()
+  }
 }
 
 // ---- 第十一件事:渡劫突破真打一次(一局里最要紧的那一屏,此前没人画过) ----
