@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 115,
+  "round": 116,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T01:42:21+00:00",
+  "updated_at": "2026-09-12T01:57:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 109,
+      "touched_round": 115,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -5830,6 +5830,67 @@
       "touched_round": 114,
       "summary": "九册图鉴各补来源说明(CodexCat.source),「???」悬停也带上;新增 codexSource.spec:扫 collect() 调用点按模块→机制关键字核对说明,并反向校验;丹方录来源由两处修正为三处",
       "commit": "206757a"
+    },
+    "ISS-088": {
+      "id": "ISS-088",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:48:09+00:00",
+      "updated_at": "2026-09-12T01:57:05+00:00",
+      "touched_round": 115,
+      "summary": "离线的作用域没人守:settleOffline 是一段「趁玩家不在偷偷推进」的代码,最容易犯的错不是少算而是**多动** —— 秘境在境中、远征在途、器魂、称号这些是玩家亲手摆在那儿的局面,缺席几小时回来发现它们变了比少拿收益难受得多;而此前没有任何用例界定「哪些能动」",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-079": {
+      "id": "TASK-079",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:48:09+00:00",
+      "updated_at": "2026-09-12T01:57:05+00:00",
+      "touched_round": 115,
+      "summary": "给离线划一条作用域红线:玩家分片只许动 {exp, age, bond(且只攒机会点)},终局分片一个键都不许动;同时要求「该动的真动了」以防判据空转",
+      "category": "robustness",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-095": {
+      "id": "EV-095",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:48:09+00:00",
+      "updated_at": "2026-09-12T01:48:09+00:00",
+      "touched_round": 115,
+      "summary": "offlineScope.spec:60 小时离线带在途秘境/远征/道侣/器魂/历练,实测 player 只变 age/bond/exp、endgame 一键未变;道侣只增加机会点(1→2),缘分/信任/契合与初遇时刻一律不变 —— 即「离线只攒机会点,不替玩家推进关系」;两次注入(offline 里给 trust+5、给 daoSource+1)分别报「信任被离线推进了」「离线动了终局状态」;全量 141 文件 1414 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/offlineScope.spec.ts"
+    },
+    "HYP-043": {
+      "id": "HYP-043",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:48:09+00:00",
+      "updated_at": "2026-09-12T01:48:09+00:00",
+      "touched_round": 115,
+      "summary": "「离线/后台推进」这类代码的作用域是可以写成闭集的:与其列一张「哪些能动」的长清单(会随内容增长而漏),不如断言**没变的部分**——比较运行前后的键集合,多动一个键就报出名字。这条比逐项检查更强,也更容易维护",
+      "confidence": 0.85
+    },
+    "CHG-138": {
+      "id": "CHG-138",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:57:04+00:00",
+      "updated_at": "2026-09-12T01:57:04+00:00",
+      "touched_round": 115,
+      "summary": "新增 offlineScope.spec:离线前后逐键比对,玩家分片只许 {exp,age,bond}、终局分片一键不许动,并单独钉「道侣只攒机会点、关系三维不变」;登记进 Economy 分类",
+      "commit": "d3089d7"
     }
   },
   "edges": [
@@ -8359,6 +8420,36 @@
       "to": "HYP-042",
       "type": "validates",
       "created_at": "2026-09-12T01:42:21+00:00"
+    },
+    {
+      "from": "ISS-088",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T01:57:04+00:00"
+    },
+    {
+      "from": "TASK-079",
+      "to": "ISS-088",
+      "type": "addresses",
+      "created_at": "2026-09-12T01:57:04+00:00"
+    },
+    {
+      "from": "CHG-138",
+      "to": "TASK-079",
+      "type": "implements",
+      "created_at": "2026-09-12T01:57:04+00:00"
+    },
+    {
+      "from": "CHG-138",
+      "to": "ISS-088",
+      "type": "resolves",
+      "created_at": "2026-09-12T01:57:05+00:00"
+    },
+    {
+      "from": "EV-095",
+      "to": "HYP-043",
+      "type": "validates",
+      "created_at": "2026-09-12T01:57:05+00:00"
     }
   ]
 }
