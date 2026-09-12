@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 140,
+  "round": 141,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T09:16:40+00:00",
+  "updated_at": "2026-09-12T09:37:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 120,
+      "touched_round": 140,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -7465,6 +7465,66 @@
       "touched_round": 139,
       "summary": "最根本的那条承诺最容易被漏检:引擎在跑、数在涨,是放置玩法的前提,却因为「单元用例直接调引擎」而无人从界面这头看过。凡是「应用启动后应当持续发生」的事,都值得在真浏览器里量一次「它真的在发生」",
       "confidence": 0.85
+    },
+    "ISS-116": {
+      "id": "ISS-116",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T09:37:00+00:00",
+      "updated_at": "2026-09-12T09:37:05+00:00",
+      "touched_round": 140,
+      "summary": "存档的导出/导入没人真按过:单元用例测过 payload 形状,但「导出走 Blob + a[download]」「导入走 FileReader + 校验 + 写盘 + 重载」这条链在真浏览器里从没跑通过 —— 而它是玩家丢档时最后一道保险",
+      "severity": 0.4,
+      "confidence": 0.95
+    },
+    "TASK-107": {
+      "id": "TASK-107",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T09:37:00+00:00",
+      "updated_at": "2026-09-12T09:37:00+00:00",
+      "touched_round": 140,
+      "summary": "第十四件事:夹具(无洞府产出,灵石不会自己变)走一遍 导出 S0 → 投灵脉花掉 S1 → 导入 → 页面与磁盘都须回到 S0;并验重载发生、文件名与成功提示",
+      "category": "maintainability",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 4
+    },
+    "CHG-165": {
+      "id": "CHG-165",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:37:01+00:00",
+      "updated_at": "2026-09-12T09:37:01+00:00",
+      "touched_round": 140,
+      "summary": "layout-check 增第十四件事(存读往返,含解密磁盘分片核对);抽出 readFormatted(万/亿档位还原)供挂机与存读两处共用;夹具播种加「只种一次」闸",
+      "commit": "586279a"
+    },
+    "EV-122": {
+      "id": "EV-122",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:37:01+00:00",
+      "updated_at": "2026-09-12T09:37:01+00:00",
+      "touched_round": 140,
+      "summary": "实测读数:导出时 100万 → 投脉后 98.16万 → 导入后 100万(页面与磁盘一致);导入后确实重载、导出文件名 yunyin-xiuxian-*.save、导入提示「存档导入成功」。故障注入(跳过 applyImportPayload):第一次**没抓住** —— 投入还在 5 秒节流队列里,磁盘本来就是旧值;判据改成「先等落盘并核磁盘=页面,再导入」后,同一注入立刻红:「导入后灵石 98.16万,导出时是 100万(存档没救回来)」+「写盘那份没换回来」。修回后 74 组全绿,全量 146 文件 1441 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-067": {
+      "id": "HYP-067",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:37:01+00:00",
+      "updated_at": "2026-09-12T09:37:01+00:00",
+      "touched_round": 140,
+      "summary": "验证「恢复」之前,先证明「改过了、而且改到盘上了」:否则「导入成功」与「那一下根本没写进去」在读数上完全一样(节流写盘让两者都显示旧值)。凡是对照类判据,都要先固定住被对照的那一项,再谈恢复",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -10864,6 +10924,36 @@
       "to": "HYP-066",
       "type": "validates",
       "created_at": "2026-09-12T09:16:40+00:00"
+    },
+    {
+      "from": "ISS-116",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T09:37:04+00:00"
+    },
+    {
+      "from": "TASK-107",
+      "to": "ISS-116",
+      "type": "addresses",
+      "created_at": "2026-09-12T09:37:04+00:00"
+    },
+    {
+      "from": "CHG-165",
+      "to": "TASK-107",
+      "type": "implements",
+      "created_at": "2026-09-12T09:37:04+00:00"
+    },
+    {
+      "from": "CHG-165",
+      "to": "ISS-116",
+      "type": "resolves",
+      "created_at": "2026-09-12T09:37:04+00:00"
+    },
+    {
+      "from": "EV-122",
+      "to": "HYP-067",
+      "type": "validates",
+      "created_at": "2026-09-12T09:37:05+00:00"
     }
   ]
 }
