@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 111,
+  "round": 112,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T01:09:34+00:00",
+  "updated_at": "2026-09-12T01:24:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 110,
+      "touched_round": 111,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -3047,11 +3047,11 @@
       "id": "ISS-049",
       "type": "issue",
       "status": "active",
-      "version": 2,
+      "version": 3,
       "created_at": "2026-09-11T16:41:32+00:00",
-      "updated_at": "2026-09-11T21:48:37+00:00",
-      "touched_round": 96,
-      "summary": "全量并行跑测试时,savePersistence 偶发一红(两度出现:round 60 那次是「读己所写」,round 96 这轮全量又出现一次,当次输出未留存,随后连续 6 次全量 1336 例全绿,单跑亦绿);疑与并行负载下的模块级状态/真假定时器交界有关,不可当已修",
+      "updated_at": "2026-09-12T01:24:24+00:00",
+      "touched_round": 111,
+      "summary": "全量并行跑测试时,savePersistence 偶发一红(round 60「读己所写」一次;round 96 一次未留存原文)。round 111 用「并发全量 + 循环压 save 系用例」复现出一例,但落在我新写的 importCorruption 上,根因是 decryptSave 把明文当密文(已由 CHG-135 修复);老那条 probe.writes===0 仍未复现,继续挂着",
       "severity": 0.2,
       "confidence": 0.3
     },
@@ -5624,6 +5624,67 @@
       "touched_round": 110,
       "summary": "12 个文件的可点元素补纵向内边距(设置图标/修行胶囊/属性来源行/返回链接/背包收纳分解/五维行/设置胶囊/称号佩戴/教学内联链接),视觉密度不变;layout-check 增「≥28px」判据",
       "commit": "08e8106"
+    },
+    "ISS-085": {
+      "id": "ISS-085",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:15:32+00:00",
+      "updated_at": "2026-09-12T01:24:24+00:00",
+      "touched_round": 111,
+      "summary": "明文存档会被误当密文解出乱码:decryptSave 把任何字符串都交给 CryptoJS,而它的 Base64 解析会跳过非法字符 —— 明文 JSON 也可能解出一段非空乱码(不抛、sigBytes 不为 0),于是 readSaveText 返回乱码、导入报「文件内容无法解析」。实测 500 条明文里约 2~3 条中招(≈0.4~0.6%),与内容有关、与环境无关,故极难复现;玩家侧表现是「导入旧版明文存档偶尔失败」",
+      "severity": 0.45,
+      "confidence": 0.95,
+      "effort": 2
+    },
+    "TASK-076": {
+      "id": "TASK-076",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:15:32+00:00",
+      "updated_at": "2026-09-12T01:24:24+00:00",
+      "touched_round": 111,
+      "summary": "decryptSave 先认密文头(U2FsdGVkX1 = Salted__),不是密文一律按明文走;补一批明文的红线(2000 条时间戳变化 + 明文不进解密 + 真密文仍解得开)",
+      "category": "robustness",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "EV-091": {
+      "id": "EV-091",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:15:37+00:00",
+      "updated_at": "2026-09-12T01:15:37+00:00",
+      "touched_round": 111,
+      "summary": "复现路径:并发跑全量套件 + 循环压 save 系用例,3 轮里第 2 轮全量复现 1 例失败(importCorruption「player 是 null」报「文件内容无法解析」);定位后单测 500 条明文 3 条被误读;修复后 2000 条明文全原样、2000 轮并发压测 0 失败;注入(去掉密文头检查)时批次用例稳定转红(一次 2000 条里 7 条中招)",
+      "confidence": 0.95,
+      "source": "src/utils/savePlaintext.spec.ts"
+    },
+    "HYP-039": {
+      "id": "HYP-039",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:15:37+00:00",
+      "updated_at": "2026-09-12T01:15:37+00:00",
+      "touched_round": 111,
+      "summary": "「偶发、与环境无关、只和输入内容有关」的缺陷,大多是「把不合格式的输入交给了宽容的解析器」:CryptoJS 的 Base64 解析会跳过非法字符,于是明文也能解出乱码而不报错。判据要钉在**入口格式**上(先认密文头),而不是靠在出口加 try/catch 兜 —— 兜住异常挡不住「解出乱码但不抛」这一类",
+      "confidence": 0.9
+    },
+    "CHG-135": {
+      "id": "CHG-135",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:24:24+00:00",
+      "updated_at": "2026-09-12T01:24:24+00:00",
+      "touched_round": 111,
+      "summary": "decryptSave 入口认密文头(U2FsdGVkX1 = Salted__),非密文一律按明文走;新增 savePlaintext.spec(3 例)并登记进 Unit 分类",
+      "commit": "92341df"
     }
   },
   "edges": [
@@ -8057,6 +8118,36 @@
       "to": "HYP-038",
       "type": "validates",
       "created_at": "2026-09-12T01:09:34+00:00"
+    },
+    {
+      "from": "ISS-085",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T01:24:24+00:00"
+    },
+    {
+      "from": "TASK-076",
+      "to": "ISS-085",
+      "type": "addresses",
+      "created_at": "2026-09-12T01:24:24+00:00"
+    },
+    {
+      "from": "CHG-135",
+      "to": "TASK-076",
+      "type": "implements",
+      "created_at": "2026-09-12T01:24:24+00:00"
+    },
+    {
+      "from": "CHG-135",
+      "to": "ISS-085",
+      "type": "resolves",
+      "created_at": "2026-09-12T01:24:24+00:00"
+    },
+    {
+      "from": "EV-091",
+      "to": "HYP-039",
+      "type": "validates",
+      "created_at": "2026-09-12T01:24:24+00:00"
     }
   ]
 }
