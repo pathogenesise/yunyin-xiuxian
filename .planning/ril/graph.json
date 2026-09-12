@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 114,
+  "round": 115,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T01:31:54+00:00",
+  "updated_at": "2026-09-12T01:42:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1535,7 +1535,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 102,
+      "touched_round": 114,
       "summary": "藏经阁钻研/认知系统(loreService.ts + lore store)"
     },
     "COMP-010": {
@@ -5769,6 +5769,67 @@
       "touched_round": 113,
       "summary": "新增 saveMigration.spec(7 例):v1→v2 法宝位迁移的值/清字段/幂等/垃圾值,启动路径(旧明文档升级落密文、垃圾分片不动),导入路径(v1 存档导得进来),以及明文老档的可读性;登记进 Regression 分类",
       "commit": "5336d1a"
+    },
+    "ISS-087": {
+      "id": "ISS-087",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:37:25+00:00",
+      "updated_at": "2026-09-12T01:42:21+00:00",
+      "touched_round": 114,
+      "summary": "图鉴的「未收录」是死胡同:未获得的条目一律只显示一个「???」(title=尚未收录),页面上没有任何地方说明这一册的东西从哪来 —— 玩家看得出还差多少,却不知道去哪儿找;而这类小字最容易在玩法改动后变成谎话",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-078": {
+      "id": "TASK-078",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:37:25+00:00",
+      "updated_at": "2026-09-12T01:42:21+00:00",
+      "touched_round": 114,
+      "summary": "每册图鉴补一句来源说明(九册),未收录的「???」悬停/长按也给出处;并用一条红线把说明钉在真实的 collect 调用点上",
+      "category": "core-feature",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-094": {
+      "id": "EV-094",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:37:30+00:00",
+      "updated_at": "2026-09-12T01:37:30+00:00",
+      "touched_round": 114,
+      "summary": "图鉴九册各有来源说明,「???」的 title 也带上它;新增 codexSource.spec:扫 src/** 里的 collect('cat') 调用点,按模块→机制关键字(loot→掉落/gongfaService→参悟/pillService→炼/eventEngine→际遇/reincarnation→转世)核对说明文字,并反向校验「说能炼就得真有炼丹收录点」;头一天就抓出一处真错(丹方录实际有三处来源,说明只写了两处);注入(把装备册说明改成「宗门赐下」)即转红;无头实证 9 条来源行与 ??? 提示都渲染;全量 140 文件 1413 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/codexSource.spec.ts"
+    },
+    "HYP-042": {
+      "id": "HYP-042",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:37:30+00:00",
+      "updated_at": "2026-09-12T01:37:30+00:00",
+      "touched_round": 114,
+      "summary": "给「未收录」指路的小字必须与真实收录点同源,否则它比不写更坏(玩家照着找,找不到)。判据:扫 collect() 调用点 → 模块映射到机制关键字 → 要求说明文字里出现该关键字;这条同时给出反向保护 —— 说明里提到「能炼」就得真有炼丹收录点",
+      "confidence": 0.85
+    },
+    "CHG-137": {
+      "id": "CHG-137",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:42:21+00:00",
+      "updated_at": "2026-09-12T01:42:21+00:00",
+      "touched_round": 114,
+      "summary": "九册图鉴各补来源说明(CodexCat.source),「???」悬停也带上;新增 codexSource.spec:扫 collect() 调用点按模块→机制关键字核对说明,并反向校验;丹方录来源由两处修正为三处",
+      "commit": "206757a"
     }
   },
   "edges": [
@@ -8268,6 +8329,36 @@
       "to": "HYP-041",
       "type": "validates",
       "created_at": "2026-09-12T01:31:54+00:00"
+    },
+    {
+      "from": "ISS-087",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-12T01:42:21+00:00"
+    },
+    {
+      "from": "TASK-078",
+      "to": "ISS-087",
+      "type": "addresses",
+      "created_at": "2026-09-12T01:42:21+00:00"
+    },
+    {
+      "from": "CHG-137",
+      "to": "TASK-078",
+      "type": "implements",
+      "created_at": "2026-09-12T01:42:21+00:00"
+    },
+    {
+      "from": "CHG-137",
+      "to": "ISS-087",
+      "type": "resolves",
+      "created_at": "2026-09-12T01:42:21+00:00"
+    },
+    {
+      "from": "EV-094",
+      "to": "HYP-042",
+      "type": "validates",
+      "created_at": "2026-09-12T01:42:21+00:00"
     }
   ]
 }
