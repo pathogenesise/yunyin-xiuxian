@@ -8,8 +8,14 @@
         @click.self="onBackdrop"
       >
         <div
-          class="modal-panel paper-grain relative w-full max-h-[82vh] flex flex-col overflow-hidden rounded-xl border border-ink/20 bg-paper shadow-2xl"
+          ref="panelRef"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="props.title || undefined"
+          tabindex="-1"
+          class="modal-panel paper-grain relative w-full max-h-[82vh] flex flex-col overflow-hidden rounded-xl border border-ink/20 bg-paper shadow-2xl outline-none"
           :class="props.wide ? 'max-w-100' : 'max-w-90'"
+          @keydown="onPanelKeydown"
         >
           <!-- 卷轴上缘 -->
           <header v-if="props.title || props.closable" class="relative z-10 flex items-center justify-between px-5 pt-4 pb-1 shrink-0">
@@ -31,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-  import { onUnmounted, watch } from 'vue'
+  import { nextTick, onUnmounted, ref, watch } from 'vue'
   import GameIcon from './GameIcon.vue'
 
   const props = withDefaults(
@@ -47,6 +53,49 @@
   )
 
   const emit = defineEmits<{ close: [] }>()
+
+  /**
+   * 焦点管理 —— 弹窗打开时,键盘焦点必须跟着进去,且不许跑出去。
+   *
+   * 此前弹窗只管 Esc:打开后焦点仍留在背后的按钮上,按 Tab 会一路跑到页面与底部导航
+   * (实测连按六次,六次全在弹窗外),读屏用户甚至不知道有个弹窗开了。故:
+   *   · 打开时记住是谁打开的,把焦点移进面板(role=dialog + aria-modal);
+   *   · Tab/Shift+Tab 在面板内循环,首尾相接;
+   *   · 关闭后把焦点还给打开它的那个元素。
+   */
+  const panelRef = ref<HTMLElement | null>(null)
+  let lastFocused: HTMLElement | null = null
+
+  function focusablesIn(root: HTMLElement): HTMLElement[] {
+    return [...root.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
+      el => !el.hasAttribute('disabled') && el.offsetParent !== null
+    )
+  }
+
+  function onPanelKeydown(e: KeyboardEvent): void {
+    if (e.key !== 'Tab') return
+    const panel = panelRef.value
+    if (!panel) return
+    const items = focusablesIn(panel)
+    if (items.length === 0) {
+      e.preventDefault()
+      panel.focus()
+      return
+    }
+    const first = items[0]!
+    const last = items[items.length - 1]!
+    const active = document.activeElement as HTMLElement | null
+    const outside = !active || !panel.contains(active)
+    if (e.shiftKey) {
+      if (outside || active === first) {
+        e.preventDefault()
+        last.focus()
+      }
+    } else if (outside || active === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 
   function onBackdrop(): void {
     if (props.closable) emit('close')
@@ -71,10 +120,19 @@
   watch(
     () => props.open,
     open => {
-      if (open) activeModals.push(entry)
-      else {
+      if (open) {
+        activeModals.push(entry)
+        // 记住是谁打开的,关闭后把焦点还回去(键盘用户不会"掉到页面顶端")
+        lastFocused = document.activeElement as HTMLElement | null
+        void nextTick(() => panelRef.value?.focus())
+      } else {
         const i = activeModals.indexOf(entry)
         if (i >= 0) activeModals.splice(i, 1)
+        const back = lastFocused
+        lastFocused = null
+        void nextTick(() => {
+          if (back && back.isConnected) back.focus()
+        })
       }
     },
     { immediate: true }

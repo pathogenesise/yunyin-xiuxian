@@ -7,7 +7,7 @@
  *   npm i --no-save playwright        # 或全局装;浏览器缓存在 ~/.cache/ms-playwright
  *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
  *
- * 它做四件事:
+ * 它做五件事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
  *   二 在 375×812 与 320×568 两个宽度下,逐页量 scrollWidth 与越界元素;
  *   三 把「底部导航五项」「无 pageerror」「控件都有可访问名」「可点元素不小于 28px」也一并核对;
@@ -204,6 +204,65 @@ for (const vp of VIEWPORTS) {
   checked += 1
   if (!warned) failures.push('[375] /settings → 存档写失败时设置页没有提示(静默丢档)')
   if (pageErrors.length) failures.push(`[375] 存档失败场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await page.close()
+}
+
+// ---- 第五件事:弹窗的键盘与焦点 ----
+{
+  const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
+  const pageErrors = []
+  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  await page.locator('input[type=checkbox]').first().check()
+  await page.getByRole('button', { name: /同意并开始/ }).first().click()
+  await page.waitForTimeout(3200)
+  await page.locator('input:not([type=file]):not([type=checkbox])').first().fill('焦点自检')
+  await page.getByRole('button', { name: /踏\s*入\s*仙\s*途/ }).first().click()
+  await page.waitForTimeout(1200)
+  await page.evaluate(() => {
+    location.hash = '#/settings'
+  })
+  await page.waitForTimeout(700)
+
+  const trigger = page.getByRole('button', { name: /关于/ }).first()
+  await trigger.click()
+  await page.waitForTimeout(350)
+  const opened = await page.evaluate(() => {
+    const panel = document.querySelector('.modal-panel')
+    const active = document.activeElement
+    return {
+      role: panel?.getAttribute('role'),
+      modal: panel?.getAttribute('aria-modal'),
+      inside: !!(panel && active && panel.contains(active))
+    }
+  })
+  checked += 1
+  if (opened.role !== 'dialog' || opened.modal !== 'true') failures.push('[375] 弹窗没有 dialog 语义(role/aria-modal)')
+  if (!opened.inside) failures.push('[375] 弹窗打开后焦点没进去 —— 键盘用户不知道弹窗开了')
+
+  // 连按六次 Tab:焦点必须一直在弹窗里(此前会一路跑到页面与底部导航)
+  let escaped = false
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Tab')
+    const inside = await page.evaluate(() => {
+      const panel = document.querySelector('.modal-panel')
+      const active = document.activeElement
+      return !!(panel && active && panel.contains(active))
+    })
+    if (!inside) escaped = true
+  }
+  if (escaped) failures.push('[375] 弹窗里按 Tab 会跑到背后的页面(焦点没有被困住)')
+
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(300)
+  const afterEsc = await page.evaluate(() => ({
+    stillOpen: !!document.querySelector('.modal-panel'),
+    backOnTrigger: (document.activeElement?.textContent || '').includes('关于')
+  }))
+  if (afterEsc.stillOpen) failures.push('[375] Esc 没能关掉弹窗')
+  if (!afterEsc.backOnTrigger) failures.push('[375] 关掉弹窗后焦点没还给打开它的那个按钮')
+  if (pageErrors.length) failures.push(`[375] 弹窗焦点场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await page.close()
 }
 
