@@ -10,7 +10,7 @@
  * 它做四件事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
  *   二 在 375×812 与 320×568 两个宽度下,逐页量 scrollWidth 与越界元素;
- *   三 把「底部导航五项」「无 pageerror」也一并核对;
+ *   三 把「底部导航五项」「无 pageerror」「控件都有可访问名」也一并核对;
  *   四 把浏览器存储卡死(令 setItem 抛错),看设置页会不会把「写不进去」说出来 ——
  *      静默丢档是玩家看不见的事故,只能靠这一条端到端核。
  *
@@ -71,13 +71,27 @@ for (const vp of VIEWPORTS) {
         hash: location.hash,
         horizontalOverflow: document.documentElement.scrollWidth > vw + 1,
         overflows,
-        navItems: document.querySelectorAll('nav button, nav a').length
+        navItems: document.querySelectorAll('nav button, nav a').length,
+        /**
+         * 只有图标的控件必须自带可访问名(aria-label / 可见文字)。
+         * 没有名字,读屏只会念「按钮」「链接」,自动化也无从按名字点它。
+         */
+        unnamed: [...document.querySelectorAll('button, a, [role=button]')]
+          .filter(el => {
+            const name = (el.getAttribute('aria-label') || el.textContent || '').trim()
+            if (name) return false
+            const r = el.getBoundingClientRect()
+            return r.width > 0 && r.height > 0
+          })
+          .slice(0, 3)
+          .map(el => el.outerHTML.slice(0, 80).replace(/\s+/g, ' '))
       }
     })
     checked += 1
     const problems = []
     if (info.horizontalOverflow) problems.push(`横向溢出(scrollWidth ${info.hash})`)
     if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
+    if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
     if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
     if (problems.length) failures.push(`[${vp.tag}] ${route} → ${problems.join(' / ')}`)
     if (SHOTS) {
