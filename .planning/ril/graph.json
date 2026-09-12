@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 152,
+  "round": 153,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T13:35:32+00:00",
+  "updated_at": "2026-09-12T14:23:03+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -736,7 +736,7 @@
       "version": 1,
       "created_at": "2026-09-10T04:53:34+00:00",
       "updated_at": "2026-09-10T04:53:34+00:00",
-      "touched_round": 92,
+      "touched_round": 152,
       "summary": "洞府建筑系统(data/buildings + stores/dongfu + buildingService:等级闸门、离线收益上限、品类上限)"
     },
     "TASK-010": {
@@ -8224,6 +8224,66 @@
       "touched_round": 151,
       "summary": "「设置里的开关」都要有一条两向判据:只验「打开后变了」可能碰上本来就那样(界面本来就不动),只验「关掉后不变」则永远绿。两向都立得住,才说明这个开关真的接上了线",
       "confidence": 0.85
+    },
+    "ISS-129": {
+      "id": "ISS-129",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T14:22:58+00:00",
+      "updated_at": "2026-09-12T14:23:03+00:00",
+      "touched_round": 152,
+      "summary": "洞府营造的账目没人对过:卡上写「建造 · 60石 6铁」,实际扣费由 buildingUpgradeInfo 决定。灵石那一半被任务/成就奖励搅动(实测开局发三十多万),故得另找一个干净量纲 —— 玄铁除了营造没人动",
+      "severity": 0.25,
+      "confidence": 0.95
+    },
+    "TASK-120": {
+      "id": "TASK-120",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T14:22:58+00:00",
+      "updated_at": "2026-09-12T14:22:58+00:00",
+      "touched_round": 152,
+      "summary": "第二十三件事:卡上写多少料就扣多少料;量法必须精确到个位(界面「万」位只有三位小数,1 位漂移会被四舍五入吃掉)",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-177": {
+      "id": "CHG-177",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T14:22:58+00:00",
+      "updated_at": "2026-09-12T14:22:58+00:00",
+      "touched_round": 152,
+      "summary": "layout-check 增第二十三件事(洞府营造账目);读数改为等节流落盘后解密 resources 分片取精确玄铁值",
+      "commit": "a2542a4"
+    },
+    "EV-134": {
+      "id": "EV-134",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T14:22:58+00:00",
+      "updated_at": "2026-09-12T14:22:58+00:00",
+      "touched_round": 152,
+      "summary": "实测读数:建造 · 200石 20铁 → 玄铁 90000 → 89980(分毫不差)。故障注入(多扣 1 玄铁):第一版读界面值(万位三位小数)→ 四舍五入吃掉,判据假绿;改成解密分片后同一注入立刻红:「卡片写「建造 · 200石 20铁」,玄铁实际 90000 → 89979(所见非所付)」。排版自检 98 组全绿,全量 147 文件 1446 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-079": {
+      "id": "HYP-079",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T14:22:58+00:00",
+      "updated_at": "2026-09-12T14:22:58+00:00",
+      "touched_round": 152,
+      "summary": "对账要么取精确值,要么把判据的量纲选在界面精度之上:界面把 89979 显示成「8.998万」,1 位漂移就此隐形 —— 那时绿的不是账目对,而是看不出来。凡「所见即所付」的判据,先问一句「这份读数的最小刻度是多少」",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -12013,6 +12073,36 @@
       "to": "HYP-078",
       "type": "validates",
       "created_at": "2026-09-12T13:35:32+00:00"
+    },
+    {
+      "from": "ISS-129",
+      "to": "COMP-007",
+      "type": "located_in",
+      "created_at": "2026-09-12T14:23:03+00:00"
+    },
+    {
+      "from": "TASK-120",
+      "to": "ISS-129",
+      "type": "addresses",
+      "created_at": "2026-09-12T14:23:03+00:00"
+    },
+    {
+      "from": "CHG-177",
+      "to": "TASK-120",
+      "type": "implements",
+      "created_at": "2026-09-12T14:23:03+00:00"
+    },
+    {
+      "from": "CHG-177",
+      "to": "ISS-129",
+      "type": "resolves",
+      "created_at": "2026-09-12T14:23:03+00:00"
+    },
+    {
+      "from": "EV-134",
+      "to": "HYP-079",
+      "type": "validates",
+      "created_at": "2026-09-12T14:23:03+00:00"
     }
   ]
 }
