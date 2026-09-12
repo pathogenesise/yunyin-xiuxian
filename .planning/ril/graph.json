@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 143,
+  "round": 144,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T10:24:15+00:00",
+  "updated_at": "2026-09-12T10:41:30+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 140,
+      "touched_round": 143,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -6860,7 +6860,7 @@
       "version": 1,
       "created_at": "2026-09-12T05:59:53+00:00",
       "updated_at": "2026-09-12T05:59:53+00:00",
-      "touched_round": 129,
+      "touched_round": 143,
       "summary": "判据的作用域要和界面的层级对齐:只在页面层跑的检查覆盖不到浮层 —— 凡是「打开才存在」的界面(弹窗/抽屉/浮层),都得在打开状态下再量一遍,否则共享组件里的问题会同时躲开所有页面级检查",
       "confidence": 0.85
     },
@@ -7670,6 +7670,66 @@
       "updated_at": "2026-09-12T10:24:10+00:00",
       "touched_round": 142,
       "summary": "说明里写死的数字也是「声明」:凡是文案与数据各写一份的地方(「每 4 回合」vs interval、「回复五成」vs 0.5),都要有一条能解析出来的对账判据 —— 否则改一处忘另一处永远不会报错,而玩家不会去猜哪个是对的",
+      "confidence": 0.85
+    },
+    "ISS-120": {
+      "id": "ISS-120",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T10:41:26+00:00",
+      "updated_at": "2026-09-12T10:41:30+00:00",
+      "touched_round": 143,
+      "summary": "坏档只弹一次两秒的提示,玩家回头找不到原因:preflightScan 会把读不出来的分片挪到 corrupt.<key> 备份键、其余照常开局,并弹一条「已隔离修复」——但那条提示只活 2.4 秒,而玩家多半是先发现「灵石怎么归零了」再回来找原因;设置页当时什么也没说,更没交代原档还在不在",
+      "severity": 0.35,
+      "confidence": 0.95
+    },
+    "TASK-111": {
+      "id": "TASK-111",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T10:41:26+00:00",
+      "updated_at": "2026-09-12T10:41:26+00:00",
+      "touched_round": 143,
+      "summary": "设置页「存档」段常驻一条坏档交代:坏了几个、哪几片(中文名)、原档留在哪个备份键、该做什么(有备份就导入);并补一条浏览器判据(坏档开局:进得去 / 说得出话 / 常驻交代齐全)",
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-168": {
+      "id": "CHG-168",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:41:26+00:00",
+      "updated_at": "2026-09-12T10:41:26+00:00",
+      "touched_round": 143,
+      "summary": "storage.ts 增 STORE_NAMES(与 PERSISTED_STORES 同处);SettingsView 存档段增常驻坏档交代(中文名 + 备份键 + 导入建议 + 知道了);layout-check 增第十六件事(坏档开局)",
+      "commit": "0bfd112"
+    },
+    "EV-125": {
+      "id": "EV-125",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:41:26+00:00",
+      "updated_at": "2026-09-12T10:41:26+00:00",
+      "touched_round": 143,
+      "summary": "探针与判据实测:把 resources 分片写成垃圾 → 启动后界面照常起来(不白屏)、备份键 corrupt.yunyin.resources 存在、启动提示「检测到部分存档数据异常,已为你隔离修复」(约 2.4 秒);设置页存档段现为「启动时发现 1 个存档分片损坏,已隔离修复:资源。损坏的原档没有删除,仍留在本机(键名 corrupt.yunyin.resources)—— 若手上还有导出的备份,可在此导入恢复。」。故障注入:藏掉该块 → 三条判据同时红。修回后 91 组全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-070": {
+      "id": "HYP-070",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:41:26+00:00",
+      "updated_at": "2026-09-12T10:41:26+00:00",
+      "touched_round": 143,
+      "summary": "「说过一次」不等于「交代清楚」:启动提示只活两三秒,而玩家发现异常的时机往往晚得多(先看见数字不对,再回来找原因)。凡是要玩家采取行动的坏消息(存档坏了、写不进去),都得在**他会去找答案的地方**常驻一条,并写清「哪一件坏了、原物还在不在、该做什么」",
       "confidence": 0.85
     }
   },
@@ -11184,6 +11244,42 @@
       "to": "HYP-069",
       "type": "validates",
       "created_at": "2026-09-12T10:24:15+00:00"
+    },
+    {
+      "from": "ISS-120",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T10:41:30+00:00"
+    },
+    {
+      "from": "TASK-111",
+      "to": "ISS-120",
+      "type": "addresses",
+      "created_at": "2026-09-12T10:41:30+00:00"
+    },
+    {
+      "from": "CHG-168",
+      "to": "TASK-111",
+      "type": "implements",
+      "created_at": "2026-09-12T10:41:30+00:00"
+    },
+    {
+      "from": "CHG-168",
+      "to": "ISS-120",
+      "type": "resolves",
+      "created_at": "2026-09-12T10:41:30+00:00"
+    },
+    {
+      "from": "EV-125",
+      "to": "HYP-070",
+      "type": "validates",
+      "created_at": "2026-09-12T10:41:30+00:00"
+    },
+    {
+      "from": "EV-125",
+      "to": "HYP-056",
+      "type": "validates",
+      "created_at": "2026-09-12T10:41:30+00:00"
     }
   ]
 }
