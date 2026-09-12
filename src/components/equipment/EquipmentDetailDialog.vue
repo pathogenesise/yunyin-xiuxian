@@ -74,6 +74,13 @@
           <span class="tabular">器灵尘×{{ upCost.dust }} · 灵石 {{ formatGN(upCost.stone) }}</span>
         </p>
       </template>
+      <p v-if="salvage" class="mt-1 flex items-center justify-between text-[11px] text-ink-ghost">
+        <span>分解返还{{ inst.level > 0 ? '(含强化八成)' : '' }}</span>
+        <span class="tabular">
+          器灵尘×{{ salvage.dust }}
+          <template v-if="!isZero(salvage.stone)"> · 灵石 {{ formatGN(salvage.stone) }}</template>
+        </span>
+      </p>
       <!-- 修士实验室:反事实换装推演(真仙可用) -->
       <template v-if="canWhatIf">
         <div class="ink-divider my-3" />
@@ -150,6 +157,7 @@
   import { equipmentTemplate, EQUIP_SLOT_NAMES } from '@/data/equipment'
   import { resolveEquipStats } from '@/core/equipGen'
   import { decomposeEquipment, equipLevelCap, equipUpgradeCost, upgradeEquipment } from '@/core/forge'
+  import { salvageOf } from '@/core/salvage'
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
@@ -172,6 +180,8 @@
   const resolved = computed(() => (inst.value ? resolveEquipStats(inst.value) : null))
   const isEquipped = computed(() => (inst.value && template.value ? inventory.equipped[template.value.slot] === inst.value.uid : false))
   const upCost = computed(() => (inst.value ? equipUpgradeCost(inst.value.uid) : null))
+  /** 分解返还:底材 + 强化投入的八成(练过的件拆了不至于血本无归,先把账摆出来) */
+  const salvage = computed(() => (inst.value ? salvageOf(inst.value) : null))
 
   // ---- 重铸与封存 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))

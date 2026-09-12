@@ -247,6 +247,8 @@ export interface EquipmentInstance {
   reforgeCount?: number
   /** 已封存的词条 id(重铸时不会被替换) */
   sealedAffixIds?: string[]
+  /** 累计强化投入(分解时按八成返还;老档无此账,按标价补算) */
+  invested?: { dust: number; stone: GNum }
 }
 
 // ============ 法宝 ============

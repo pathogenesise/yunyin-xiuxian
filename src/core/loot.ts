@@ -1,9 +1,10 @@
 /**
  * 掉落服务 —— 战斗胜利后的奖励结算
  */
-import type { EquipmentInstance, RegionDef } from '@/types'
+import type { EquipmentInstance, GNum, RegionDef } from '@/types'
 import { rng } from '@/utils/random'
-import { mulN } from '@/utils/gnum'
+import { gnZero, isZero, mulN } from '@/utils/gnum'
+import { formatGN } from '@/utils/format'
 import { qualityDef } from '@/data/qualities'
 import { equipmentTemplate } from '@/data/equipment'
 import { PILLS } from '@/data/pills'
@@ -11,7 +12,6 @@ import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import {
   ARTIFACT_DROP_CHANCE,
   BATTLE_EXP_REQ_PCT,
-  DECOMPOSE_DUST,
   EQUIP_DROP_CHANCE,
   PAGE_DROP_CHANCE,
   PILL_DROP_CHANCE
@@ -21,6 +21,7 @@ import { stoneByTier } from './formulas'
 import { modOf } from './statsCalc'
 import { personalityEffects } from './petPersonality'
 import { keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
+import { salvageOf } from './salvage'
 import { checkQualityAchievement, collect, track } from './progress'
 import { harvestMaterials } from './loreService'
 import { usePlayerStore } from '@/stores/player'
@@ -32,11 +33,6 @@ export interface DropSummary {
   lines: string[]
 }
 
-/** 品质 rank → 分解所得器灵尘 */
-function dustOfRank(rank: number): number {
-  return DECOMPOSE_DUST[rank] ?? 1
-}
-
 export interface AcquireResult {
   /** 给人看的文案(战斗报告/事件/弹窗行) */
   line: string
@@ -44,6 +40,8 @@ export interface AcquireResult {
   bagged: boolean
   /** 本次拾取带来的器灵尘增量(化尘时为尘量,入包为 0) */
   dust: number
+  /** 本次拾取带来的灵石返还(化尘时可能有 —— 被挤掉的旧件若练过) */
+  stone: GNum
 }
 
 /**
@@ -63,11 +61,18 @@ export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolea
   track('equipsGained')
   collect('equip', inst.templateId)
   checkQualityAchievement(q.rank)
+  /** 化尘结算 —— 与手动分解走同一条账(底材 + 强化投入八成);新掉落多为 0 级,退了就是全额底材 */
+  const toDust = (item: EquipmentInstance): AcquireResult => {
+    const gain = salvageOf(item)
+    resources.addSmall('dust', gain.dust)
+    resources.addStone(gain.stone)
+    const tail = isZero(gain.stone) ? `化作器灵尘×${gain.dust}` : `化作器灵尘×${gain.dust} · 退灵石 ${formatGN(gain.stone)}`
+    return { line: tail, bagged: false, dust: gain.dust, stone: gain.stone }
+  }
   // 自动回收闸:新件先过裁决,命中回收规则的不占行囊,直接化尘
   if (!forceKeep && shouldAutoRecycle(inst)) {
-    const dust = dustOfRank(q.rank)
-    resources.addSmall('dust', dust)
-    return { line: `${label}(自动回收,化作器灵尘×${dust})`, bagged: false, dust }
+    const res = toDust(inst)
+    return { ...res, line: `${label}(自动回收,${res.line})` }
   }
   if (!inventory.addEquipment(inst)) {
     // 智能收纳:新件值得留则腾位(分解包内最差的「与道无缘」件)
@@ -76,26 +81,26 @@ export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolea
         .filter(it => !it.locked && !keepVerdict(it).keep)
         .sort((a, b) => qualityDef(a.quality).rank - qualityDef(b.quality).rank)[0]
       if (evictable) {
-        const evictDust = dustOfRank(qualityDef(evictable.quality).rank)
         inventory.removeEquipment(evictable.uid)
-        resources.addSmall('dust', evictDust)
+        const evicted = toDust(evictable)
         if (inventory.addEquipment(inst)) {
           return {
-            line: `${label}(收纳规则腾位:${equipmentTemplate(evictable.templateId)?.name ?? '旧物'}化尘×${evictDust})`,
+            line: `${label}(收纳规则腾位:${equipmentTemplate(evictable.templateId)?.name ?? '旧物'}${evicted.line})`,
             bagged: true,
-            dust: evictDust
+            dust: evicted.dust,
+            stone: evicted.stone
           }
         }
+        // 腾位后仍放不进去(理论上不会):那件旧物已化尘不追回,新件按满包那条路折算
       }
     }
-    const dust = dustOfRank(q.rank)
-    resources.addSmall('dust', dust)
-    return { line: `${label}(行囊已满,化作器灵尘×${dust})`, bagged: false, dust }
+    const res = toDust(inst)
+    return { ...res, line: `${label}(行囊已满,${res.line})` }
   }
   if (!quiet && q.rank >= 3) {
     ui.toast(`灵光乍现,拾得「${label}」`, 'rare')
   }
-  return { line: label, bagged: true, dust: 0 }
+  return { line: label, bagged: true, dust: 0, stone: gnZero() }
 }
 
 /** 获得法宝:重复则折算悟道点 */

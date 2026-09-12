@@ -1,12 +1,15 @@
 /**
  * 炼器服务 —— 强化 / 分解 / 法宝升阶
  */
-import type { GNum } from '@/types'
+import type { EquipmentInstance, GNum } from '@/types'
 import { qualityDef } from '@/data/qualities'
 import { equipmentTemplate } from '@/data/equipment'
 import { artifactDef, ARTIFACT_MAX_LEVEL, ARTIFACT_UP_STONE_TIER, ARTIFACT_UP_WUDAO_BASE } from '@/data/artifacts'
-import { DECOMPOSE_DUST, EQUIP_MAX_LEVEL_BASE } from '@/data/constants'
+import { EQUIP_MAX_LEVEL_BASE } from '@/data/constants'
 import { stoneByTier, upgradeCost } from './formulas'
+import { add, gnZero, isZero } from '@/utils/gnum'
+import { formatGN } from '@/utils/format'
+import { salvageOf } from './salvage'
 import { modOf } from './statsCalc'
 import { track } from './progress'
 import { usePlayerStore } from '@/stores/player'
@@ -44,38 +47,92 @@ export function upgradeEquipment(uid: string): boolean {
   }
   resources.spendSmall('dust', cost.dust)
   resources.spendStone(cost.stone)
-  inventory.replaceItem({ ...inst, level: inst.level + 1 })
+  // 记账:这件装备花掉的强化成本(分解时按八成返还)——折扣是当时的,只有账本记得住
+  const invested = inst.invested ?? { dust: 0, stone: gnZero() }
+  inventory.replaceItem({
+    ...inst,
+    level: inst.level + 1,
+    invested: { dust: invested.dust + cost.dust, stone: add(invested.stone, cost.stone) }
+  })
   track('upgrades')
   const t = equipmentTemplate(inst.templateId)
   ui.toast(`「${t?.name}」强化至 +${inst.level + 1}`, 'success')
   return true
 }
 
-export function decomposeEquipment(uid: string): boolean {
+export function decomposeEquipment(uid: string, opts: { quiet?: boolean } = {}): boolean {
   const inventory = useInventoryStore()
   const resources = useResourcesStore()
   const ui = useUiStore()
   const inst = inventory.findItem(uid)
   if (!inst || inst.locked) return false
-  const q = qualityDef(inst.quality)
-  const dust = (DECOMPOSE_DUST[q.rank] ?? 1) + Math.floor(inst.level / 2)
+  const gain = salvageOf(inst)
   inventory.removeEquipment(uid)
-  resources.addSmall('dust', dust)
+  resources.addSmall('dust', gain.dust)
+  resources.addStone(gain.stone)
   track('decomposed')
-  ui.toast(`分解得器灵尘×${dust}`, 'info')
+  if (!opts.quiet) {
+    ui.toast(
+      isZero(gain.stone)
+        ? `分解得器灵尘×${gain.dust}`
+        : `分解得器灵尘×${gain.dust} · 退灵石 ${formatGN(gain.stone)}(含强化八成)`,
+      'info'
+    )
+  }
   return true
 }
 
-/** 一键分解:行囊中勾选品质 rank 的未锁定装备,返回分解件数 */
-export function decomposeByRanks(ranks: readonly number[]): number {
-  const inventory = useInventoryStore()
-  const wanted = new Set(ranks)
-  const targets = inventory.bagItems.filter(it => !it.locked && wanted.has(qualityDef(it.quality).rank))
-  let count = 0
-  for (const it of targets) {
-    if (decomposeEquipment(it.uid)) count += 1
+export interface DecomposeBatch {
+  count: number
+  dust: number
+  stone: GNum
+}
+
+/** 批量分解的账目文案:批量路径只有这一处措辞,免得各写各的 */
+export function batchYieldText(b: DecomposeBatch): string {
+  return isZero(b.stone) ? `得器灵尘×${b.dust}` : `得器灵尘×${b.dust} · 退灵石 ${formatGN(b.stone)}`
+}
+
+/**
+ * 批量分解:逐件结算、**不逐件弹提示** —— 提示窗只留最近 5 条,
+ * 逐件弹会把「一共拆了多少、拿回多少」的总账顶掉。调用方自己按总量报一次。
+ */
+export function decomposeBatch(items: readonly EquipmentInstance[]): DecomposeBatch {
+  const total: DecomposeBatch = { count: 0, dust: 0, stone: gnZero() }
+  for (const it of items) {
+    if (!decomposeEquipment(it.uid, { quiet: true })) continue
+    const gain = salvageOf(it)
+    total.count += 1
+    total.dust += gain.dust
+    total.stone = add(total.stone, gain.stone)
   }
-  return count
+  return total
+}
+
+/** 行囊中勾选品质的未锁定装备(预告与下手用同一套筛选,所见即所得) */
+function decomposeTargets(ranks: readonly number[]): EquipmentInstance[] {
+  const wanted = new Set(ranks)
+  return useInventoryStore().bagItems.filter(it => !it.locked && wanted.has(qualityDef(it.quality).rank))
+}
+
+/** 分解预告:会拆几件、拿回什么 —— 弹窗上写的数就是真下手的数 */
+export function decomposePreview(ranks: readonly number[]): DecomposeBatch {
+  const total: DecomposeBatch = { count: 0, dust: 0, stone: gnZero() }
+  for (const it of decomposeTargets(ranks)) {
+    const gain = salvageOf(it)
+    total.count += 1
+    total.dust += gain.dust
+    total.stone = add(total.stone, gain.stone)
+  }
+  return total
+}
+
+/** 一键分解:行囊中勾选品质 rank 的未锁定装备,按一次总账报出来,返回分解件数 */
+export function decomposeByRanks(ranks: readonly number[]): number {
+  const ui = useUiStore()
+  const got = decomposeBatch(decomposeTargets(ranks))
+  if (got.count > 0) ui.toast(`已分解 ${got.count} 件装备,${batchYieldText(got)}`, 'info')
+  return got.count
 }
 
 export function artifactUpCost(defId: string): { wudao: number; stone: GNum } | null {

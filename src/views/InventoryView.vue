@@ -277,24 +277,30 @@
 
     <!-- 一键分解:勾选品质(记忆勾选) -->
     <BaseModal :open="decomposeOpen" title="一键分解" @close="decomposeOpen = false">
-      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊,已存入行囊的同类也会一并化作器灵尘。此规则优先于智能收纳。</p>
+      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊。行囊中已存的同类须点下方「分 解」方才化尘。此规则优先于智能收纳。</p>
       <div class="mt-2 space-y-1">
         <label
-          v-for="q in QUALITIES"
-          :key="q.id"
+          v-for="row in decomposeRows"
+          :key="row.rank"
           class="flex items-center gap-2.5 rounded-md px-2.5 py-1.5"
-          :class="settings.decomposeRanks.includes(q.rank) ? 'bg-paper-deep/80' : ''"
+          :class="settings.decomposeRanks.includes(row.rank) ? 'bg-paper-deep/80' : ''"
         >
           <input
             type="checkbox"
             class="h-4 w-4 accent-cinnabar"
-            :checked="settings.decomposeRanks.includes(q.rank)"
-            @change="toggleRank(q.rank)"
+            :checked="settings.decomposeRanks.includes(row.rank)"
+            @change="toggleRank(row.rank)"
           />
-          <span class="font-kai text-[13px]" :style="{ color: q.color }">{{ q.name }}</span>
-          <span class="ml-auto tabular text-[11px] text-ink-faint">现存 {{ decomposeCounts[q.rank] ?? 0 }} 件</span>
+          <span class="font-kai text-[13px]" :style="{ color: row.color }">{{ row.name }}</span>
+          <span class="ml-auto tabular text-[11px] text-ink-faint">
+            现存 {{ row.count }} 件
+            <template v-if="row.count > 0">· {{ row.text }}</template>
+          </span>
         </label>
       </div>
+      <p v-if="decomposeTotal > 0" class="mt-2 text-right text-[11px] text-cinnabar/90 tabular">
+        共 {{ decomposeTotal }} 件 → {{ batchYieldText(decomposePlanned) }}
+      </p>
       <template #footer>
         <button class="btn-seal w-full" :disabled="decomposeTotal === 0" @click="confirmDecompose">
           分 解{{ decomposeTotal > 0 ? `(${decomposeTotal} 件)` : '' }}
@@ -369,7 +375,14 @@
   import { BAG_CAPACITY } from '@/data/constants'
   import { usePill, availableRecipes, craftPill, pillCraftCost } from '@/core/pillService'
   import { craftability, type Craftability } from '@/core/craftability'
-  import { decomposeByRanks, decomposeEquipment, artifactUpCost, upgradeArtifact } from '@/core/forge'
+  import {
+    batchYieldText,
+    decomposeBatch,
+    decomposeByRanks,
+    decomposePreview,
+    artifactUpCost,
+    upgradeArtifact
+  } from '@/core/forge'
   import { keepVerdict } from '@/core/smartKeep'
   import { equipSetDef, setCounts, type EquipSetDef } from '@/core/equipSet'
   import { useLoreStore } from '@/stores/lore'
@@ -566,36 +579,35 @@
   }
 
   function batchDecompose(): void {
-    const n = decomposeByRanks(settings.decomposeRanks)
-    ui.toast(n > 0 ? `已分解 ${n} 件装备` : '无可分解之物', 'info')
+    // 总账那一条由服务自己报(逐件弹提示只会互相顶掉)
+    if (decomposeByRanks(settings.decomposeRanks) === 0) ui.toast('无可分解之物', 'info')
   }
 
   // ---- 一键分解弹窗 ----
   const decomposeOpen = ref(false)
 
-  /** 各品质档现存可分解件数(未锁定) */
-  const decomposeCounts = computed(() => {
-    const counts: Record<number, number> = {}
-    for (const it of inventory.bagItems) {
-      if (it.locked) continue
-      const rank = qualityDef(it.quality).rank
-      counts[rank] = (counts[rank] ?? 0) + 1
-    }
-    return counts
-  })
+  /** 各品质档的现存件数与分解返还(与服务同一套算法:弹窗上写多少就是真给多少) */
+  const decomposeRows = computed(() =>
+    QUALITIES.map(q => {
+      const got = decomposePreview([q.rank])
+      return { rank: q.rank, name: q.name, color: q.color, count: got.count, text: batchYieldText(got) }
+    })
+  )
 
-  const decomposeTotal = computed(() => settings.decomposeRanks.reduce((sum, rank) => sum + (decomposeCounts.value[rank] ?? 0), 0))
+  const decomposeTotal = computed(() =>
+    decomposeRows.value.filter(r => settings.decomposeRanks.includes(r.rank)).reduce((sum, r) => sum + r.count, 0)
+  )
+
+  /** 已勾选那几档的总账 */
+  const decomposePlanned = computed(() => decomposePreview(settings.decomposeRanks))
 
   function toggleRank(rank: number): void {
     const adding = !settings.decomposeRanks.includes(rank)
     settings.decomposeRanks = adding
       ? [...settings.decomposeRanks, rank].sort((a, b) => a - b)
       : settings.decomposeRanks.filter(r => r !== rank)
-    // 新勾选一档 = 宣告该档是废料:行囊内现存同类(未上锁)一并化尘,与"此后拾取自动回收"对齐
-    if (adding) {
-      const n = decomposeByRanks([rank])
-      if (n > 0) ui.toast(`行囊内 ${QUALITIES[rank]?.name ?? '该档'}×${n} 按新规则化作器灵尘`, 'info')
-    }
+    // 勾选只是「标记该档为废料」——行囊内现存同类不在此刻销毁,待玩家点「分 解」确认。
+    // (此后拾取到该档仍会自动回收,那是不占行囊的入包裁决,与行囊内已存之物无关。)
   }
 
   function confirmDecompose(): void {
@@ -620,11 +632,8 @@
   function smartClean(): void {
     cleanConfirm.value = false
     const targets = inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep)
-    let n = 0
-    for (const it of targets) {
-      if (decomposeEquipment(it.uid)) n += 1
-    }
-    ui.toast(n > 0 ? `收纳毕:${n} 件无缘之物化作器灵尘` : '行囊中皆是有缘之物', 'info')
+    const got = decomposeBatch(targets)
+    ui.toast(got.count > 0 ? `收纳毕:${got.count} 件无缘之物化尘,${batchYieldText(got)}` : '行囊中皆是有缘之物', 'info')
     smartOpen.value = false
   }
 

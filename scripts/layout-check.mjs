@@ -7,7 +7,7 @@
  *   npm i --no-save playwright        # 或全局装;浏览器缓存在 ~/.cache/ms-playwright
  *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
  *
- * 它做七件事:
+ * 它做这些事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
  *   二 在 390×844 / 375×812 / 320×568 三个宽度下,逐页量 scrollWidth 与越界元素,
  *      并核对**外壳本身**没被滚偏(overflow-hidden 的盒子玩家滚不动,浏览器滚得动);
@@ -43,6 +43,7 @@
  *   二十二 减少动效真的减到了(并顺带在音效开着的情况下点一路按钮)。
  *   二十三 洞府营造的账目:卡片写多少石就扣多少石。
  *   二十四 法宝炼化的两笔账:按钮上两种代价都得写全,且两种都按所写扣。
+ *   二十五 一键分解要「先勾后点」:勾品质只是标记,行囊里的东西须点「分 解」才化尘。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1362,6 +1363,124 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第二十五件事:一键分解要「先勾后点」,勾品质不许当场把东西烧了 ----
+/*
+ * 勾选框的语义是**标记**,不是**执行** —— 玩家勾「精品」是想说「精品算废料」,
+ * 不是想让行囊里的精品立刻消失。此前 toggleRank 在勾上的一瞬间就调了
+ * decomposeByRanks,于是「勾一下就没了」,勾错了没得后悔,也看不到会拆掉几件。
+ * 判据按玩家的动作顺序核两拍:
+ *   一 勾上「精品」之后 —— 行囊件数一件不能少,也不能出现「化作器灵尘」的交代;
+ *   二 再点下方「分 解(2 件)」 —— 这才能少,而且要少出个交代来。
+ * 顺带核第二笔账:练过的那件拆了要按八成退强化投入。夹具里一件 0 级、一件 +4
+ * (记账投入尘 100 / 灵石 8000),故返还 = 底材4 + (底材4 + 八成尘80) = 88 尘 + 灵石 6400,
+ * 并且提示里写的数必须与器灵尘那一栏真涨的数对得上(所见即所得)。
+ * (勾选仍然会被记住,并继续管着「此后拾取自动回收」;那条是不占行囊的入包裁决,与本题无关。)
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '分解自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 0 },
+    inventory: {
+      items: [
+        { uid: 'b_1', templateId: 'b_qingyun', quality: 'excellent', tier: 3, level: 0, affixes: [] },
+        { uid: 'b_2', templateId: 'b_qingyun', quality: 'excellent', tier: 3, level: 4, affixes: [], invested: { dust: 100, stone: gn(8, 3) } }
+      ],
+      equipped: {},
+      pills: {},
+      artifacts: [],
+      equippedArtifacts: []
+    },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  /** 行囊件数(只读 main;弹窗 Teleport 到 body,不在这棵子树里) */
+  const bagCount = () =>
+    page.evaluate(() => {
+      const m = /藏品\s*(\d+)/.exec(document.querySelector('main')?.innerText || '')
+      return m ? Number(m[1]) : null
+    })
+  /** 背包页顶上那栏「器灵尘 N」 */
+  const dustCount = () =>
+    page.evaluate(() => {
+      const m = /器灵尘\s*(\d+)/.exec(document.querySelector('main')?.innerText || '')
+      return m ? Number(m[1]) : null
+    })
+  const toasts = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
+    )
+  const opened = await page
+    .locator('main button', { hasText: /^分解$/ })
+    .first()
+    .click({ timeout: 3000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!opened) failures.push('[390] 分解场景:行囊页找不到「分解」入口')
+  else {
+    await page.waitForTimeout(400)
+    const before = await bagCount()
+    if (before !== 2) failures.push(`[390] 分解场景:夹具没铺好 —— 开局行囊 ${before} 件(应为 2)`)
+    const box = page.locator('.modal-panel label', { hasText: '精品' }).locator('input[type=checkbox]').first()
+    const ticked = await box
+      .click({ timeout: 3000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!ticked) failures.push('[390] 分解场景:弹窗里找不到「精品」的勾选框')
+    await page.waitForTimeout(900)
+    const marked = await bagCount()
+    const markedToast = await toasts()
+    if (marked !== 2) failures.push(`[390] 分解场景:只勾了「精品」,行囊就从 ${before} 件变成 ${marked} 件 —— 勾选把东西当场烧了(应先标记、等「分 解」)`)
+    if (/化作器灵尘/.test(markedToast)) failures.push(`[390] 分解场景:勾选品质就弹了销毁交代(${markedToast})—— 玩家还没点「分 解」`)
+    const footLabel = ((await page.locator('.modal-panel footer button').first().textContent().catch(() => '')) || '').replace(/\s+/g, ' ').trim()
+    if (!/分\s*解\s*\(2\s*件\)/.test(footLabel)) {
+      failures.push(`[390] 分解场景:勾选后按钮没写出「会拆几件」——「${footLabel}」`)
+    }
+    if (marked === 2) {
+      const dustBefore = await dustCount()
+      await page.locator('.modal-panel footer button').first().click({ timeout: 3000 }).catch(() => {})
+      await page.waitForTimeout(900)
+      const after = await bagCount()
+      const afterToast = await toasts()
+      if (after !== 0) failures.push(`[390] 分解场景:点了「分 解」行囊还剩 ${after} 件(两件精品都该拆掉)`)
+      if (!/已分解\s*2\s*件/.test(afterToast)) failures.push(`[390] 分解场景:点「分 解」之后没有交代(${afterToast || '无提示'})`)
+      const promised = Number((/得器灵尘×(\d+)/.exec(afterToast) || [])[1] ?? NaN)
+      const dustAfter = await dustCount()
+      if (promised !== 88) {
+        failures.push(`[390] 分解场景:两件精品(其中一件 +4,记账投入尘 100)该退 88 尘,提示写的是 ${promised}`)
+      }
+      if (!/退灵石\s*6,400/.test(afterToast)) failures.push(`[390] 分解场景:练过的件没退灵石(记了 8000,该退 6400)—— ${afterToast}`)
+      if (dustBefore === null || dustAfter === null || dustAfter - dustBefore !== promised) {
+        failures.push(`[390] 分解场景:提示说给 ${promised} 尘,器灵尘那一栏 ${dustBefore} → ${dustAfter}(所见非所得)`)
+      }
+      if (promised === 88 && dustAfter - dustBefore === 88) {
+        console.log(`\n一键分解:勾「精品」行囊仍是 ${marked} 件(未烧) · 「${footLabel}」→ 行囊 ${after} 件 · 得尘 ${promised}(对上,含强化八成)· 退灵石 6,400`)
+      }
+    }
+  }
+  if (pageErrors.length) failures.push(`[390] 分解场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 

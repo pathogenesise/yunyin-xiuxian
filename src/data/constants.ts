@@ -250,6 +250,8 @@ export const UPGRADE_DUST_GROWTH = 1.5
 export const UPGRADE_STONE_TIER_BASE = 15
 /** 分解所得灵尘(按品质序号) */
 export const DECOMPOSE_DUST = [1, 2, 4, 8, 16, 32, 64, 128, 256] as const
+/** 分解/回收时返还强化投入的比例(尘与灵石同率) */
+export const DECOMPOSE_REFUND_RATE = 0.8
 export const BAG_CAPACITY = 120
 
 // ============ 掉落 ============
