@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 117,
+  "round": 118,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T02:08:40+00:00",
+  "updated_at": "2026-09-12T02:40:10+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 113,
+      "touched_round": 117,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -5952,6 +5952,67 @@
       "touched_round": 116,
       "summary": "新增 ui/achievementHint.ts(计数器→方向,严格 Record 类型)与 achievementHint.spec(4 例);成就页未达成条目显示「尚未达成 · 方向:…」;登记进 Regression 分类",
       "commit": "24edcde"
+    },
+    "ISS-090": {
+      "id": "ISS-090",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T02:39:59+00:00",
+      "updated_at": "2026-09-12T02:40:09+00:00",
+      "touched_round": 117,
+      "summary": "选中态只靠边色:设置页的主题与战报速度、各页页签(界域志六册/图鉴两页/称号两页)的「选中」都只体现在颜色上,读屏用户与自动化都看不出选了哪个;另外排版自检只巡八条路由,设置/流派/收藏/修仙录/洞府/本世之界/天界这七页的排版与选中态从未量过",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-081": {
+      "id": "TASK-081",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T02:39:59+00:00",
+      "updated_at": "2026-09-12T02:40:10+00:00",
+      "touched_round": 117,
+      "summary": "选中态对机器可读(aria-pressed / role=tab+aria-selected),排版自检扩到全十五条路由,并加「选择组恰有一个选中」判据;另给冒烟加「点了没反应」读数",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "EV-097": {
+      "id": "EV-097",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:39:59+00:00",
+      "updated_at": "2026-09-12T02:39:59+00:00",
+      "touched_round": 117,
+      "summary": "设置页 6 个选择控件加 aria-pressed、InkTabs 加 role=tab+aria-selected;layout-check 路由 8→15(组合 17→31)、新增「选择组恰有一个选中」与「设置页两组选择都得带 aria-pressed」;两次注入(去主题 aria-pressed → 报「只有 3 个带 aria-pressed」;去页签 aria-selected → 界域志/图鉴/称号各报「页签组(4 项)里有 0 个选中」)均转红;冒烟加「点了没反应」读数:后期档 7 处、日常档 5 处,逐条核对全是点已选中的选项或弹窗「离开」,无静默失败;全量 142 文件 1418 用例绿",
+      "confidence": 0.9,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-045": {
+      "id": "HYP-045",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:39:59+00:00",
+      "updated_at": "2026-09-12T02:39:59+00:00",
+      "touched_round": 117,
+      "summary": "「点了没反应」不宜做通用判据(页面本身每秒都在变、选中靠类名),但很适合做**读数**:先扫出来分类,若某处是静默失败就修,若全是「点已选中项」这类合理空点,就留着当哨兵。真正可判的是它的邻居问题:选中态必须对机器可读(aria-pressed/aria-selected),且一组里恰好一个",
+      "confidence": 0.85
+    },
+    "CHG-140": {
+      "id": "CHG-140",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:40:09+00:00",
+      "updated_at": "2026-09-12T02:40:09+00:00",
+      "touched_round": 117,
+      "summary": "SettingsView 主题/速度加 aria-pressed;InkTabs 加 role=tab + aria-selected;layout-check 路由 8→15 并加「选择组恰有一个选中」判据;ui-smoke 加「点了没反应」读数",
+      "commit": "cc27e07"
     }
   },
   "edges": [
@@ -8541,6 +8602,36 @@
       "to": "HYP-044",
       "type": "validates",
       "created_at": "2026-09-12T02:08:40+00:00"
+    },
+    {
+      "from": "ISS-090",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T02:40:09+00:00"
+    },
+    {
+      "from": "TASK-081",
+      "to": "ISS-090",
+      "type": "addresses",
+      "created_at": "2026-09-12T02:40:09+00:00"
+    },
+    {
+      "from": "CHG-140",
+      "to": "TASK-081",
+      "type": "implements",
+      "created_at": "2026-09-12T02:40:09+00:00"
+    },
+    {
+      "from": "CHG-140",
+      "to": "ISS-090",
+      "type": "resolves",
+      "created_at": "2026-09-12T02:40:09+00:00"
+    },
+    {
+      "from": "EV-097",
+      "to": "HYP-045",
+      "type": "validates",
+      "created_at": "2026-09-12T02:40:09+00:00"
     }
   ]
 }
