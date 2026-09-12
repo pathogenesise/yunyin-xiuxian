@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 134,
+  "round": 135,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T07:16:31+00:00",
+  "updated_at": "2026-09-12T07:32:07+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 132,
+      "touched_round": 134,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -7006,7 +7006,7 @@
       "version": 1,
       "created_at": "2026-09-12T06:50:28+00:00",
       "updated_at": "2026-09-12T06:50:28+00:00",
-      "touched_round": 131,
+      "touched_round": 134,
       "summary": "「假红」也要查到底:一条判据时红时绿,往往不是被测对象不稳,而是取景里混进了别的活物(随机浮层、第三方脚本)。处理不是放宽阈值或加重试,而是把取景收拾干净(钉死随机源、按脚本出处分流异常),否则真正的问题会被红绿噪声掩盖",
       "confidence": 0.85
     },
@@ -7104,6 +7104,66 @@
       "summary": "ISS-049 定案:根因是明文存档被当密文解(CryptoJS Base64 解析跳过非法字符,2000 条明文里 11 条被解成乱码 ≈0.55%),失败落点是 SAVE_SERIALIZER.deserialize 里那层 JSON.parse;CHG-135 的密文头检查让明文根本不进解密,该路径结构性消失。证据三样:① 故障注入去掉预检 → savePlaintext.spec 立刻红(报出 11 条被误读的时间戳);② 回归补到真正被调用的序列化器那一段;③ 此后 11 轮全量并行(1440/1441 用例)0 失败,另有 60 次定向复现 0 失败",
       "confidence": 0.95,
       "source": "src/utils/savePlaintext.spec.ts"
+    },
+    "ISS-110": {
+      "id": "ISS-110",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T07:32:03+00:00",
+      "updated_at": "2026-09-12T07:32:07+00:00",
+      "touched_round": 134,
+      "summary": "两处「打开才存在 / 推进才有下文」的界面从没被真驱动过:① 在途秘境的「再入一层」只在单元用例里跑过,按下去会怎样(点了没反应/战报刷不出/漏 NaN)没人看过;② 弹窗焦点场景第三次假红,真凶是引擎随机浮上来的顿悟遮罩 —— 只钉 Math.random 不够,引擎每秒一拍,场景动手前它已经掷过一次了",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-101": {
+      "id": "TASK-101",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T07:32:03+00:00",
+      "updated_at": "2026-09-12T07:32:03+00:00",
+      "touched_round": 134,
+      "summary": "用后期档夹具真驱动在途秘境(要么出战报要么状态前移,并查占位符),并抽出 clearOverlays(收提示条+钉随机+关已浮起的弹窗)供弹窗与冷启动场景共用",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-159": {
+      "id": "CHG-159",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:32:03+00:00",
+      "updated_at": "2026-09-12T07:32:03+00:00",
+      "touched_round": 134,
+      "summary": "layout-check 第十件事增「在途秘境推进一步」;抽 clearOverlays 并把弹窗/冷启动场景的取景收拾干净(连跑三次全绿)",
+      "commit": "c2e6d50"
+    },
+    "EV-116": {
+      "id": "EV-116",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:32:03+00:00",
+      "updated_at": "2026-09-12T07:32:03+00:00",
+      "touched_round": 134,
+      "summary": "秘境推进实测读数:战报「不敌 金渊仙兽 · 气血余 0%」,无占位符、无页面异常,67 组全绿连跑三次。故障注入:把「再入一层」的 @click 改成空函数 → 「点了「再入一层」既没战报也没变化(点了没反应)」红。假红治理:判决报告里自己写出凶手(「挡路:div.fixed inset-0 / 开着的弹窗:悟道顿悟」),clearOverlays 之后三连绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-061": {
+      "id": "HYP-061",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:32:03+00:00",
+      "updated_at": "2026-09-12T07:32:03+00:00",
+      "touched_round": 134,
+      "summary": "「钉死随机源」只在场景动手之前有效:引擎是按拍推进的,从进入游戏到判据动手之间它已经掷过骰子,浮上来的东西得当场收掉 —— 收拾取景要三件一起做(收提示条、钉随机、关已开浮层),少一件就还会偶发假红",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -10299,6 +10359,42 @@
       "to": "ISS-049",
       "type": "resolves",
       "created_at": "2026-09-12T07:16:31+00:00"
+    },
+    {
+      "from": "ISS-110",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T07:32:06+00:00"
+    },
+    {
+      "from": "TASK-101",
+      "to": "ISS-110",
+      "type": "addresses",
+      "created_at": "2026-09-12T07:32:06+00:00"
+    },
+    {
+      "from": "CHG-159",
+      "to": "TASK-101",
+      "type": "implements",
+      "created_at": "2026-09-12T07:32:06+00:00"
+    },
+    {
+      "from": "CHG-159",
+      "to": "ISS-110",
+      "type": "resolves",
+      "created_at": "2026-09-12T07:32:06+00:00"
+    },
+    {
+      "from": "EV-116",
+      "to": "HYP-061",
+      "type": "validates",
+      "created_at": "2026-09-12T07:32:06+00:00"
+    },
+    {
+      "from": "EV-116",
+      "to": "HYP-058",
+      "type": "validates",
+      "created_at": "2026-09-12T07:32:07+00:00"
     }
   ]
 }
