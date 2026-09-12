@@ -488,6 +488,9 @@ export const usePlayerStore = defineStore(
       if (!Number.isFinite(age.value)) age.value = START_AGE
       if (!Number.isFinite(major.value) || major.value < 0) major.value = 0
       if (!Number.isFinite(sub.value) || sub.value < 0) sub.value = 0
+      // 寿元加算:lifespanMax = floor(base×(1+pct) + 此栏),写坏(字符串/NaN)会让它变 NaN,
+      // 而引擎死亡判据 `age < lifespanMax` 恒为 false → 下一拍即「油尽灯枯」。坏档必死,必须修回
+      lifespanBonusYears.value = asFiniteNumber(lifespanBonusYears.value, 0)
       // Phase 32.5:旧存档没有宿慧/履历/命题三项,按转世次数折算补齐,不让老玩家凭空掉档
       const r = reincarnation.value
       const count = Number.isFinite(r?.count) ? Math.max(0, r.count) : 0

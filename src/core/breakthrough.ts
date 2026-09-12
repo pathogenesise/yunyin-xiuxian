@@ -167,7 +167,8 @@ export function attemptBreakthrough(): BreakthroughView | null {
     const result = runTribulation(player.major + 1)
     success = result.survived
     tribulationLog = result.log
-    track('tribulations')
+    // 「渡过」才算渡过:失败不计数(否则连败三次自动解锁 a_trib3 劫后余生)
+    if (success) track('tribulations')
   } else {
     // 无劫突破消费掉就绪的准备加成(info.rate 已并入,见 breakthroughInfo peek)
     consumeBreakthroughPrep()

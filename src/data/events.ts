@@ -1010,9 +1010,11 @@ export const EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('凝本源为一丹', [o(1, '你以本源凝成一枚丹药,收于袖中。', { type: 'pill', id: 'p_daoyuan', count: 1 })], {
-        cond: { type: 'stone', tierAmount: 300 }
-      })
+      c(
+        '凝本源为一丹',
+        [o(1, '你以本源凝成一枚丹药,收于袖中。', { type: 'stone', tierAmount: -300 }, { type: 'pill', id: 'p_daoyuan', count: 1 })],
+        { cond: { type: 'stone', tierAmount: 300 } }
+      )
     ],
     { minRealm: 20, weight: 60 }
   )

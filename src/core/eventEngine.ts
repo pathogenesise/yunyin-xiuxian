@@ -3,7 +3,7 @@
  */
 import type { EventChoice, EventDef, EventEffect, RegionDef } from '@/types'
 import { RandomService, rng } from '@/utils/random'
-import { mulN, gte } from '@/utils/gnum'
+import { mulN } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
 import { CHAINS, chainOfEvent } from '@/data/chains'
@@ -150,7 +150,8 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
         resources.addStone(v)
         return `灵石 +${formatGN(v)}`
       }
-      resources.spendStone(gte(resources.spiritStone, v) ? v : { ...resources.spiritStone })
+      // 入不敷出就拒绝,不「把整份余额奉上」——传余额拷贝会让 gte 恒真、清零收场
+      if (!resources.spendStone(v)) return null
       return `灵石 -${formatGN(v)}`
     }
     case 'exp': {

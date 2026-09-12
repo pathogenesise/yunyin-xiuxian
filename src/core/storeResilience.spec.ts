@@ -230,6 +230,29 @@ describe('坏档韧性 · 复杂状态的值也要修回来(不只是"不炸")',
     player.sanitize()
     expect(player.bond).toBeNull()
   })
+
+  it('寿元加算:非数字被修回 0,坏档不再把 lifespanMax 烧成 NaN', () => {
+    // lifespanMax = floor(base×(1+pct) + lifespanBonusYears);字段一旦是字符串/NaN,
+    // 结果变 NaN,而引擎死亡判据是 `age < lifespanMax` 恒为 false → 下一拍即「油尽灯枯」。
+    // sanitize 此前逐字段修形,唯独漏了这一栏(写坏/导入坏档的必死路径)。
+    setActivePinia(createPinia())
+    const player = usePlayerStore()
+    player.$patch({ lifespanBonusYears: 'abc' } as never)
+    player.sanitize()
+    expect(player.lifespanBonusYears).toBe(0)
+    expect(Number.isFinite(player.lifespanMax)).toBe(true)
+    expect(player.lifespanMax).toBeGreaterThan(0)
+
+    player.$patch({ lifespanBonusYears: NaN } as never)
+    player.sanitize()
+    expect(player.lifespanBonusYears).toBe(0)
+    expect(Number.isFinite(player.lifespanMax)).toBe(true)
+
+    // 合法的延寿数值(丹药/事件给的 +X 载)不因守卫被误伤
+    player.$patch({ lifespanBonusYears: 200 } as never)
+    player.sanitize()
+    expect(player.lifespanBonusYears).toBe(200)
+  })
 })
 
 describe('坏档韧性 · 活状态(引擎每 tick 都读的那些)', () => {
