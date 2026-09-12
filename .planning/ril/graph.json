@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 112,
+  "round": 113,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T01:24:24+00:00",
+  "updated_at": "2026-09-12T01:28:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3047,11 +3047,11 @@
       "id": "ISS-049",
       "type": "issue",
       "status": "active",
-      "version": 3,
+      "version": 4,
       "created_at": "2026-09-11T16:41:32+00:00",
-      "updated_at": "2026-09-12T01:24:24+00:00",
-      "touched_round": 111,
-      "summary": "全量并行跑测试时,savePersistence 偶发一红(round 60「读己所写」一次;round 96 一次未留存原文)。round 111 用「并发全量 + 循环压 save 系用例」复现出一例,但落在我新写的 importCorruption 上,根因是 decryptSave 把明文当密文(已由 CHG-135 修复);老那条 probe.writes===0 仍未复现,继续挂着",
+      "updated_at": "2026-09-12T01:28:17+00:00",
+      "touched_round": 112,
+      "summary": "全量并行跑测试时,savePersistence 偶发一红(round 60「读己所写」一次;round 96 一次未留存原文)。round 111 复现的一例落在 importCorruption,根因是解密误判(已由 CHG-135 修复),与本条不同;round 112 定向复现:60 次单文件压力运行 + 2 轮全量,0 失败,并已排除明文误读。已给断言加写盘调用栈埋点,下次发生即可点名来源",
       "severity": 0.2,
       "confidence": 0.3
     },
@@ -5685,6 +5685,29 @@
       "touched_round": 111,
       "summary": "decryptSave 入口认密文头(U2FsdGVkX1 = Salted__),非密文一律按明文走;新增 savePlaintext.spec(3 例)并登记进 Unit 分类",
       "commit": "92341df"
+    },
+    "EV-092": {
+      "id": "EV-092",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:28:17+00:00",
+      "updated_at": "2026-09-12T01:28:17+00:00",
+      "touched_round": 113,
+      "summary": "ISS-049 定向复现:6 路并发 × 每路 10 次 savePersistence(60 次单文件)+ 2 轮全量套件,0 失败;另排除一个假设 —— 该文件用到的 94 条明文逐条过 readSaveText 全部原样(上轮修的明文误读不是它的成因);同时给 Probe 加写盘调用栈埋点,断言失败会直接点名「谁写的」",
+      "confidence": 0.85,
+      "source": "src/utils/savePersistence.spec.ts"
+    },
+    "HYP-040": {
+      "id": "HYP-040",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:28:17+00:00",
+      "updated_at": "2026-09-12T01:28:17+00:00",
+      "touched_round": 113,
+      "summary": "偶发红久拖不决,往往不是难修,而是**证据不足**:断言只留一个计数、不留「谁写的、从哪写的」,于是每次失败都只能重开一轮猜测。对不可复现的偶发缺陷,先做的是加埋点(调用栈/来源标记),让下一次发生自带线索 —— 这比继续撞运气有效",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -8148,6 +8171,12 @@
       "to": "HYP-039",
       "type": "validates",
       "created_at": "2026-09-12T01:24:24+00:00"
+    },
+    {
+      "from": "EV-092",
+      "to": "HYP-040",
+      "type": "validates",
+      "created_at": "2026-09-12T01:28:24+00:00"
     }
   ]
 }
