@@ -122,7 +122,18 @@ const silent = []
 async function fingerprint() {
   return page.evaluate(() => {
     const text = document.body.innerText.replace(/\s+/g, ' ').slice(0, 4000)
-    return `${text.length}:${text.slice(0, 120)}:${text.slice(-80)}|${document.querySelectorAll('.modal-panel').length}|${document.querySelectorAll('[class*=toast]').length}`
+    /*
+     * 指纹里必须带上「不体现在文字上的变化」。
+     *
+     * 主题与战报速度这两组切换改的是 CSS 变量与 aria-pressed,正文一个字都不变 ——
+     * 于是它们每一轮都被报成「点了没反应」,而读数一旦常驻噪声,真事故就会被忽略。
+     * 故把 data-theme 与当前按下的选择一并算进指纹(顺手也能看出选中态有没有变)。
+     */
+    const pressed = [...document.querySelectorAll('[aria-pressed=true]')]
+      .map(b => (b.textContent || '').trim().slice(0, 6))
+      .join(',')
+    const theme = document.documentElement.getAttribute('data-theme') ?? ''
+    return `${text.length}:${text.slice(0, 120)}:${text.slice(-80)}|${theme}|${pressed}|${document.querySelectorAll('.modal-panel').length}|${document.querySelectorAll('[class*=toast]').length}`
   })
 }
 page.on('pageerror', e => errors.push({ where: 'boot', msg: String(e).slice(0, 300) }))
