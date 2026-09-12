@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 150,
+  "round": 151,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T12:41:16+00:00",
+  "updated_at": "2026-09-12T13:02:43+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 149,
+      "touched_round": 150,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 141,
+      "touched_round": 150,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -8091,6 +8091,78 @@
       "updated_at": "2026-09-12T12:41:11+00:00",
       "touched_round": 149,
       "summary": "同一句拒绝,越早说越好:服务层兜底保证「结果对」,但玩家会先走完一步(选完三个模式)才发现走不通。凡是「前置条件不满足」,入口处就该拦一次井打出同一句话;服务层的那一份留着,两处各司其职",
+      "confidence": 0.85
+    },
+    "ISS-127": {
+      "id": "ISS-127",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T13:02:26+00:00",
+      "updated_at": "2026-09-12T13:02:43+00:00",
+      "touched_round": 150,
+      "summary": "冒烟把「只改样式」的点击记成了「点了没反应」:主题(日间/夜间/跟随系统)与战报速度(×1/×2/×4)改的是 CSS 变量与 aria-pressed,正文一个字不变 —— 于是每轮固定冒 4~6 处读数。读数常驻噪声的代价是真事故被忽略",
+      "severity": 0.2,
+      "confidence": 0.95
+    },
+    "TASK-118": {
+      "id": "TASK-118",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T13:02:26+00:00",
+      "updated_at": "2026-09-12T13:02:26+00:00",
+      "touched_round": 150,
+      "summary": "让冒烟的指纹认得出样式变化(带上 data-theme 与按下的选择),并把几处长期读数各自核一遍(主题换肤 / 属性来源明细 / 后期档整轮冒烟)",
+      "category": "maintainability",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-175": {
+      "id": "CHG-175",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:02:26+00:00",
+      "updated_at": "2026-09-12T13:02:26+00:00",
+      "touched_round": 150,
+      "summary": "ui-smoke.fingerprint 增 data-theme 与 [aria-pressed=true] 列表;实测读数 6 → 2(剩下两处各自核过:状态文字按钮、随机事件弹窗的关闭键)",
+      "commit": "ed0ec4f"
+    },
+    "EV-132": {
+      "id": "EV-132",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:02:26+00:00",
+      "updated_at": "2026-09-12T13:02:26+00:00",
+      "touched_round": 150,
+      "summary": "三条核验读数:① 主题真换肤(夜间 → data-theme=dark、--color-paper-rgb 243 239 228 → 33 31 28;日间/跟随系统各自正确);② 人物页点一行属性,来源明细展开(文本 435 → 526 字),故那条「点了没反应」是采样位置问题;③ 后期档冒烟 15 页 102 次点击(含突破推演/远征预估/挑战书定价/熔炉/魂/道途)无运行时异常。日常档冒烟读数 6 → 2",
+      "confidence": 0.95,
+      "source": "scripts/ui-smoke.mjs"
+    },
+    "DEC-028": {
+      "id": "DEC-028",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:02:36+00:00",
+      "updated_at": "2026-09-12T13:02:36+00:00",
+      "touched_round": 150,
+      "summary": "闭关的禁令范围定为「只禁历练」:秘境/远征/试炼/挑战书不禁。现状保留",
+      "rationale": "闭关的代价是「这五分钟不出门历练」——历练是实时挂机循环,与 +150% 叠加才是双吃;而秘境/远征/试炼都是一次性即时结算,不占用那五分钟。UI 文案也已如实写成「闭关期间无法外出历练」(不是「一切外出」),故无须改行为,只补一条判据守住「点出发当场被拦」",
+      "alternatives_rejected": "① 把禁令扩到秘境/远征/试炼:会凭空砍掉五分钟的内容入口,且这三者并不造成双吃;② 把禁令缩到完全不拦(靠玩家自觉):会让 +150% 与历练叠加,破坏闭关的取舍"
+    },
+    "HYP-077": {
+      "id": "HYP-077",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:02:36+00:00",
+      "updated_at": "2026-09-12T13:02:36+00:00",
+      "touched_round": 150,
+      "summary": "读数要么准,要么别报:固定的假读数会训练人忽略整张表。凡是「点了没反应」这类读数,先问「变化是不是没落在我的指纹里」(样式、选中态、跨页状态),能收进指纹的就收进去 —— 这张表才有资格当哨兵",
       "confidence": 0.85
     }
   },
@@ -11815,6 +11887,42 @@
       "to": "HYP-076",
       "type": "validates",
       "created_at": "2026-09-12T12:41:16+00:00"
+    },
+    {
+      "from": "ISS-127",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T13:02:43+00:00"
+    },
+    {
+      "from": "TASK-118",
+      "to": "ISS-127",
+      "type": "addresses",
+      "created_at": "2026-09-12T13:02:43+00:00"
+    },
+    {
+      "from": "CHG-175",
+      "to": "TASK-118",
+      "type": "implements",
+      "created_at": "2026-09-12T13:02:43+00:00"
+    },
+    {
+      "from": "CHG-175",
+      "to": "ISS-127",
+      "type": "resolves",
+      "created_at": "2026-09-12T13:02:43+00:00"
+    },
+    {
+      "from": "EV-132",
+      "to": "HYP-077",
+      "type": "validates",
+      "created_at": "2026-09-12T13:02:43+00:00"
+    },
+    {
+      "from": "DEC-028",
+      "to": "COMP-006",
+      "type": "governs",
+      "created_at": "2026-09-12T13:02:43+00:00"
     }
   ]
 }
