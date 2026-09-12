@@ -131,6 +131,36 @@ describe('半损坏档 · 进得了游戏,或者被明确拒绝', () => {
     }
   })
 
+  it('导入旧备份:lastActiveAt 重戳为现在,归来不因快照里的旧时间戳老化到死', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1_000_000)
+    try {
+      const writes = new Map<string, string>()
+      vi.stubGlobal('localStorage', {
+        getItem: (k: string) => writes.get(k) ?? null,
+        setItem: (k: string, v: string) => void writes.set(k, v),
+        removeItem: (k: string) => void writes.delete(k),
+        clear: () => writes.clear(),
+        key: () => null,
+        length: 0
+      })
+      // 一份 30 天前导出的旧备份(lastActiveAt 还是那时的时刻)
+      const err = importSaveText(
+        envelope({
+          game: { started: true, lastActiveAt: 1_000_000 - 2_592_000_000, totalPlaySec: 0 },
+          player: { major: 0, age: 146, lifespanBonusYears: 0 }
+        })
+      )
+      expect(err).toBeNull()
+      // 重新水合后,lastActiveAt 应是「现在」,而不是快照里吞下去的旧时刻
+      bootStores()
+      expect(useGameStore().lastActiveAt).toBe(1_000_000)
+    } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('导入写盘中途失败:回滚,旧档原样保留(不清成半档)', () => {
     // 配额不足的存储:resources 分片写不进,其余照常
     const writes = new Map<string, string>()

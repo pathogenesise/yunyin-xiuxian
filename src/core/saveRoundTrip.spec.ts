@@ -155,7 +155,23 @@ describe('存档往返 · 导出再导入一模一样', () => {
       const raw = localStorage.getItem(storageKey(id))
       expect(raw, `导入后 ${id} 分片不见了`).not.toBeNull()
       expect(raw!, `${id} 分片内容与导出的不一致`).not.toContain('云隐')
-      expect(JSON.parse(readSaveText(raw!)), `${id} 分片内容与导出的不一致`).toEqual(payload.data[id])
+      const stored = JSON.parse(readSaveText(raw!)) as Record<string, unknown>
+      if (id === 'game') {
+        // 唯一刻意例外:导入把 lastActiveAt 重戳为「现在」(save.ts migrate),
+        // 免得快照里的旧时间戳把「导入旧备份」误算成「缺勤数月」——时钟
+        // 字段以外,其余键仍须与导出逐一对账
+        const expGame = payload.data.game as Record<string, unknown>
+        expect(stored.lastActiveAt, '导入后游戏时钟应为现在附近').toBeGreaterThan(Date.now() - 60_000)
+        for (const k of Object.keys(stored)) {
+          if (k === 'lastActiveAt') continue
+          expect(stored[k], `game.${k} 应与导出一致`).toEqual(expGame[k])
+        }
+        for (const k of Object.keys(expGame)) {
+          if (k !== 'lastActiveAt') expect(k in stored, `导入后 game 少了一键 ${k}`).toBe(true)
+        }
+      } else {
+        expect(stored, `${id} 分片内容与导出的不一致`).toEqual(payload.data[id])
+      }
     }
 
     // 再开一次游戏(新 pinia + 插件从存档水合):玩家的东西得还在

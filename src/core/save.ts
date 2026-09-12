@@ -20,6 +20,12 @@ function migrate(payload: ExportPayload): ExportPayload {
   if (migrated.version < 2 && typeof migrated.data.inventory === 'object' && migrated.data.inventory !== null) {
     migrated.data.inventory = migrateInventorySlice(migrated.data.inventory as Record<string, unknown>)
   }
+  // 导入 = 从这份快照继续:lastActiveAt 重戳为现在的时刻。
+  // 快照里吞着的是导出那一刻的时间戳,直接沿用会把「导入旧备份」误算成
+  // 「缺勤数月」——离线资源按 8h 封顶、年龄却按全程流,先死处理
+  if (migrated.data.game && typeof migrated.data.game === 'object') {
+    migrated.data.game = { ...(migrated.data.game as Record<string, unknown>), lastActiveAt: Date.now() }
+  }
   migrated.version = SAVE_VERSION
   return migrated
 }
