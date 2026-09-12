@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 137,
+  "round": 138,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T08:14:05+00:00",
+  "updated_at": "2026-09-12T08:36:06+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -425,7 +425,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:46:51+00:00",
       "updated_at": "2026-09-09T14:46:51+00:00",
-      "touched_round": 80,
+      "touched_round": 137,
       "summary": "转世/轮回系统(reincarnation.ts + player store 跨世字段)"
     },
     "ISS-016": {
@@ -7161,7 +7161,7 @@
       "version": 1,
       "created_at": "2026-09-12T07:32:03+00:00",
       "updated_at": "2026-09-12T07:32:03+00:00",
-      "touched_round": 134,
+      "touched_round": 137,
       "summary": "「钉死随机源」只在场景动手之前有效:引擎是按拍推进的,从进入游戏到判据动手之间它已经掷过骰子,浮上来的东西得当场收掉 —— 收拾取景要三件一起做(收提示条、钉随机、关已开浮层),少一件就还会偶发假红",
       "confidence": 0.85
     },
@@ -7283,6 +7283,66 @@
       "updated_at": "2026-09-12T08:14:01+00:00",
       "touched_round": 136,
       "summary": "判据要能自己指认「屏幕上现在是谁」:浮层场景里,拿错扇面板会把诊断指向无辜的人(顿悟被当成突破结果)。凡是「点一下应当开出某扇窗」的判据,都要按内容认窗,并在失败时列出当前所有开着的窗",
+      "confidence": 0.85
+    },
+    "ISS-113": {
+      "id": "ISS-113",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T08:36:02+00:00",
+      "updated_at": "2026-09-12T08:36:06+00:00",
+      "touched_round": 137,
+      "summary": "转世流程(寿元将尽 → 此生已矣 → 轮回 → 新的一世)从没被真浏览器走过:它是每一世收官的仪式,也是唯一会把存档推倒重来的流程,三步弹窗 + 择姿立题 + 新一代建号,任何一步断了都不会有人发现。另:弹窗焦点场景第四次假红,机制是「引擎掷顿悟」与「弹窗每秒轮询」是两个独立定时器 —— 事件已产生、窗还没画出来时,数 .modal-panel 是 0,收拾取景当场收工,一秒后那扇窗才浮上来盖住入口",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-104": {
+      "id": "TASK-104",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T08:36:02+00:00",
+      "updated_at": "2026-09-12T08:36:02+00:00",
+      "touched_round": 137,
+      "summary": "补第十二件事(走完一次转世,逐程查标题/正文/占位符,并查宿慧/道果交代与新的一世),并把 clearOverlays 改成「固定等够一轮、有窗就收、返回残留清单」",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-162": {
+      "id": "CHG-162",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T08:36:02+00:00",
+      "updated_at": "2026-09-12T08:36:02+00:00",
+      "touched_round": 137,
+      "summary": "layout-check 增第十二件事(转世全流程,夹具:寿元写尽);clearOverlays 固定转六圈(≈2.1 秒)并按 Esc 收窗,返回仍未关掉的浮层清单;弹窗焦点场景动手前若仍有残留则直接点名",
+      "commit": "9d8df83"
+    },
+    "EV-119": {
+      "id": "EV-119",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T08:36:03+00:00",
+      "updated_at": "2026-09-12T08:36:03+00:00",
+      "touched_round": 137,
+      "summary": "转世实测:寿元将尽(第 2 世 99999 载 炼虚·四层)→ 此生已矣(宿慧 +12/共计 155/熟知凡间)→ 轮回(凝得道果 64 枚 + 择先天之姿 + 立题)→ 新的一世(闭关修炼中 灵雨 …),全程无占位符、无页面异常。故障注入:「往生」改空点击 → 「往生后的窗标题是「此生已矣」,不是预期的/轮回/」红。取景修复后排版自检 72 组连跑三次全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-064": {
+      "id": "HYP-064",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T08:36:03+00:00",
+      "updated_at": "2026-09-12T08:36:03+00:00",
+      "touched_round": 137,
+      "summary": "「当场看一眼」不足以收拾取景:两个独立定时器(引擎掷事件 / 组件轮询取事件)之间有一拍错位,事件已产生而界面还没画出来。收拾取景要按「最坏一拍」来等(固定转够一圈),而不是「现在没看见就当没有」",
       "confidence": 0.85
     }
   },
@@ -10587,6 +10647,42 @@
       "to": "HYP-059",
       "type": "validates",
       "created_at": "2026-09-12T08:14:05+00:00"
+    },
+    {
+      "from": "ISS-113",
+      "to": "COMP-003",
+      "type": "located_in",
+      "created_at": "2026-09-12T08:36:06+00:00"
+    },
+    {
+      "from": "TASK-104",
+      "to": "ISS-113",
+      "type": "addresses",
+      "created_at": "2026-09-12T08:36:06+00:00"
+    },
+    {
+      "from": "CHG-162",
+      "to": "TASK-104",
+      "type": "implements",
+      "created_at": "2026-09-12T08:36:06+00:00"
+    },
+    {
+      "from": "CHG-162",
+      "to": "ISS-113",
+      "type": "resolves",
+      "created_at": "2026-09-12T08:36:06+00:00"
+    },
+    {
+      "from": "EV-119",
+      "to": "HYP-064",
+      "type": "validates",
+      "created_at": "2026-09-12T08:36:06+00:00"
+    },
+    {
+      "from": "EV-119",
+      "to": "HYP-061",
+      "type": "validates",
+      "created_at": "2026-09-12T08:36:06+00:00"
     }
   ]
 }
