@@ -24,6 +24,8 @@
  *      PWA 恢复上次路由都会走到这个处境)。
  *   十 后期档复核:用夹具存档(神人境 + 装备/法宝/器魂/在途秘境 + 隔夜归来)
  *      再巡一遍 —— 空档量不出长数字与满屏内容,而归来卷轴那屏每几天就见一次。
+ *   十一 渡劫突破真打一次:结果弹窗必须写清成败与雷数、成功要与页面境界对得上
+ *      (每个玩家反复看的那一屏,此前从没被渲染过)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -843,6 +845,86 @@ for (const vp of VIEWPORTS) {
     )
   }
   if (pageErrors.length) failures.push(`[390] 后期档页面异常(远征):${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第十一件事:渡劫突破真打一次(一局里最要紧的那一屏,此前没人画过) ----
+/*
+ * 突破结果弹窗(成功/失败、渡劫雷数与「寿元增至」那一行)是每个玩家都会反复看的屏,
+ * 而它从来没被无头浏览器渲染过 —— 空档修为不满,按钮是灰的;后期档又未必卡在大关上。
+ * 故另起一份「炼气圆满」的夹具:修为与灵气给足、寿元留够,点「引 劫 突 破」真打一次。
+ * 渡劫成不成是随机的,故判据只看**形状**:必须开出结果弹窗,写清成败与境界去向,
+ * 失败不许漏占位符,成功要与页面上的境界对得上。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    // 炼气·圆满(大关)+ 修为灵气给足 + 寿元留够(寿元已尽会被「寿元将尽」截住)
+    player: { major: 0, sub: 9, exp: gn(9, 30), age: 16, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 30, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'fire', aptitude: 90 }], gradeName: '单灵根', growthMult: 1.2 } },
+    resources: { spiritStone: gn(3, 6), qi: 9999999, wudao: 300, herb: 400, ore: 400, page: 90, dust: 120 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/cultivation', { waitUntil: 'load' })
+  await page.waitForTimeout(2200)
+  await clearOverlays(page)
+  checked += 1
+  const tribBtn = page.locator('main button', { hasText: /引\s*劫\s*突\s*破/ }).first()
+  if ((await tribBtn.count()) === 0) {
+    failures.push('[390] 渡劫场景:修为灵气给足、卡在炼气圆满,却没出现「引劫突破」(判据没跑到东西)')
+  } else {
+    await tribBtn.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(1600)
+    const view = await page.evaluate(() => {
+      // 只认**突破结果**那一扇:屏幕上可能同时浮着别的(顿悟/巡游),拿错扇就诊断错人
+      const panels = [...document.querySelectorAll('.modal-panel')]
+      const panel = panels.find(p => /突破成功|突破失败/.test(p.innerText || '')) ?? null
+      const text = panel?.innerText || ''
+      return {
+        found: !!panel,
+        // 没开出来时,把「此刻开着的到底是谁」写进报告 —— 上一次注入就是靠这句才能一眼看懂
+        others: panels.map(p => (p.querySelector('h3')?.textContent || p.getAttribute('aria-label') || '无标题').trim()).join('、'),
+        text,
+        label: panel?.getAttribute('aria-label') ?? null,
+        outcome: /突破成功/.test(text) ? '成功' : /突破失败/.test(text) ? '失败' : null,
+        hasWave: /共\s*\d+\s*道/.test(text),
+        // 页面上当前境界(成功之后应当已经换名)
+        realm: (document.body.innerText.match(/炼气|筑基/) || [''])[0]
+      }
+    })
+    if (!view.found) failures.push(`[390] 渡劫场景:点了「引劫突破」没有开出结果弹窗(此刻开着的是:${view.others || '无'})`)
+    if (view.found) {
+      if (!view.outcome) failures.push(`[390] 渡劫场景:结果弹窗没写清成败 —— ${view.text.slice(0, 40)}`)
+      if (!view.hasWave) failures.push('[390] 渡劫场景:渡劫结果里没有雷数(「共 N 道」)')
+      if (/NaN|undefined|Infinity/.test(view.text)) failures.push('[390] 渡劫场景:结果弹窗漏出占位符')
+      if (view.outcome === '成功' && view.realm !== '筑基') {
+        failures.push(`[390] 渡劫场景:弹窗说成功,页面上的境界却还是「${view.realm}」`)
+      }
+      const close = page.locator('.modal-panel button', { hasText: /继续问道|收拾心情/ }).first()
+      if ((await close.count()) === 0) failures.push('[390] 渡劫场景:结果弹窗没有收尾按钮')
+      else {
+        await close.click({ timeout: 3000 }).catch(() => {})
+        await page.waitForTimeout(600)
+        if (await page.locator('.modal-panel').count()) failures.push('[390] 渡劫场景:点了收尾按钮弹窗没关掉')
+      }
+    }
+    console.log(`\n渡劫突破:${view.outcome ?? '(没写成败)'} · 雷数${view.hasWave ? '有' : '缺'} · 页面境界 ${view.realm}`)
+  }
+  if (pageErrors.length) failures.push(`[390] 渡劫场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
