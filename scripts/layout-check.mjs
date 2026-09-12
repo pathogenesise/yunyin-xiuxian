@@ -22,12 +22,15 @@
  *      它们正常巡页碰不到,正是最容易悄悄退回「自己铺一层浮层」的角落。
  *   九 冷启动落在子页时,「返回」要回父页而不是退出游戏(书签 / deep link /
  *      PWA 恢复上次路由都会走到这个处境)。
+ *   十 后期档复核:用夹具存档(神人境 + 装备/法宝/器魂/在途秘境 + 隔夜归来)
+ *      再巡一遍 —— 空档量不出长数字与满屏内容,而归来卷轴那屏每几天就见一次。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
  * 仍需真机确认,故本脚本过绿不等于真机过绿。
  */
 import { chromium } from 'playwright'
+import CryptoJS from 'crypto-js'
 import { mkdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -112,14 +115,140 @@ async function auditModalControls(page) {
  * 故按堆栈里的脚本来路分流:第三方脚本的异常只打印、不计入失败。
  */
 function watchPageErrors(page, sink) {
+  let thirdPartyNoted = false
   page.on('pageerror', e => {
     const stack = String(e.stack || e.message || '')
     if (/sdk\.51\.la/.test(stack)) {
-      console.log(`  (第三方统计脚本异常,不计入失败:${String(e.message).slice(0, 60)})`)
+      // 逐页重载会把它重复抛出来,同一处只提一次,免得报告被噪声淹没
+      if (!thirdPartyNoted) {
+        thirdPartyNoted = true
+        console.log(`  (第三方统计脚本异常,不计入失败:${String(e.message).slice(0, 60)})`)
+      }
       return
     }
     sink.push(String(e).slice(0, 160))
   })
+}
+
+/**
+ * 一页一量:横向溢出、外壳偏移、越界元素、无名控件、过小可点元素、选择组选中态、底部导航项数。
+ *
+ * 抽成函数是为了让**后期档**那一遍复用同一把尺子 —— 空档量不出长数字与满屏内容,
+ * 而两遍若各写一份判据,迟早会分叉成两套标准。
+ */
+async function measurePage(page) {
+  return page.evaluate(() => {
+    const vw = window.innerWidth
+    const overflows = [...document.querySelectorAll('body *')]
+      .filter(el => {
+        const r = el.getBoundingClientRect()
+        if (r.width <= 0 || r.right <= vw + 2) return false
+        // 纯装饰层(墨爆/传送门)故意超出视口,且不吃事件,不算排版事故
+        return !el.classList.contains('pointer-events-none') && !el.closest('.pointer-events-none')
+      })
+      .slice(0, 4)
+      .map(el => `${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]}@${Math.round(el.getBoundingClientRect().right)}`)
+    return {
+      hash: location.hash,
+      horizontalOverflow: document.documentElement.scrollWidth > vw + 1,
+      /**
+       * 外壳(#app 的第一层)不能被滚偏,也不该有可滚的横向余量。
+       *
+       * 它是 overflow-hidden 的:玩家滚不动,但**浏览器滚得动**。
+       * 云雾装饰故意越界画出盒子(左上 -64px、右下 -96px),曾把外壳撑到
+       * scrollWidth 516 vs clientWidth 390;建号结束时浏览器顺手把 scrollLeft
+       * 设成 24,此后整个界面永久左移 24px —— 顶栏名字被切掉左半边、底部
+       * 第一栏「洞府」只剩半个字。而「查 documentElement 有没有横向溢出」查不出
+       * 这件事:overflow-hidden 把子元素的溢出挡在外壳以内,量在最外层永远是绿的。
+       * 故这里直接量外壳自己:scrollLeft 必须为 0,且不该有横向可滚区间。
+       */
+      shellShift: (() => {
+        const shell = document.getElementById('app')?.firstElementChild
+        if (!shell) return null
+        return { scrollLeft: Math.round(shell.scrollLeft), overflowX: Math.round(shell.scrollWidth - shell.clientWidth) }
+      })(),
+      overflows,
+      navItems: document.querySelectorAll('nav button, nav a').length,
+      /**
+       * 只有图标的控件必须自带可访问名(aria-label / 可见文字)。
+       * 没有名字,读屏只会念「按钮」「链接」,自动化也无从按名字点它。
+       */
+      unnamed: [...document.querySelectorAll('button, a, [role=button]')]
+        .filter(el => {
+          const name = (el.getAttribute('aria-label') || el.textContent || '').trim()
+          if (name) return false
+          const r = el.getBoundingClientRect()
+          return r.width > 0 && r.height > 0
+        })
+        .slice(0, 3)
+        .map(el => el.outerHTML.slice(0, 80).replace(/\s+/g, ' ')),
+      /**
+       * 可点元素的高度下限 28px —— 拇指点得着的最起码尺寸。
+       * 实测(带装备的后期档,375/320 两档):修前有 47 个不足 24px、26 个不足 28px,
+       * 大多是把文字行直接当按钮(属性来源行、返回链接、设置里的胶囊按钮)。
+       */
+      smallTargets: [...document.querySelectorAll('button, a, [role=button]')]
+        .map(el => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width > 0 && r.height > 0 && r.height < 28)
+        .slice(0, 3)
+        .map(({ el, r }) => `${Math.round(r.height)}px «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 12)}»`),
+      /**
+       * 选择型控件的选中态要对机器可读,且**每组恰有一个**。
+       *
+       * 此前主题/战报速度/页签的选中全靠边色,读屏用户与自动化都看不出选了哪个
+       * (上一轮补了 aria-label/aria-pressed,这里把「恰好一个」钉住)。
+       */
+      badGroups: (() => {
+        const out = []
+        for (const attr of ['aria-pressed', 'aria-selected']) {
+          const byParent = new Map()
+          for (const el of document.querySelectorAll(`[${attr}]`)) {
+            const parent = el.parentElement
+            if (!parent) continue
+            byParent.set(parent, [...(byParent.get(parent) ?? []), el])
+          }
+          for (const [parent, els] of byParent) {
+            if (els.length < 2) continue
+            const on = els.filter(e => e.getAttribute(attr) === 'true').length
+            if (on !== 1) out.push(`${attr} 组(${els.length} 项)里有 ${on} 个选中`)
+          }
+        }
+        // 页签:每一组(同一父容器下 ≥2 个 role=tab)恰有一个 aria-selected=true
+        const tabsByParent = new Map()
+        for (const el of document.querySelectorAll('[role=tab]')) {
+          const parent = el.parentElement
+          if (!parent) continue
+          tabsByParent.set(parent, [...(tabsByParent.get(parent) ?? []), el])
+        }
+        for (const [, els] of tabsByParent) {
+          if (els.length < 2) continue
+          const on = els.filter(e => e.getAttribute('aria-selected') === 'true').length
+          if (on !== 1) out.push(`页签组(${els.length} 项)里有 ${on} 个选中`)
+        }
+        // 设置页的两组选择(主题、战报速度)是明文约定:少了哪一组这里就红
+        if (location.hash.startsWith('#/settings')) {
+          const pressed = document.querySelectorAll('[aria-pressed]').length
+          if (pressed < 6) out.push(`设置页的选择控件只有 ${pressed} 个带 aria-pressed(主题 3 + 速度 3)`)
+        }
+        return out.slice(0, 3)
+      })()
+    }
+  })
+}
+
+/** 一页量出来的读数 → 失败清单(两遍巡页共用同一套判据) */
+function problemsOf(info) {
+  const problems = []
+  if (info.horizontalOverflow) problems.push(`横向溢出(scrollWidth ${info.hash})`)
+  if (info.shellShift && (info.shellShift.scrollLeft !== 0 || info.shellShift.overflowX > 1)) {
+    problems.push(`外壳被滚偏(scrollLeft ${info.shellShift.scrollLeft} / 横向可滚 ${info.shellShift.overflowX}px)`)
+  }
+  if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
+  if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
+  if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
+  if (info.badGroups.length) problems.push(`选择组没选中态:${info.badGroups.join(' | ')}`)
+  if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
+  return problems
 }
 
 for (const vp of VIEWPORTS) {
@@ -149,114 +278,9 @@ for (const vp of VIEWPORTS) {
   for (const route of ROUTES) {
     await page.goto(INDEX + '#' + route, { waitUntil: 'load' })
     await page.waitForTimeout(700)
-    const info = await page.evaluate(() => {
-      const vw = window.innerWidth
-      const overflows = [...document.querySelectorAll('body *')]
-        .filter(el => {
-          const r = el.getBoundingClientRect()
-          if (r.width <= 0 || r.right <= vw + 2) return false
-          // 纯装饰层(墨爆/传送门)故意超出视口,且不吃事件,不算排版事故
-          return !el.classList.contains('pointer-events-none') && !el.closest('.pointer-events-none')
-        })
-        .slice(0, 4)
-        .map(el => `${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]}@${Math.round(el.getBoundingClientRect().right)}`)
-      return {
-        hash: location.hash,
-        horizontalOverflow: document.documentElement.scrollWidth > vw + 1,
-        /**
-         * 外壳(#app 的第一层)不能被滚偏,也不该有可滚的横向余量。
-         *
-         * 它是 overflow-hidden 的:玩家滚不动,但**浏览器滚得动**。
-         * 云雾装饰故意越界画出盒子(左上 -64px、右下 -96px),曾把外壳撑到
-         * scrollWidth 516 vs clientWidth 390;建号结束时浏览器顺手把 scrollLeft
-         * 设成 24,此后整个界面永久左移 24px —— 顶栏名字被切掉左半边、底部
-         * 第一栏「洞府」只剩半个字。而「查 documentElement 有没有横向溢出」查不出
-         * 这件事:overflow-hidden 把子元素的溢出挡在外壳以内,量在最外层永远是绿的。
-         * 故这里直接量外壳自己:scrollLeft 必须为 0,且不该有横向可滚区间。
-         */
-        shellShift: (() => {
-          const shell = document.getElementById('app')?.firstElementChild
-          if (!shell) return null
-          return { scrollLeft: Math.round(shell.scrollLeft), overflowX: Math.round(shell.scrollWidth - shell.clientWidth) }
-        })(),
-        overflows,
-        navItems: document.querySelectorAll('nav button, nav a').length,
-        /**
-         * 只有图标的控件必须自带可访问名(aria-label / 可见文字)。
-         * 没有名字,读屏只会念「按钮」「链接」,自动化也无从按名字点它。
-         */
-        unnamed: [...document.querySelectorAll('button, a, [role=button]')]
-          .filter(el => {
-            const name = (el.getAttribute('aria-label') || el.textContent || '').trim()
-            if (name) return false
-            const r = el.getBoundingClientRect()
-            return r.width > 0 && r.height > 0
-          })
-          .slice(0, 3)
-          .map(el => el.outerHTML.slice(0, 80).replace(/\s+/g, ' ')),
-        /**
-         * 可点元素的高度下限 28px —— 拇指点得着的最起码尺寸。
-         * 实测(带装备的后期档,375/320 两档):修前有 47 个不足 24px、26 个不足 28px,
-         * 大多是把文字行直接当按钮(属性来源行、返回链接、设置里的胶囊按钮)。
-         */
-        smallTargets: [...document.querySelectorAll('button, a, [role=button]')]
-          .map(el => ({ el, r: el.getBoundingClientRect() }))
-          .filter(({ r }) => r.width > 0 && r.height > 0 && r.height < 28)
-          .slice(0, 3)
-          .map(({ el, r }) => `${Math.round(r.height)}px «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 12)}»`),
-        /**
-         * 选择型控件的选中态要对机器可读,且**每组恰有一个**。
-         *
-         * 此前主题/战报速度/页签的选中全靠边色,读屏用户与自动化都看不出选了哪个
-         * (上一轮补了 aria-label/aria-pressed,这里把「恰好一个」钉住)。
-         */
-        badGroups: (() => {
-          const out = []
-          for (const attr of ['aria-pressed', 'aria-selected']) {
-            const byParent = new Map()
-            for (const el of document.querySelectorAll(`[${attr}]`)) {
-              const parent = el.parentElement
-              if (!parent) continue
-              byParent.set(parent, [...(byParent.get(parent) ?? []), el])
-            }
-            for (const [parent, els] of byParent) {
-              if (els.length < 2) continue
-              const on = els.filter(e => e.getAttribute(attr) === 'true').length
-              if (on !== 1) out.push(`${attr} 组(${els.length} 项)里有 ${on} 个选中`)
-            }
-          }
-          // 页签:每一组(同一父容器下 ≥2 个 role=tab)恰有一个 aria-selected=true
-          const tabsByParent = new Map()
-          for (const el of document.querySelectorAll('[role=tab]')) {
-            const parent = el.parentElement
-            if (!parent) continue
-            tabsByParent.set(parent, [...(tabsByParent.get(parent) ?? []), el])
-          }
-          for (const [, els] of tabsByParent) {
-            if (els.length < 2) continue
-            const on = els.filter(e => e.getAttribute('aria-selected') === 'true').length
-            if (on !== 1) out.push(`页签组(${els.length} 项)里有 ${on} 个选中`)
-          }
-          // 设置页的两组选择(主题、战报速度)是明文约定:少了哪一组这里就红
-          if (location.hash.startsWith('#/settings')) {
-            const pressed = document.querySelectorAll('[aria-pressed]').length
-            if (pressed < 6) out.push(`设置页的选择控件只有 ${pressed} 个带 aria-pressed(主题 3 + 速度 3)`)
-          }
-          return out.slice(0, 3)
-        })()
-      }
-    })
+    const info = await measurePage(page)
     checked += 1
-    const problems = []
-    if (info.horizontalOverflow) problems.push(`横向溢出(scrollWidth ${info.hash})`)
-    if (info.shellShift && (info.shellShift.scrollLeft !== 0 || info.shellShift.overflowX > 1)) {
-      problems.push(`外壳被滚偏(scrollLeft ${info.shellShift.scrollLeft} / 横向可滚 ${info.shellShift.overflowX}px)`)
-    }
-    if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
-    if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
-    if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
-    if (info.badGroups.length) problems.push(`选择组没选中态:${info.badGroups.join(' | ')}`)
-    if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
+    const problems = problemsOf(info)
     if (problems.length) failures.push(`[${vp.tag}] ${route} → ${problems.join(' / ')}`)
     if (SHOTS) {
       mkdirSync(SHOTS_DIR, { recursive: true })
@@ -341,8 +365,17 @@ for (const vp of VIEWPORTS) {
     await trigger.waitFor({ state: 'visible', timeout: 10000 })
     await trigger.click({ timeout: 5000 })
   } catch (err) {
-    // 把真实原因写进报告 —— 「页面没就绪?」这种猜测曾让人白跑一趟
-    failures.push(`[375] 弹窗焦点场景:「关于」入口点不开(${String(err).split('\n')[0]?.slice(0, 140)})`)
+    // 把真实原因与**挡路的是谁**一起写进报告 —— 「页面没就绪?」这种猜测曾让人白跑两趟,
+    // 第二次才发现挡路的是一层随机浮上来的浮盖。抓不到线索的判据等于没有判据。
+    const blocked = await page.evaluate(() => {
+      const b = [...document.querySelectorAll('button')].find(x => (x.textContent || '').includes('关于'))
+      if (!b) return '(页面上找不到「关于」)'
+      const r = b.getBoundingClientRect()
+      const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+      const modals = [...document.querySelectorAll('.modal-panel')].map(p => (p.querySelector('h3')?.textContent || '(无标题)').trim())
+      return `挡路:${at ? `${at.tagName.toLowerCase()}.${String(at.className).slice(0, 40)}` : '无'} / 开着的弹窗:${modals.join('、') || '无'}`
+    })
+    failures.push(`[375] 弹窗焦点场景:「关于」入口点不开(${String(err).split('\n')[0]?.slice(0, 80)};${blocked})`)
   }
   await page.waitForTimeout(350)
   const opened = await page.evaluate(() => {
@@ -589,6 +622,116 @@ for (const vp of VIEWPORTS) {
     else if (after.hash !== '#/' && after.hash !== '') failures.push(`[375] 冷启动场景:点「返回」落在 ${after.hash},父页应是 #/`)
   }
   if (pageErrors.length) failures.push(`[375] 冷启动场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第十件事:后期档的逐页复核(空档量不出长数字与满屏内容) ----
+/*
+ * 前面九件事量的是「刚建号」那一份空档。可同一个页面在神人境是另一副样子:
+ * 数字长到九位数、法宝两件、器魂、在途秘境、以及隔夜归来时的「归来卷轴」。
+ * 那一屏玩家每隔几天就会见一次,却从来没有被无头浏览器画出来过。
+ * 故这里用一份自检夹具(存档密钥就写在包里,见 utils/crypto 的注释:并非安全边界),
+ * 走一遍后期档:先核归来卷轴,再逐页过同一把尺子。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now() - 86400000 * 30, lastActiveAt: Date.now() - 9 * 3600000, totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: {
+      major: 14,
+      sub: 0,
+      exp: gn(3, 9),
+      age: 3000,
+      lifespanBonusYears: 0,
+      dead: false,
+      reincarnation: { count: 2, daoFruit: 12, talents: [], insight: 400, lives: [], vow: null, trial: null, bonds: [] },
+      linggen: { roots: [{ element: 'fire', aptitude: 88 }, { element: 'water', aptitude: 70 }], gradeName: '双灵根', growthMult: 1.4 },
+      // 在途秘境:归来卷轴要说「原样留着」,历练页也要画出「在境中」那一版
+      secretRealm: { realmId: 'sr_kurong', enteredAt: Date.now() - 600000, layer: 2, wins: 1, losses: 0, spoils: ['灵石少许'], rules: ['治疗减半'], carriedHpPct: 0.7, finished: false }
+    },
+    resources: { spiritStone: gn(9, 12), qi: 5000, wudao: 800, herb: 900, ore: 900, page: 300, dust: 500 },
+    inventory: {
+      items: [
+        { uid: 'late_w', templateId: 'w_zidian', quality: 'heaven', tier: 20, level: 0, affixes: [{ id: 'bs3', roll: 1 }] },
+        { uid: 'late_a', templateId: 'a_hufu', quality: 'heaven', tier: 20, level: 0, affixes: [{ id: 'low2', roll: 1 }] }
+      ],
+      equipped: { weapon: 'late_w', armor: 'late_a' },
+      pills: { p_jvqidan: 5, p_huichun: 3 },
+      artifacts: [{ defId: 'af_qinglian', level: 3 }, { defId: 'af_wuxiangzhu', level: 2 }],
+      equippedArtifacts: ['af_qinglian', 'af_wuxiangzhu']
+    },
+    endgame: { daoPath: 'sword', daoSource: 1200, souls: [{ uid: 'late_s1', type: 'fengmang', grade: 1, fromName: '旧剑' }], equippedSouls: ['late_s1'] },
+    settings: {
+      privacyAccepted: true,
+      sfxOn: false,
+      musicOn: false,
+      musicVol: 0,
+      sfxVol: 0,
+      reduceMotion: true,
+      battleSpeed: 4,
+      decomposeRanks: [],
+      smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true },
+      theme: 'dark'
+    }
+  }
+  await ctx.addInitScript(
+    data => {
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2600)
+
+  // (一)隔夜归来第一眼:数字不许漏 NaN,收下之后要真的关掉
+  checked += 1
+  const offline = await page.evaluate(() => {
+    const panel = document.querySelector('.modal-panel')
+    if (!panel) return null
+    const text = panel.innerText || ''
+    return {
+      label: panel.getAttribute('aria-label'),
+      text: text.slice(0, 200),
+      leaks: /NaN|undefined|Infinity/.test(text),
+      rows: text.split('\n').filter(l => l.includes('+')).length
+    }
+  })
+  if (!offline) {
+    failures.push('[390] 后期档:隔夜 9 小时开局,「归来卷轴」没有弹出来')
+  } else {
+    if (!offline.label) failures.push('[390] 后期档:归来卷轴没有可访问名')
+    if (offline.leaks) failures.push(`[390] 后期档:归来卷轴漏出占位符 —— ${offline.text.slice(0, 60)}`)
+    if (offline.rows === 0) failures.push('[390] 后期档:归来卷轴一条收益都没列')
+    const take = page.locator('.modal-panel button', { hasText: /收\s*下/ }).first()
+    if ((await take.count()) === 0) failures.push('[390] 后期档:归来卷轴没有「收下」')
+    else {
+      await take.click({ timeout: 3000 }).catch(() => {})
+      await page.waitForTimeout(700)
+      if (await page.locator('.modal-panel').count()) failures.push('[390] 后期档:点了「收下」归来卷轴没关掉')
+    }
+  }
+
+  // (二)后期档逐页:与空档同一把尺子
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+    Math.random = () => 1
+  })
+  await page.waitForTimeout(400)
+  for (const route of ['/', '/cultivation', '/adventure', '/inventory', '/character', '/celestial', '/souls', '/collection', '/build', '/dongfu']) {
+    await page.goto(INDEX + '#' + route, { waitUntil: 'load' })
+    await page.waitForTimeout(700)
+    const info = await measurePage(page)
+    checked += 1
+    const problems = problemsOf(info)
+    if (problems.length) failures.push(`[390-late] ${route} → ${problems.join(' / ')}`)
+  }
+  if (pageErrors.length) failures.push(`[390] 后期档页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 

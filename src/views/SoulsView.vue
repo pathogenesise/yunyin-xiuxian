@@ -56,7 +56,13 @@
                 {{ soulSeal(endgame.activeSouls[i - 1]!) }}
               </span>
               <span class="mt-1 text-[10px] leading-tight text-ink-soft">{{ soulLabel(endgame.activeSouls[i - 1]!) }}</span>
-              <button class="mt-1 text-[10px] text-ink-faint underline" @click="removeSoul(endgame.activeSouls[i - 1]!.uid)">卸下</button>
+              <!-- 纯文字按钮只有字体那 15px 高;补成内联块给拇指一个 30px 的靶面 -->
+              <button
+                class="mt-1 inline-block px-2 py-2 text-[10px] text-ink-faint underline"
+                @click="removeSoul(endgame.activeSouls[i - 1]!.uid)"
+              >
+                卸下
+              </button>
             </template>
             <span v-else class="text-[10px] text-ink-ghost">空</span>
           </div>
