@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 157,
+  "round": 158,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T17:16:30+00:00",
+  "updated_at": "2026-09-12T21:08:11+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 151,
+      "touched_round": 158,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -324,7 +324,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:05:15+00:00",
       "updated_at": "2026-09-09T14:05:15+00:00",
-      "touched_round": 103,
+      "touched_round": 158,
       "summary": "悟道顿悟/洞府巡游事件系统(earlyGameService + 两个弹窗组件)"
     },
     "CHG-007": {
@@ -448,7 +448,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:59:19+00:00",
       "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 136,
+      "touched_round": 158,
       "summary": "突破系统(breakthrough.ts + 突破准备数据)"
     },
     "ISS-017": {
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 150,
+      "touched_round": 158,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 144,
+      "touched_round": 158,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -8617,6 +8617,316 @@
       "touched_round": 156,
       "summary": "智能收纳:练过/成套/近满三类当藏(hasInvestment 与两条新规则,后两条配开关)+ 腾位改 compareEvictable 先挤最弱;smartKeep.spec 7 例、layout-check 第二十六件事、loot.spec 夹具确定性化",
       "commit": "a665f77"
+    },
+    "EV-139": {
+      "id": "EV-139",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T20:56:04+00:00",
+      "updated_at": "2026-09-12T20:56:04+00:00",
+      "touched_round": 158,
+      "summary": "复现:player.({lifespanBonusYears:'abc'}) 后 sanitize 不修整该字段,值仍为字符串;lifespanMax 随之 NaN。回归用例见 storeResilience.spec.ts「寿元加算」",
+      "source": "src/core/storeResilience.spec.ts 寿元加算:非数字被修回 0",
+      "confidence": 0.95
+    },
+    "EV-140": {
+      "id": "EV-140",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T20:56:04+00:00",
+      "updated_at": "2026-09-12T20:56:04+00:00",
+      "touched_round": 158,
+      "summary": "复现:resolveEventChoice 构造事件,负灵石支出超出余额时旧实现把整份余额清零(spendStone 传余额拷贝,gte 恒真);ev_hongmeng_benyuan「凝本源为一丹」声明 cond 300 灵石却无对应支出 effect。回归见 eventEngine.spec.ts",
+      "source": "src/core/eventEngine.spec.ts 事件结算 · 灵石代价守恒",
+      "confidence": 0.95
+    },
+    "EV-141": {
+      "id": "EV-141",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T20:56:04+00:00",
+      "updated_at": "2026-09-12T20:56:04+00:00",
+      "touched_round": 158,
+      "summary": "复现:attemptBreakthrough 在天劫成败判定之前就 track('tribulations'),失败也计数;钉死 rng 的最大最小伤害抖动可确定性复现。回归见 breakthroughCounter.spec.ts",
+      "source": "src/core/breakthroughCounter.spec.ts 突破 · 天劫计数口径",
+      "confidence": 0.95
+    },
+    "HYP-083": {
+      "id": "HYP-083",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T20:56:57+00:00",
+      "updated_at": "2026-09-12T20:56:57+00:00",
+      "touched_round": 158,
+      "summary": "寿元加算(lifespanBonusYears)从不被 sanitize:写坏/导入的字符串、NaN 一路进 lifespanMax=floor(base×(1+pct)+该栏),把寿元上限烧成 NaN,引擎死亡判据 age<NaN 恒 false → 下次 tick 即「油尽灯枯」,玩家无从干预",
+      "confidence": 0.95
+    },
+    "HYP-084": {
+      "id": "HYP-084",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T20:56:57+00:00",
+      "updated_at": "2026-09-12T20:56:57+00:00",
+      "touched_round": 158,
+      "summary": "事件灵石代价不守恒:负灵石支出在入不敷出时用「余额拷贝」喂 spendStone(让 gte 恒真),结局是把整份余额清零;另有事件(凝本源为一丹)在 cond 声明 300 灵石门槛、结算却分文不扣 → 免费取物",
+      "confidence": 0.9
+    },
+    "HYP-085": {
+      "id": "HYP-085",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T20:56:57+00:00",
+      "updated_at": "2026-09-12T20:56:57+00:00",
+      "touched_round": 158,
+      "summary": "天劫计数在成败判定之前:track('tribulations') 不认 success,失败也累计 —— 连败三次就会解锁成就 a_trib3「渡过 3 次天劫」,与「渡过」语义不符",
+      "confidence": 0.95
+    },
+    "ISS-138": {
+      "id": "ISS-138",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T20:58:03+00:00",
+      "updated_at": "2026-09-12T21:08:11+00:00",
+      "touched_round": 158,
+      "summary": "寿元加算不设防:lifespanBonusYears 字符串/NaN 经导入或写坏进店,把 lifespanMax 烧成 NaN,引擎下一拍即判死 —— 单字段损坏 = 角色立即死亡,无任何二次确认或兜底",
+      "severity": 0.95,
+      "confidence": 0.95
+    },
+    "ISS-139": {
+      "id": "ISS-139",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T20:58:03+00:00",
+      "updated_at": "2026-09-12T21:08:11+00:00",
+      "touched_round": 158,
+      "summary": "事件灵石代价不守恒:入不敷出的负灵石支出把整份余额清零(越支成清零);凝本源为一丹声明 300 灵石门槛却分文不扣(免费取丹) —— 代价既可能被清零暴食,也可能被跳过",
+      "severity": 0.8,
+      "confidence": 0.9
+    },
+    "ISS-140": {
+      "id": "ISS-140",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T20:58:03+00:00",
+      "updated_at": "2026-09-12T21:08:11+00:00",
+      "touched_round": 158,
+      "summary": "天劫计数口径:失败也累计 tribulations,a_trib3「渡过 3 次天劫」在连败 3 次时解锁 —— 成就语义与「渡过」不符",
+      "severity": 0.55,
+      "confidence": 0.95
+    },
+    "TASK-129": {
+      "id": "TASK-129",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T20:58:03+00:00",
+      "updated_at": "2026-09-12T21:08:11+00:00",
+      "touched_round": 158,
+      "summary": "修形寿元加算:player.sanitize 补 lifespanBonusYears = asFiniteNumber(值, 0) —— 坏值修回 0,合法延寿不误伤",
+      "category": "correctness",
+      "severity": 0.95,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "TASK-130": {
+      "id": "TASK-130",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T20:58:03+00:00",
+      "updated_at": "2026-09-12T21:08:11+00:00",
+      "touched_round": 158,
+      "summary": "事件灵石收支守恒:applyEffect 负灵石改走 spendStone(付不起即拒绝,不再整体清零);凝本源为一丹补上 -300 实扣,让 cond 声明与结算一致",
+      "category": "correctness",
+      "severity": 0.8,
+      "confidence": 0.9,
+      "effort": 1.5
+    },
+    "TASK-131": {
+      "id": "TASK-131",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T20:58:03+00:00",
+      "updated_at": "2026-09-12T21:08:11+00:00",
+      "touched_round": 158,
+      "summary": "天劫按 success 计数:attemptBreakthrough 只在渡劫成功时 track('tribulations') —— 失败攒不出「渡过」成就",
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "COMP-016": {
+      "id": "COMP-016",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-12T21:00:41+00:00",
+      "touched_round": 158,
+      "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
+    },
+    "EV-142": {
+      "id": "EV-142",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-12T21:00:41+00:00",
+      "touched_round": 158,
+      "summary": "天界双口径核验:gauntlet.forgeSoul 对 BASE_PCT_KEYS(attackPct/defensePct/maxHpPct)原样透传,故无器魂时 celestialStats 三维 == finalStats 三维(远征敌方 ref 用 finalStats 并无硬件差);有器魂时装备 attackPct 从玩家侧整份剥离、敌方 ref 仍含 —— 高器魂玩家在远征/挑战(切磋/变数)里遭隐性加难,与试炼(celestialStats+depth)口径分叉",
+      "source": "src/core/gauntlet.ts:34 BASE_PCT_KEYS · src/stores/player.ts:267 celestialStats · src/core/expedition.ts:152 fightStep",
+      "confidence": 0.7
+    },
+    "HYP-086": {
+      "id": "HYP-086",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-12T21:00:41+00:00",
+      "touched_round": 158,
+      "summary": "远征/挑战(切磋/变数)与试炼同为天界内容却双轨:前者按 finalStats(凡界满装)造敌、玩家按 celestialStats 打且敌方 mods 无 depthScale;后者(celestialStats+depth)才是「三维与词条互相对消」的设计口径。装备越厚、器魂配置越足,分叉越明显 —— 反成长/双标准",
+      "confidence": 0.6
+    },
+    "EV-143": {
+      "id": "EV-143",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-12T21:00:41+00:00",
+      "touched_round": 158,
+      "summary": "离线老化不看上限:offline.ts:219 addAge((dtSec/3600)*AGE_YEARS_PER_HOUR) 用完整 dtSec,不走 capSec/effSec(资源线 8h 封顶只作用于资源);game.sanitize 把 lastActiveAt 兜底成 0 而非 now —— 导入 30 天前旧备份或时钟错位 → 数百~数十万载老化 → 下拍即死",
+      "source": "src/core/offline.ts:219 · src/stores/game.ts:26 sanitize lastActiveAt",
+      "confidence": 0.7
+    },
+    "HYP-087": {
+      "id": "HYP-087",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-12T21:00:41+00:00",
+      "touched_round": 158,
+      "summary": "离线年龄不封顶是设计,配错的 lastActiveAt(旧备份/时钟回拨)却把「该有点惩罚」变成「必死」:资源按 8h×0.9 结算、年龄按全程 —— 导入旧档的代价远大于设计意图",
+      "confidence": 0.5
+    },
+    "EV-144": {
+      "id": "EV-144",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:42+00:00",
+      "updated_at": "2026-09-12T21:00:42+00:00",
+      "touched_round": 158,
+      "summary": "导入非原子:applyImportPayload 先 clearAllSave() 再逐片 setItem;配额失败时旧档已全删、新档只写一半,注释自己警告过的「半清的存档比清干净更糟」恰在导入路径上发生;spec 只覆盖了导入前校验拒绝保留旧档的情形",
+      "source": "src/utils/storage.ts:311 applyImportPayload · save.ts:42",
+      "confidence": 0.6
+    },
+    "EV-145": {
+      "id": "EV-145",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:42+00:00",
+      "updated_at": "2026-09-12T21:00:42+00:00",
+      "touched_round": 158,
+      "summary": "CI 缺口:三个 workflow(build/deploy/yunyin)只构建与发布,type-check 借 build 里的 vue-tsc 顺带执行,但 eslint 与《1462 条单元测试》从不进 CI,仓库亦无 git hooks —— 测试只在本地跑,回归漏网无任何合并/发布关口",
+      "source": ".github/workflows/{build,deploy,yunyin}.yml (grep 无 vitest/eslint)",
+      "confidence": 1.0
+    },
+    "EV-146": {
+      "id": "EV-146",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:00:42+00:00",
+      "updated_at": "2026-09-12T21:00:42+00:00",
+      "touched_round": 158,
+      "summary": "天机透视·入界之敌在出发前(run=null)只经 currentDaoRules() 预估,漏掉 world.rules(enemyAtkMult/healMult/maxRounds)、所择契约、奇门;真正开战走 expeditionRules(道途×世界×契约×奇门×节点) —— 天机道「先算后战」的报战胜算比实况乐观一整档",
+      "source": "src/core/expedition.ts:305 previewFight · src/views/CelestialView.vue:895",
+      "confidence": 0.85
+    },
+    "ISS-141": {
+      "id": "ISS-141",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:01:50+00:00",
+      "updated_at": "2026-09-12T21:01:50+00:00",
+      "touched_round": 158,
+      "summary": "远征/挑战(切磋/变数)与试炼天界口径分叉:敌方按 finalStats 造敌而玩家按 celestialStats 打,器魂配置下装备 attackPct 从玩家侧剥离、另一半仍在敌方 ref —— 试炼(celestialStats+depth)口径正确,另两条线留下反成长不设防(PLAUSIBLE,需产品定夺统一口径)",
+      "severity": 0.55,
+      "confidence": 0.6
+    },
+    "ISS-142": {
+      "id": "ISS-142",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:01:50+00:00",
+      "updated_at": "2026-09-12T21:01:50+00:00",
+      "touched_round": 158,
+      "summary": "离线老化不看离线上限,且 lastActiveAt 损坏被兜成 0:导入旧备份/设备时钟错位 → 数百至数十万载老化 → 下拍即死;资源线 8h 封顶段的口径与年龄线不一致 —— 导入旧档的惩罚远超设计(需决策:导入时重戳 lastActiveAt 或年龄走下限)",
+      "severity": 0.7,
+      "confidence": 0.6
+    },
+    "ISS-143": {
+      "id": "ISS-143",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:01:50+00:00",
+      "updated_at": "2026-09-12T21:01:50+00:00",
+      "touched_round": 158,
+      "summary": "导入非原子:配额失败时旧档已清、新档半写,导入路径把「半清存档」风险做实(位置:clearAllSave 后逐片 setItem,无回滚)",
+      "severity": 0.65,
+      "confidence": 0.6
+    },
+    "ISS-144": {
+      "id": "ISS-144",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:01:50+00:00",
+      "updated_at": "2026-09-12T21:01:50+00:00",
+      "touched_round": 158,
+      "summary": "CI 不跑 lint 与单元测试:1462 条用例与 eslint 只在本地产出,任何 push/合并都不经过它们 —— 回归被推向生产是无声的(悬在 stability/test-quality 之间,建议至少加一条 vitest+eslint 关口)",
+      "severity": 0.5,
+      "confidence": 1.0
+    },
+    "ISS-145": {
+      "id": "ISS-145",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:01:50+00:00",
+      "updated_at": "2026-09-12T21:01:50+00:00",
+      "touched_round": 158,
+      "summary": "天机道「天机透视·入界之敌」出发前预览漏世界/契约/奇门规则:报的胜算用的是另一场仗的规则,与实战所见即所打契约冲突(fate 道途专属,对它是核心玩法违约)",
+      "severity": 0.55,
+      "confidence": 0.85
+    },
+    "CHG-182": {
+      "id": "CHG-182",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:07:06+00:00",
+      "updated_at": "2026-09-12T21:07:06+00:00",
+      "touched_round": 158,
+      "summary": "修形寿元加算 + 事件灵石收支守恒 + 天劫按成功计数,三处各配确定性回归用例",
+      "commit": "f7e1d4c"
     }
   },
   "edges": [
@@ -12652,6 +12962,138 @@
       "to": "ISS-137",
       "type": "resolves",
       "created_at": "2026-09-12T17:16:30+00:00"
+    },
+    {
+      "from": "EV-139",
+      "to": "HYP-083",
+      "type": "validates",
+      "created_at": "2026-09-12T20:59:05+00:00"
+    },
+    {
+      "from": "EV-140",
+      "to": "HYP-084",
+      "type": "validates",
+      "created_at": "2026-09-12T20:59:05+00:00"
+    },
+    {
+      "from": "EV-141",
+      "to": "HYP-085",
+      "type": "validates",
+      "created_at": "2026-09-12T20:59:05+00:00"
+    },
+    {
+      "from": "TASK-129",
+      "to": "ISS-138",
+      "type": "addresses",
+      "created_at": "2026-09-12T20:59:06+00:00"
+    },
+    {
+      "from": "TASK-130",
+      "to": "ISS-139",
+      "type": "addresses",
+      "created_at": "2026-09-12T20:59:06+00:00"
+    },
+    {
+      "from": "TASK-131",
+      "to": "ISS-140",
+      "type": "addresses",
+      "created_at": "2026-09-12T20:59:06+00:00"
+    },
+    {
+      "from": "ISS-138",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T20:59:06+00:00"
+    },
+    {
+      "from": "ISS-139",
+      "to": "COMP-002",
+      "type": "located_in",
+      "created_at": "2026-09-12T20:59:06+00:00"
+    },
+    {
+      "from": "ISS-140",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-12T20:59:06+00:00"
+    },
+    {
+      "from": "EV-142",
+      "to": "HYP-086",
+      "type": "validates",
+      "created_at": "2026-09-12T21:02:45+00:00"
+    },
+    {
+      "from": "EV-143",
+      "to": "HYP-087",
+      "type": "validates",
+      "created_at": "2026-09-12T21:02:46+00:00"
+    },
+    {
+      "from": "ISS-141",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-12T21:02:46+00:00"
+    },
+    {
+      "from": "ISS-142",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T21:02:46+00:00"
+    },
+    {
+      "from": "ISS-143",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T21:02:46+00:00"
+    },
+    {
+      "from": "ISS-144",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-12T21:02:46+00:00"
+    },
+    {
+      "from": "ISS-145",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-12T21:02:46+00:00"
+    },
+    {
+      "from": "CHG-182",
+      "to": "TASK-129",
+      "type": "implements",
+      "created_at": "2026-09-12T21:07:06+00:00"
+    },
+    {
+      "from": "CHG-182",
+      "to": "TASK-130",
+      "type": "implements",
+      "created_at": "2026-09-12T21:07:06+00:00"
+    },
+    {
+      "from": "CHG-182",
+      "to": "TASK-131",
+      "type": "implements",
+      "created_at": "2026-09-12T21:07:06+00:00"
+    },
+    {
+      "from": "CHG-182",
+      "to": "ISS-138",
+      "type": "resolves",
+      "created_at": "2026-09-12T21:07:06+00:00"
+    },
+    {
+      "from": "CHG-182",
+      "to": "ISS-139",
+      "type": "resolves",
+      "created_at": "2026-09-12T21:07:07+00:00"
+    },
+    {
+      "from": "CHG-182",
+      "to": "ISS-140",
+      "type": "resolves",
+      "created_at": "2026-09-12T21:07:07+00:00"
     }
   ]
 }
