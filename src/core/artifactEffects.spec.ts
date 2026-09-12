@@ -76,6 +76,36 @@ describe('法宝效果 · 词汇表不虚设', () => {
       `高界 ${high.length} 件法宝全在「打/回/盾/削」四样里按倍率放大 —— 境界涨了,手艺没涨`
     ).toBeGreaterThan(0)
   })
+
+  /**
+   * 文案里写的回合数,必须就是它真的出手的节拍。
+   *
+   * 法宝的主动说明是手写的(「每 4 回合青莲护身…」),而节拍写在 `active.interval` 里。
+   * 两处各写各的,改一处忘另一处不会有任何报错 —— 玩家照着文案数回合,发现对不上,
+   * 却没有任何地方能告诉他哪个是对的。故这里把「每 N 回合」与 interval 钉在一起。
+   *
+   * 唯一的例外是净念(无相念珠):它是随身被动,不走节拍(interval 记 1 表「常在」,
+   * 见 types 里 ArtifactEffect.purge 的注释),文案也刻意不写回合数。
+   */
+  it('说明里写的回合数 = 它真的出手的节拍', () => {
+    const CN: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 }
+    const bad: string[] = []
+    let checkedCount = 0
+    for (const a of ARTIFACTS) {
+      if (a.active.effect.type === 'purge') continue
+      const m = /每\s*([0-9一二三四五六七八九十]+)\s*回合/.exec(a.active.desc)
+      if (!m) {
+        bad.push(`${a.name}:说明里没有写回合数(「${a.active.desc}」)`)
+        continue
+      }
+      const raw = m[1]!
+      const n = /^\d+$/.test(raw) ? Number(raw) : CN[raw]
+      checkedCount += 1
+      if (n !== a.active.interval) bad.push(`${a.name}:说明写「每 ${raw} 回合」,节拍却是 ${a.active.interval}`)
+    }
+    expect(checkedCount, '一件法宝都没扫到,判据形同虚设').toBeGreaterThan(20)
+    expect(bad, `这些法宝的说明与节拍对不上:\n${bad.join('\n')}`).toEqual([])
+  })
 })
 
 describe('法宝效果 · 震慑真打断敌人那一手', () => {

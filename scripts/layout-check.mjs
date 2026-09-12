@@ -905,6 +905,50 @@ for (const vp of VIEWPORTS) {
     )
   }
   if (pageErrors.length) failures.push(`[390] 后期档页面异常(远征):${[...new Set(pageErrors)].join(' | ')}`)
+
+  /*
+   * (四续)天道试炼:第三条终局产线,同样只在单元用例里跑过。
+   * 切到「试炼」册,真按一次应试,要求开出战报、且写清止步/功成与赏格、不漏占位符。
+   */
+  await page.goto(INDEX + '#' + '/celestial', { waitUntil: 'load' })
+  await page.waitForTimeout(900)
+  // 上一步的远征战报还开着(它是一层遮罩),先收掉再切册 —— 否则点不动、还查不出原因
+  const leftover = await clearOverlays(page)
+  if (leftover.length) failures.push(`[390-late] 天界页:切试炼册前还开着浮层 —— ${leftover.join('、')}`)
+  const trialTab = page.getByRole('tab', { name: /试\s*炼/ }).first()
+  if ((await trialTab.count()) === 0) failures.push('[390-late] 天界页:找不到「试炼」册')
+  else {
+    await trialTab.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(500)
+    checked += 1
+    const trialBtn = page.locator('main button', { hasText: /应\s*试/ }).first()
+    if ((await trialBtn.count()) === 0) failures.push('[390-late] 试炼册里没有「应试」入口(判据没跑到东西)')
+    else {
+      const trialName = ((await trialBtn.textContent()) || '').replace(/\s+/g, ' ').trim().slice(0, 20)
+      await trialBtn.click({ timeout: 4000 }).catch(() => {})
+      await page.waitForTimeout(2200)
+      const after = await page.evaluate(() => {
+        const panel = document.querySelector('.modal-panel')
+        const text = panel?.innerText || ''
+        return {
+          title: (panel?.querySelector('h3')?.textContent || '').trim(),
+          text: text.replace(/\n+/g, ' ').slice(0, 90),
+          rows: panel ? panel.querySelectorAll('p, li').length : 0,
+          leaks: /NaN|undefined|Infinity/.test(text)
+        }
+      })
+      if (!after.title) failures.push(`[390-late] 试炼:点了「${trialName}」没有开出战报`)
+      else {
+        // 战报的两种口径:全捷(打通)或止步第 N 战
+        if (!/全捷|止步第/.test(after.text)) failures.push(`[390-late] 试炼:战报没写清结果 —— ${after.text}`)
+        if (after.leaks) failures.push('[390-late] 试炼:战报漏出占位符')
+        console.log(`  天道试炼(点了「${trialName}」):战报「${after.title}」· ${after.text.slice(0, 34)}…`)
+        await page.keyboard.press('Escape')
+        await page.waitForTimeout(400)
+      }
+    }
+  }
+  if (pageErrors.length) failures.push(`[390] 后期档页面异常(试炼):${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 
   /*
