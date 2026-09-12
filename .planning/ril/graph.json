@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 158,
+  "round": 159,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T21:08:11+00:00",
+  "updated_at": "2026-09-12T21:25:34+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -8896,10 +8896,10 @@
     "ISS-144": {
       "id": "ISS-144",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-12T21:01:50+00:00",
-      "updated_at": "2026-09-12T21:01:50+00:00",
+      "updated_at": "2026-09-12T21:24:20+00:00",
       "touched_round": 158,
       "summary": "CI 不跑 lint 与单元测试:1462 条用例与 eslint 只在本地产出,任何 push/合并都不经过它们 —— 回归被推向生产是无声的(悬在 stability/test-quality 之间,建议至少加一条 vitest+eslint 关口)",
       "severity": 0.5,
@@ -8927,6 +8927,32 @@
       "touched_round": 158,
       "summary": "修形寿元加算 + 事件灵石收支守恒 + 天劫按成功计数,三处各配确定性回归用例",
       "commit": "f7e1d4c"
+    },
+    "TASK-132": {
+      "id": "TASK-132",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-12T21:12:16+00:00",
+      "updated_at": "2026-09-12T21:25:34+00:00",
+      "touched_round": 159,
+      "summary": "给 CI 加 lint 与单元测试关口:新增一个轻量 workflow,每次 push/PR 跑 install → type-check+eslint → vitest 全量;1462 条用例与 lint 不再只在本地产出,回归进主分支即红",
+      "category": "stability",
+      "severity": 0.65,
+      "confidence": 1.0,
+      "effort": 1,
+      "unlock_factor": 1.4
+    },
+    "CHG-183": {
+      "id": "CHG-183",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:24:20+00:00",
+      "updated_at": "2026-09-12T21:24:20+00:00",
+      "touched_round": 158,
+      "summary": "三道构建/部署工作流(build/deploy/yunyin)各插一步 静态检查+单元测试(bun run check && bun run test),回归在构建前即红",
+      "commit": "bb5f132"
     }
   },
   "edges": [
@@ -13094,6 +13120,24 @@
       "to": "ISS-140",
       "type": "resolves",
       "created_at": "2026-09-12T21:07:07+00:00"
+    },
+    {
+      "from": "TASK-132",
+      "to": "ISS-144",
+      "type": "addresses",
+      "created_at": "2026-09-12T21:12:16+00:00"
+    },
+    {
+      "from": "CHG-183",
+      "to": "TASK-132",
+      "type": "implements",
+      "created_at": "2026-09-12T21:24:20+00:00"
+    },
+    {
+      "from": "CHG-183",
+      "to": "ISS-144",
+      "type": "resolves",
+      "created_at": "2026-09-12T21:24:20+00:00"
     }
   ]
 }
