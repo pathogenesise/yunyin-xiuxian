@@ -7,12 +7,17 @@
  *   npm i --no-save playwright        # 或全局装;浏览器缓存在 ~/.cache/ms-playwright
  *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
  *
- * 它做五件事:
+ * 它做七件事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
- *   二 在 375×812 与 320×568 两个宽度下,逐页量 scrollWidth 与越界元素;
+ *   二 在 390×844 / 375×812 / 320×568 三个宽度下,逐页量 scrollWidth 与越界元素,
+ *      并核对**外壳本身**没被滚偏(overflow-hidden 的盒子玩家滚不动,浏览器滚得动);
  *   三 把「底部导航五项」「无 pageerror」「控件都有可访问名」「可点元素不小于 28px」也一并核对;
  *   四 把浏览器存储卡死(令 setItem 抛错),看设置页会不会把「写不进去」说出来 ——
  *      静默丢档是玩家看不见的事故,只能靠这一条端到端核。
+ *   五 弹窗的 dialog 语义与焦点(进得去 / 困得住 / 关掉还给触发它的按钮);
+ *   六 Tab 焦点看得见(全局 :focus-visible 是否有实际轮廓);
+ *   七 浮出来的提示条点得掉 —— 它挂着 @click 关掉自己,不能被外框的
+ *      pointer-events:none 继承掉(继承了就永远只能等超时)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -249,11 +254,28 @@ for (const vp of VIEWPORTS) {
   })
   await page.waitForTimeout(700)
 
+  /*
+   * 先把浮出来的提示条收掉再点「关于」。
+   *
+   * 提示条是浮在顶上的一层(而且现在真的可点),建号后的成就提示会停留两三秒;
+   * 它与设置页入口若落在同一区域,这条判据就会被一条无干的提示挡住而假红
+   * (实测偶发:waitFor 过了、click 超时)。要测的是弹窗焦点,不是提示条 ——
+   * 提示条自己那条判据在下面单独跑。
+   */
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+  })
+  await page.waitForTimeout(400)
+
   const trigger = page.getByRole('button', { name: /关于/ }).first()
+  // 先等它真的画出来:懒加载的分包 + 页面淡入都要时间,直接点会得到
+  // 「点了没反应」的假红(实测偶发),而这条判据要抓的是真问题,不是抢跑
   try {
+    await trigger.waitFor({ state: 'visible', timeout: 10000 })
     await trigger.click({ timeout: 5000 })
-  } catch {
-    failures.push('[375] 弹窗焦点场景:「关于」入口点不开(页面没就绪?)')
+  } catch (err) {
+    // 把真实原因写进报告 —— 「页面没就绪?」这种猜测曾让人白跑一趟
+    failures.push(`[375] 弹窗焦点场景:「关于」入口点不开(${String(err).split('\n')[0]?.slice(0, 140)})`)
   }
   await page.waitForTimeout(350)
   const opened = await page.evaluate(() => {
@@ -341,10 +363,57 @@ for (const vp of VIEWPORTS) {
   await page.close()
 }
 
+// ---- 第七件事:浮出来的提示条能不能点掉 ----
+{
+  const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
+  const pageErrors = []
+  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  await page.locator('input[type=checkbox]').first().check()
+  await page.getByRole('button', { name: /同意并开始/ }).first().click()
+  await page.waitForTimeout(3200)
+  await page.locator('input:not([type=file]):not([type=checkbox])').first().fill('浮层自检')
+  await page.getByRole('button', { name: /踏\s*入\s*仙\s*途/ }).first().click()
+  await page.waitForTimeout(1200)
+  const hostSel = '.pointer-events-none.fixed'
+  const before = await page.evaluate(sel => {
+    const buttons = [...document.querySelectorAll(`${sel} button`)]
+    return {
+      count: buttons.length,
+      // 判据是**计算出来的** pointer-events:外框写 none 时按钮会继承成 none,
+      // 于是 @click 挂在那儿却永远收不到事件 —— 写了不生效,等于没写
+      blocked: buttons.filter(b => getComputedStyle(b).pointerEvents === 'none').length
+    }
+  }, hostSel)
+  checked += 1
+  if (before.count === 0) failures.push('[375] 浮层场景:一条提示都没浮出来,这条判据没跑到东西')
+  if (before.blocked > 0) failures.push(`[375] 浮层场景:${before.blocked} 条提示条点了没反应(pointer-events 被外框的 none 继承)`)
+  if (before.count > 0 && before.blocked === 0) {
+    const first = page.locator(`${hostSel} button`).first()
+    const text = ((await first.textContent()) ?? '').trim()
+    await first.click({ timeout: 3000 })
+    /*
+     * 「点了要收」还得看它**多快**收:提示条带 glow-pulse 无限动画时,过渡探测
+     * 会把 2.4 秒当成离场时长,点掉之后原地杵两秒才没(实测 460ms 仍在原地)。
+     * 故给一个 1 秒的窗口 —— 它短于最短的提示寿命(2.6 秒),不会把「自己超时消失」错认成点掉了。
+     */
+    let gone = false
+    for (let i = 0; i < 20 && !gone; i += 1) {
+      await page.waitForTimeout(50)
+      gone = (await page.locator(`${hostSel} button`, { hasText: text }).count()) === 0
+    }
+    if (!gone) failures.push(`[375] 浮层场景:点了「${text.slice(0, 12)}」1 秒内没消失(还挂在屏幕上)`)
+  }
+  if (pageErrors.length) failures.push(`[375] 浮层场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await page.close()
+}
+
 await browser.close()
 console.log(`\n排版自检:${checked} 个页面 × 视口组合`)
 if (failures.length === 0) {
   console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全、控件有名且不小于 28px、选择项有选中态')
+  console.log('✓ 提示条点得掉、弹窗焦点与外壳偏移都正常')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {
   for (const f of failures) console.log(`✗ ${f}`)
