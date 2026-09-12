@@ -106,6 +106,54 @@ describe('法宝效果 · 词汇表不虚设', () => {
     expect(checkedCount, '一件法宝都没扫到,判据形同虚设').toBeGreaterThan(20)
     expect(bad, `这些法宝的说明与节拍对不上:\n${bad.join('\n')}`).toEqual([])
   })
+
+  /**
+   * 说明里的**数值**也必须等于数据里的数值。
+   *
+   * 与上一条同源:主动说明是手写的(「每 4 回合获得 32% 生命护盾」「造成 260% 攻击伤害」
+   * 「其攻击降低 20%」),而真正的账在 effect 里(pctMaxHp / mult / pct)。
+   * 手写的数字不会自己跟着数据走 —— 改数据忘改文案,玩家就会按错的数去配装。
+   *
+   * 例外:净念写的是「七成」(中文成数),单独换算。
+   */
+  it('说明里写的数值 = 数据里的数值', () => {
+    const CN: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 }
+    const bad: string[] = []
+    let checkedCount = 0
+    for (const a of ARTIFACTS) {
+      const eff = a.active.effect
+      const desc = a.active.desc
+      /** 说明里写的百分比(数值主体) */
+      const pct = /([\d.]+)\s*%/.exec(desc)
+      const cheng = /以([一二三四五六七八九十]+)成/.exec(desc)
+      let claimed: number | null = null
+      if (pct) claimed = Number(pct[1])
+      else if (cheng) {
+        const raw = cheng[1]!
+        const n = /^\d+$/.test(raw) ? Number(raw) : CN[raw]
+        // 「七成」= 70%
+        if (n !== undefined) claimed = n * 10
+      }
+      /** 数据里写的百分比 */
+      let actual: number | null = null
+      if (eff.type === 'heal' || eff.type === 'shield') actual = eff.pctMaxHp * 100
+      else if (eff.type === 'damage') actual = eff.mult * 100
+      else if (eff.type === 'weaken' || eff.type === 'sunder') actual = eff.pct * 100
+      else if (eff.type === 'purge') actual = eff.pct * 100
+      if (actual === null) continue
+      checkedCount += 1
+      if (claimed === null) {
+        bad.push(`${a.name}:说明里没写数值(「${desc}」),数据里却是 ${actual}%`)
+        continue
+      }
+      // 浮点比较留一点余量(0.1 的倍数级别)
+      if (Math.abs(claimed - actual) > 0.01) {
+        bad.push(`${a.name}:说明写 ${claimed}%,数据是 ${actual}%`)
+      }
+    }
+    expect(checkedCount, '一件法宝的数值都没扫到,判据形同虚设').toBeGreaterThan(25)
+    expect(bad, `这些法宝的说明与数据对不上:\n${bad.join('\n')}`).toEqual([])
+  })
 })
 
 describe('法宝效果 · 震慑真打断敌人那一手', () => {

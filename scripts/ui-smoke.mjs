@@ -129,11 +129,19 @@ async function fingerprint() {
      * 于是它们每一轮都被报成「点了没反应」,而读数一旦常驻噪声,真事故就会被忽略。
      * 故把 data-theme 与当前按下的选择一并算进指纹(顺手也能看出选中态有没有变)。
      */
+    /*
+     * 全文哈希:只看首尾会漏掉「变化发生在中间」的点击 ——
+     * 比如人物页点一行属性,来源明细是在正文中段展开的,
+     * 首 120/末 80 字都没动,于是它被记成「点了没反应」(实测)。
+     */
+    const full = document.body.innerText.replace(/\s+/g, ' ')
+    let hash = 0
+    for (let i = 0; i < full.length; i += 1) hash = (hash * 31 + full.charCodeAt(i)) | 0
     const pressed = [...document.querySelectorAll('[aria-pressed=true]')]
       .map(b => (b.textContent || '').trim().slice(0, 6))
       .join(',')
     const theme = document.documentElement.getAttribute('data-theme') ?? ''
-    return `${text.length}:${text.slice(0, 120)}:${text.slice(-80)}|${theme}|${pressed}|${document.querySelectorAll('.modal-panel').length}|${document.querySelectorAll('[class*=toast]').length}`
+    return `${text.length}:${full.length}:${hash}|${theme}|${pressed}|${document.querySelectorAll('.modal-panel').length}|${document.querySelectorAll('[class*=toast]').length}`
   })
 }
 page.on('pageerror', e => errors.push({ where: 'boot', msg: String(e).slice(0, 300) }))
