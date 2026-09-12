@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 126,
+  "round": 127,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T04:06:32+00:00",
+  "updated_at": "2026-09-12T04:35:59+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -448,7 +448,7 @@
       "version": 1,
       "created_at": "2026-09-09T14:59:19+00:00",
       "updated_at": "2026-09-09T14:59:19+00:00",
-      "touched_round": 63,
+      "touched_round": 126,
       "summary": "突破系统(breakthrough.ts + 突破准备数据)"
     },
     "ISS-017": {
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 122,
+      "touched_round": 126,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -6468,6 +6468,173 @@
       "touched_round": 125,
       "summary": "新增破甲效果(sunder)并接到神鞭;artifactEffects.spec 增厚甲靶子对比用例(带破甲回合数更少)",
       "commit": "5ee91a1"
+    },
+    "COMP-015": {
+      "id": "COMP-015",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:19+00:00",
+      "updated_at": "2026-09-12T04:35:19+00:00",
+      "touched_round": 126,
+      "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
+    },
+    "ISS-099": {
+      "id": "ISS-099",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:35:19+00:00",
+      "updated_at": "2026-09-12T04:35:59+00:00",
+      "touched_round": 127,
+      "summary": "外壳被两团越界云雾撑出可滚横向区(390 宽下 scrollWidth 516);建号结束时浏览器把 overflow-hidden 的外壳 scrollLeft 设成 24,此后整个界面永久左移 24px —— 顶栏名字与「炼气·一层」被切掉左半边、底部第一栏「洞府」只剩半个字。而 documentElement 量不出任何溢出,排版自检全绿",
+      "severity": 0.55,
+      "confidence": 0.9
+    },
+    "TASK-090": {
+      "id": "TASK-090",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:19+00:00",
+      "updated_at": "2026-09-12T04:35:19+00:00",
+      "touched_round": 126,
+      "summary": "修掉「界面永久左移 24px」并把它变成排版自检的判据:装饰关进裁剪盒 + 量外壳自己的 scrollLeft 与可滚余量 + 排版自检补 390×844 档",
+      "category": "maintainability",
+      "severity": 0.5,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "CHG-149": {
+      "id": "CHG-149",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "App.vue 的两团云雾改挂进 pointer-events-none absolute inset-0 overflow-hidden 的裁剪盒,越界部分不再进入外壳滚动区;layout-check 新增「外壳不能被滚偏」判据,视口补 390×844 档并带 dpr 截图",
+      "commit": "81d1d42"
+    },
+    "ISS-100": {
+      "id": "ISS-100",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:59+00:00",
+      "touched_round": 127,
+      "summary": "修炼页「突破准备」的两枚胶囊在 320px 宽下越界 11px:chip-ink 是 nowrap,两枚并排放不下。这一处此前被外壳的左移 24px 遮住,修好偏移才露出来",
+      "severity": 0.2,
+      "confidence": 0.9
+    },
+    "TASK-091": {
+      "id": "TASK-091",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "让突破准备的两枚胶囊在窄屏换行,并让排版自检覆盖 390/375/320 三档",
+      "category": "maintainability",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "CHG-150": {
+      "id": "CHG-150",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "突破准备行改 flex-wrap(宽屏并排、窄屏上下)",
+      "commit": "c23a74f"
+    },
+    "ISS-101": {
+      "id": "ISS-101",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:59+00:00",
+      "touched_round": 127,
+      "summary": "道侣陨落的触发路径没有红线:fall()/ending/界面「已殁」都在,但没有任何东西保证「共劫」真的能被历练递到玩家面前 —— 声明了却没人 offer 的触发情境会让它再次退化成没有入口的特例",
+      "severity": 0.4,
+      "confidence": 0.85
+    },
+    "TASK-092": {
+      "id": "TASK-092",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "给道侣陨落补可达性红线:每个声明的触发情境必须在玩法代码里真的被 offer;知交阶的「濒死」一掷池中必须真有「共劫」。随机源可注入以便确定性断言",
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "CHG-151": {
+      "id": "CHG-151",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "offerBondEvent 的随机源可注入(生产仍用全局 rng);bondEvents.spec 增两例:声明即调用(源码扫描)、知交阶池中含共劫(带种子 400 掷)",
+      "commit": "00a5901"
+    },
+    "HYP-052": {
+      "id": "HYP-052",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "「声明即承诺」可以推广到所有情境触发型内容:凡声明了触发条件的,都要有一条红线证明那个条件在玩法代码里真的被制造出来 —— 源码扫描证明调用点 + 带种子的随机源证明够得着,两样都不掷运气",
+      "confidence": 0.8
+    },
+    "EV-107": {
+      "id": "EV-107",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-12T04:35:41+00:00",
+      "touched_round": 126,
+      "summary": "两处故障注入都红:① be_jie 的 minStageIndex 4→6 →「知交阶池中含共劫」失败;② exploration.ts 的 offerBondEvent(nearDeath) 改名 →「没有任何玩法代码会 offer nearDeath」失败。修回后 144 文件 1429 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/bondEvents.spec.ts"
+    },
+    "HYP-051": {
+      "id": "HYP-051",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:47+00:00",
+      "updated_at": "2026-09-12T04:35:47+00:00",
+      "touched_round": 126,
+      "summary": "「真机看排版」的自动化替代是量外壳自己:overflow-hidden 的容器玩家滚不动但浏览器滚得动(焦点回到 body 时会触发),只量 documentElement 的溢出会永远漏掉这一类",
+      "confidence": 0.8
+    },
+    "EV-106": {
+      "id": "EV-106",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:35:47+00:00",
+      "updated_at": "2026-09-12T04:35:47+00:00",
+      "touched_round": 126,
+      "summary": "修前:390/375/320/430 四档复现外壳 scrollLeft=24、横向可滚 128px(故障注入把云雾挪回外壳时同样读数);修后:三档宽度 scrollLeft/可滚余量全为 0。390×844 DPR3 截图中顶栏「真机自检/炼气·一层 16/150载」与底部五栏「洞府…人物」均完整",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
     }
   },
   "edges": [
@@ -9327,6 +9494,90 @@
       "to": "HYP-050",
       "type": "validates",
       "created_at": "2026-09-12T04:06:32+00:00"
+    },
+    {
+      "from": "ISS-099",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T04:35:44+00:00"
+    },
+    {
+      "from": "TASK-090",
+      "to": "ISS-099",
+      "type": "addresses",
+      "created_at": "2026-09-12T04:35:44+00:00"
+    },
+    {
+      "from": "CHG-149",
+      "to": "TASK-090",
+      "type": "implements",
+      "created_at": "2026-09-12T04:35:44+00:00"
+    },
+    {
+      "from": "CHG-149",
+      "to": "ISS-099",
+      "type": "resolves",
+      "created_at": "2026-09-12T04:35:44+00:00"
+    },
+    {
+      "from": "EV-106",
+      "to": "HYP-051",
+      "type": "validates",
+      "created_at": "2026-09-12T04:35:53+00:00"
+    },
+    {
+      "from": "ISS-100",
+      "to": "COMP-004",
+      "type": "located_in",
+      "created_at": "2026-09-12T04:35:53+00:00"
+    },
+    {
+      "from": "TASK-091",
+      "to": "ISS-100",
+      "type": "addresses",
+      "created_at": "2026-09-12T04:35:53+00:00"
+    },
+    {
+      "from": "CHG-150",
+      "to": "TASK-091",
+      "type": "implements",
+      "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "CHG-150",
+      "to": "ISS-100",
+      "type": "resolves",
+      "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "ISS-101",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "TASK-092",
+      "to": "ISS-101",
+      "type": "addresses",
+      "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "CHG-151",
+      "to": "TASK-092",
+      "type": "implements",
+      "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "CHG-151",
+      "to": "ISS-101",
+      "type": "resolves",
+      "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "EV-107",
+      "to": "HYP-052",
+      "type": "validates",
+      "created_at": "2026-09-12T04:35:54+00:00"
     }
   ]
 }
