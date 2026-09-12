@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 107,
+  "round": 108,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T00:07:51+00:00",
+  "updated_at": "2026-09-12T00:21:26+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1980,11 +1980,11 @@
     "ISS-038": {
       "id": "ISS-038",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-11T14:03:17+00:00",
-      "updated_at": "2026-09-11T14:03:17+00:00",
-      "touched_round": 105,
+      "updated_at": "2026-09-12T00:21:26+00:00",
+      "touched_round": 107,
       "summary": "扩界首轮仅落到结构化内容(每新境 1 区域),四界长尾节奏未在真实存档口径验证,且 12 个新境界的内容密度偏低,存在同质化为纯数值阶梯的风险",
       "severity": 0.55,
       "confidence": 0.7
@@ -4630,7 +4630,7 @@
       "version": 1,
       "created_at": "2026-09-11T20:58:01+00:00",
       "updated_at": "2026-09-11T20:58:01+00:00",
-      "touched_round": 102,
+      "touched_round": 107,
       "summary": "「境界是不是只是数值台阶」可以用一条结构判据提前发现:每个境界至少要有一条门槛恰好落在该境的内容(本项目取功法 —— 参悟池按 minRealm ≤ 当前+1 过滤,表里有就一定会撞见);判据读表而不读感觉,故内容缺哪一境会立刻点名",
       "confidence": 0.7
     },
@@ -5418,6 +5418,29 @@
       "touched_round": 107,
       "summary": "「只有图标的控件」是随手就会写的形态,而它不会报错、不会崩、排版也正常 —— 只是对读屏使用者与全部按名字找控件的自动化不可见。故这类缺陷只能靠一条逐页扫可访问名的检查来守(aria-label 或可见文字),它同时也是自动化自己能用名字点按钮的前提",
       "confidence": 0.85
+    },
+    "EV-087": {
+      "id": "EV-087",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:11:09+00:00",
+      "updated_at": "2026-09-12T00:11:09+00:00",
+      "touched_round": 107,
+      "summary": "contentDensity 增「新界每境条数 ≥ 人间界最薄一境」:实测人间界 min 10 / 中位 14,新界 min 10 / 中位 10 —— 新界不比旧界最薄的境界更薄(人间界尾巴大乘/渡劫同样是 10,故底线取 min 而非中位);注入(神悟丹 16→15)即转红并点名;逐境条数表随测试打印",
+      "confidence": 0.9,
+      "source": "src/core/contentDensity.spec.ts"
+    },
+    "CHG-131": {
+      "id": "CHG-131",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:21:19+00:00",
+      "updated_at": "2026-09-12T00:21:19+00:00",
+      "touched_round": 107,
+      "summary": "扩界内容密度收口:contentDensity 增「新界每境条数 ≥ 人间界最薄一境」底线判据(逐境条数表随测试打印);配合此前 CHG-117/118/126/127 的功法/法宝/丹方/奇缘补齐与 CHG-128/129 的模型分项与真实档包夹,ISS-038 的两条指控(内容密度偏低、长尾节奏未在真实存档口径验证)均已闭合",
+      "commit": "0c0ce8f"
     }
   },
   "edges": [
@@ -7749,6 +7772,18 @@
       "to": "HYP-035",
       "type": "validates",
       "created_at": "2026-09-12T00:07:51+00:00"
+    },
+    {
+      "from": "CHG-131",
+      "to": "ISS-038",
+      "type": "resolves",
+      "created_at": "2026-09-12T00:21:19+00:00"
+    },
+    {
+      "from": "EV-087",
+      "to": "HYP-026",
+      "type": "validates",
+      "created_at": "2026-09-12T00:21:19+00:00"
     }
   ]
 }
