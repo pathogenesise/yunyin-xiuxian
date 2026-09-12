@@ -86,6 +86,7 @@
   import { TALENTS, TALENT_GRADE_COLORS } from '@/data/talents'
   import { qualityDef } from '@/data/qualities'
   import { CODEX_SOURCES, branchCodex, materialCodex, type CodexCat, type CodexEntry } from '@/ui/codex'
+  import { achievementDirection } from '@/ui/achievementHint'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -113,7 +114,8 @@
         id: a.id,
         done,
         name: done ? a.name : '???',
-        desc: done ? a.desc : '尚未达成 —— 成时自见'
+        // 名字成时自现,但方向要给:六十多个「???」不给方向,这一页就是白纸
+        desc: done ? a.desc : `尚未达成 · 方向:${achievementDirection(a.cond)}`
       }
     }).sort((a, b) => Number(b.done) - Number(a.done))
   )
