@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 119,
+  "round": 120,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T02:51:51+00:00",
+  "updated_at": "2026-09-12T03:13:55+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 118,
+      "touched_round": 119,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -6074,6 +6074,67 @@
       "touched_round": 118,
       "summary": "BaseModal 补 dialog 语义与焦点管理(入焦/Tab 循环/归还);layout-check 增第五件事「弹窗的键盘与焦点」(四条断言)",
       "commit": "31d53bd"
+    },
+    "ISS-092": {
+      "id": "ISS-092",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:13:36+00:00",
+      "updated_at": "2026-09-12T03:13:54+00:00",
+      "touched_round": 119,
+      "summary": "键盘焦点可见性无人守:实测各控件靠浏览器默认焦点环(颜色随主题/平台而变),而 Tailwind 的 outline-none 一落到某个控件上就会把它整个抹掉(实测静坐调息按钮变成 outline:2px solid transparent —— 一个看不见的环) —— 这类事故不会报错,只是键盘用户突然不知道走到哪了",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-083": {
+      "id": "TASK-083",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:13:36+00:00",
+      "updated_at": "2026-09-12T03:13:55+00:00",
+      "touched_round": 119,
+      "summary": "焦点统一成朱砂描边(写在 utilities 之后,压得住 outline-none),并加无头判据「每个 Tab 落点都得看得见」(透明轮廓不算)",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-099": {
+      "id": "EV-099",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:13:36+00:00",
+      "updated_at": "2026-09-12T03:13:36+00:00",
+      "touched_round": 119,
+      "summary": "style.css 全局 :focus-visible(2px 朱砂、offset 2px,位于 Tailwind utilities 之后);layout-check 第六件事「Tab 焦点看得见吗」:/cultivation 与 /settings 各数 6 个 Tab 落点,要求轮廓或阴影可见(透明轮廓算看不见),且落点数不能为 0;注入验证(去掉全局规则 + 给静坐调息加 outline-none)立刻报「/cultivation 第 2 个 Tab 落点看不见焦点:button «静坐调息»」;全量 142 文件 1418 用例绿,冒烟无异常",
+      "confidence": 0.9,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-047": {
+      "id": "HYP-047",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:13:36+00:00",
+      "updated_at": "2026-09-12T03:13:36+00:00",
+      "touched_round": 119,
+      "summary": "「看得见焦点」可以自动判:Tab 到每个落点读 computed style,要求轮廓(非透明)或阴影之一可见。注意两个坑:透明轮廓不能算可见(outline-none 在 Tailwind 里正是 2px solid transparent),以及残留焦点会把 Tab 序列算歪(每页先 blur 再数)",
+      "confidence": 0.85
+    },
+    "CHG-142": {
+      "id": "CHG-142",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:13:54+00:00",
+      "updated_at": "2026-09-12T03:13:54+00:00",
+      "touched_round": 119,
+      "summary": "style.css 增全局 :focus-visible(2px 朱砂,压得住 outline-none);layout-check 增第六件事「Tab 焦点看得见吗」(两页各六个落点,透明轮廓不算)",
+      "commit": "966c8a2"
     }
   },
   "edges": [
@@ -8723,6 +8784,36 @@
       "to": "HYP-046",
       "type": "validates",
       "created_at": "2026-09-12T02:51:51+00:00"
+    },
+    {
+      "from": "ISS-092",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T03:13:54+00:00"
+    },
+    {
+      "from": "TASK-083",
+      "to": "ISS-092",
+      "type": "addresses",
+      "created_at": "2026-09-12T03:13:54+00:00"
+    },
+    {
+      "from": "CHG-142",
+      "to": "TASK-083",
+      "type": "implements",
+      "created_at": "2026-09-12T03:13:54+00:00"
+    },
+    {
+      "from": "CHG-142",
+      "to": "ISS-092",
+      "type": "resolves",
+      "created_at": "2026-09-12T03:13:54+00:00"
+    },
+    {
+      "from": "EV-099",
+      "to": "HYP-047",
+      "type": "validates",
+      "created_at": "2026-09-12T03:13:54+00:00"
     }
   ]
 }
