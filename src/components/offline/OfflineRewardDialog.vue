@@ -65,6 +65,7 @@
     const list: { icon: string; label: string; value: string }[] = []
     if (s.exp.m > 0) list.push({ icon: 'flame', label: '修为', value: `+${formatGN(s.exp)}` })
     if (s.stone.m > 0) list.push({ icon: 'gem', label: '灵石', value: `+${formatGN(s.stone)}` })
+    if (s.qi > 0) list.push({ icon: 'wind', label: '灵气', value: `+${s.qi}` })
     if (s.herb > 0) list.push({ icon: 'leaf', label: '灵草', value: `+${s.herb}` })
     if (s.ore > 0) list.push({ icon: 'mountain', label: '玄铁', value: `+${s.ore}` })
     if (s.wudao > 0) list.push({ icon: 'book', label: '悟道点', value: `+${s.wudao}` })

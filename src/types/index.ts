@@ -870,9 +870,13 @@ export interface OfflineSummary {
   capped: boolean
   exp: GNum
   stone: GNum
+  /** 灵气回充量(受上限约束,故记实际差额) */
+  qi: number
   herb: number
   ore: number
   wudao: number
+  /** 离线期间流逝的寿元(年)—— 是代价,不是收益,但玩家该知道 */
+  ageYears: number
   battles: number
   wins: number
   events: number

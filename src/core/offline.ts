@@ -76,6 +76,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   player.gainExp(mulN(gn(player.cultPerSec), effSec))
 
   // ---- 灵气 ----
+  const qiBefore = resources.qi
   resources.setQi(resources.qi + player.qiRegenPerSec * effSec, player.qiCapValue)
 
   // ---- 建筑产出 ----
@@ -215,6 +216,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   }
 
   // ---- 寿元流逝(不受离线上限约束) ----
+  const ageBefore = player.age
   player.addAge((dtSec / 3600) * AGE_YEARS_PER_HOUR)
 
   // ---- Buff 过期 ----
@@ -226,9 +228,11 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     capped: dtSec > capSec + 1,
     exp: sub(player.exp, expBefore),
     stone: sub(resources.spiritStone, stoneBefore),
+    qi: Math.round(resources.qi - qiBefore),
     herb: resources.herb - herbBefore,
     ore: resources.ore - oreBefore,
     wudao: resources.wudao - wudaoBefore,
+    ageYears: Math.round(player.age - ageBefore),
     battles,
     wins,
     events,
@@ -237,6 +241,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     notes
   }
   if (player.expFull) notes.push('修为已至圆满,可尝试突破')
+  if (summary.ageYears > 0) notes.push(`闭关期间寿元流逝 ${summary.ageYears} 载`)
 
   if (dtSec >= OFFLINE_MODAL_MIN_SECONDS) {
     track('offlineClaims')
