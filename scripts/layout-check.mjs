@@ -26,6 +26,8 @@
  *      再巡一遍 —— 空档量不出长数字与满屏内容,而归来卷轴那屏每几天就见一次。
  *   十一 渡劫突破真打一次:结果弹窗必须写清成败与雷数、成功要与页面境界对得上
  *      (每个玩家反复看的那一屏,此前从没被渲染过)。
+ *   十二 走完一次转世(寿元将尽 → 此生已矣 → 轮回 → 新的一世):唯一会把存档
+ *      推倒重来的仪式,此前一步都没被真浏览器走过。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -144,11 +146,19 @@ async function clearOverlays(page) {
     for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
     Math.random = () => 1
   })
-  for (let i = 0; i < 3; i += 1) {
-    if ((await page.locator('.modal-panel').count()) === 0) break
-    await page.keyboard.press('Escape')
+  /*
+   * 关掉**已经浮起来**的浮层,并且等够一轮。
+   *
+   * 坑在这里:引擎掷出顿悟(每秒一拍)与弹窗自己每秒一次的轮询是两个独立定时器,
+   * 事件已经产生、窗还没画出来 —— 这时数 .modal-panel 是 0,当场就收工,
+   * 一秒后那扇窗才浮上来,正好盖住要点的入口。故这里固定转六圈(≈2.1 秒):
+   * 有窗就按 Esc 收掉,没窗就等着 —— 反正随机源已钉死,等到的只会是**之前那一扇**。
+   */
+  for (let i = 0; i < 6; i += 1) {
+    if ((await page.locator('.modal-panel').count()) > 0) await page.keyboard.press('Escape')
     await page.waitForTimeout(350)
   }
+  return page.evaluate(() => [...document.querySelectorAll('.modal-panel')].map(p => (p.querySelector('h3')?.textContent || p.getAttribute('aria-label') || '?').trim()))
 }
 
 /**
@@ -370,8 +380,8 @@ for (const vp of VIEWPORTS) {
    * (实测偶发:waitFor 过了、click 超时)。要测的是弹窗焦点,不是提示条 ——
    * 提示条自己那条判据在下面单独跑。
    */
-  await clearOverlays(page)
-  await page.waitForTimeout(400)
+  const stillOpen = await clearOverlays(page)
+  if (stillOpen.length) failures.push(`[375] 弹窗焦点场景:动手前还开着浮层 —— ${stillOpen.join('、')}(取景没收拾干净)`)
 
   const trigger = page.getByRole('button', { name: /关于/ }).first()
   // 先等它真的画出来:懒加载的分包 + 页面淡入都要时间,直接点会得到
@@ -925,6 +935,102 @@ for (const vp of VIEWPORTS) {
     console.log(`\n渡劫突破:${view.outcome ?? '(没写成败)'} · 雷数${view.hasWave ? '有' : '缺'} · 页面境界 ${view.realm}`)
   }
   if (pageErrors.length) failures.push(`[390] 渡劫场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第十二件事:走完一次转世(寿元将尽 → 此生已矣 → 轮回 → 新的一世) ----
+/*
+ * 转世是每一世收官的那套仪式,也是**唯一会把存档推倒重来**的流程 ——
+ * 三步弹窗 + 择姿立题 + 新的一世,此前一步都没被真浏览器走过。
+ * 夹具把寿元写尽(一读档引擎就判定身故),然后一路点下去。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now() - 86400000 * 60, lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: {
+      major: 5,
+      sub: 3,
+      exp: gn(2, 7),
+      age: 99999,
+      lifespanBonusYears: 0,
+      dead: false,
+      reincarnation: { count: 1, daoFruit: 9, talents: [], insight: 120, lives: [], vow: null, trial: null, bonds: [] },
+      linggen: { roots: [{ element: 'fire', aptitude: 90 }], gradeName: '单灵根', growthMult: 1.2 }
+    },
+    resources: { spiritStone: gn(4, 6), qi: 4000, wudao: 500, herb: 300, ore: 300, page: 60, dust: 80 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2600)
+
+  /** 读一扇弹窗的形状:标题、正文、按钮、有没有漏占位符 */
+  const readPanel = () =>
+    page.evaluate(() => {
+      const p = document.querySelector('.modal-panel')
+      if (!p) return null
+      return {
+        title: (p.querySelector('h3')?.textContent || p.getAttribute('aria-label') || '').trim(),
+        text: (p.innerText || '').replace(/\n+/g, ' '),
+        buttons: [...p.querySelectorAll('button')].map(b => (b.textContent || '').trim())
+      }
+    })
+  const step = async (label, expect) => {
+    checked += 1
+    const p = await readPanel()
+    if (!p) {
+      failures.push(`[390] 转世场景:${label}没有弹出对应的窗`)
+      return null
+    }
+    if (!expect.test(p.title)) failures.push(`[390] 转世场景:${label}的窗标题是「${p.title}」,不是预期的${expect}`)
+    if (/NaN|undefined|Infinity/.test(p.text)) failures.push(`[390] 转世场景:${label}漏出占位符 —— ${p.text.slice(0, 50)}`)
+    return p
+  }
+
+  const death = await step('读档后(身故)', /寿元将尽/)
+  if (death && !/兵解转世/.test(death.buttons.join(' '))) failures.push('[390] 转世场景:身故那屏没有「兵解转世」')
+  await page.locator('.modal-panel button', { hasText: /兵\s*解\s*转\s*世/ }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(900)
+
+  const review = await step('兵解后(回顾)', /此生已矣/)
+  if (review && !/宿慧/.test(review.text)) failures.push('[390] 转世场景:回顾那一程没有交代宿慧')
+  await page.locator('.modal-panel button', { hasText: /往\s*生/ }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(800)
+
+  const next = await step('往生后(择姿立题)', /轮回/)
+  if (next && !/道果/.test(next.text)) failures.push('[390] 转世场景:轮回那一程没有交代道果')
+  // 有先天之姿就先择一个(不择则「踏入轮回」是灰的)
+  const talent = page.locator('.modal-panel button').first()
+  if (next && next.buttons.some(b => /赋|姿/.test(b))) await talent.click({ timeout: 3000 }).catch(() => {})
+  const confirm = page.locator('.modal-panel button', { hasText: /踏\s*入\s*轮\s*回/ }).first()
+  if ((await confirm.count()) === 0) failures.push('[390] 转世场景:轮回那程没有「踏入轮回」')
+  else {
+    if (await confirm.isDisabled()) failures.push('[390] 转世场景:择了先天之姿,「踏入轮回」仍是灰的')
+    await confirm.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(1800)
+    const after = await page.evaluate(() => ({
+      modal: !!document.querySelector('.modal-panel'),
+      text: (document.querySelector('main')?.innerText || '').replace(/\n+/g, ' ').slice(0, 200)
+    }))
+    if (after.modal) failures.push('[390] 转世场景:点「踏入轮回」之后还留着一扇没关的弹窗')
+    if (/炼虚|99999/.test(after.text)) failures.push('[390] 转世场景:转世之后页面上还写着上一世的境界/寿数')
+    console.log(`\n转世:${[death?.title, review?.title, next?.title].filter(Boolean).join(' → ')} → 新的一世(${after.text.slice(0, 24)}…)`)
+  }
+  if (pageErrors.length) failures.push(`[390] 转世场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
