@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 161,
+  "round": 162,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T22:15:23+00:00",
+  "updated_at": "2026-09-12T22:39:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 158,
+      "touched_round": 162,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 158,
+      "touched_round": 162,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -8817,7 +8817,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 158,
+      "touched_round": 161,
       "summary": "离线年龄不封顶是设计,配错的 lastActiveAt(旧备份/时钟回拨)却把「该有点惩罚」变成「必死」:资源按 8h×0.9 结算、年龄按全程 —— 导入旧档的代价远大于设计意图",
       "confidence": 0.5
     },
@@ -8860,11 +8860,11 @@
     "ISS-141": {
       "id": "ISS-141",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-12T21:01:50+00:00",
-      "updated_at": "2026-09-12T21:01:50+00:00",
-      "touched_round": 158,
+      "updated_at": "2026-09-12T22:39:24+00:00",
+      "touched_round": 162,
       "summary": "远征/挑战(切磋/变数)与试炼天界口径分叉:敌方按 finalStats 造敌而玩家按 celestialStats 打,器魂配置下装备 attackPct 从玩家侧剥离、另一半仍在敌方 ref —— 试炼(celestialStats+depth)口径正确,另两条线留下反成长不设防(PLAUSIBLE,需产品定夺统一口径)",
       "severity": 0.55,
       "confidence": 0.6
@@ -8872,11 +8872,11 @@
     "ISS-142": {
       "id": "ISS-142",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-12T21:01:50+00:00",
-      "updated_at": "2026-09-12T21:01:50+00:00",
-      "touched_round": 158,
+      "updated_at": "2026-09-12T22:37:15+00:00",
+      "touched_round": 161,
       "summary": "离线老化不看离线上限,且 lastActiveAt 损坏被兜成 0:导入旧备份/设备时钟错位 → 数百至数十万载老化 → 下拍即死;资源线 8h 封顶段的口径与年龄线不一致 —— 导入旧档的惩罚远超设计(需决策:导入时重戳 lastActiveAt 或年龄走下限)",
       "severity": 0.7,
       "confidence": 0.6
@@ -9004,6 +9004,69 @@
       "touched_round": 160,
       "summary": "原子导入:快照→清档→逐片写→失败回滚;importSaveText 透出「原存档已保留」;importCorruption 增配额失败用例",
       "commit": "df839ba"
+    },
+    "TASK-135": {
+      "id": "TASK-135",
+      "type": "task",
+      "status": "resolved",
+      "version": 3,
+      "created_at": "2026-09-12T22:20:25+00:00",
+      "updated_at": "2026-09-12T22:37:15+00:00",
+      "touched_round": 161,
+      "summary": "导入旧备份重戳 lastActiveAt 为现在:migrate 时把 data.game.lastActiveAt 置为 Date.now(),快照里的旧时间戳不再触发「缺勤数月」式离线老化即死(客户残龄/老化政策本身另行决策)",
+      "category": "stability",
+      "severity": 0.7,
+      "confidence": 0.85,
+      "effort": 1,
+      "lock_owner": "graph-eng-loop",
+      "lock_until": "2026-09-12T23:00:25+00:00"
+    },
+    "EV-147": {
+      "id": "EV-147",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T22:37:15+00:00",
+      "updated_at": "2026-09-12T22:37:15+00:00",
+      "touched_round": 161,
+      "summary": "导入边界修复实证:importSaveText(migrate) 把 data.game.lastActiveAt 重戳为 Date.now();importCorruption 旧备份用例(30 天前戳)与 saveRoundTrip(时钟字段例外、其余键对账)双双钉住",
+      "source": "src/core/save.ts migrate · src/core/importCorruption.spec.ts 导入旧备份",
+      "confidence": 0.9
+    },
+    "CHG-186": {
+      "id": "CHG-186",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T22:37:15+00:00",
+      "updated_at": "2026-09-12T22:37:15+00:00",
+      "touched_round": 161,
+      "summary": "导入重戳 lastActiveAt 为现在,防旧戳被离线老化误算成缺勤即死;saveRoundTrip 给时钟字段写明例外",
+      "commit": "f11586e"
+    },
+    "DEC-029": {
+      "id": "DEC-029",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T22:37:15+00:00",
+      "updated_at": "2026-09-12T22:37:15+00:00",
+      "touched_round": 162,
+      "summary": "离线老化的时域政策维持原样:年龄按全程流逝(不带 8h 封顶)是「远离的人寿元照流」的设计,不改;时钟错位/设备回拨导致的 nonce 老化属于通用离线时长精度问题,靠导入边界(已修)与 sanitize 兜底即可,不因边界事故反向改政策",
+      "rationale": "资源按封顶结算而年龄按全程,属刻意设计;真正的有害暴露是「导入旧备份=死亡」,已由导入重戳 lastActiveAt 修掉",
+      "alternatives_rejected": "给年龄也加 capSec(会纵容挂机逃寿元);把 sanitize 的 lastActiveAt 兜底从 0 改成 now(会掩盖真实缺勤,恶化而非消除问题)"
+    },
+    "DEC-030": {
+      "id": "DEC-030",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T22:37:15+00:00",
+      "updated_at": "2026-09-12T22:37:15+00:00",
+      "touched_round": 162,
+      "summary": "远征/挑战(切磋/变数)的天界造敌口径暂缓统一:维持 finalStats 参照,不立刻改成 celestialStats+depth —— 世界 atkR 是按现行口径调校的,统一口径需连带重校敌我比值,留待产品/平衡回合",
+      "rationale": "无器魂时三维均衡(forgeSoul 对 base-pct 透传),分叉仅在器魂配置下显现;对齐试炼口径会放大锐度又需重调 atkR,一次改动两处风险,先记不改",
+      "alternatives_rejected": "仅把 expedition.fightStep 的 ref 换成 finalStats→celestialStats 单行改(未经数值复核,可能把远征难度整体踩穿);保留双轨(现状,但需平衡回合处理)"
     }
   },
   "edges": [
@@ -13225,6 +13288,36 @@
       "to": "ISS-143",
       "type": "addresses",
       "created_at": "2026-09-12T22:15:23+00:00"
+    },
+    {
+      "from": "TASK-135",
+      "to": "ISS-142",
+      "type": "addresses",
+      "created_at": "2026-09-12T22:20:25+00:00"
+    },
+    {
+      "from": "EV-147",
+      "to": "HYP-087",
+      "type": "validates",
+      "created_at": "2026-09-12T22:37:15+00:00"
+    },
+    {
+      "from": "CHG-186",
+      "to": "TASK-135",
+      "type": "implements",
+      "created_at": "2026-09-12T22:37:15+00:00"
+    },
+    {
+      "from": "DEC-030",
+      "to": "COMP-014",
+      "type": "governs",
+      "created_at": "2026-09-12T22:39:24+00:00"
+    },
+    {
+      "from": "DEC-029",
+      "to": "COMP-006",
+      "type": "governs",
+      "created_at": "2026-09-12T22:39:24+00:00"
     }
   ]
 }
