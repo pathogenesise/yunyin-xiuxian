@@ -40,7 +40,7 @@
             <button
               v-for="l in powerRating.labels"
               :key="l.key"
-              class="text-left active:opacity-60"
+              class="-my-1 py-1.5 text-left active:opacity-60"
               @click="toggleDim(l.key)"
             >
               <span class="flex items-center justify-between text-[11px]">
@@ -105,7 +105,7 @@
     <div class="card-ink px-4 py-3">
       <p class="mb-1.5 flex items-center justify-between">
         <span class="text-[11px] text-ink-faint">把顺手的整套功法 / 法宝 / 装备存起来,一键切换</span>
-        <button class="text-[11px] text-cinnabar/90 active:opacity-60" @click="openSave">+ 存当前构筑</button>
+        <button class="-my-1 py-1.5 text-[11px] text-cinnabar/90 active:opacity-60" @click="openSave">+ 存当前构筑</button>
       </p>
       <div v-if="loadouts.list.length" class="space-y-1.5">
         <div v-for="lo in loadouts.list" :key="lo.id" class="flex items-center gap-2 rounded-md bg-paper-deep/70 px-2.5 py-1.5">

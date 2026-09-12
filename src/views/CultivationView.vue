@@ -14,7 +14,7 @@
       </div>
       <div class="mt-4">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
-          <button class="text-left active:opacity-60" @click="showCultBreakdown = !showCultBreakdown">
+          <button class="-my-1 py-1.5 text-left active:opacity-60" @click="showCultBreakdown = !showCultBreakdown">
             修为 +{{ formatRate(player.cultPerSec) }}
             <span class="ml-0.5 text-[9px] text-ink-ghost">{{ showCultBreakdown ? '▾' : '▸' }}来路</span>
           </button>
@@ -133,11 +133,11 @@
           <span v-else-if="btInfo.prep.ready" class="text-jade">加成 +{{ Math.round(btInfo.prep.bonus * 100) }}% 就绪</span>
         </div>
         <div v-if="!btInfo.prep.sitting && !btInfo.prep.ready" class="mt-1.5 flex gap-1.5">
-          <button type="button" class="chip-ink text-[10px]" @click="startPrep('meditate')">
+          <button type="button" class="chip-ink !py-1.5 text-[10px]" @click="startPrep('meditate')">
             {{ prepMeditate.label }} · {{ Math.round(prepMeditate.duration / 60) }}分钟
             +{{ Math.round(prepMeditate.bonusRate * 100) }}%
           </button>
-          <button type="button" class="chip-ink text-[10px]" :disabled="!prepCanPill" @click="startPrep('pill')">
+          <button type="button" class="chip-ink !py-1.5 text-[10px]" :disabled="!prepCanPill" @click="startPrep('pill')">
             {{ prepPill.label }} · {{ prepPillCost }}灵石 +{{ Math.round(prepPill.bonusRate * 100) }}%
           </button>
         </div>
@@ -161,7 +161,7 @@
       <p class="mt-0.5 text-[10px] text-ink-faint">
         静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出历练。
       </p>
-      <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full text-[11px]" @click="beginRetreat">
+      <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full !py-1.5 text-[11px]" @click="beginRetreat">
         闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%(期间无法历练)
       </button>
     </div>

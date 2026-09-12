@@ -21,7 +21,7 @@
             <p class="truncate text-[10px] text-ink-ghost">{{ row.def.desc }}</p>
             <p v-if="row.owned && row.modText" class="text-[10px] text-azure tabular">{{ row.modText }}</p>
           </div>
-          <button v-if="row.owned" class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="toggleTitle(row.def.id)">
+          <button v-if="row.owned" class="btn-ghost shrink-0 !px-2.5 !py-1.5 !text-[11px]" @click="toggleTitle(row.def.id)">
             {{ row.worn ? '卸下' : '佩戴' }}
           </button>
         </div>

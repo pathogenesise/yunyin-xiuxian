@@ -673,7 +673,7 @@
         <p class="font-kai text-ink">凡间所得,终有尽时。</p>
         <p class="text-ink-soft">
           玄铁、残页、灵石……到了此境,皆可献入
-          <a class="text-azure" @click="tutorialOpen = false">天道熔炉</a>
+          <a class="-my-2 inline-block py-2 text-azure" @click="tutorialOpen = false">天道熔炉</a>
           ,熔作道源。
         </p>
         <p class="text-ink-soft">

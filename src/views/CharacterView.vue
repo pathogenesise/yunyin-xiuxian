@@ -57,7 +57,7 @@
           <button
             v-for="row in modRows"
             :key="row.label"
-            class="flex justify-between text-left text-[11px] active:opacity-60"
+            class="-my-1 flex justify-between py-1.5 text-left text-[11px] active:opacity-60"
             @click="toggleBreakdown(row.key)"
           >
             <span class="text-ink-faint">

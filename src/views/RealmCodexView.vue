@@ -1,7 +1,7 @@
 <template>
   <div class="stagger-in space-y-4 px-4 pb-6 pt-4">
     <div class="flex items-center gap-2">
-      <RouterLink to="/character" class="text-[12px] text-ink-faint active:text-ink-soft">← 人物</RouterLink>
+      <RouterLink to="/character" class="-my-1.5 py-1.5 text-[12px] text-ink-faint active:text-ink-soft">← 人物</RouterLink>
       <span class="text-[11px] text-ink-ghost">·</span>
       <span class="text-[12px] text-ink-soft">界域志</span>
     </div>

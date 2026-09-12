@@ -15,7 +15,7 @@
     <template v-else>
       <!-- 抬头 -->
       <div class="card-ink flex items-center justify-between gap-2 px-4 py-3">
-        <button class="text-left text-[12px] text-ink-faint" @click="router.back()">← 天界</button>
+        <button class="-my-1.5 py-1.5 text-left text-[12px] text-ink-faint" @click="router.back()">← 天界</button>
         <p class="font-kai text-[15px] tracking-[0.3em] text-ink">器 魂</p>
         <div class="text-right">
           <span class="block text-[10px] leading-tight text-ink-ghost">道源</span>

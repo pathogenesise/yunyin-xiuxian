@@ -17,10 +17,10 @@
       <div class="mt-3 flex items-center justify-between px-1">
         <span class="text-[11px] text-ink-faint tabular">藏品 {{ inventory.bagItems.length }} · 器灵尘 {{ resources.dust }}</span>
         <span class="flex gap-3">
-          <button class="text-[11px] text-azure/90 active:opacity-60" @click="smartOpen = true">
+          <button class="-my-1.5 py-1.5 text-[11px] text-azure/90 active:opacity-60" @click="smartOpen = true">
             收纳{{ settings.smartKeep.enabled ? '·启' : '' }}
           </button>
-          <button class="text-[11px] text-cinnabar/80 active:opacity-60" @click="decomposeOpen = true">分解</button>
+          <button class="-my-1.5 py-1.5 text-[11px] text-cinnabar/80 active:opacity-60" @click="decomposeOpen = true">分解</button>
         </span>
       </div>
       <div class="mt-2 grid grid-cols-3 gap-2">

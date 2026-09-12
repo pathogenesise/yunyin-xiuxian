@@ -27,7 +27,11 @@
         {{ formatNum(Math.floor(resources.qi)) }}
       </span>
       <!-- 只有图标的入口必须自带名字:否则读屏只会念「链接」,自动化也点不着它 -->
-      <RouterLink to="/settings" aria-label="设置" class="text-ink-faint active:scale-90">
+      <RouterLink
+        to="/settings"
+        aria-label="设置"
+        class="-my-1.5 -mr-1.5 flex min-h-[32px] min-w-[32px] items-center justify-center p-1.5 text-ink-faint active:scale-90"
+      >
         <GameIcon name="settings" :size="15" />
       </RouterLink>
     </div>

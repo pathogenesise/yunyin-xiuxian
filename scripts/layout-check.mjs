@@ -10,7 +10,7 @@
  * 它做四件事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
  *   二 在 375×812 与 320×568 两个宽度下,逐页量 scrollWidth 与越界元素;
- *   三 把「底部导航五项」「无 pageerror」「控件都有可访问名」也一并核对;
+ *   三 把「底部导航五项」「无 pageerror」「控件都有可访问名」「可点元素不小于 28px」也一并核对;
  *   四 把浏览器存储卡死(令 setItem 抛错),看设置页会不会把「写不进去」说出来 ——
  *      静默丢档是玩家看不见的事故,只能靠这一条端到端核。
  *
@@ -84,7 +84,17 @@ for (const vp of VIEWPORTS) {
             return r.width > 0 && r.height > 0
           })
           .slice(0, 3)
-          .map(el => el.outerHTML.slice(0, 80).replace(/\s+/g, ' '))
+          .map(el => el.outerHTML.slice(0, 80).replace(/\s+/g, ' ')),
+        /**
+         * 可点元素的高度下限 28px —— 拇指点得着的最起码尺寸。
+         * 实测(带装备的后期档,375/320 两档):修前有 47 个不足 24px、26 个不足 28px,
+         * 大多是把文字行直接当按钮(属性来源行、返回链接、设置里的胶囊按钮)。
+         */
+        smallTargets: [...document.querySelectorAll('button, a, [role=button]')]
+          .map(el => ({ el, r: el.getBoundingClientRect() }))
+          .filter(({ r }) => r.width > 0 && r.height > 0 && r.height < 28)
+          .slice(0, 3)
+          .map(({ el, r }) => `${Math.round(r.height)}px «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 12)}»`)
       }
     })
     checked += 1
@@ -92,6 +102,7 @@ for (const vp of VIEWPORTS) {
     if (info.horizontalOverflow) problems.push(`横向溢出(scrollWidth ${info.hash})`)
     if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
     if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
+    if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
     if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
     if (problems.length) failures.push(`[${vp.tag}] ${route} → ${problems.join(' / ')}`)
     if (SHOTS) {
@@ -138,7 +149,7 @@ for (const vp of VIEWPORTS) {
 await browser.close()
 console.log(`\n排版自检:${checked} 个页面 × 视口组合`)
 if (failures.length === 0) {
-  console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全')
+  console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全、控件有名且不小于 28px')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {
   for (const f of failures) console.log(`✗ ${f}`)
