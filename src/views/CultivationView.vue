@@ -132,7 +132,11 @@
           <span v-if="btInfo.prep.sitting" class="text-amber-ink">调息中 · {{ formatDuration(btInfo.prep.remainingSec) }}</span>
           <span v-else-if="btInfo.prep.ready" class="text-jade">加成 +{{ Math.round(btInfo.prep.bonus * 100) }}% 就绪</span>
         </div>
-        <div v-if="!btInfo.prep.sitting && !btInfo.prep.ready" class="mt-1.5 flex gap-1.5">
+        <!--
+          两个准备选项并排,但 chip-ink 是 nowrap 的胶囊,320px 窄屏放不下两枚
+          (实测第二枚右缘到 331px,越界 11px)。故允许换行:宽屏并排、窄屏上下。
+        -->
+        <div v-if="!btInfo.prep.sitting && !btInfo.prep.ready" class="mt-1.5 flex flex-wrap gap-1.5">
           <button type="button" class="chip-ink !py-1.5 text-[10px]" @click="startPrep('meditate')">
             {{ prepMeditate.label }} · {{ Math.round(prepMeditate.duration / 60) }}分钟
             +{{ Math.round(prepMeditate.bonusRate * 100) }}%
