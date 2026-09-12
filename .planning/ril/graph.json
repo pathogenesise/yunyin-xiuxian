@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 128,
+  "round": 129,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T04:52:18+00:00",
+  "updated_at": "2026-09-12T05:26:30+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 105,
+      "touched_round": 128,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -6473,11 +6473,11 @@
       "id": "COMP-015",
       "type": "component",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
-      "updated_at": "2026-09-12T04:35:19+00:00",
-      "touched_round": 126,
-      "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
+      "updated_at": "2026-09-12T05:26:30+00:00",
+      "touched_round": 128,
+      "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
       "id": "ISS-099",
@@ -6695,6 +6695,126 @@
       "summary": "必摄魂靶子 × 30 场:不带念珠被跳过 744 回合,带念珠 204 回合(降约七成,与基础概率相符)。故障注入:① 挣脱判定改成 chance=0 → 「带念珠被跳过 747 vs 不带 744」红;② 删掉 combat 里 purge 的跳过 → 对手不摄魂时触发 50 次,节拍判据红。全量 144 文件 1431 用例绿",
       "confidence": 0.95,
       "source": "src/core/artifactEffects.spec.ts"
+    },
+    "ISS-103": {
+      "id": "ISS-103",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T05:26:12+00:00",
+      "updated_at": "2026-09-12T05:26:21+00:00",
+      "touched_round": 128,
+      "summary": "幻影类敌手无解:闪避型首领幻境高达 55%(蜃楼之主)/50%(冰魄化身)/48%(大罗化身),而玩家连「命中」这条属性都没有 —— 只能眼看一半出手落空,战后分析还会明说「N 次出手落空,连击与暴击难以衔接」。与震慑同一个病:报得出病因、给不出药",
+      "severity": 0.45,
+      "confidence": 0.9
+    },
+    "TASK-094": {
+      "id": "TASK-094",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:12+00:00",
+      "updated_at": "2026-09-12T05:26:12+00:00",
+      "touched_round": 128,
+      "summary": "补「命中」这条轴:引擎按百分点抵掉目标闪避,配三处来源(装备词条/功法分支/法宝被动),并加两条红线 —— 幻影落空对比、每个属性键必须拿得到",
+      "category": "core-feature",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 4
+    },
+    "CHG-153": {
+      "id": "CHG-153",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:12+00:00",
+      "updated_at": "2026-09-12T05:26:12+00:00",
+      "touched_round": 128,
+      "summary": "SpecialKey 增 accuracy;combat 闪避判定改为 max(0, 目标闪避 − 攻击方命中);递减表与软上限按闪避对称补;来源三处(ac1~ac3 词条、庚金剑典·破妄、周天星盘被动);人物面板补「命中」;combat.spec 增幻影落空对比;vocabularyCoverage 增「每个属性键都拿得到」",
+      "commit": "743d863"
+    },
+    "HYP-054": {
+      "id": "HYP-054",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:12+00:00",
+      "updated_at": "2026-09-12T05:26:12+00:00",
+      "touched_round": 128,
+      "summary": "「报得出病因、给不出药就是内容缺口」可以反过来当审计法:把战后分析每一条会报出来的病因,与全部属性轴逐一对照 —— 凡是报了却没有任何东西能改变的,就是缺的那条轴",
+      "confidence": 0.8
+    },
+    "EV-109": {
+      "id": "EV-109",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:12+00:00",
+      "updated_at": "2026-09-12T05:26:12+00:00",
+      "touched_round": 128,
+      "summary": "幻影(闪避 55%)×20 场累计落空:无命中 571 次,带四成命中 151 次。故障注入:① 去掉相减 → 571 vs 571 红;② 删掉 accuracy 三处来源 → 「这些属性键没有任何来源:accuracy」红。全量 144 文件 1433 用例绿;排版自检 49 组、界面冒烟 15 页无异常",
+      "confidence": 0.95,
+      "source": "src/core/combat.spec.ts"
+    },
+    "ISS-104": {
+      "id": "ISS-104",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T05:26:17+00:00",
+      "updated_at": "2026-09-12T05:26:21+00:00",
+      "touched_round": 128,
+      "summary": "提示条点不掉,而且是两层静默失效:① 外框 pointer-events-none 被按钮继承,@click 关掉自己永远收不到事件(store 注释却写着「点按 toast 即收」,样式还写着 cursor-pointer);② 修好命中后量出第二层 —— 稀有提示带 2.4 秒无限光晕动画,离场时长被探测成动画时长,而无限动画的 animationend 永不到来,点掉后还要原地等满超时",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-095": {
+      "id": "TASK-095",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:17+00:00",
+      "updated_at": "2026-09-12T05:26:17+00:00",
+      "touched_round": 128,
+      "summary": "让提示条真的可点、点掉即收,并把「点了之后有没有消失、多快消失」写成排版自检的判据;顺带修掉弹窗焦点场景被浮层挡住的偶发假红",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-154": {
+      "id": "CHG-154",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:17+00:00",
+      "updated_at": "2026-09-12T05:26:17+00:00",
+      "touched_round": 128,
+      "summary": "ToastHost 按钮补 pointer-events-auto,TransitionGroup 显式给 250ms 离场时长;layout-check 新增第七件事(量计算出来的 pointer-events + 真点一下,要求 1 秒内消失),弹窗焦点场景先清提示条再点入口",
+      "commit": "23ad14e"
+    },
+    "HYP-055": {
+      "id": "HYP-055",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:17+00:00",
+      "updated_at": "2026-09-12T05:26:17+00:00",
+      "touched_round": 128,
+      "summary": "挂上去的交互必须验证它真的接得上:模板里的 @click、pointer-events、过渡时长这类跨层约定类型系统看不见,只能靠真浏览器量「点了之后发生了什么、多快发生」—— 其中无限动画会污染离场时长探测,是最隐蔽的一种",
+      "confidence": 0.85
+    },
+    "EV-110": {
+      "id": "EV-110",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T05:26:17+00:00",
+      "updated_at": "2026-09-12T05:26:17+00:00",
+      "touched_round": 128,
+      "summary": "修前:按钮计算值 pointer-events=none,Playwright 点击直接超时,计数 2→2;修好 auto 后又量出点了 460ms 仍在原地(光晕 2.4s 无限动画)。修后:点击即刻进离场、≤250ms 消失。故障注入:去掉 pointer-events-auto → 「2 条提示条点了没反应」红;去掉显式 :duration → 「点了…1 秒内没消失」红。排版自检连跑两次全绿、界面冒烟 15 页无异常",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
     }
   },
   "edges": [
@@ -9668,6 +9788,66 @@
       "to": "HYP-053",
       "type": "validates",
       "created_at": "2026-09-12T04:52:18+00:00"
+    },
+    {
+      "from": "ISS-103",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-12T05:26:20+00:00"
+    },
+    {
+      "from": "TASK-094",
+      "to": "ISS-103",
+      "type": "addresses",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "CHG-153",
+      "to": "TASK-094",
+      "type": "implements",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "CHG-153",
+      "to": "ISS-103",
+      "type": "resolves",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "EV-109",
+      "to": "HYP-054",
+      "type": "validates",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "ISS-104",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "TASK-095",
+      "to": "ISS-104",
+      "type": "addresses",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "CHG-154",
+      "to": "TASK-095",
+      "type": "implements",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "CHG-154",
+      "to": "ISS-104",
+      "type": "resolves",
+      "created_at": "2026-09-12T05:26:21+00:00"
+    },
+    {
+      "from": "EV-110",
+      "to": "HYP-055",
+      "type": "validates",
+      "created_at": "2026-09-12T05:26:21+00:00"
     }
   ]
 }
