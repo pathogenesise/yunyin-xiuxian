@@ -194,6 +194,7 @@
   import { todayMansion, favoredWorld, todayMansionLine } from '@/core/astronomy'
   import { worldDef } from '@/data/realms'
   import { canEnterRegion, entryBlockReason, worldView } from '@/core/mortalWorldService'
+  import { isRetreating } from '@/core/earlyGameService'
   import { REALMS } from '@/data/realms'
   import { EXPLORE_MODES } from '@/data/constants'
   import { startExploration } from '@/core/exploration'
@@ -312,6 +313,16 @@
   })
 
   function chooseMode(region: RegionDef): void {
+    /*
+     * 闭关期间不许外出历练 —— 这条早该在这里说。
+     *
+     * 此前只由 startExploration 兜底:玩家点了「出发」,模式窗照开,三选一之后才被告知
+     * 「你正在闭关静修」——话是对的,但让人先白走一步。同一句拒绝,越早说越好。
+     */
+    if (isRetreating()) {
+      ui.toast('你正在闭关静修,心无旁骛,暂勿外出历练', 'warn')
+      return
+    }
     modeTarget.value = region
   }
 

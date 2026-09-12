@@ -39,6 +39,7 @@
  *   十八 切后台/离开页面时,待刷的存档要立刻落盘(visibilitychange / pagehide)。
  *   十九 真打一场历练战斗:战报回放要出内容、结语要写清胜负、战斗分析点得开。
  *   二十 背包里的账目:强化写着扣多少尘就扣多少,分解说给多少尘就给多少。
+ *   二十一 闭关期间不许历练:点出发要当场拦下(不开模式窗),换页回来闭关还在。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1358,6 +1359,79 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第二十一件事:闭关的跨页承诺 —— 闭关中不许历练,而且当场就说 ----
+/*
+ * 「静坐一炷香,修炼速度 +150%;闭关期间无法外出历练」是修行页明写的一条。
+ * 这条承诺跨两个页面,此前也没人真走过:去历练页点出发,模式窗照开,三选一之后
+ * 才被告知「你正在闭关静修」——话是对的,但让人先白走一步。
+ * 判据三件:闭关真的起效(有倒计时)、出发当场被拦且不开模式窗、回修行页闭关还在。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '闭关自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/cultivation', { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  const retreatBtn = page.locator('main button', { hasText: /闭\s*关/ }).first()
+  if ((await retreatBtn.count()) === 0) failures.push('[390] 闭关场景:修行页找不到「闭关」入口')
+  else {
+    await retreatBtn.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(800)
+    const started = await page.evaluate(() => ({
+      toast: [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|'),
+      countdown: /闭关中 · /.test(document.querySelector('main')?.innerText || '')
+    }))
+    if (!started.countdown) failures.push('[390] 闭关场景:点了闭关,修行页没有出现「闭关中」的倒计时')
+    if (!/闭关/.test(started.toast)) failures.push(`[390] 闭关场景:闭关没有任何交代(${started.toast || '无提示'})`)
+    // 去历练页点出发:应当当场被拦,且不开模式窗
+    await page.goto(INDEX + '#' + '/adventure', { waitUntil: 'load' })
+    await page.waitForTimeout(900)
+    await page.locator('main button', { hasText: /出\s*发/ }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(600)
+    const blocked = await page.evaluate(() => ({
+      toast: [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|'),
+      modal: !!document.querySelector('.modal-panel'),
+      running: /余 \d+分\d+秒/.test(document.querySelector('main')?.innerText || '')
+    }))
+    if (!/闭关/.test(blocked.toast)) failures.push(`[390] 闭关场景:闭关期间点出发,出面没有说「正在闭关」(${blocked.toast || '无提示'})`)
+    if (blocked.modal) failures.push('[390] 闭关场景:闭关期间点出发,还开出了模式窗(该当场拦下,不让玩家白走一步)')
+    if (blocked.running) failures.push('[390] 闭关场景:闭关期间居然真的出发了')
+    // 回修行页:闭关还在
+    await page.goto(INDEX + '#' + '/cultivation', { waitUntil: 'load' })
+    await page.waitForTimeout(800)
+    const back = await page.evaluate(() => {
+      const text = document.querySelector('main')?.innerText || ''
+      return { still: /闭关中 · /.test(text), line: (text.match(/闭关中 · [^\r\n]*/) || [''])[0] }
+    })
+    if (!back.still) failures.push('[390] 闭关场景:换页回来闭关状态就丢了')
+    console.log(`\n闭关:起效「${back.line}」 · 历练当场被拦(未开模式窗) · 换页仍在`)
+  }
+  if (pageErrors.length) failures.push(`[390] 闭关场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
