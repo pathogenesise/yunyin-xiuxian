@@ -41,6 +41,7 @@
  *   二十 背包里的账目:强化写着扣多少尘就扣多少,分解说给多少尘就给多少。
  *   二十一 闭关期间不许历练:点出发要当场拦下(不开模式窗),换页回来闭关还在。
  *   二十二 减少动效真的减到了(并顺带在音效开着的情况下点一路按钮)。
+ *   二十三 洞府营造的账目:卡片写多少石就扣多少石。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1360,6 +1361,84 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第二十三件事:洞府营造的账目 —— 卡上写多少料,就扣多少料 ----
+/*
+ * 洞府是中期最主要的一处灵石去处,卡上写着「建造 · 60石 6铁」。
+ * 判据核的是**玄铁**那一半:灵石同一时间会被任务/成就奖励搅动(实测开局那一下
+ * 就发了三十多万,差被冲得看不出来),而玄铁除了营造没人动它,差一分就是错。
+ * 读数取自背包「材料」页(界面上的数),不去解密分片 —— 写盘是节流的,磁盘会落后。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '营造自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 7), qi: 1000, wudao: 10, herb: 5, ore: 90000, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  checked += 1
+  /**
+   * 玄铁余额:**磁盘那一份**(精确到个位)。
+   *
+   * 界面上的分片只有万位三位小数(9万 → 8.998万),一位数的漂移会被四舍五入吃掉 ——
+   * 实测把造价 +1 的注入就这样混过去了。故这里等节流落盘后解密比对,不取显示值。
+   */
+  const readOre = async () => {
+    await page.waitForTimeout(5600)
+    const cipher = await page.evaluate(() => localStorage.getItem('yunyin.resources') || '')
+    if (!cipher) return { text: '(无分片)', value: null }
+    const plain = CryptoJS.AES.decrypt(cipher, SAVE_SECRET).toString(CryptoJS.enc.Utf8)
+    if (!plain) return { text: '(解不开)', value: null }
+    const v = JSON.parse(plain).ore
+    const n = typeof v === 'number' ? v : v.m * Math.pow(10, v.e)
+    return { text: String(n), value: n }
+  }
+  // 先落到页面上:任何 localStorage 读数都要有 document 在(localStorage 才能读)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  const oreBefore = await readOre()
+  await page.goto(INDEX + '#' + '/dongfu', { waitUntil: 'load' })
+  await page.waitForTimeout(900)
+  const buildBtn = page.locator('main button', { hasText: /建\s*造 · |升\s*级 · / }).first()
+  if ((await buildBtn.count()) === 0) {
+    failures.push('[390] 营造场景:洞府页没有可动工的建筑(判据没跑到东西)')
+  } else {
+    const label = ((await buildBtn.textContent()) || '').replace(/\s+/g, ' ').trim()
+    const oreCost = Number((/([\d,]+)\s*铁/.exec(label.replace(/,/g, '')) || [])[1] ?? NaN)
+    await buildBtn.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(800)
+    const toast = await page.evaluate(() =>
+      [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
+    )
+    const oreAfter = await readOre()
+    if (!Number.isFinite(oreCost)) failures.push(`[390] 营造场景:读不出卡片上的玄铁价(「${label}」)`)
+    else if (oreBefore.value === null || oreAfter.value === null || oreBefore.value - oreAfter.value !== oreCost) {
+      failures.push(`[390] 营造场景:卡片写「${label}」,玄铁实际 ${oreBefore.text} → ${oreAfter.text}(所见非所付)`)
+    }
+    if (!/升至|落成|建造/.test(toast)) failures.push(`[390] 营造场景:动工之后没有任何交代(${toast || '无提示'})`)
+    console.log(`\n洞府营造:${label} → 玄铁 ${oreBefore.text} → ${oreAfter.text}(应扣 ${Number.isFinite(oreCost) ? oreCost : '?'})`)
+  }
+  if (pageErrors.length) failures.push(`[390] 营造场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
