@@ -36,6 +36,7 @@
  *      此前没量过(主巡页的 320 用的是刚建号的空档)。
  *   十六 坏档开局:坏掉一个分片也要进得去,并且说得出「哪一片坏了、原档在哪」。
  *   十七 导出失败也要说话:把浏览器的下载能力打断再点一次「导出存档」。
+ *   十八 切后台/离开页面时,待刷的存档要立刻落盘(visibilitychange / pagehide)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1355,6 +1356,93 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第十八件事:切后台/离开页面时,待刷的存档要立刻落盘 ----
+/*
+ * 写盘是节流的(省电,见 savePersistence.spec),于是「刚做的改动」可能还躺在队列里;
+ * 手机上的保命时机就是切后台/离开页面 —— `visibilitychange → hidden` 与 `pagehide`。
+ * 单元用例测过 flushSaveWrites 本身,却没人测过这两个监听究竟接上没有:
+ * 接不上,玩家切出去接个电话、回来时这一段时间就没了,而且是无声无息地没。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '落盘自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+    Math.random = () => 1
+  })
+  await page.waitForTimeout(500)
+  /** 磁盘上那一份灵石(解密 resources 分片) */
+  const diskStone = async () => {
+    const cipher = await page.evaluate(() => localStorage.getItem('yunyin.resources') || '')
+    if (!cipher) return null
+    const plain = CryptoJS.AES.decrypt(cipher, SAVE_SECRET).toString(CryptoJS.enc.Utf8)
+    if (!plain) return null
+    const v = JSON.parse(plain).spiritStone
+    return typeof v === 'number' ? v : v.m * Math.pow(10, v.e)
+  }
+  const investOnce = async () => {
+    await page.getByRole('button', { name: /灵脉投资/ }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(400)
+    await page.locator('.modal-panel button.btn-ghost:not([disabled])').first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(500)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(300)
+    return readFormatted(page, '灵石')
+  }
+  checked += 1
+  const start = await readFormatted(page, '灵石')
+  const afterInvest = await investOnce()
+  const onDiskBefore = await diskStone()
+  // 先确认节流确实在起作用:此刻磁盘还该是旧值,否则后面那一步证明不了什么
+  if (onDiskBefore !== null && afterInvest.value !== null && Math.abs(onDiskBefore - afterInvest.value) < afterInvest.value * 0.001) {
+    failures.push('[390] 落盘场景:投入之后磁盘立刻就变了 —— 节流没起作用,这条判据也就证明不了什么')
+  }
+  // ① 切后台
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+  await page.waitForTimeout(400)
+  const afterHidden = await diskStone()
+  if (afterInvest.value !== null && (afterHidden === null || Math.abs(afterHidden - afterInvest.value) > afterInvest.value * 0.01)) {
+    failures.push(`[390] 落盘场景:切后台(visibilitychange→hidden)之后磁盘还是 ${afterHidden},页面已是 ${afterInvest.text} —— 待刷存档没落盘`)
+  }
+  // ② 离开页面(pagehide)
+  const second = await investOnce()
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide')))
+  await page.waitForTimeout(400)
+  const afterHide = await diskStone()
+  if (second.value !== null && (afterHide === null || Math.abs(afterHide - second.value) > second.value * 0.01)) {
+    failures.push(`[390] 落盘场景:pagehide 之后磁盘还是 ${afterHide},页面已是 ${second.text} —— 待刷存档没落盘`)
+  }
+  if (pageErrors.length) failures.push(`[390] 落盘场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  console.log(`\n落盘时机:开局 ${start.text} → 投脉后页面 ${afterInvest.text}(磁盘暂为旧值,节流中)→ 切后台落盘 · 再投一次 ${second.text} → pagehide 落盘`)
   await ctx.close()
 }
 
