@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 132,
+  "round": 133,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T06:50:32+00:00",
+  "updated_at": "2026-09-12T07:09:37+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 131,
+      "touched_round": 132,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -7021,6 +7021,66 @@
       "summary": "冷启动读数:修前 #/dongfu 与 #/souls 点返回后 href=about:blank、#app 无子元素(界面消失);修后落在 #/ 且界面存活。挡路元素诊断:四次里三次 elementFromPoint 命中「悟道顿悟」所在的 .fixed.inset-0 浮盖。第三方异常堆栈来自 sdk.51.la/js-sdk-pro.min.js。故障注入:洞府改回裸 back() → 单元「视图里不许裸 back()」与浏览器第九件事同时红。全量 146 文件 1440 用例、分类报告 1440 过 0 败、排版自检 55 组、界面冒烟 15 页、tsc/eslint 全绿",
       "confidence": 0.95,
       "source": "src/router/goBack.spec.ts"
+    },
+    "ISS-109": {
+      "id": "ISS-109",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T07:09:32+00:00",
+      "updated_at": "2026-09-12T07:09:36+00:00",
+      "touched_round": 132,
+      "summary": "后期档从未被排版自检画出来过:前十件事量的都是刚建号那份空档,而同一页面在神人境是另一副样子(数字九位数、法宝两件、器魂、在途秘境),更要紧的是隔夜归来的「归来卷轴」——每几天见一次的屏,从来没被无头浏览器渲染过。第一次补跑就抓到器魂页「卸下」只有 15px",
+      "severity": 0.35,
+      "confidence": 0.95
+    },
+    "TASK-100": {
+      "id": "TASK-100",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T07:09:32+00:00",
+      "updated_at": "2026-09-12T07:09:32+00:00",
+      "touched_round": 132,
+      "summary": "用夹具存档补一路后期档复核(归来卷轴 + 十个页面);把测量与判据抽成 measurePage/problemsOf 供空档与后期档共用;修掉查出的「卸下」触面",
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 4
+    },
+    "CHG-158": {
+      "id": "CHG-158",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:09:32+00:00",
+      "updated_at": "2026-09-12T07:09:32+00:00",
+      "touched_round": 132,
+      "summary": "layout-check 抽 measurePage/problemsOf(两遍共用一把尺子)并新增第十件事:夹具后期档先核归来卷轴(可访问名/收益行/无占位符/收下即关),再逐页量 10 个路由;SoulsView「卸下」补成内联块 31px;第三方脚本异常去重;弹窗场景失败时报告挡路元素与已开弹窗",
+      "commit": "7aae7cd"
+    },
+    "HYP-059": {
+      "id": "HYP-059",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:09:32+00:00",
+      "updated_at": "2026-09-12T07:09:32+00:00",
+      "touched_round": 132,
+      "summary": "判据的样本也要和目标对齐:同一页面在空档与后期档是两副样子(长数字、满屏内容、在途状态),只用刚建号那份档去量,漏掉的恰恰是玩家看得最多的那一版 —— 巡页之前先问「该拿哪份档来巡」",
+      "confidence": 0.85
+    },
+    "EV-114": {
+      "id": "EV-114",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:09:33+00:00",
+      "updated_at": "2026-09-12T07:09:33+00:00",
+      "touched_round": 132,
+      "summary": "第一次跑后期档即红:「[390-late] /souls → 可点元素过小:15px «卸下»」—— 补成内联块 31px 后 66 组全绿。归来卷轴读数:aria-label=离线归来结算、两行收益(修为 +2.129亿 / 灵气 +7775880)、三条附注(圆满可突破 / 寿元流逝 10 载 / 秘境之行原样留着)、无 NaN 占位符、点「收下」后弹窗关闭且界面存活",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
     }
   },
   "edges": [
@@ -10168,6 +10228,36 @@
       "to": "HYP-058",
       "type": "validates",
       "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "ISS-109",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T07:09:36+00:00"
+    },
+    {
+      "from": "TASK-100",
+      "to": "ISS-109",
+      "type": "addresses",
+      "created_at": "2026-09-12T07:09:36+00:00"
+    },
+    {
+      "from": "CHG-158",
+      "to": "TASK-100",
+      "type": "implements",
+      "created_at": "2026-09-12T07:09:36+00:00"
+    },
+    {
+      "from": "CHG-158",
+      "to": "ISS-109",
+      "type": "resolves",
+      "created_at": "2026-09-12T07:09:36+00:00"
+    },
+    {
+      "from": "EV-114",
+      "to": "HYP-059",
+      "type": "validates",
+      "created_at": "2026-09-12T07:09:36+00:00"
     }
   ]
 }
