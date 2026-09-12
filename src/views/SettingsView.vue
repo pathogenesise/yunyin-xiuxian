@@ -70,6 +70,21 @@
       <p v-if="saveFailed" class="rounded-md border border-cinnabar/40 bg-cinnabar/8 px-2 py-1.5 text-[11px] leading-relaxed text-cinnabar">
         上次写入存档失败 —— 浏览器存储可能已满。请先「导出存档」留一份,再清理浏览器数据或换设备导入。
       </p>
+      <!--
+        坏掉的分片只说一次(启动时一条 2.4 秒的提示)是不够的:
+        玩家多半是先发现「我的灵石怎么没了」,再回来找原因。
+        故这里常驻一条:哪一片坏了、原档还在哪儿、以及最该做的那件事(导入备份)。
+      -->
+      <p
+        v-if="corruptedNotice.length"
+        class="rounded-md border border-cinnabar/40 bg-cinnabar/8 px-2 py-1.5 text-[11px] leading-relaxed text-cinnabar"
+      >
+        启动时发现 {{ corruptedNotice.length }} 个存档分片损坏,已隔离修复:{{
+          corruptedNotice.map(id => STORE_NAMES[id] ?? id).join('、')
+        }}。损坏的原档没有删除,仍留在本机(键名
+        <span class="break-all">{{ corruptKeys }}</span>)—— 若手上还有导出的备份,可在此导入恢复。
+        <button class="mt-1 block text-ink-faint underline" @click="ui.corruptedNotice = []">知道了</button>
+      </p>
       <div class="grid grid-cols-2 gap-2">
         <button class="btn-ghost !text-[12px]" @click="onExport">导出存档</button>
         <button class="btn-ghost !text-[12px]" @click="triggerImport">导入存档</button>
@@ -124,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onUnmounted } from 'vue'
+  import { computed, ref, onUnmounted } from 'vue'
   import { useSettingsStore } from '@/stores/settings'
   import { useGameStore } from '@/stores/game'
   import { useUiStore } from '@/stores/ui'
@@ -132,7 +147,7 @@
   import { importSaveText, resetGame, reloadGame, sealStorageWrites } from '@/core/save'
   import { exportSaveToDevice } from '@/core/savePlatform'
   import { formatDuration } from '@/utils/format'
-  import { SAVE_VERSION, saveWriteFailure, subscribeSaveWriteFailure } from '@/utils/storage'
+  import { SAVE_VERSION, STORE_NAMES, saveWriteFailure, storageKey, subscribeSaveWriteFailure } from '@/utils/storage'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
@@ -145,6 +160,10 @@
 
   /** 写盘失败状态:进页面先读一次,之后随订阅翻转 */
   const saveFailed = ref(saveWriteFailure() !== null)
+  /** 被隔离的分片(启动时 preflightScan 记下的那份) */
+  const corruptedNotice = computed<string[]>(() => ui.corruptedNotice)
+  /** 原档留在哪些备份键里 —— 说得出键名,玩家(或帮他的人)才找得回来 */
+  const corruptKeys = computed(() => corruptedNotice.value.map(id => `corrupt.${storageKey(id)}`).join('、'))
   const unsubscribeSaveFailure = subscribeSaveWriteFailure(failure => {
     saveFailed.value = failure !== null
   })

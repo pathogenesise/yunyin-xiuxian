@@ -33,6 +33,28 @@ export const PERSISTED_STORES = [
   'pacing'
 ] as const
 
+/**
+ * 分片的中文名 —— 只在说人话的地方用(如「哪一片坏了」)。
+ *
+ * 与 PERSISTED_STORES 放在一起:清单改了这个也得跟着改,
+ * 否则界面上会出现一个叫「resources」的东西。
+ */
+export const STORE_NAMES: Record<string, string> = {
+  game: '开局',
+  player: '角色',
+  resources: '资源',
+  inventory: '背包',
+  cultivation: '修炼',
+  dongfu: '洞府',
+  adventure: '历练',
+  quests: '任务与成就',
+  settings: '设置',
+  loadouts: '构筑',
+  endgame: '终局',
+  lore: '认知',
+  pacing: '节奏遥测'
+}
+
 export function storageKey(storeId: string): string {
   return SAVE_PREFIX + storeId
 }

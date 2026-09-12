@@ -34,6 +34,7 @@
  *      (最后一道保险,此前没人按过这两个按钮)。
  *   十五 后期档再走一遍 320 窄屏:「长数字 + 满屏内容 + 最窄屏」这个组合
  *      此前没量过(主巡页的 320 用的是刚建号的空档)。
+ *   十六 坏档开局:坏掉一个分片也要进得去,并且说得出「哪一片坏了、原档在哪」。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1339,6 +1340,69 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第十六件事:坏档也能进游戏,而且要说得清哪一片坏了 ----
+/*
+ * 分片损坏是最容易变成「白屏」或「我的东西怎么没了」的一种事故:
+ * 启动前的 preflightScan 会把读不出来的分片挪到备份键、其余照常开局。
+ * 这条判据查三件事:① 照样进得去(不白屏);② 启动时说了话;
+ * ③ 设置页常驻一条说得出「哪一片坏了、原档还在哪」——坏档只弹一条两秒的提示是不够的,
+ *    玩家多半是先发现「灵石怎么归零了」,再回来找原因。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '坏档自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) {
+        // 故意写坏一个分片(既不是本游戏密文,也不是合法 JSON)
+        localStorage.setItem(k, k.endsWith('.resources') ? '这不是存档' : v)
+      }
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  checked += 1
+  // 启动提示只活两秒多,这里趁它在的时候读
+  await page.waitForTimeout(1200)
+  const boot = await page.evaluate(() => ({
+    alive: !!document.querySelector('#app')?.firstElementChild,
+    hash: location.hash,
+    toasts: [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|'),
+    backedUp: Object.keys(localStorage).some(k => k.startsWith('corrupt.'))
+  }))
+  if (!boot.alive) failures.push('[390] 坏档场景:坏掉一个分片之后界面都没起来(白屏)')
+  if (!/损坏|异常|隔离/.test(boot.toasts)) failures.push(`[390] 坏档场景:启动时没有交代坏档(${boot.toasts || '无提示'})`)
+  if (!boot.backedUp) failures.push('[390] 坏档场景:坏掉的分片没有被隔离备份(原档直接丢了)')
+  await page.goto(INDEX + '#' + '/settings', { waitUntil: 'load' })
+  await page.waitForTimeout(900)
+  const notice = await page.evaluate(() => {
+    const card = [...document.querySelectorAll('.card-ink')].find(c => (c.textContent || '').includes('存档版本'))
+    return (card?.innerText || '').replace(/\n+/g, ' ')
+  })
+  if (!/分片损坏/.test(notice)) failures.push('[390] 坏档场景:设置页没有常驻交代(只说一次两秒的提示,玩家回头找不到原因)')
+  if (!/资源/.test(notice)) failures.push(`[390] 坏档场景:设置页没说出坏的是哪一片 —— ${notice.slice(0, 80)}`)
+  if (!/corrupt\./.test(notice)) failures.push('[390] 坏档场景:设置页没说出原档备份在哪(玩家/帮他的人找不回来)')
+  if (pageErrors.length) failures.push(`[390] 坏档场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  console.log(`
+坏档开局:界面照常起来 · 启动提示「${boot.toasts.split('|')[0] ?? '无'}」 · 设置页「${notice.slice(0, 46)}…」`)
   await ctx.close()
 }
 
