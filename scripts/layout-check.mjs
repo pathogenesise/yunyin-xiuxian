@@ -35,6 +35,7 @@
  *   十五 后期档再走一遍 320 窄屏:「长数字 + 满屏内容 + 最窄屏」这个组合
  *      此前没量过(主巡页的 320 用的是刚建号的空档)。
  *   十六 坏档开局:坏掉一个分片也要进得去,并且说得出「哪一片坏了、原档在哪」。
+ *   十七 导出失败也要说话:把浏览器的下载能力打断再点一次「导出存档」。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1103,6 +1104,16 @@ for (const vp of VIEWPORTS) {
   watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   await page.waitForTimeout(2600)
+  /*
+   * 钉死随机源、收掉提示条 —— 但**不要**去关弹窗:这一屏正开着「寿元将尽」,
+   * 它就是本场景的起点(而且它故意不可关)。钉随机的用意是免得引擎在转世途中
+   * 掷出一个顿悟/巡游浮层,把「关没关干净」的判据搅红(实测偶发)。
+   */
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+    Math.random = () => 1
+  })
+  await page.waitForTimeout(400)
 
   /** 读一扇弹窗的形状:标题、正文、按钮、有没有漏占位符 */
   const readPanel = () =>
@@ -1149,10 +1160,14 @@ for (const vp of VIEWPORTS) {
     await confirm.click({ timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(1800)
     const after = await page.evaluate(() => ({
-      modal: !!document.querySelector('.modal-panel'),
+      // 判据是「转世那几扇窗关干净了」,不是「一扇窗都没有」——新的一世里
+      // 引擎随时可能浮出顿悟/巡游,那是正常玩法,不该被算作转世没走完
+      rebirthStillOpen: [...document.querySelectorAll('.modal-panel')]
+        .map(p => (p.querySelector('h3')?.textContent || p.getAttribute('aria-label') || '').trim())
+        .filter(t => /寿元将尽|此生已矣|轮回/.test(t)),
       text: (document.querySelector('main')?.innerText || '').replace(/\n+/g, ' ').slice(0, 200)
     }))
-    if (after.modal) failures.push('[390] 转世场景:点「踏入轮回」之后还留着一扇没关的弹窗')
+    if (after.rebirthStillOpen.length) failures.push(`[390] 转世场景:点「踏入轮回」之后还留着转世的窗 —— ${after.rebirthStillOpen.join('、')}`)
     if (/炼虚|99999/.test(after.text)) failures.push('[390] 转世场景:转世之后页面上还写着上一世的境界/寿数')
     console.log(`\n转世:${[death?.title, review?.title, next?.title].filter(Boolean).join(' → ')} → 新的一世(${after.text.slice(0, 24)}…)`)
   }
@@ -1340,6 +1355,58 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第十七件事:导出失败必须说出来(打断浏览器的下载能力再点一次) ----
+/*
+ * 「导出存档」是玩家丢档前唯一的保险。而 Web 这条路靠 `saveAs`(Blob + a[download])——
+ * 受限 WebView、部分应用内浏览器里 `URL.createObjectURL` 直接不可用,于是它抛错。
+ * 调用方是 `void exportSaveToDevice()`,既不看返回值也不接异常,结果就是:
+ * 点下去既没文件、也没提示。故这里把下载能力打断,要求界面**说得出这句话**。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, acceptDownloads: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '导出自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/settings', { waitUntil: 'load' })
+  await page.waitForTimeout(2200)
+  await clearOverlays(page)
+  checked += 1
+  // 把下载这条路打断 —— 受限 WebView / 应用内浏览器正是这样
+  await page.evaluate(() => {
+    URL.createObjectURL = () => {
+      throw new Error('createObjectURL is not available')
+    }
+  })
+  await page.getByRole('button', { name: /导出存档/ }).first().click()
+  await page.waitForTimeout(1500)
+  const said = await page.evaluate(() =>
+    [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
+  )
+  if (!/导出|下载/.test(said)) failures.push(`[390] 导出失败场景:下载能力不可用时点了「导出存档」,界面一声不响(${said || '无提示'})`)
+  else console.log(`\n导出失败也说话:「${said.split('|')[0]}」`)
+  if (pageErrors.length) failures.push(`[390] 导出失败场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 

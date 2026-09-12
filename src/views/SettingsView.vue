@@ -182,7 +182,8 @@
 
   /** 导出存档:Web/Electron 走浏览器下载,原生端写 Documents(见 savePlatform) */
   function onExport(): void {
-    void exportSaveToDevice()
+    // 两个平台各自会 toast 结果;这里再兜一层,免得异常冒成未捕获的 Promise
+    void exportSaveToDevice().catch(() => ui.toast('导出没能完成,请稍后再试', 'warn'))
   }
 
   // ---- 重置流程:弹窗期间暂停心跳,取消则恢复 ----
@@ -229,6 +230,8 @@
       sealStorageWrites()
       setTimeout(reloadGame, 800)
     }
+    // 读文件本身也可能失败(权限/磁盘)—— 静默就等于「点了没反应」
+    reader.onerror = () => ui.toast('这个文件读不出来,换一个再试', 'warn')
     reader.readAsText(file)
     // 清空 input,允许重复选择同一文件
     if (fileInput.value) fileInput.value.value = ''

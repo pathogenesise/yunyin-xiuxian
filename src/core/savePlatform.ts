@@ -37,6 +37,20 @@ export async function exportSaveToDevice(): Promise<string | null> {
       return '导出失败'
     }
   }
-  saveAs(new Blob([text], { type: 'application/json' }), `yunyin-xiuxian-${new Date().toISOString().slice(0, 10)}.save`)
-  return null
+  /*
+   * Web 端靠 `saveAs`(Blob + a[download])。
+   *
+   * 这条路不是处处都通:受限 WebView、部分应用内浏览器里 `URL.createObjectURL` 直接不可用,
+   * 于是 saveAs 抛错 —— 而调用方是 `void exportSaveToDevice()`(不 await、不看返回值),
+   * 结果玩家点「导出存档」既没文件也没提示,静默失败。导出是丢档前唯一的保险,
+   * 失败必须说出来。
+   */
+  try {
+    saveAs(new Blob([text], { type: 'application/json' }), `yunyin-xiuxian-${new Date().toISOString().slice(0, 10)}.save`)
+    return null
+  } catch {
+    // 别承诺做不到的事:导入只认文件,没有「粘贴文本」这条路,故只指可行的办法
+    useUiStore().toast('浏览器没能下载这份存档 —— 请换一个浏览器打开后再导出', 'warn')
+    return '浏览器不支持下载'
+  }
 }
