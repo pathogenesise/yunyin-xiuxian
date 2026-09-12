@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 151,
+  "round": 152,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T13:02:43+00:00",
+  "updated_at": "2026-09-12T13:35:32+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 146,
+      "touched_round": 151,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -8164,6 +8164,66 @@
       "touched_round": 150,
       "summary": "读数要么准,要么别报:固定的假读数会训练人忽略整张表。凡是「点了没反应」这类读数,先问「变化是不是没落在我的指纹里」(样式、选中态、跨页状态),能收进指纹的就收进去 —— 这张表才有资格当哨兵",
       "confidence": 0.85
+    },
+    "ISS-128": {
+      "id": "ISS-128",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T13:35:27+00:00",
+      "updated_at": "2026-09-12T13:35:32+00:00",
+      "touched_round": 151,
+      "summary": "「减少动效」这个开关没人验过是否真的减到了:它靠一个类名 + 一条把动画时长压成 0.01ms 的 CSS 规则,加错了界面上看不出来(动效照动),而这条设置一般是给晕动或省电的人开的。另:音效/音乐开着时点击的路径也没走过 —— 冒烟夹具一律把声音关掉",
+      "severity": 0.25,
+      "confidence": 0.95
+    },
+    "TASK-119": {
+      "id": "TASK-119",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T13:35:28+00:00",
+      "updated_at": "2026-09-12T13:35:28+00:00",
+      "touched_round": 151,
+      "summary": "补第二十二件事:按「还会不会动」量(duration>0.05s 或 infinite),默认应 >0、打开开关应 =0、关回应 >0;同一场在音效与音乐开着的情况下点一路按钮",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-176": {
+      "id": "CHG-176",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:35:28+00:00",
+      "updated_at": "2026-09-12T13:35:28+00:00",
+      "touched_round": 151,
+      "summary": "layout-check 增第二十二件事(减动效两向判据 + 音效开关下的点击);战斗场景等待 30→45 秒并把当前页面写进失败报告",
+      "commit": "2430cbc"
+    },
+    "EV-133": {
+      "id": "EV-133",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:35:28+00:00",
+      "updated_at": "2026-09-12T13:35:28+00:00",
+      "touched_round": 151,
+      "summary": "实测读数:减动效「默认 33 个在动 → 打开开关 0 个 → 关回 11 个(音效开着点了一路,无异常)」;同一轮另三条读数也都齐(闭关 4分58秒当场被拦、背包账目强化扣 7/分解得 4、战斗回放 1 回合胜且分析面板可开)。故障注入:把 .reduce-motion 规则改类名 → 「开了「减少动效」仍有 11 个元素在动(开关是摆设)」红。排版自检 97 组全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-078": {
+      "id": "HYP-078",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T13:35:28+00:00",
+      "updated_at": "2026-09-12T13:35:28+00:00",
+      "touched_round": 151,
+      "summary": "「设置里的开关」都要有一条两向判据:只验「打开后变了」可能碰上本来就那样(界面本来就不动),只验「关掉后不变」则永远绿。两向都立得住,才说明这个开关真的接上了线",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -11923,6 +11983,36 @@
       "to": "COMP-006",
       "type": "governs",
       "created_at": "2026-09-12T13:02:43+00:00"
+    },
+    {
+      "from": "ISS-128",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T13:35:32+00:00"
+    },
+    {
+      "from": "TASK-119",
+      "to": "ISS-128",
+      "type": "addresses",
+      "created_at": "2026-09-12T13:35:32+00:00"
+    },
+    {
+      "from": "CHG-176",
+      "to": "TASK-119",
+      "type": "implements",
+      "created_at": "2026-09-12T13:35:32+00:00"
+    },
+    {
+      "from": "CHG-176",
+      "to": "ISS-128",
+      "type": "resolves",
+      "created_at": "2026-09-12T13:35:32+00:00"
+    },
+    {
+      "from": "EV-133",
+      "to": "HYP-078",
+      "type": "validates",
+      "created_at": "2026-09-12T13:35:32+00:00"
     }
   ]
 }
