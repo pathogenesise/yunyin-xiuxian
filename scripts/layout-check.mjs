@@ -38,6 +38,7 @@
  *   十七 导出失败也要说话:把浏览器的下载能力打断再点一次「导出存档」。
  *   十八 切后台/离开页面时,待刷的存档要立刻落盘(visibilitychange / pagehide)。
  *   十九 真打一场历练战斗:战报回放要出内容、结语要写清胜负、战斗分析点得开。
+ *   二十 背包里的账目:强化写着扣多少尘就扣多少,分解说给多少尘就给多少。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1357,6 +1358,101 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第二十件事:背包里的账目 —— 显示多少就扣/给多少 ----
+/*
+ * 强化与分解是玩家天天用的两个资源动作,而它们各自都有一处**手写数字**:
+ *   强化弹窗写着「器灵尘×N · 灵石 M」;
+ *   分解完弹一条「分解得器灵尘×K」。
+ * 这些数字若与服务实际扣/给的对不上,玩家不会知道该信哪个。
+ * 判据就一件事:拿界面上的数对界面自己的变化(器灵尘那一栏)。
+ * 灵石不在判据里 —— 同一段时间里任务/成就也会发灵石,拿它做差会被别处的收益搅乱。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '锻造自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 5000 },
+    inventory: {
+      items: [
+        { uid: 'p_w', templateId: 'w_zidian', quality: 'heaven', tier: 20, level: 4, affixes: [] },
+        { uid: 'b_1', templateId: 'b_qingyun', quality: 'excellent', tier: 3, level: 0, affixes: [] }
+      ],
+      equipped: { weapon: 'p_w' },
+      pills: {},
+      artifacts: [],
+      equippedArtifacts: []
+    },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  /** 背包页顶上那栏「器灵尘 N」 */
+  const readDust = () =>
+    page.evaluate(() => {
+      const m = /器灵尘\s*(\d+)/.exec(document.querySelector('main')?.innerText || '')
+      return m ? Number(m[1]) : null
+    })
+  // 打开背包里那件(未装备、未锁定)
+  await page.locator('main button', { hasText: /青云道袍/ }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(500)
+  const costLine = await page.evaluate(() => {
+    const p = document.querySelector('.modal-panel')
+    const m = /器灵尘×(\d+)/.exec(p?.innerText || '')
+    return m ? Number(m[1]) : null
+  })
+  if (costLine === null) failures.push('[390] 锻造场景:详情里没写出强化的器灵尘价(判据没跑到东西)')
+  else {
+    const before = await readDust()
+    await page.locator('.modal-panel button', { hasText: /强\s*化/ }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(600)
+    const after = await readDust()
+    if (before === null || after === null || before - after !== costLine) {
+      failures.push(`[390] 锻造场景:强化写着扣 ${costLine} 尘,实际 ${before} → ${after}(所见非所付)`)
+    }
+    // 接着分解同一件:提示里说给多少尘,就该给多少 —— 而且这件要从包里消失
+    const dustBeforeSplit = await readDust()
+    await page.locator('.modal-panel footer button').filter({ hasText: /^$/ }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(300)
+    await page.locator('.modal-panel button', { hasText: /分解\?/ }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(700)
+    const toast = await page.evaluate(() =>
+      [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
+    )
+    const promised = Number((/分解得器灵尘×(\d+)/.exec(toast) || [])[1] ?? NaN)
+    const dustAfterSplit = await readDust()
+    const stillInBag = await page.evaluate(() => (document.querySelector('main')?.innerText || '').includes('青云道袍'))
+    if (Number.isFinite(promised)) {
+      if (dustBeforeSplit === null || dustAfterSplit === null || dustAfterSplit - dustBeforeSplit !== promised) {
+        failures.push(`[390] 锻造场景:分解说给 ${promised} 尘,实际 ${dustBeforeSplit} → ${dustAfterSplit}`)
+      }
+      if (stillInBag) failures.push('[390] 锻造场景:分解之后那件还留在背包里')
+      console.log(`\n背包账目:强化扣尘 ${costLine}(对上) · 分解得尘 ${promised}(对上,且件已出包)`)
+    } else {
+      failures.push(`[390] 锻造场景:分解没有给出「分解得器灵尘×N」的交代(${toast || '无提示'})`)
+    }
+  }
+  if (pageErrors.length) failures.push(`[390] 锻造场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
