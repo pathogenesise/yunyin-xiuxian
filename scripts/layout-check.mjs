@@ -29,8 +29,13 @@ const SHOTS_DIR = '/tmp/layout-shots'
 const SHOTS = process.argv.includes('--shots')
 
 const VIEWPORTS = [
-  { width: 375, height: 812, tag: '375' },
-  { width: 320, height: 568, tag: '320' }
+  // 390×844 = iPhone 12/13/14/15 的标称宽度,当下最常见的一档;
+  // 375/320 是旧机型与极窄档。三档一起量,免得只守住了其中一档。
+  // dpr 只影响截图栅格化(1px 边框、字体抗锯齿),不影响 CSS 布局与判据 ——
+  // 但 --shots 存下来的图因此更接近真机看到的密度,便于人眼复核。
+  { width: 390, height: 844, tag: '390', dpr: 3 },
+  { width: 375, height: 812, tag: '375', dpr: 3 },
+  { width: 320, height: 568, tag: '320', dpr: 2 }
 ]
 /**
  * 全量路由 —— 从前只巡八页,于是设置页与收藏页的排版与选中态从未被量过。
@@ -59,7 +64,7 @@ const failures = []
 let checked = 0
 
 for (const vp of VIEWPORTS) {
-  const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } })
+  const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr })
   const pageErrors = []
   page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
 
@@ -90,6 +95,22 @@ for (const vp of VIEWPORTS) {
       return {
         hash: location.hash,
         horizontalOverflow: document.documentElement.scrollWidth > vw + 1,
+        /**
+         * 外壳(#app 的第一层)不能被滚偏,也不该有可滚的横向余量。
+         *
+         * 它是 overflow-hidden 的:玩家滚不动,但**浏览器滚得动**。
+         * 云雾装饰故意越界画出盒子(左上 -64px、右下 -96px),曾把外壳撑到
+         * scrollWidth 516 vs clientWidth 390;建号结束时浏览器顺手把 scrollLeft
+         * 设成 24,此后整个界面永久左移 24px —— 顶栏名字被切掉左半边、底部
+         * 第一栏「洞府」只剩半个字。而「查 documentElement 有没有横向溢出」查不出
+         * 这件事:overflow-hidden 把子元素的溢出挡在外壳以内,量在最外层永远是绿的。
+         * 故这里直接量外壳自己:scrollLeft 必须为 0,且不该有横向可滚区间。
+         */
+        shellShift: (() => {
+          const shell = document.getElementById('app')?.firstElementChild
+          if (!shell) return null
+          return { scrollLeft: Math.round(shell.scrollLeft), overflowX: Math.round(shell.scrollWidth - shell.clientWidth) }
+        })(),
         overflows,
         navItems: document.querySelectorAll('nav button, nav a').length,
         /**
@@ -160,6 +181,9 @@ for (const vp of VIEWPORTS) {
     checked += 1
     const problems = []
     if (info.horizontalOverflow) problems.push(`横向溢出(scrollWidth ${info.hash})`)
+    if (info.shellShift && (info.shellShift.scrollLeft !== 0 || info.shellShift.overflowX > 1)) {
+      problems.push(`外壳被滚偏(scrollLeft ${info.shellShift.scrollLeft} / 横向可滚 ${info.shellShift.overflowX}px)`)
+    }
     if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
     if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
     if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
