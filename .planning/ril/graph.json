@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 118,
+  "round": 119,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T02:40:10+00:00",
+  "updated_at": "2026-09-12T02:51:51+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 117,
+      "touched_round": 118,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -6013,6 +6013,67 @@
       "touched_round": 117,
       "summary": "SettingsView 主题/速度加 aria-pressed;InkTabs 加 role=tab + aria-selected;layout-check 路由 8→15 并加「选择组恰有一个选中」判据;ui-smoke 加「点了没反应」读数",
       "commit": "cc27e07"
+    },
+    "ISS-091": {
+      "id": "ISS-091",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T02:51:43+00:00",
+      "updated_at": "2026-09-12T02:51:51+00:00",
+      "touched_round": 118,
+      "summary": "弹窗不管键盘焦点:打开「关于」弹窗后焦点仍留在背后按钮上,连按六次 Tab 六次全跑到弹窗外的页面与底部导航;弹窗也没有 role=dialog/aria-modal,读屏不知道有弹窗开了;Esc 能关但关完焦点不回触发处",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-082": {
+      "id": "TASK-082",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T02:51:43+00:00",
+      "updated_at": "2026-09-12T02:51:51+00:00",
+      "touched_round": 118,
+      "summary": "BaseModal 补焦点管理:dialog 语义、打开即入焦、Tab 在面板内循环、关闭后焦点还给触发元素;排版自检加第五件事「弹窗的键盘与焦点」",
+      "category": "robustness",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "EV-098": {
+      "id": "EV-098",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:51:43+00:00",
+      "updated_at": "2026-09-12T02:51:43+00:00",
+      "touched_round": 118,
+      "summary": "修复前实测:focusInside=false、Tab 轨迹「外外外外外外」、无 role/aria-modal;修复后:role=dialog、aria-modal=true、焦点入内、六次 Tab 全在内、Esc 后焦点回到触发按钮;layout-check 第五件事四条断言(语义/入焦/困住/归还);注入(去掉 ref+role+aria-modal)三条同时转红;全量 142 文件 1418 用例绿,冒烟 61 次点击无异常",
+      "confidence": 0.9,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-046": {
+      "id": "HYP-046",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:51:43+00:00",
+      "updated_at": "2026-09-12T02:51:43+00:00",
+      "touched_round": 118,
+      "summary": "「弹窗」是可被无头验证的完整契约,四条缺一不可:语义(role/aria-modal)、打开即入焦、Tab 困在面板内、关闭归还焦点。只测「能不能关」会漏掉最要紧的用户群 —— 键盘与读屏用户打开弹窗后会被困在背后的页面里",
+      "confidence": 0.85
+    },
+    "CHG-141": {
+      "id": "CHG-141",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T02:51:51+00:00",
+      "updated_at": "2026-09-12T02:51:51+00:00",
+      "touched_round": 118,
+      "summary": "BaseModal 补 dialog 语义与焦点管理(入焦/Tab 循环/归还);layout-check 增第五件事「弹窗的键盘与焦点」(四条断言)",
+      "commit": "31d53bd"
     }
   },
   "edges": [
@@ -8632,6 +8693,36 @@
       "to": "HYP-045",
       "type": "validates",
       "created_at": "2026-09-12T02:40:09+00:00"
+    },
+    {
+      "from": "ISS-091",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T02:51:51+00:00"
+    },
+    {
+      "from": "TASK-082",
+      "to": "ISS-091",
+      "type": "addresses",
+      "created_at": "2026-09-12T02:51:51+00:00"
+    },
+    {
+      "from": "CHG-141",
+      "to": "TASK-082",
+      "type": "implements",
+      "created_at": "2026-09-12T02:51:51+00:00"
+    },
+    {
+      "from": "CHG-141",
+      "to": "ISS-091",
+      "type": "resolves",
+      "created_at": "2026-09-12T02:51:51+00:00"
+    },
+    {
+      "from": "EV-098",
+      "to": "HYP-046",
+      "type": "validates",
+      "created_at": "2026-09-12T02:51:51+00:00"
     }
   ]
 }
