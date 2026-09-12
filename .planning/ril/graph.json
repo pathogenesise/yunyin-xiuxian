@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 131,
+  "round": 132,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T06:18:00+00:00",
+  "updated_at": "2026-09-12T06:50:32+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 130,
+      "touched_round": 131,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -6935,6 +6935,92 @@
       "summary": "改造后真浏览器读数:两扇弹窗 role=dialog、aria-label 分别为「悟道顿悟」「洞府巡游」,选项按钮 59px、忽略/离开 41px、关闭键 28px 且有名。排版自检 54 组全绿(新增第八件事);全量 145 文件 1436 用例、界面冒烟 15 页、tsc/eslint 全绿。故障注入三处:自铺浮层的探测文件 → 「全屏浮层出处:BaseModal + 越界的 1 个」红;删掉灵脉 aria-label → 「没有名字」红;删掉 @close → 「关不掉」红",
       "confidence": 0.95,
       "source": "src/core/uiLayering.spec.ts"
+    },
+    "ISS-107": {
+      "id": "ISS-107",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-12T06:50:32+00:00",
+      "touched_round": 131,
+      "summary": "冷启动落在子页时「返回」会退出游戏:书签/deep link/PWA 恢复上次路由都会让首次导航就落在子页,此时 history.state.back 为 null,裸 router.back() 退到 about:blank —— 实测 #/dongfu 与 #/souls 都是一点返回、界面连这一局上下文一起消失,而玩家只觉得「点了返回,游戏没了」",
+      "severity": 0.55,
+      "confidence": 0.95
+    },
+    "ISS-108": {
+      "id": "ISS-108",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-12T06:50:32+00:00",
+      "touched_round": 131,
+      "summary": "排版自检的弹窗场景长期偶发假红,而且判否得没有依据:真凶是随机浮上来的「悟道顿悟」整层浮盖挡住点击(圆盘里四次挂三次,elementFromPoint 抓到),此前误记在提示条头上;另有第三方统计脚本(51.la)在 Math.random 被钉成常量时抛 Invalid UUID,把「无 pageerror」判否掉",
+      "severity": 0.2,
+      "confidence": 0.95
+    },
+    "TASK-098": {
+      "id": "TASK-098",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-12T06:50:28+00:00",
+      "touched_round": 131,
+      "summary": "返回键冷启动兜底:新增 goBack(router, 父页),洞府/器魂改走它;判据两侧都钉(单元三例 + 「视图里不许裸 back()」+ 浏览器第九件事复现冷启动)",
+      "category": "maintainability",
+      "severity": 0.55,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "TASK-099": {
+      "id": "TASK-099",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-12T06:50:28+00:00",
+      "touched_round": 131,
+      "summary": "查清并消除排版自检的假红:相关场景把随机事件概率钉死(测的是弹窗契约不是引擎事件),页面异常按脚本出处分流(第三方脚本异常只打印不计入失败)",
+      "category": "maintainability",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-157": {
+      "id": "CHG-157",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-12T06:50:28+00:00",
+      "touched_round": 131,
+      "summary": "新增 router/goBack.ts(有站内来路才 back,否则 push 父页)并接到洞府/器魂;uiLayering 增「视图里不许裸 back()」;layout-check 增第九件事(同 context 新开一页复现冷启动);弹窗/冷启动场景钉死 Math.random 并把第三方脚本异常分流",
+      "commit": "0c714ab"
+    },
+    "HYP-058": {
+      "id": "HYP-058",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-12T06:50:28+00:00",
+      "touched_round": 131,
+      "summary": "「假红」也要查到底:一条判据时红时绿,往往不是被测对象不稳,而是取景里混进了别的活物(随机浮层、第三方脚本)。处理不是放宽阈值或加重试,而是把取景收拾干净(钉死随机源、按脚本出处分流异常),否则真正的问题会被红绿噪声掩盖",
+      "confidence": 0.85
+    },
+    "EV-113": {
+      "id": "EV-113",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T06:50:29+00:00",
+      "updated_at": "2026-09-12T06:50:29+00:00",
+      "touched_round": 131,
+      "summary": "冷启动读数:修前 #/dongfu 与 #/souls 点返回后 href=about:blank、#app 无子元素(界面消失);修后落在 #/ 且界面存活。挡路元素诊断:四次里三次 elementFromPoint 命中「悟道顿悟」所在的 .fixed.inset-0 浮盖。第三方异常堆栈来自 sdk.51.la/js-sdk-pro.min.js。故障注入:洞府改回裸 back() → 单元「视图里不许裸 back()」与浏览器第九件事同时红。全量 146 文件 1440 用例、分类报告 1440 过 0 败、排版自检 55 组、界面冒烟 15 页、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "src/router/goBack.spec.ts"
     }
   },
   "edges": [
@@ -10028,6 +10114,60 @@
       "to": "HYP-057",
       "type": "validates",
       "created_at": "2026-09-12T06:18:00+00:00"
+    },
+    {
+      "from": "ISS-107",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "ISS-108",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "TASK-098",
+      "to": "ISS-107",
+      "type": "addresses",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "TASK-099",
+      "to": "ISS-108",
+      "type": "addresses",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "CHG-157",
+      "to": "TASK-098",
+      "type": "implements",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "CHG-157",
+      "to": "TASK-099",
+      "type": "implements",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "CHG-157",
+      "to": "ISS-107",
+      "type": "resolves",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "CHG-157",
+      "to": "ISS-108",
+      "type": "resolves",
+      "created_at": "2026-09-12T06:50:32+00:00"
+    },
+    {
+      "from": "EV-113",
+      "to": "HYP-058",
+      "type": "validates",
+      "created_at": "2026-09-12T06:50:32+00:00"
     }
   ]
 }
