@@ -131,6 +131,25 @@ function watchPageErrors(page, sink) {
 }
 
 /**
+ * 把取景收拾干净:收掉提示条、钉死随机事件、关掉已经浮上来的弹窗。
+ *
+ * 由来:弹窗焦点场景三次偶发假红,真凶每次都是引擎随机浮上来的「悟道顿悟」——
+ * 它是一整层遮罩,点它盖着的入口自然点不动。只钉 Math.random 不够:
+ * 引擎每秒一拍,从「踏入仙途」到这条场景动手之间已经够它掷出一次了。
+ */
+async function clearOverlays(page) {
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+    Math.random = () => 1
+  })
+  for (let i = 0; i < 3; i += 1) {
+    if ((await page.locator('.modal-panel').count()) === 0) break
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(350)
+  }
+}
+
+/**
  * 一页一量:横向溢出、外壳偏移、越界元素、无名控件、过小可点元素、选择组选中态、底部导航项数。
  *
  * 抽成函数是为了让**后期档**那一遍复用同一把尺子 —— 空档量不出长数字与满屏内容,
@@ -349,13 +368,7 @@ for (const vp of VIEWPORTS) {
    * (实测偶发:waitFor 过了、click 超时)。要测的是弹窗焦点,不是提示条 ——
    * 提示条自己那条判据在下面单独跑。
    */
-  await page.evaluate(() => {
-    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
-    // 把随机事件钉死:顿悟那一刻若正好浮上来,它是一整层浮盖,会把「关于」挡住
-    // (实测复现四次里挂三次,挡路的正是「悟道顿悟」)。这条场景测的是弹窗焦点契约,
-    // 不是引擎的随机事件 —— 让随机事件在场只会制造假红。
-    Math.random = () => 1
-  })
+  await clearOverlays(page)
   await page.waitForTimeout(400)
 
   const trigger = page.getByRole('button', { name: /关于/ }).first()
@@ -601,7 +614,7 @@ for (const vp of VIEWPORTS) {
   await page.goto(INDEX + '#/dongfu', { waitUntil: 'load' })
   await page.waitForTimeout(1800)
   // 同上:别让随机浮上来的引擎事件挡住「返回」
-  await page.evaluate(() => { Math.random = () => 1 })
+  await clearOverlays(page)
   checked += 1
   const coldBack = await page.evaluate(() => ({
     back: (window.history.state || {}).back ?? null,
@@ -730,6 +743,38 @@ for (const vp of VIEWPORTS) {
     checked += 1
     const problems = problemsOf(info)
     if (problems.length) failures.push(`[390-late] ${route} → ${problems.join(' / ')}`)
+  }
+
+  /*
+   * (三)在途秘境要真的推得动。
+   *
+   * 秘境这一整套此前只在单元用例里跑过 —— 界面上「再入一层」按下去会怎样,
+   * 从没有人看过:点了没反应、刷不出战报、数字漏 NaN,都会静静留在这里。
+   * 夹具身上带着一趟打到第二层的秘境,故这里真点一次:要么浮出战报,
+   * 要么卡片状态前移(层数/败次/探尽),两者必有其一。
+   */
+  await page.goto(INDEX + '#' + '/adventure', { waitUntil: 'load' })
+  await page.waitForTimeout(800)
+  checked += 1
+  const beforeText = await page.evaluate(() => document.querySelector('main')?.innerText || '')
+  const fightAgain = page.locator('main button', { hasText: /再\s*入\s*一\s*层/ }).first()
+  if ((await fightAgain.count()) === 0) {
+    failures.push('[390-late] 历练页:在途秘境没有「再入一层」入口 —— 夹具的秘境没被读出来?')
+  } else {
+    await fightAgain.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(900)
+    const after = await page.evaluate(() => ({
+      text: document.querySelector('main')?.innerText || '',
+      toasts: [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim())
+    }))
+    if (after.toasts.length === 0 && after.text === beforeText) {
+      failures.push('[390-late] 历练页:点了「再入一层」既没战报也没变化(点了没反应)')
+    }
+    if (/NaN|undefined/.test(after.text + after.toasts.join(' '))) failures.push('[390-late] 历练页:秘境推进后漏出占位符')
+    console.log(
+      `  在途秘境推进一步:${after.toasts.length ? `战报「${after.toasts[0]?.slice(0, 26)}」` : '卡片状态前移'}` +
+        `${after.toasts.length > 1 ? ` 等 ${after.toasts.length} 条` : ''}`
+    )
   }
   if (pageErrors.length) failures.push(`[390] 后期档页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
