@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 133,
+  "round": 134,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T07:09:37+00:00",
+  "updated_at": "2026-09-12T07:16:31+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3046,11 +3046,11 @@
     "ISS-049": {
       "id": "ISS-049",
       "type": "issue",
-      "status": "active",
-      "version": 5,
+      "status": "resolved",
+      "version": 6,
       "created_at": "2026-09-11T16:41:32+00:00",
-      "updated_at": "2026-09-12T03:35:58+00:00",
-      "touched_round": 121,
+      "updated_at": "2026-09-12T07:16:31+00:00",
+      "touched_round": 133,
       "summary": "全量并行跑测试时偶发一红,savePersistence「读己所写」两次(round 60/96);round 111 复现的一例在 importCorruption,根因解密误判已修(CHG-135);round 112 定向复现 60 次单文件 + 2 轮全量 0 失败;round 122 又见一例 offlineCap「离线折扣同源」失败,三连跑同组用例复现不出。已给 savePersistence 的写盘断言加调用栈埋点;隔离实验证明文件间无全局污染(各文件隔离正常)",
       "severity": 0.2,
       "confidence": 0.3
@@ -5671,7 +5671,7 @@
       "version": 1,
       "created_at": "2026-09-12T01:15:37+00:00",
       "updated_at": "2026-09-12T01:15:37+00:00",
-      "touched_round": 111,
+      "touched_round": 133,
       "summary": "「偶发、与环境无关、只和输入内容有关」的缺陷,大多是「把不合格式的输入交给了宽容的解析器」:CryptoJS 的 Base64 解析会跳过非法字符,于是明文也能解出乱码而不报错。判据要钉在**入口格式**上(先认密文头),而不是靠在出口加 try/catch 兜 —— 兜住异常挡不住「解出乱码但不抛」这一类",
       "confidence": 0.9
     },
@@ -5682,7 +5682,7 @@
       "version": 1,
       "created_at": "2026-09-12T01:24:24+00:00",
       "updated_at": "2026-09-12T01:24:24+00:00",
-      "touched_round": 111,
+      "touched_round": 133,
       "summary": "decryptSave 入口认密文头(U2FsdGVkX1 = Salted__),非密文一律按明文走;新增 savePlaintext.spec(3 例)并登记进 Unit 分类",
       "commit": "92341df"
     },
@@ -7081,6 +7081,29 @@
       "summary": "第一次跑后期档即红:「[390-late] /souls → 可点元素过小:15px «卸下»」—— 补成内联块 31px 后 66 组全绿。归来卷轴读数:aria-label=离线归来结算、两行收益(修为 +2.129亿 / 灵气 +7775880)、三条附注(圆满可突破 / 寿元流逝 10 载 / 秘境之行原样留着)、无 NaN 占位符、点「收下」后弹窗关闭且界面存活",
       "confidence": 0.95,
       "source": "scripts/layout-check.mjs"
+    },
+    "HYP-060": {
+      "id": "HYP-060",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:16:28+00:00",
+      "updated_at": "2026-09-12T07:16:28+00:00",
+      "touched_round": 133,
+      "summary": "偶发缺陷要收口,得能说出「它现在为什么不可能再发生」:只报「跑了很多遍没再出现」是弱证据。找到那条概率路径(把不合格式的输入交给宽容的解析器,实测 2000 条明文里 11 条中招)、把它变成结构性不可能(入口先认密文头)、再用一条能被打红的回归钉住 —— 三样齐了才算闭环",
+      "confidence": 0.85
+    },
+    "EV-115": {
+      "id": "EV-115",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T07:16:28+00:00",
+      "updated_at": "2026-09-12T07:16:28+00:00",
+      "touched_round": 133,
+      "summary": "ISS-049 定案:根因是明文存档被当密文解(CryptoJS Base64 解析跳过非法字符,2000 条明文里 11 条被解成乱码 ≈0.55%),失败落点是 SAVE_SERIALIZER.deserialize 里那层 JSON.parse;CHG-135 的密文头检查让明文根本不进解密,该路径结构性消失。证据三样:① 故障注入去掉预检 → savePlaintext.spec 立刻红(报出 11 条被误读的时间戳);② 回归补到真正被调用的序列化器那一段;③ 此后 11 轮全量并行(1440/1441 用例)0 失败,另有 60 次定向复现 0 失败",
+      "confidence": 0.95,
+      "source": "src/utils/savePlaintext.spec.ts"
     }
   },
   "edges": [
@@ -10258,6 +10281,24 @@
       "to": "HYP-059",
       "type": "validates",
       "created_at": "2026-09-12T07:09:36+00:00"
+    },
+    {
+      "from": "EV-115",
+      "to": "HYP-060",
+      "type": "validates",
+      "created_at": "2026-09-12T07:16:31+00:00"
+    },
+    {
+      "from": "EV-115",
+      "to": "HYP-039",
+      "type": "validates",
+      "created_at": "2026-09-12T07:16:31+00:00"
+    },
+    {
+      "from": "CHG-135",
+      "to": "ISS-049",
+      "type": "resolves",
+      "created_at": "2026-09-12T07:16:31+00:00"
     }
   ]
 }
