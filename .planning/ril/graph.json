@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 153,
+  "round": 154,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T14:23:03+00:00",
+  "updated_at": "2026-09-12T14:55:44+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 148,
+      "touched_round": 153,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -8284,6 +8284,66 @@
       "touched_round": 152,
       "summary": "对账要么取精确值,要么把判据的量纲选在界面精度之上:界面把 89979 显示成「8.998万」,1 位漂移就此隐形 —— 那时绿的不是账目对,而是看不出来。凡「所见即所付」的判据,先问一句「这份读数的最小刻度是多少」",
       "confidence": 0.9
+    },
+    "ISS-130": {
+      "id": "ISS-130",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T14:55:39+00:00",
+      "updated_at": "2026-09-12T14:55:44+00:00",
+      "touched_round": 153,
+      "summary": "法宝炼化只报了悟道、没说灵石:forge.artifactUpCost 返回 wudao 与 stone 两笔,upgradeArtifact 两笔都扣,而背包「法宝」页的按钮只写「炼化(悟道 8)」——玩家按标签算账,回头发现灵石也少了一截",
+      "severity": 0.35,
+      "confidence": 0.95
+    },
+    "TASK-121": {
+      "id": "TASK-121",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T14:55:39+00:00",
+      "updated_at": "2026-09-12T14:55:39+00:00",
+      "touched_round": 153,
+      "summary": "炼化按钮把两种代价都写出来,并补两笔账判据(按钮须含灵石;点击后悟道与灵石的差各等于所写)",
+      "category": "core-feature",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-178": {
+      "id": "CHG-178",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T14:55:39+00:00",
+      "updated_at": "2026-09-12T14:55:39+00:00",
+      "touched_round": 153,
+      "summary": "InventoryView 炼化按钮改为「炼化(悟道 N · 灵石 M)」;layout-check 增第二十四件事(两笔账,取磁盘精确值);战斗场景遇际遇窗当场了结再等战斗(等待上限 60 秒)",
+      "commit": "0833253"
+    },
+    "EV-135": {
+      "id": "EV-135",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T14:55:39+00:00",
+      "updated_at": "2026-09-12T14:55:39+00:00",
+      "touched_round": 153,
+      "summary": "实测:悟道 5000 → 4992、灵石 10000000 → 9999908.8(正好 8 与 91.2 两笔)。故障注入(按钮改回只写悟道)→ 「按钮只写了悟道、没写灵石 —— 实际两种都要扣」红。另修战斗场景真因:历练首步会先掷「际遇」,事件窗挡着战斗(超时自动处理),故「45 秒 0 场」并非战斗坏了;现在遇到就当场了结。修后排版自检 99 组全绿(九条场景读数齐),全量 147 文件 1446 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-080": {
+      "id": "HYP-080",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T14:55:39+00:00",
+      "updated_at": "2026-09-12T14:55:39+00:00",
+      "touched_round": 153,
+      "summary": "「两种代价」最容易只写一半:实现里两笔都扣,界面却只报一笔,而玩家只会按标签算账。凡是多资源消耗的动作,按钮上要么都写、要么都不写(让玩家点开看价),绝不能写一半",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -12103,6 +12163,36 @@
       "to": "HYP-079",
       "type": "validates",
       "created_at": "2026-09-12T14:23:03+00:00"
+    },
+    {
+      "from": "ISS-130",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T14:55:44+00:00"
+    },
+    {
+      "from": "TASK-121",
+      "to": "ISS-130",
+      "type": "addresses",
+      "created_at": "2026-09-12T14:55:44+00:00"
+    },
+    {
+      "from": "CHG-178",
+      "to": "TASK-121",
+      "type": "implements",
+      "created_at": "2026-09-12T14:55:44+00:00"
+    },
+    {
+      "from": "CHG-178",
+      "to": "ISS-130",
+      "type": "resolves",
+      "created_at": "2026-09-12T14:55:44+00:00"
+    },
+    {
+      "from": "EV-135",
+      "to": "HYP-080",
+      "type": "validates",
+      "created_at": "2026-09-12T14:55:44+00:00"
     }
   ]
 }
