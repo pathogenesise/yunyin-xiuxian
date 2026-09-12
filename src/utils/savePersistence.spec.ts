@@ -32,18 +32,27 @@ import {
 interface Probe {
   disk: Map<string, string>
   writes: number
+  /**
+   * 每次写盘记一条调用栈。
+   *
+   * 由来:这个文件里出现过一次「还没到点却写了盘」的偶发红(见 ISS-049),
+   * 而断言只报了个数字,谁写的、从哪写的一概不知,于是复现不了也修不了。
+   * 记下调用栈,下一次再出现就能直接点名。
+   */
+  stacks: string[]
 }
 
 let probe: Probe
 
 function installFakeStorage(): Probe {
   const disk = new Map<string, string>()
-  const p: Probe = { disk, writes: 0 }
+  const p: Probe = { disk, writes: 0, stacks: [] }
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => disk.get(k) ?? null,
     setItem: (k: string, v: string) => {
       disk.set(k, v)
       p.writes += 1
+      p.stacks.push((new Error('write').stack ?? '').split('\n').slice(1, 3).join(' | '))
     },
     removeItem: (k: string) => disk.delete(k),
     clear: () => disk.clear(),
@@ -116,8 +125,8 @@ describe('存档写盘 · 省下的电不能拿存档换', () => {
   it('读己所写:尚未落盘也能立刻读回最新值', () => {
     const { storage, serializer, key } = persistConfig('player')
     storage.setItem(key, serializer.serialize({ exp: 42 }))
-    // 一次都还没落盘
-    expect(probe.writes).toBe(0)
+    // 一次都还没落盘(若这条偶发红,报文会带上是谁写的调用栈 —— 见 Probe.stacks 的说明)
+    expect(probe.writes, `还没到刷盘点就写了盘。调用栈:${probe.stacks.join(' // ')}`).toBe(0)
     expect(serializer.deserialize(storage.getItem(key)!)).toEqual({ exp: 42 })
   })
 
