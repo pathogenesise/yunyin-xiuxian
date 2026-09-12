@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 159,
+  "round": 160,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T21:25:34+00:00",
+  "updated_at": "2026-09-12T21:56:07+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -8908,11 +8908,11 @@
     "ISS-145": {
       "id": "ISS-145",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-12T21:01:50+00:00",
-      "updated_at": "2026-09-12T21:01:50+00:00",
-      "touched_round": 158,
+      "updated_at": "2026-09-12T21:54:26+00:00",
+      "touched_round": 159,
       "summary": "天机道「天机透视·入界之敌」出发前预览漏世界/契约/奇门规则:报的胜算用的是另一场仗的规则,与实战所见即所打契约冲突(fate 道途专属,对它是核心玩法违约)",
       "severity": 0.55,
       "confidence": 0.85
@@ -8953,6 +8953,32 @@
       "touched_round": 158,
       "summary": "三道构建/部署工作流(build/deploy/yunyin)各插一步 静态检查+单元测试(bun run check && bun run test),回归在构建前即红",
       "commit": "bb5f132"
+    },
+    "TASK-133": {
+      "id": "TASK-133",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-12T21:29:48+00:00",
+      "updated_at": "2026-09-12T21:56:07+00:00",
+      "touched_round": 160,
+      "summary": "天机透视·入界之敌出发前(run=null)只按 currentDaoRules 预估,漏世界/契约/奇门 —— 改成 compose 同样的 chainRules(dao×world×pact×gate),让预报与首战同源",
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.1
+    },
+    "CHG-184": {
+      "id": "CHG-184",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T21:54:25+00:00",
+      "updated_at": "2026-09-12T21:54:25+00:00",
+      "touched_round": 159,
+      "summary": "previewFight 增 prep 上下文(世界/契约/奇门):出发前预览与首战同源合成 chainRules,CelestialView prep 弹层接上;新增 expeditionPrep.spec 钉住世界与契约规则可见",
+      "commit": 1086009
     }
   },
   "edges": [
@@ -13138,6 +13164,24 @@
       "to": "ISS-144",
       "type": "resolves",
       "created_at": "2026-09-12T21:24:20+00:00"
+    },
+    {
+      "from": "TASK-133",
+      "to": "ISS-145",
+      "type": "addresses",
+      "created_at": "2026-09-12T21:29:48+00:00"
+    },
+    {
+      "from": "CHG-184",
+      "to": "TASK-133",
+      "type": "implements",
+      "created_at": "2026-09-12T21:54:25+00:00"
+    },
+    {
+      "from": "CHG-184",
+      "to": "ISS-145",
+      "type": "resolves",
+      "created_at": "2026-09-12T21:54:25+00:00"
     }
   ]
 }
