@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 139,
+  "round": 140,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T09:03:53+00:00",
+  "updated_at": "2026-09-12T09:16:40+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 126,
+      "touched_round": 139,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -7405,6 +7405,66 @@
       "summary": "可读性也是可以量的,而*禁用态*最容易被漏:设计时只想着「把它灰掉」,忘了那行字往往正是「为什么不让我点」—— 玩家最需要读的一句。判据要按「算出来的对比度」量前景与背景,而不是按设计师记得的那几个色号",
       "status:": "active",
       "confidence": 0.85
+    },
+    "ISS-115": {
+      "id": "ISS-115",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T09:16:36+00:00",
+      "updated_at": "2026-09-12T09:16:40+00:00",
+      "touched_round": 139,
+      "summary": "「引擎在跑」这件事没人端到端看过:引擎每秒推进修为/灵气/洞府产出是放置玩法的根,而单元用例直接调引擎 —— 「应用一启动,引擎到底跑起来没有」只有真浏览器能答。若 engine.start() 被条件挡住或 tick 被掐,界面会安静地冻住,单测照样全绿",
+      "severity": 0.35,
+      "confidence": 0.95
+    },
+    "TASK-106": {
+      "id": "TASK-106",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T09:16:36+00:00",
+      "updated_at": "2026-09-12T09:16:36+00:00",
+      "touched_round": 139,
+      "summary": "补第十三件事:灵气只给 1 点的夹具,读顶栏灵气(万/亿档位还原成数值)真等两轮六秒,要求一直在涨且末尾高过开头(涨到上限会平,故不要求每步严格变大)",
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-164": {
+      "id": "CHG-164",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:16:36+00:00",
+      "updated_at": "2026-09-12T09:16:36+00:00",
+      "touched_round": 139,
+      "summary": "layout-check 增第十三件事(挂机 6 秒,顶栏灵气必须自己在涨);判据写成「非降且末尾更高」以免上限处假红",
+      "commit": "81c1edc"
+    },
+    "EV-121": {
+      "id": "EV-121",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:16:36+00:00",
+      "updated_at": "2026-09-12T09:16:36+00:00",
+      "touched_round": 139,
+      "summary": "实测读数:挂机 6 秒灵气 2.247万 → 3.931万 → 5.614万。故障注入:engine.start() 在已开局时立刻返回 → 「灵气没有在涨(页面上的数冻住了 —— 引擎没跑?) 1 → 1 → 1」红,并连带照出两处靠引擎推动的场景(隔夜归来、转世)。修回后 73 组全绿;全量 146 文件 1441 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-066": {
+      "id": "HYP-066",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:16:36+00:00",
+      "updated_at": "2026-09-12T09:16:36+00:00",
+      "touched_round": 139,
+      "summary": "最根本的那条承诺最容易被漏检:引擎在跑、数在涨,是放置玩法的前提,却因为「单元用例直接调引擎」而无人从界面这头看过。凡是「应用启动后应当持续发生」的事,都值得在真浏览器里量一次「它真的在发生」",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -10774,6 +10834,36 @@
       "to": "HYP-065",
       "type": "validates",
       "created_at": "2026-09-12T09:03:53+00:00"
+    },
+    {
+      "from": "ISS-115",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T09:16:40+00:00"
+    },
+    {
+      "from": "TASK-106",
+      "to": "ISS-115",
+      "type": "addresses",
+      "created_at": "2026-09-12T09:16:40+00:00"
+    },
+    {
+      "from": "CHG-164",
+      "to": "TASK-106",
+      "type": "implements",
+      "created_at": "2026-09-12T09:16:40+00:00"
+    },
+    {
+      "from": "CHG-164",
+      "to": "ISS-115",
+      "type": "resolves",
+      "created_at": "2026-09-12T09:16:40+00:00"
+    },
+    {
+      "from": "EV-121",
+      "to": "HYP-066",
+      "type": "validates",
+      "created_at": "2026-09-12T09:16:40+00:00"
     }
   ]
 }
