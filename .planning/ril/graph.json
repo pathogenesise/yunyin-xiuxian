@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 124,
+  "round": 125,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T03:54:47+00:00",
+  "updated_at": "2026-09-12T04:01:04+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 94,
+      "touched_round": 124,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -6357,6 +6357,67 @@
       "touched_round": 123,
       "summary": "contentDensity 增「每个界域都结得到灵兽」(从发放事件反推),头注记七类覆盖判据已铺齐",
       "commit": "d55086b"
+    },
+    "ISS-097": {
+      "id": "ISS-097",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:00:56+00:00",
+      "updated_at": "2026-09-12T04:00:56+00:00",
+      "touched_round": 124,
+      "summary": "高界法宝只是数值放大:32 件法宝的主动效果只用到 damage/heal/shield/weaken 四种,高界那 12 件(仙界/神界/混沌海各 4)全在这四样里按倍率放大 —— 境界涨了,手艺没涨,与「纯数值阶梯」是同一个毛病",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "TASK-088": {
+      "id": "TASK-088",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:00:56+00:00",
+      "updated_at": "2026-09-12T04:00:56+00:00",
+      "touched_round": 124,
+      "summary": "给法宝效果加一种新手艺(震慑:打断敌人这一手)并接到高界法宝上;加「声明即承诺」「高界不止数值放大」「震慑真打断」三条红线",
+      "category": "core-feature",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 3
+    },
+    "EV-104": {
+      "id": "EV-104",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:00:56+00:00",
+      "updated_at": "2026-09-12T04:00:56+00:00",
+      "touched_round": 124,
+      "summary": "ArtifactEffect 增 { type: \"stun\" }(复用既有 stunned 状态,不新增战斗状态),combat 的接缝加一支分支;仙琴「摄心」与镇神印「镇神」改用它(后者间隔 3→4 对齐);artifactEffects.spec 3 例:①效果词汇表无死条目 ②高界法宝至少一件用基础四效之外的 ③真打一场数「敌人那一手被跳过」的次数(不是只数台词);两次注入(单件/两件换回削弱)分别打红行为与词汇表;战斗/天界模拟/首领审计/规则宇宙全绿;全量 144 文件 1426 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/artifactEffects.spec.ts"
+    },
+    "HYP-050": {
+      "id": "HYP-050",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:00:56+00:00",
+      "updated_at": "2026-09-12T04:00:56+00:00",
+      "touched_round": 124,
+      "summary": "「效果词汇表是否只是换皮」可以这样判:取高界那批内容,要求至少一件使用的效果**不在基础集**里(基础集从既有内容归纳:打/回/盾/削)。这条比逐件看文案硬,也能顺手逼出「声明了却没人用」的死词汇 —— 新增机制时会一起变红",
+      "confidence": 0.85
+    },
+    "CHG-147": {
+      "id": "CHG-147",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:01:04+00:00",
+      "updated_at": "2026-09-12T04:01:04+00:00",
+      "touched_round": 124,
+      "summary": "ArtifactEffect 增震慑(stun)并接入战斗;仙琴/镇神印改用震慑;新增 artifactEffects.spec(3 例:词汇表无死条目、高界不止数值放大、震慑真打断)",
+      "commit": "556f35e"
     }
   },
   "edges": [
@@ -9156,6 +9217,36 @@
       "to": "HYP-049",
       "type": "validates",
       "created_at": "2026-09-12T03:54:47+00:00"
+    },
+    {
+      "from": "ISS-097",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T04:01:04+00:00"
+    },
+    {
+      "from": "TASK-088",
+      "to": "ISS-097",
+      "type": "addresses",
+      "created_at": "2026-09-12T04:01:04+00:00"
+    },
+    {
+      "from": "CHG-147",
+      "to": "TASK-088",
+      "type": "implements",
+      "created_at": "2026-09-12T04:01:04+00:00"
+    },
+    {
+      "from": "CHG-147",
+      "to": "ISS-097",
+      "type": "resolves",
+      "created_at": "2026-09-12T04:01:04+00:00"
+    },
+    {
+      "from": "EV-104",
+      "to": "HYP-050",
+      "type": "validates",
+      "created_at": "2026-09-12T04:01:04+00:00"
     }
   ]
 }
