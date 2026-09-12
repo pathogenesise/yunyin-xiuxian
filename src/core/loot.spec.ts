@@ -6,8 +6,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { mulberry32, RandomService, rng } from '@/utils/random'
-import { generateEquipment } from './equipGen'
+import { rng } from '@/utils/random'
 import { afterWin, acquireEquipment } from './loot'
 import { regionDef } from '@/data/regions'
 import { usePlayerStore } from '@/stores/player'
@@ -24,10 +23,13 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     setActivePinia(createPinia())
   })
 
+  // 一件好判的凡俗道袍:不带套、无词条 —— 判定只看品质。
+  // (此前用 generateEquipment 随手生成的件:模板可能成套、词条可能条条近满,
+  //  于是「这件算不算垃圾」被随机模板搅浑,判据不再只测它想测的那条规则。)
+  let seq = 0
   function mk(quality: QualityId): EquipmentInstance {
-    const rng = new RandomService(mulberry32(11))
-    const inst = generateEquipment(3, rng, { slot: 'weapon' })
-    return { ...inst, quality }
+    seq += 1
+    return { uid: `u${seq}`, templateId: 'b_qingyun', quality, tier: 3, level: 0, affixes: [] }
   }
 
   function bagUids(): string[] {

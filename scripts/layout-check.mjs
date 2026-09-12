@@ -44,6 +44,7 @@
  *   二十三 洞府营造的账目:卡片写多少石就扣多少石。
  *   二十四 法宝炼化的两笔账:按钮上两种代价都得写全,且两种都按所写扣。
  *   二十五 一键分解要「先勾后点」:勾品质只是标记,行囊里的东西须点「分 解」才化尘。
+ *   二十六 智能收纳不替玩家扔「有投入的件」:练过/成套/近满的三件必须留下。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1363,6 +1364,107 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第二十六件事:智能收纳不替玩家扔「有投入的件」 ----
+/*
+ * 智能收纳卖的是「替你分辨值得留的」,而它此前只认品质/流派核心词条/组合技部件 ——
+ * 于是三类明明该留的件会被当垃圾:练过的(+N / 重铸 / 封存)、成套共鸣件、词条近满件。
+ * 「一键清理行囊」更狠:一按就把它们全化尘,连一次确认都只报个总数,玩家事后才知道少了什么。
+ * 判据按玩家真按的两个按钮核:
+ *   一 清理确认框写的件数 = 该清的件数(夹具 5 件里只有 2 件是废物);
+ *   二 点下去之后,留下的正好是那 3 件有投入的(行囊 5 → 3),且练过那件的「+3」还在。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '收纳自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 0 },
+    inventory: {
+      items: [
+        // 两件该走的:凡品、不带套、没词条 / 或词条拉胯
+        { uid: 'j1', templateId: 'b_qingyun', quality: 'mortal', tier: 3, level: 0, affixes: [] },
+        { uid: 'j2', templateId: 'b_qingyun', quality: 'mortal', tier: 3, level: 0, affixes: [{ id: 'atk1', roll: 0.12 }] },
+        // 三件该留的:练过(有投入)/ 成套共鸣 / 词条条条近满
+        { uid: 'k_lv', templateId: 'b_qingyun', quality: 'mortal', tier: 3, level: 3, affixes: [], invested: { dust: 40, stone: gn(2, 3) } },
+        { uid: 'k_set', templateId: 'w_xuantie', quality: 'mortal', tier: 3, level: 0, affixes: [] },
+        { uid: 'k_roll', templateId: 'h_muzan', quality: 'mortal', tier: 3, level: 0, affixes: [{ id: 'atk1', roll: 0.95 }, { id: 'def1', roll: 0.9 }] }
+      ],
+      equipped: {},
+      pills: {},
+      artifacts: [],
+      equippedArtifacts: []
+    },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true, keepPerfectRolls: true, keepSetPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  const bagCount = () =>
+    page.evaluate(() => {
+      const m = /藏品\s*(\d+)/.exec(document.querySelector('main')?.innerText || '')
+      return m ? Number(m[1]) : null
+    })
+  const opened = await page
+    .locator('main button', { hasText: /收纳/ })
+    .first()
+    .click({ timeout: 3000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!opened) failures.push('[390] 收纳场景:行囊页找不到「收纳」入口')
+  else {
+    await page.waitForTimeout(400)
+    const before = await bagCount()
+    if (before !== 5) failures.push(`[390] 收纳场景:夹具没铺好 —— 开局行囊 ${before} 件(应为 5)`)
+    const armed = await page
+      .locator('.modal-panel button', { hasText: /依此规则清理行囊/ })
+      .first()
+      .click({ timeout: 3000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!armed) failures.push('[390] 收纳场景:找不到「依此规则清理行囊」按钮')
+    await page.waitForTimeout(300)
+    const warn = await page.evaluate(() => (document.querySelector('.modal-panel')?.innerText || '').replace(/\n+/g, ' '))
+    const promisedCount = Number((/共\s*(\d+)\s*件/.exec(warn) || [])[1] ?? NaN)
+    if (promisedCount !== 2) {
+      failures.push(`[390] 收纳场景:该清的只有 2 件废物,确认框写的是 ${promisedCount} 件 —— 练过/成套/近满的件被算进了清理名单(${warn.slice(0, 90)})`)
+    }
+    await page.locator('.modal-panel button', { hasText: /清理化尘/ }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(900)
+    const after = await bagCount()
+    const body = await page.evaluate(() => (document.querySelector('main')?.innerText || '').replace(/\n+/g, ' '))
+    const toast = await page.evaluate(() =>
+      [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
+    )
+    if (after !== 3) failures.push(`[390] 收纳场景:清理后行囊剩 ${after} 件(应为 3 —— 那 3 件有投入的必须留下)`)
+    if (!/收纳毕:2 件/.test(toast)) failures.push(`[390] 收纳场景:清理后的交代不对(${toast || '无提示'})`)
+    for (const [uid, name] of [['k_set', '玄铁重剑'], ['k_roll', '桃木簪']]) {
+      if (!body.includes(name)) failures.push(`[390] 收纳场景:${name}(${uid})被自动清理了`)
+    }
+    if (!/\+3/.test(body)) failures.push('[390] 收纳场景:练过的那件(+3)被自动清理了')
+    if (after === 3 && promisedCount === 2) {
+      console.log(`\n智能收纳:行囊 5 件 → 确认框「共 ${promisedCount} 件」→ 清理后 ${after} 件(练过/成套/近满三件都留下)`)
+    }
+  }
+  if (pageErrors.length) failures.push(`[390] 收纳场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 

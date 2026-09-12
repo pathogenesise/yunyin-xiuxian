@@ -22,7 +22,9 @@ export const useSettingsStore = defineStore(
       enabled: false,
       minQuality: 3,
       keepCoreAffix: true,
-      keepComboPiece: true
+      keepComboPiece: true,
+      keepPerfectRolls: true,
+      keepSetPiece: true
     })
     /** 是否已同意隐私政策(欢迎页勾选后记录,老档视为已同意) */
     const privacyAccepted = ref(false)
@@ -42,7 +44,9 @@ export const useSettingsStore = defineStore(
         enabled: sk.enabled === true,
         minQuality: Math.floor(asFiniteNumber(sk.minQuality, 3, 0)),
         keepCoreAffix: sk.keepCoreAffix !== false,
-        keepComboPiece: sk.keepComboPiece !== false
+        keepComboPiece: sk.keepComboPiece !== false,
+        keepPerfectRolls: sk.keepPerfectRolls !== false,
+        keepSetPiece: sk.keepSetPiece !== false
       }
     }
 

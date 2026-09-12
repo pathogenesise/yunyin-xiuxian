@@ -311,7 +311,10 @@
     <!-- 智能收纳弹窗入口共用分解弹窗下方 -->
     <BaseModal :open="smartOpen" title="智能收纳" @close="smartOpen = false">
       <p class="text-[11px] leading-relaxed text-ink-faint">
-        开启后,新掉落先过智能裁决:无缘之物直接化尘不入包;行囊满时,值得收藏的新件会挤掉包内与道无缘的旧物。识别不只看品质:流派核心件与组合技部件亦在收藏之列。
+        开启后,新掉落先过智能裁决:无缘之物直接化尘不入包;行囊满时,值得收藏的新件会挤掉包内最弱的无缘旧物(品质低的先走,同档看层级与词条)。识别不只看品质:流派核心词条、组合技部件、成套共鸣件、条条近满的词条都算值得留。
+      </p>
+      <p class="mt-1 text-[11px] leading-relaxed text-ink-ghost">
+        你强化过、重铸过、封存过词条的件一律不动 —— 身上有投入的东西,只有你自己能决定去留(单件分解不受此限)。
       </p>
       <label class="mt-2 flex items-center justify-between py-1.5">
         <span class="text-[13px] text-ink-soft">启用智能收纳</span>
@@ -338,6 +341,14 @@
       <label class="flex items-center justify-between py-1.5">
         <span class="text-[12px] text-ink-soft">保留组合技部件(副体系词条)</span>
         <input v-model="settings.smartKeep.keepComboPiece" type="checkbox" class="h-4 w-4 accent-cinnabar" />
+      </label>
+      <label class="flex items-center justify-between py-1.5">
+        <span class="text-[12px] text-ink-soft">保留成套共鸣件(机制优先)</span>
+        <input v-model="settings.smartKeep.keepSetPiece" type="checkbox" class="h-4 w-4 accent-cinnabar" />
+      </label>
+      <label class="flex items-center justify-between py-1.5">
+        <span class="text-[12px] text-ink-soft">保留词条近满件</span>
+        <input v-model="settings.smartKeep.keepPerfectRolls" type="checkbox" class="h-4 w-4 accent-cinnabar" />
       </label>
       <template #footer>
         <!-- 一键清理二步确认:整包报废,按一下不该就此了结 -->

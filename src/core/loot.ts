@@ -20,7 +20,7 @@ import { generateEquipment } from './equipGen'
 import { stoneByTier } from './formulas'
 import { modOf } from './statsCalc'
 import { personalityEffects } from './petPersonality'
-import { keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
+import { compareEvictable, keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
 import { salvageOf } from './salvage'
 import { checkQualityAchievement, collect, track } from './progress'
 import { harvestMaterials } from './loreService'
@@ -79,7 +79,7 @@ export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolea
     if (smartKeepEnabled() && keepVerdict(inst).keep) {
       const evictable = inventory.bagItems
         .filter(it => !it.locked && !keepVerdict(it).keep)
-        .sort((a, b) => qualityDef(a.quality).rank - qualityDef(b.quality).rank)[0]
+        .sort(compareEvictable)[0]
       if (evictable) {
         inventory.removeEquipment(evictable.uid)
         const evicted = toDust(evictable)
