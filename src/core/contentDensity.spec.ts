@@ -28,7 +28,7 @@ import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
 import { ARTIFACTS, ARTIFACT_MAX_SLOTS } from '@/data/artifacts'
 import { SECRET_REALMS } from '@/data/secretRealms'
 import { CHAINS } from '@/data/chains'
-import { eventDef } from '@/data/events'
+import { EVENTS, eventDef } from '@/data/events'
 import { WORLD_WEATHERS } from '@/core/weather'
 
 /** 某境界的地界所占的层级 */
@@ -175,6 +175,31 @@ describe('内容密度 · 每一境都得有新东西', () => {
       expect(n, `${w.name} 有 ${n} 件法宝、${ARTIFACT_MAX_SLOTS} 个法宝位 —— 带满即最优,没有取舍`).toBeGreaterThan(
         ARTIFACT_MAX_SLOTS
       )
+    }
+  })
+
+  /**
+   * 灵兽也按界域数一遍:灵兽没有 minRealm 字段,它的门槛写在**发放事件**里
+   * (事件的 minRealm,或它带的界域标签)。故这里从事件反推「哪一界域能拿到灵兽」,
+   * 而不是给灵兽表补一个没人读的字段 —— 有门槛的地方才是真相。
+   *
+   * 现状:人间界有随机认主(妖兽认主),仙界应龙、神界麒麟、混沌海鲲鹏与饕餮,
+   * 四界都能结缘。故障注入:把某一界的灵兽奖励改成别的奖励,对应界域立刻红。
+   */
+  it('每个界域都结得到灵兽 —— 门槛写在发放事件里', () => {
+    const WORLD_TAGS: Record<string, string> = { immortal: 'immortal', sky: 'immortal', god: 'god', chaos: 'chaos' }
+    const petsByWorld = new Map<string, number>(WORLDS.map(w => [w.id, 0]))
+    for (const ev of EVENTS) {
+      const grantsPet = ev.choices.some(ch => ch.outcomes.some(o => o.effects.some(e => e.type === 'pet')))
+      if (!grantsPet) continue
+      const byRealm = ev.minRealm !== undefined ? worldOf(ev.minRealm).id : undefined
+      const byTag = ev.tags.map(t => WORLD_TAGS[t]).find(Boolean)
+      const world = byRealm ?? byTag ?? 'mortal'
+      petsByWorld.set(world, (petsByWorld.get(world) ?? 0) + 1)
+    }
+    console.log('界域\t灵兽来源数\n' + WORLDS.map(w => `${w.name}\t${petsByWorld.get(w.id)}`).join('\n'))
+    for (const w of WORLDS) {
+      expect(petsByWorld.get(w.id), `${w.name} 一只灵兽也结不到 —— 那一界的灵兽栏永远空着`).toBeGreaterThan(0)
     }
   })
 })
