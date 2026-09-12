@@ -37,6 +37,7 @@
  *   十六 坏档开局:坏掉一个分片也要进得去,并且说得出「哪一片坏了、原档在哪」。
  *   十七 导出失败也要说话:把浏览器的下载能力打断再点一次「导出存档」。
  *   十八 切后台/离开页面时,待刷的存档要立刻落盘(visibilitychange / pagehide)。
+ *   十九 真打一场历练战斗:战报回放要出内容、结语要写清胜负、战斗分析点得开。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1356,6 +1357,85 @@ for (const vp of VIEWPORTS) {
   if (pageErrors.length) failures.push(`[390] 存读场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`\n存读往返:导出时 ${s0.text} → 投脉后 ${spent?.text ?? '(没投成)'} → 导入后 ${after.text}`)
   rmSync(savePath, { force: true })
+  await ctx.close()
+}
+
+// ---- 第十九件事:真打一场历练战斗,看战报回放与战斗分析 ----
+/*
+ * 战报是这游戏里**看得最多**的一屏:出发 → 模式 → 等一场 → 逐行回放 → 结语,
+ * 而这条链只在单元用例里跑过引擎、从没在真浏览器里走完过。
+ * 判据只要四件事:探索真的开起来了、战报回放出了行、结语写清回合与胜负、
+ * 战斗分析点得开且给得出数据面板(总输出/总承伤那一组)。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '战斗自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    // 一件高 Tier 的武器:让首战打得赢、回放短,判据才不至于看运气
+    inventory: { items: [{ uid: 'p_w', templateId: 'w_zidian', quality: 'heaven', tier: 20, level: 4, affixes: [] }], equipped: { weapon: 'p_w' }, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/adventure', { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  await page.locator('main button', { hasText: /出\s*发/ }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(600)
+  // 「出发」先开模式窗:此行欲作何打算
+  await page.locator('.modal-panel button', { hasText: /寻常游历/ }).first().click({ timeout: 3000 }).catch(() => {})
+  // 首战间隔 12 秒 ÷ 历练速度,故最多等 30 秒
+  let summary = ''
+  let logLines = 0
+  for (let i = 0; i < 30 && !summary; i += 1) {
+    await page.waitForTimeout(1000)
+    const info = await page.evaluate(() => {
+      const text = document.querySelector('main')?.innerText || ''
+      return {
+        running: /余 \d+分\d+秒/.test(text),
+        lines: (text.match(/击中|施展|避开|打断|气血逆涌/g) || []).length,
+        summary: (text.match(/此战 \d+ 回合[^\n]*/) || [''])[0]
+      }
+    })
+    logLines = Math.max(logLines, info.lines)
+    summary = info.summary
+    if (i === 0 && !info.running) failures.push('[390] 战斗场景:点了「出发」并择了模式,历练却没跑起来')
+  }
+  if (!summary) failures.push('[390] 战斗场景:等了 30 秒也没等到一场的结语(战报回放没走完?)')
+  else {
+    if (logLines === 0) failures.push('[390] 战斗场景:有结语却没有战报行(回放没出内容)')
+    if (!/胜|负/.test(summary)) failures.push(`[390] 战斗场景:结语没写清胜负 —— ${summary}`)
+    // 战斗分析:点开要看得到数据面板
+    const analysisBtn = page.locator('main button', { hasText: /战斗分析/ }).first()
+    if ((await analysisBtn.count()) === 0) failures.push('[390] 战斗场景:找不到「战斗分析」入口')
+    else {
+      await analysisBtn.click({ timeout: 3000 }).catch(() => {})
+      await page.waitForTimeout(400)
+      const analysisText = await page.evaluate(() => document.querySelector('main')?.innerText || '')
+      if (!/总输出|总承伤/.test(analysisText)) failures.push('[390] 战斗场景:点开战斗分析也没看到数据面板(总输出/总承伤)')
+      else console.log(`\n战斗回放:${summary} · 战报 ${logLines} 行 · 分析面板可开`)
+    }
+  }
+  if (/NaN|undefined|Infinity/.test(await page.evaluate(() => document.querySelector('main')?.innerText || ''))) {
+    failures.push('[390] 战斗场景:战报里漏出占位符')
+  }
+  if (pageErrors.length) failures.push(`[390] 战斗场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
