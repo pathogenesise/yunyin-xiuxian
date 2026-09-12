@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 121,
+  "round": 122,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T03:31:05+00:00",
+  "updated_at": "2026-09-12T03:36:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 115,
+      "touched_round": 122,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3047,11 +3047,11 @@
       "id": "ISS-049",
       "type": "issue",
       "status": "active",
-      "version": 4,
+      "version": 5,
       "created_at": "2026-09-11T16:41:32+00:00",
-      "updated_at": "2026-09-12T01:28:17+00:00",
-      "touched_round": 112,
-      "summary": "全量并行跑测试时,savePersistence 偶发一红(round 60「读己所写」一次;round 96 一次未留存原文)。round 111 复现的一例落在 importCorruption,根因是解密误判(已由 CHG-135 修复),与本条不同;round 112 定向复现:60 次单文件压力运行 + 2 轮全量,0 失败,并已排除明文误读。已给断言加写盘调用栈埋点,下次发生即可点名来源",
+      "updated_at": "2026-09-12T03:35:58+00:00",
+      "touched_round": 121,
+      "summary": "全量并行跑测试时偶发一红,savePersistence「读己所写」两次(round 60/96);round 111 复现的一例在 importCorruption,根因解密误判已修(CHG-135);round 112 定向复现 60 次单文件 + 2 轮全量 0 失败;round 122 又见一例 offlineCap「离线折扣同源」失败,三连跑同组用例复现不出。已给 savePersistence 的写盘断言加调用栈埋点;隔离实验证明文件间无全局污染(各文件隔离正常)",
       "severity": 0.2,
       "confidence": 0.3
     },
@@ -5877,7 +5877,7 @@
       "version": 1,
       "created_at": "2026-09-12T01:48:09+00:00",
       "updated_at": "2026-09-12T01:48:09+00:00",
-      "touched_round": 115,
+      "touched_round": 122,
       "summary": "「离线/后台推进」这类代码的作用域是可以写成闭集的:与其列一张「哪些能动」的长清单(会随内容增长而漏),不如断言**没变的部分**——比较运行前后的键集合,多动一个键就报出名字。这条比逐项检查更强,也更容易维护",
       "confidence": 0.85
     },
@@ -6196,6 +6196,56 @@
       "touched_round": 120,
       "summary": "ui-smoke 路由 9→15 页,与排版自检同一份清单;两档各跑一遍确认新增六页无异常、无数字泄漏",
       "commit": "c8909cb"
+    },
+    "ISS-094": {
+      "id": "ISS-094",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:35:58+00:00",
+      "updated_at": "2026-09-12T03:36:20+00:00",
+      "touched_round": 122,
+      "summary": "离线把在途内容冻住了,却没告诉玩家:秘境在境中、远征在途时,归来卷轴只报资源,玩家很容易以为「我不在的时候那趟远征是不是黄了」—— 冻结是正确行为,但它是实现细节,界面没把它变成承诺",
+      "severity": 0.2,
+      "confidence": 0.8,
+      "effort": 1
+    },
+    "TASK-085": {
+      "id": "TASK-085",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:35:58+00:00",
+      "updated_at": "2026-09-12T03:36:21+00:00",
+      "touched_round": 122,
+      "summary": "归来卷轴为在途内容补一句交代(秘境/远征原样留着),并加「有在途就说、没有就别乱说」两向判据",
+      "category": "core-feature",
+      "severity": 0.2,
+      "confidence": 0.85,
+      "effort": 1
+    },
+    "EV-101": {
+      "id": "EV-101",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:35:58+00:00",
+      "updated_at": "2026-09-12T03:35:58+00:00",
+      "touched_round": 122,
+      "summary": "offline.ts 在途两条 note(秘境/远征);offlineScope.spec 增「冻结要说出声」与「没有在途不许乱说」两条断言;注入(去掉秘境那句)即报「在途秘境被冻住了,却没跟玩家说」;另做隔离探查实验:vitest 各文件隔离正常(B 看不到 A 写的 globalThis 标记),故本轮的偶发红(offlineCap 同源用例一次失败、三连跑复现不出)不是跨文件污染;全量 142 文件 1419 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/offlineScope.spec.ts"
+    },
+    "CHG-144": {
+      "id": "CHG-144",
+      "type": "change",
+      "status": "active",
+      "version": 3,
+      "created_at": "2026-09-12T03:36:03+00:00",
+      "updated_at": "2026-09-12T03:36:20+00:00",
+      "touched_round": 122,
+      "summary": "离线结算补两条在途交代(秘境/远征原样留着);offlineScope.spec 增两向断言(有在途要说、没有别乱说)",
+      "commit": "61005f4"
     }
   },
   "edges": [
@@ -8905,6 +8955,36 @@
       "to": "HYP-048",
       "type": "validates",
       "created_at": "2026-09-12T03:31:05+00:00"
+    },
+    {
+      "from": "ISS-094",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T03:36:03+00:00"
+    },
+    {
+      "from": "TASK-085",
+      "to": "ISS-094",
+      "type": "addresses",
+      "created_at": "2026-09-12T03:36:03+00:00"
+    },
+    {
+      "from": "CHG-144",
+      "to": "TASK-085",
+      "type": "implements",
+      "created_at": "2026-09-12T03:36:03+00:00"
+    },
+    {
+      "from": "CHG-144",
+      "to": "ISS-094",
+      "type": "resolves",
+      "created_at": "2026-09-12T03:36:03+00:00"
+    },
+    {
+      "from": "EV-101",
+      "to": "HYP-043",
+      "type": "validates",
+      "created_at": "2026-09-12T03:36:03+00:00"
     }
   ]
 }
