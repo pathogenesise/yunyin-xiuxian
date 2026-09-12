@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 106,
+  "round": 107,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-11T23:54:10+00:00",
+  "updated_at": "2026-09-12T00:07:51+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 100,
+      "touched_round": 106,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -5331,7 +5331,7 @@
       "version": 1,
       "created_at": "2026-09-11T23:46:16+00:00",
       "updated_at": "2026-09-11T23:46:16+00:00",
-      "touched_round": 105,
+      "touched_round": 106,
       "summary": "「基准模型有多真」可以写成一条包夹判据:满配真实档 ≤ 模型 ≤ 裸档真实档。左端拦「模型乐观到连满配都达不到」,右端拦「模型悲观到比裸档还慢」;两侧都用真实 store 通路量,而不是照公式再抄一遍 —— 抄一遍只会得到同义反复",
       "confidence": 0.85
     },
@@ -5357,6 +5357,67 @@
       "touched_round": 105,
       "summary": "新增 realPacing.spec(1 例,界外 12 境):用真 store 量裸档与满配,判据「满配 ≤ 模型 ≤ 裸档」;登记进 Progression 分类",
       "commit": "a4272d4"
+    },
+    "ISS-081": {
+      "id": "ISS-081",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:00:24+00:00",
+      "updated_at": "2026-09-12T00:07:44+00:00",
+      "touched_round": 106,
+      "summary": "顶栏设置入口是个没有名字的图标链接:各页都挂着 <a href=\"#/settings\"><svg/></a>,既无可见文字也无 aria-label —— 读屏只会念「链接」,任何按名字找控件的自动化也点不着它(本次全站扫描只发现这一处,但没有任何检查会让它不再出现)",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "TASK-072": {
+      "id": "TASK-072",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:00:24+00:00",
+      "updated_at": "2026-09-12T00:07:44+00:00",
+      "touched_round": 106,
+      "summary": "给顶栏设置入口补 aria-label,并把「控件必须有可访问名」写进排版自检(逐页扫 button/a/[role=button])",
+      "category": "maintainability",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "EV-086": {
+      "id": "EV-086",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:00:28+00:00",
+      "updated_at": "2026-09-12T00:00:28+00:00",
+      "touched_round": 107,
+      "summary": "全站扫描 15 条路由:仅顶栏设置入口无名字(补 aria-label=\"设置\");layout-check 的逐页评估新增 unnamed 检查(aria-label 或可见文字,零尺寸忽略),两条视口共 16 个页面点各扫一遍;注入验证:去掉 aria-label 后立刻报「[320] /inventory → 无名控件:<a href=\"#/settings\"…」等 15 条;全量 135 文件 1388 用例绿",
+      "confidence": 0.9,
+      "source": "scripts/layout-check.mjs"
+    },
+    "CHG-130": {
+      "id": "CHG-130",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:07:44+00:00",
+      "updated_at": "2026-09-12T00:07:44+00:00",
+      "touched_round": 106,
+      "summary": "TopStatusBar 设置入口补 aria-label=\"设置\";layout-check 逐页新增可访问名检查(aria-label/可见文字,零尺寸忽略),覆盖 16 个页面组合",
+      "commit": "e9d00d5"
+    },
+    "HYP-035": {
+      "id": "HYP-035",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:07:51+00:00",
+      "updated_at": "2026-09-12T00:07:51+00:00",
+      "touched_round": 107,
+      "summary": "「只有图标的控件」是随手就会写的形态,而它不会报错、不会崩、排版也正常 —— 只是对读屏使用者与全部按名字找控件的自动化不可见。故这类缺陷只能靠一条逐页扫可访问名的检查来守(aria-label 或可见文字),它同时也是自动化自己能用名字点按钮的前提",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -7652,6 +7713,42 @@
       "to": "ISS-038",
       "type": "addresses",
       "created_at": "2026-09-11T23:54:10+00:00"
+    },
+    {
+      "from": "ISS-081",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T00:07:44+00:00"
+    },
+    {
+      "from": "TASK-072",
+      "to": "ISS-081",
+      "type": "addresses",
+      "created_at": "2026-09-12T00:07:44+00:00"
+    },
+    {
+      "from": "CHG-130",
+      "to": "TASK-072",
+      "type": "implements",
+      "created_at": "2026-09-12T00:07:44+00:00"
+    },
+    {
+      "from": "CHG-130",
+      "to": "ISS-081",
+      "type": "resolves",
+      "created_at": "2026-09-12T00:07:44+00:00"
+    },
+    {
+      "from": "EV-086",
+      "to": "HYP-034",
+      "type": "validates",
+      "created_at": "2026-09-12T00:07:44+00:00"
+    },
+    {
+      "from": "EV-086",
+      "to": "HYP-035",
+      "type": "validates",
+      "created_at": "2026-09-12T00:07:51+00:00"
     }
   ]
 }
