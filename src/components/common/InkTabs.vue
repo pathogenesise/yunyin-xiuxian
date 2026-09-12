@@ -12,6 +12,8 @@
     <button
       v-for="t in tabs"
       :key="t.id"
+      role="tab"
+      :aria-selected="model === t.id"
       class="relative z-10 flex-1 rounded-md py-1.5 font-kai text-[13px] tracking-[0.2em] transition-colors duration-200"
       :class="model === t.id ? 'text-paper' : 'text-ink-faint active:text-ink-soft'"
       @click="model = t.id"

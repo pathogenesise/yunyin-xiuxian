@@ -91,6 +91,20 @@ if (LATE) {
 }
 const page = await context.newPage()
 const errors = []
+/**
+ * 点了没反应的按钮 —— 只报告,不判失败。
+ *
+ * 判据是「点击前后看不出任何变化」:正文文本、弹窗数、toast 数都没动。
+ * 空白点击有时是合理的(比如点一个已选中的页签),故先当读数看:
+ * 一屏里要是冒出十几个,那就说明有一批入口在静默失败。
+ */
+const silent = []
+async function fingerprint() {
+  return page.evaluate(() => {
+    const text = document.body.innerText.replace(/\s+/g, ' ').slice(0, 4000)
+    return `${text.length}:${text.slice(0, 120)}:${text.slice(-80)}|${document.querySelectorAll('.modal-panel').length}|${document.querySelectorAll('[class*=toast]').length}`
+  })
+}
 page.on('pageerror', e => errors.push({ where: 'boot', msg: String(e).slice(0, 300) }))
 
 await page.goto(INDEX, { waitUntil: 'load' })
@@ -146,10 +160,12 @@ for (const route of ROUTES) {
     if (!(await b.isVisible().catch(() => false))) continue
     if (await b.isDisabled().catch(() => false)) continue
     const before = errors.length
+    const beforeFp = await fingerprint()
     await b.click({ timeout: 800 }).catch(() => {})
     clicked += 1
     await page.waitForTimeout(160)
     if (errors.length > before) errors[errors.length - 1].where = `${route} 点「${label}」`
+    else if ((await fingerprint()) === beforeFp) silent.push(`${route} 点「${label}」`)
     await clickInsideModal(route)
     // 点开弹窗后关掉,免得挡住后面的按钮
     await page.keyboard.press('Escape').catch(() => {})
@@ -159,6 +175,10 @@ for (const route of ROUTES) {
 
 await browser.close()
 console.log(`\n界面冒烟:9 页,点击 ${clicked} 次(每页上限 ${DEPTH})`)
+if (silent.length) {
+  console.log(`点了没反应 ${silent.length} 处(读数,不判失败):`)
+  for (const s of silent.slice(0, 20)) console.log(`  · ${s}`)
+}
 if (errors.length === 0) {
   console.log('✓ 无运行时异常')
 } else {

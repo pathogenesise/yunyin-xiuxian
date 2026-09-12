@@ -36,6 +36,7 @@
           <button
             v-for="o in THEME_OPTIONS"
             :key="o.id"
+            :aria-pressed="settings.theme === o.id"
             class="chip-ink !py-1.5"
             :class="settings.theme === o.id ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
             @click="settings.theme = o.id"
@@ -50,6 +51,7 @@
           <button
             v-for="s in [1, 2, 4] as const"
             :key="s"
+            :aria-pressed="settings.battleSpeed === s"
             class="chip-ink !py-1.5"
             :class="settings.battleSpeed === s ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
             @click="settings.battleSpeed = s"

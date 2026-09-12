@@ -32,7 +32,27 @@ const VIEWPORTS = [
   { width: 375, height: 812, tag: '375' },
   { width: 320, height: 568, tag: '320' }
 ]
-const ROUTES = ['/', '/cultivation', '/adventure', '/inventory', '/character', '/codex', '/souls', '/titles']
+/**
+ * 全量路由 —— 从前只巡八页,于是设置页与收藏页的排版与选中态从未被量过。
+ * 页面各有各的布局风险,漏一页等于那一页没有守卫(加进来只多几秒)。
+ */
+const ROUTES = [
+  '/',
+  '/cultivation',
+  '/adventure',
+  '/inventory',
+  '/character',
+  '/codex',
+  '/souls',
+  '/titles',
+  '/settings',
+  '/build',
+  '/collection',
+  '/legacy',
+  '/dongfu',
+  '/world',
+  '/celestial'
+]
 
 const browser = await chromium.launch({ args: ['--allow-file-access-from-files', '--disable-web-security'] })
 const failures = []
@@ -94,7 +114,47 @@ for (const vp of VIEWPORTS) {
           .map(el => ({ el, r: el.getBoundingClientRect() }))
           .filter(({ r }) => r.width > 0 && r.height > 0 && r.height < 28)
           .slice(0, 3)
-          .map(({ el, r }) => `${Math.round(r.height)}px «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 12)}»`)
+          .map(({ el, r }) => `${Math.round(r.height)}px «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 12)}»`),
+        /**
+         * 选择型控件的选中态要对机器可读,且**每组恰有一个**。
+         *
+         * 此前主题/战报速度/页签的选中全靠边色,读屏用户与自动化都看不出选了哪个
+         * (上一轮补了 aria-label/aria-pressed,这里把「恰好一个」钉住)。
+         */
+        badGroups: (() => {
+          const out = []
+          for (const attr of ['aria-pressed', 'aria-selected']) {
+            const byParent = new Map()
+            for (const el of document.querySelectorAll(`[${attr}]`)) {
+              const parent = el.parentElement
+              if (!parent) continue
+              byParent.set(parent, [...(byParent.get(parent) ?? []), el])
+            }
+            for (const [parent, els] of byParent) {
+              if (els.length < 2) continue
+              const on = els.filter(e => e.getAttribute(attr) === 'true').length
+              if (on !== 1) out.push(`${attr} 组(${els.length} 项)里有 ${on} 个选中`)
+            }
+          }
+          // 页签:每一组(同一父容器下 ≥2 个 role=tab)恰有一个 aria-selected=true
+          const tabsByParent = new Map()
+          for (const el of document.querySelectorAll('[role=tab]')) {
+            const parent = el.parentElement
+            if (!parent) continue
+            tabsByParent.set(parent, [...(tabsByParent.get(parent) ?? []), el])
+          }
+          for (const [, els] of tabsByParent) {
+            if (els.length < 2) continue
+            const on = els.filter(e => e.getAttribute('aria-selected') === 'true').length
+            if (on !== 1) out.push(`页签组(${els.length} 项)里有 ${on} 个选中`)
+          }
+          // 设置页的两组选择(主题、战报速度)是明文约定:少了哪一组这里就红
+          if (location.hash.startsWith('#/settings')) {
+            const pressed = document.querySelectorAll('[aria-pressed]').length
+            if (pressed < 6) out.push(`设置页的选择控件只有 ${pressed} 个带 aria-pressed(主题 3 + 速度 3)`)
+          }
+          return out.slice(0, 3)
+        })()
       }
     })
     checked += 1
@@ -103,6 +163,7 @@ for (const vp of VIEWPORTS) {
     if (info.overflows.length) problems.push(`越界元素:${info.overflows.join(', ')}`)
     if (info.unnamed.length) problems.push(`无名控件:${info.unnamed.join(' | ')}`)
     if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
+    if (info.badGroups.length) problems.push(`选择组没选中态:${info.badGroups.join(' | ')}`)
     if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
     if (problems.length) failures.push(`[${vp.tag}] ${route} → ${problems.join(' / ')}`)
     if (SHOTS) {
@@ -149,7 +210,7 @@ for (const vp of VIEWPORTS) {
 await browser.close()
 console.log(`\n排版自检:${checked} 个页面 × 视口组合`)
 if (failures.length === 0) {
-  console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全、控件有名且不小于 28px')
+  console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全、控件有名且不小于 28px、选择项有选中态')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {
   for (const f of failures) console.log(`✗ ${f}`)
