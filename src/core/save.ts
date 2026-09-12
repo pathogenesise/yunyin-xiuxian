@@ -41,8 +41,9 @@ export function importSaveText(text: string): string | null {
   if (error) return error
   try {
     applyImportPayload(migrate(parsed as ExportPayload))
-  } catch {
-    return '写入存档失败,浏览器存储可能不可用'
+  } catch (e) {
+    // 原子导入已回滚旧档,写明「原档还在」,免得玩家以为存档没了
+    return e instanceof Error ? e.message : '写入存档失败,浏览器存储可能不可用'
   }
   return null
 }

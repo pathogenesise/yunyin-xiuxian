@@ -130,4 +130,30 @@ describe('半损坏档 · 进得了游戏,或者被明确拒绝', () => {
       expect(PERSISTED_STORES.length).toBeGreaterThan(0)
     }
   })
+
+  it('导入写盘中途失败:回滚,旧档原样保留(不清成半档)', () => {
+    // 配额不足的存储:resources 分片写不进,其余照常
+    const writes = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => writes.get(k) ?? null,
+      setItem: (k: string, v: string) => {
+        if (k === storageKey('resources')) throw new DOMException('quota', 'QuotaExceededError')
+        writes.set(k, v)
+      },
+      removeItem: (k: string) => void writes.delete(k),
+      clear: () => writes.clear(),
+      key: () => null,
+      length: 0
+    })
+    // 先有份旧档(直接铺两张分片)
+    writes.set(storageKey('game'), 'OLD_GAME')
+    writes.set(storageKey('player'), 'OLD_PLAYER')
+    const err = importSaveText(
+      envelope({ game: { started: true }, player: { major: 3 }, resources: { spiritStone: { m: 1, e: 4 } } })
+    )
+    // 失败(写不进去),而且旧档被原样救回 —— 不能被清到一半
+    expect(err, '写盘失败应当报错').not.toBeNull()
+    expect(writes.get(storageKey('game')), '回滚后旧 game 分片原样保留').toBe('OLD_GAME')
+    expect(writes.get(storageKey('player')), '回滚后旧 player 分片原样保留').toBe('OLD_PLAYER')
+  })
 })

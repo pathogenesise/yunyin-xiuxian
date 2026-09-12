@@ -307,16 +307,47 @@ export function validateImportPayload(obj: unknown): string | null {
   return null
 }
 
-/** 将导入数据加密写入 localStorage(调用方负责随后 reload)。先清空现有存档,再写入导入数据,确保完全覆盖 */
+/**
+ * 将导入数据加密写入 localStorage(调用方负责随后 reload)。
+ *
+ * 原子性:先清空现有存档、再逐片写入,确保完全覆盖;但写入中途失败
+ * (配额不足是移动端的家常便饭)时,**回滚到旧档**而不是留下半清的存档 ——
+ * 「game 分片还在、player 分片没了」的主页空角色正是这半清状态造出来的。
+ */
 export function applyImportPayload(payload: ExportPayload): void {
-  // 先清空所有现有存档
+  // 一 先把现有各片读进内存作快照(原样密文,回滚时按原样写回)
+  const backup = new Map<string, string | null>()
+  try {
+    for (const id of PERSISTED_STORES) {
+      backup.set(id, localStorage.getItem(storageKey(id)))
+    }
+  } catch {
+    // 快照读不出时不阻塞:回滚能力降级,但不清成半档的那层仍适合尽力而为
+  }
+  // 二 清空现有存档
   clearAllSave()
-  // 再写入导入的数据
+  // 三 逐片写入导入数据
+  const failed: string[] = []
   for (const id of PERSISTED_STORES) {
     const slice = payload.data[id]
-    if (slice !== undefined) {
+    if (slice === undefined) continue
+    try {
       localStorage.setItem(storageKey(id), encryptSave(JSON.stringify(slice)))
+    } catch {
+      failed.push(id)
     }
+  }
+  // 四 任一失败:把快照里的旧档救回来,再向上抛,让调用方说「原档还在」
+  if (failed.length > 0) {
+    for (const [id, raw] of backup) {
+      try {
+        if (raw === null) localStorage.removeItem(storageKey(id))
+        else localStorage.setItem(storageKey(id), raw)
+      } catch {
+        // 回滚尽力而为:若存储完全不可用,剩下的是已报错的现状
+      }
+    }
+    throw new Error(`写入存档失败(${failed.join('/')}),原存档已保留`)
   }
 }
 
