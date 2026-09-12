@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 148,
+  "round": 149,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T11:56:15+00:00",
+  "updated_at": "2026-09-12T12:14:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 142,
+      "touched_round": 148,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -7972,6 +7972,66 @@
       "touched_round": 147,
       "summary": "驱动流程前先弄清「真实流程有几步」:同一处入口在探针里少点一步,表现与「功能坏了」一模一样(点出发其实先弹模式窗)。判据要按玩家真实走的步数来搭 —— 少一步会把「我没搭对」误报成「它坏了」",
       "confidence": 0.85
+    },
+    "ISS-125": {
+      "id": "ISS-125",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T12:14:33+00:00",
+      "updated_at": "2026-09-12T12:14:38+00:00",
+      "touched_round": 148,
+      "summary": "背包里两处手写数字没人对过账:强化弹窗写着「器灵尘×N · 灵石 M」、分解完弹「分解得器灵尘×K」,而实际扣/给由服务里的成本函数与 DECOMPOSE_DUST 决定 —— 两处对不上时,玩家不知道该信哪个(探针里强化与分解各自都对得上,故这条是防回归)",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-116": {
+      "id": "TASK-116",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T12:14:33+00:00",
+      "updated_at": "2026-09-12T12:14:33+00:00",
+      "touched_round": 148,
+      "summary": "补第二十件事:打开背包那件 → 读详情里写的强化价 → 强化 → 器灵尘的差必须正好是这个数;再分解同一件 → 提示说给多少尘就得多多少、且件已出包(只用器灵尘做差,灵石会被任务奖励搅乱)",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-173": {
+      "id": "CHG-173",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T12:14:33+00:00",
+      "updated_at": "2026-09-12T12:14:33+00:00",
+      "touched_round": 148,
+      "summary": "layout-check 增第二十件事(背包账目:强化所见即所付、分解所得即所报);取垃圾桶按钮限定 footer(header 关闭键也是无文字按钮)",
+      "commit": "58118b7"
+    },
+    "EV-130": {
+      "id": "EV-130",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T12:14:33+00:00",
+      "updated_at": "2026-09-12T12:14:33+00:00",
+      "touched_round": 148,
+      "summary": "实测读数:强化扣尘 7(与详情所写一致) · 分解得尘 4(与提示一致,且件已出包)。故障注入:强化多扣 1 尘 → 「强化写着扣 7 尘,实际 5000 → 4992(所见非所付)」红。另记:探针里撞见任务完成发三十多万灵石 —— 故账目判据只用器灵尘做差。排版自检 95 组全绿,全量 147 文件 1446 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-075": {
+      "id": "HYP-075",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T12:14:33+00:00",
+      "updated_at": "2026-09-12T12:14:33+00:00",
+      "touched_round": 148,
+      "summary": "对账要挑**没有别的来源**的那一项:灵石同时被任务/成就发放,拿它做差会被别处收益搅乱;器灵尘只由分解与强化动,差一分就是错。凡「所见即所付」的判据,先选一条干净的量纲",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -11635,6 +11695,36 @@
       "to": "HYP-074",
       "type": "validates",
       "created_at": "2026-09-12T11:56:15+00:00"
+    },
+    {
+      "from": "ISS-125",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T12:14:38+00:00"
+    },
+    {
+      "from": "TASK-116",
+      "to": "ISS-125",
+      "type": "addresses",
+      "created_at": "2026-09-12T12:14:38+00:00"
+    },
+    {
+      "from": "CHG-173",
+      "to": "TASK-116",
+      "type": "implements",
+      "created_at": "2026-09-12T12:14:38+00:00"
+    },
+    {
+      "from": "CHG-173",
+      "to": "ISS-125",
+      "type": "resolves",
+      "created_at": "2026-09-12T12:14:38+00:00"
+    },
+    {
+      "from": "EV-130",
+      "to": "HYP-075",
+      "type": "validates",
+      "created_at": "2026-09-12T12:14:38+00:00"
     }
   ]
 }
