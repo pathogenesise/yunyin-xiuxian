@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 147,
+  "round": 148,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T11:38:45+00:00",
+  "updated_at": "2026-09-12T11:56:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 139,
+      "touched_round": 147,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -7912,6 +7912,66 @@
       "touched_round": 146,
       "summary": "判据要守「结果」而不是「某个实现」:同一次刷盘有两处监听互为兜底,盯「哪个监听还在」会误报;盯「切后台之后磁盘有没有追上页面」才是玩家真正要的那件事 —— 实现可以换,结果不能变",
       "confidence": 0.85
+    },
+    "ISS-124": {
+      "id": "ISS-124",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T11:56:10+00:00",
+      "updated_at": "2026-09-12T11:56:15+00:00",
+      "touched_round": 147,
+      "summary": "战报回放这条链从没在真浏览器里走完过:出发 → 模式 → 等一场 → 逐行回放 → 结语 → 战斗分析。单元用例只跑引擎;而这是玩家看得最多的一屏 —— 回放卡住、结语不写、分析点不开,都会安静地留在那里",
+      "severity:": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-115": {
+      "id": "TASK-115",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T11:56:10+00:00",
+      "updated_at": "2026-09-12T11:56:10+00:00",
+      "touched_round": 147,
+      "summary": "补第十九件事:高配夹具真打一场,判四件(探索开起来 / 回放出内容 / 结语写清回合与胜负 / 分析面板可开且给得出数据)",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-172": {
+      "id": "CHG-172",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:56:11+00:00",
+      "updated_at": "2026-09-12T11:56:11+00:00",
+      "touched_round": 147,
+      "summary": "layout-check 增第十九件事(战报回放 + 战斗分析);探针阶段弄清「出发 → 模式窗 → 起程」这一步,判据按真实流程走",
+      "commit": "751924e"
+    },
+    "EV-129": {
+      "id": "EV-129",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:56:11+00:00",
+      "updated_at": "2026-09-12T11:56:11+00:00",
+      "touched_round": 147,
+      "summary": "实测读数:战报回放「此战 1 回合 · 战后气血 100% · 胜 · 战报 1 行 · 分析面板可开」。故障注入(adventure.recordBattle 不记录)→ 「等了 30 秒也没等到一场的结语(战报回放没走完?)」红。排版自检 94 组全绿,全量 147 文件 1446 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-074": {
+      "id": "HYP-074",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:56:11+00:00",
+      "updated_at": "2026-09-12T11:56:11+00:00",
+      "touched_round": 147,
+      "summary": "驱动流程前先弄清「真实流程有几步」:同一处入口在探针里少点一步,表现与「功能坏了」一模一样(点出发其实先弹模式窗)。判据要按玩家真实走的步数来搭 —— 少一步会把「我没搭对」误报成「它坏了」",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -11545,6 +11605,36 @@
       "to": "HYP-073",
       "type": "validates",
       "created_at": "2026-09-12T11:38:45+00:00"
+    },
+    {
+      "from": "ISS-124",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T11:56:15+00:00"
+    },
+    {
+      "from": "TASK-115",
+      "to": "ISS-124",
+      "type": "addresses",
+      "created_at": "2026-09-12T11:56:15+00:00"
+    },
+    {
+      "from": "CHG-172",
+      "to": "TASK-115",
+      "type": "implements",
+      "created_at": "2026-09-12T11:56:15+00:00"
+    },
+    {
+      "from": "CHG-172",
+      "to": "ISS-124",
+      "type": "resolves",
+      "created_at": "2026-09-12T11:56:15+00:00"
+    },
+    {
+      "from": "EV-129",
+      "to": "HYP-074",
+      "type": "validates",
+      "created_at": "2026-09-12T11:56:15+00:00"
     }
   ]
 }
