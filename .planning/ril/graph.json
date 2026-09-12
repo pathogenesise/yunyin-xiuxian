@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 123,
+  "round": 124,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T03:49:32+00:00",
+  "updated_at": "2026-09-12T03:54:47+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1535,7 +1535,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 122,
+      "touched_round": 123,
       "summary": "藏经阁钻研/认知系统(loreService.ts + lore store)"
     },
     "COMP-010": {
@@ -6293,7 +6293,7 @@
       "version": 1,
       "created_at": "2026-09-12T03:49:23+00:00",
       "updated_at": "2026-09-12T03:49:23+00:00",
-      "touched_round": 122,
+      "touched_round": 123,
       "summary": "「每境都得有点什么」这条判据可以按内容类型逐一铺开:功法、丹方、称号各来一遍之后,长尾境界的空白就一处也藏不住了。补法尽量走**既有获取路径**(称号挂到已有成就上,不新增成就),这样可达性天然成立,不必再养一套新的发放机制",
       "confidence": 0.85
     },
@@ -6307,6 +6307,56 @@
       "touched_round": 122,
       "summary": "补 14 顶境界称号并挂到既有成就上(15→29),新增 titleLadder.spec(3 例)并登记进 Regression 分类",
       "commit": "703c2cd"
+    },
+    "ISS-096": {
+      "id": "ISS-096",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:54:16+00:00",
+      "updated_at": "2026-09-12T03:54:47+00:00",
+      "touched_round": 123,
+      "summary": "灵兽的界域覆盖没人核过:灵兽表没有 minRealm 字段,门槛写在发放事件里(事件 minRealm 或界域标签),故「哪一界能结到灵兽」既不在灵兽表上也无人断言 —— 高界灵兽栏空不空,只能靠人记",
+      "severity": 0.2,
+      "confidence": 0.8,
+      "effort": 1
+    },
+    "TASK-087": {
+      "id": "TASK-087",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:54:16+00:00",
+      "updated_at": "2026-09-12T03:54:47+00:00",
+      "touched_round": 123,
+      "summary": "把灵兽覆盖写成红线:从发放事件反推每界域的灵兽来源数,要求四界各≥1",
+      "category": "maintainability",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "EV-103": {
+      "id": "EV-103",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:54:16+00:00",
+      "updated_at": "2026-09-12T03:54:16+00:00",
+      "touched_round": 123,
+      "summary": "contentDensity 增「每个界域都结得到灵兽」:扫 EVENTS 里带 pet 奖励的事件,按 minRealm 或界域标签(immortal/sky/god/chaos)归界域;实测人间界 1 / 仙界 1 / 神界 1 / 混沌海 2,无缺口;注入(把麒麟那枚换成修为)即报「神界 一只灵兽也结不到 —— 那一界的灵兽栏永远空着」;全量 143 文件 1423 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/contentDensity.spec.ts"
+    },
+    "CHG-146": {
+      "id": "CHG-146",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:54:47+00:00",
+      "updated_at": "2026-09-12T03:54:47+00:00",
+      "touched_round": 123,
+      "summary": "contentDensity 增「每个界域都结得到灵兽」(从发放事件反推),头注记七类覆盖判据已铺齐",
+      "commit": "d55086b"
     }
   },
   "edges": [
@@ -9076,6 +9126,36 @@
       "to": "HYP-049",
       "type": "validates",
       "created_at": "2026-09-12T03:49:32+00:00"
+    },
+    {
+      "from": "ISS-096",
+      "to": "COMP-009",
+      "type": "located_in",
+      "created_at": "2026-09-12T03:54:47+00:00"
+    },
+    {
+      "from": "TASK-087",
+      "to": "ISS-096",
+      "type": "addresses",
+      "created_at": "2026-09-12T03:54:47+00:00"
+    },
+    {
+      "from": "CHG-146",
+      "to": "TASK-087",
+      "type": "implements",
+      "created_at": "2026-09-12T03:54:47+00:00"
+    },
+    {
+      "from": "CHG-146",
+      "to": "ISS-096",
+      "type": "resolves",
+      "created_at": "2026-09-12T03:54:47+00:00"
+    },
+    {
+      "from": "EV-103",
+      "to": "HYP-049",
+      "type": "validates",
+      "created_at": "2026-09-12T03:54:47+00:00"
     }
   ]
 }
