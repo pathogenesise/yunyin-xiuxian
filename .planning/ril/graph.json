@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 155,
+  "round": 156,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T15:26:00+00:00",
+  "updated_at": "2026-09-12T16:30:58+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 154,
+      "touched_round": 155,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -8419,6 +8419,118 @@
       "summary": "① 数值对账:26 件受检全对;故障注入(镇岳印说明改 240%)→「说明写 240%,数据是 340%」红;② 冒烟读数 5 → 2(「功法残页不足」是被禁用按钮、标签即原因;「×1」是重复点已选项);③ 顺带全面清查花销按钮:只有刚修的「炼化」只报一半价,其余或只花一种资源、或两种都写全",
       "confidence": 0.95,
       "source": "src/core/artifactEffects.spec.ts"
+    },
+    "ISS-133": {
+      "id": "ISS-133",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T16:30:13+00:00",
+      "updated_at": "2026-09-12T16:30:58+00:00",
+      "touched_round": 155,
+      "summary": "一键分解勾选品质即销毁:InventoryView.toggleRank 在勾上新档的一瞬间就调 decomposeByRanks,行囊内同类当场化尘 —— 玩家勾错了没得后悔,也看不到会拆几件(勾选应当是标记,点「分 解」才下手)",
+      "severity": 0.6,
+      "confidence": 0.98
+    },
+    "ISS-134": {
+      "id": "ISS-134",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T16:30:14+00:00",
+      "updated_at": "2026-09-12T16:30:58+00:00",
+      "touched_round": 155,
+      "summary": "分解不退强化投入:decomposeEquipment 只给底材(外加 floor(level/2) 那份尘),强化花掉的器灵尘与灵石一拆全没 —— 练过的件成了负资产,越练越不敢换",
+      "severity": 0.35,
+      "confidence": 0.9
+    },
+    "ISS-135": {
+      "id": "ISS-135",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T16:30:14+00:00",
+      "updated_at": "2026-09-12T16:30:58+00:00",
+      "touched_round": 155,
+      "summary": "批量化尘逐件弹提示:提示窗只留最近 5 条,一键分解/智能清理逐件 ui.toast 会把「一共拆了多少、拿回多少」的总账顶掉",
+      "severity": 0.2,
+      "confidence": 0.85
+    },
+    "TASK-124": {
+      "id": "TASK-124",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T16:30:16+00:00",
+      "updated_at": "2026-09-12T16:30:58+00:00",
+      "touched_round": 155,
+      "summary": "一键分解改成「先勾后确认」:toggleRank 只标记档位,行囊内已存之物等玩家点「分 解」;弹窗写清共几件、会拿回什么",
+      "category": "ux-contract",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "TASK-125": {
+      "id": "TASK-125",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T16:30:16+00:00",
+      "updated_at": "2026-09-12T16:30:58+00:00",
+      "touched_round": 155,
+      "summary": "分解/回收返还强化投入八成:强化时在件上记 invested,分解与掉落回收走同一条账(salvage.ts),老档按标价补算,任何折扣下退还都不超过投入",
+      "category": "economy",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-126": {
+      "id": "TASK-126",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T16:30:17+00:00",
+      "updated_at": "2026-09-12T16:30:58+00:00",
+      "touched_round": 155,
+      "summary": "批量化尘只报一次总账:decomposeBatch 静默逐件结算,一键分解与智能清理各报一条(含件数与返还)",
+      "category": "feedback",
+      "severity": 0.2,
+      "confidence": 0.85,
+      "effort": 1
+    },
+    "HYP-081": {
+      "id": "HYP-081",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T16:30:19+00:00",
+      "updated_at": "2026-09-12T16:30:19+00:00",
+      "touched_round": 155,
+      "summary": "勾选即销毁源于一条陈旧设计决策(注释写着「新勾选一档 = 宣告该档是废料」)——它把「此后拾取自动回收」(不占行囊的入包裁决)错当成「行囊内已存之物也当场销毁」,两件事被并成了一句",
+      "confidence": 0.9
+    },
+    "EV-137": {
+      "id": "EV-137",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T16:30:23+00:00",
+      "updated_at": "2026-09-12T16:30:23+00:00",
+      "touched_round": 155,
+      "summary": "故障注入两条都亮:① 把 toggleRank 的即时 decomposeByRanks 放回去 → layout-check 第二十五件事报「只勾了「精品」,行囊就从 2 件变成 0 件 —— 勾选把东西当场烧了」;② 把 salvageOf 的八成返还去掉 → 同一场景报「该退 88 尘,提示写的是 8」与「练过的件没退灵石」,单元 salvage.spec 同时两红(八成返还 / 不套利不变量)。撤销注入后 148 文件 1455 用例全绿、layout-check 100 组合绿、ui-smoke 日常+后期绿",
+      "source": "scripts/layout-check.mjs",
+      "confidence": 0.95
+    },
+    "CHG-180": {
+      "id": "CHG-180",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T16:30:54+00:00",
+      "updated_at": "2026-09-12T16:30:54+00:00",
+      "touched_round": 155,
+      "summary": "一键分解改「先勾后确认」(toggleRank 只标记,行囊内已存之物等点「分 解」)+ 新增 core/salvage.ts 让分解/回收返还强化投入八成(强化时记 invested,老档按标价补算,loot 自动回收与腾位同一条账)+ 批量化尘只报一次总账 + 详情页先写出返还;红线:salvage.spec 8 例、layout-check 第二十五件事",
+      "commit": "5c0fadd"
     }
   },
   "edges": [
@@ -12322,6 +12434,84 @@
       "to": "HYP-069",
       "type": "validates",
       "created_at": "2026-09-12T15:26:00+00:00"
+    },
+    {
+      "from": "ISS-133",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T16:30:26+00:00"
+    },
+    {
+      "from": "ISS-134",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T16:30:26+00:00"
+    },
+    {
+      "from": "ISS-135",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T16:30:26+00:00"
+    },
+    {
+      "from": "TASK-124",
+      "to": "ISS-133",
+      "type": "addresses",
+      "created_at": "2026-09-12T16:30:26+00:00"
+    },
+    {
+      "from": "TASK-125",
+      "to": "ISS-134",
+      "type": "addresses",
+      "created_at": "2026-09-12T16:30:26+00:00"
+    },
+    {
+      "from": "EV-137",
+      "to": "HYP-081",
+      "type": "validates",
+      "created_at": "2026-09-12T16:30:27+00:00"
+    },
+    {
+      "from": "TASK-126",
+      "to": "ISS-135",
+      "type": "addresses",
+      "created_at": "2026-09-12T16:30:33+00:00"
+    },
+    {
+      "from": "CHG-180",
+      "to": "TASK-124",
+      "type": "implements",
+      "created_at": "2026-09-12T16:30:55+00:00"
+    },
+    {
+      "from": "CHG-180",
+      "to": "TASK-125",
+      "type": "implements",
+      "created_at": "2026-09-12T16:30:55+00:00"
+    },
+    {
+      "from": "CHG-180",
+      "to": "TASK-126",
+      "type": "implements",
+      "created_at": "2026-09-12T16:30:55+00:00"
+    },
+    {
+      "from": "CHG-180",
+      "to": "ISS-133",
+      "type": "resolves",
+      "created_at": "2026-09-12T16:30:55+00:00"
+    },
+    {
+      "from": "CHG-180",
+      "to": "ISS-134",
+      "type": "resolves",
+      "created_at": "2026-09-12T16:30:55+00:00"
+    },
+    {
+      "from": "CHG-180",
+      "to": "ISS-135",
+      "type": "resolves",
+      "created_at": "2026-09-12T16:30:55+00:00"
     }
   ]
 }
