@@ -676,7 +676,24 @@ for (const vp of VIEWPORTS) {
       artifacts: [{ defId: 'af_qinglian', level: 3 }, { defId: 'af_wuxiangzhu', level: 2 }],
       equippedArtifacts: ['af_qinglian', 'af_wuxiangzhu']
     },
-    endgame: { daoPath: 'sword', daoSource: 1200, souls: [{ uid: 'late_s1', type: 'fengmang', grade: 1, fromName: '旧剑' }], equippedSouls: ['late_s1'] },
+    endgame: {
+      daoPath: 'sword',
+      daoSource: 1200,
+      souls: [{ uid: 'late_s1', type: 'fengmang', grade: 1, fromName: '旧剑' }],
+      equippedSouls: ['late_s1'],
+      // 在途远征:归来卷轴要说「原样留着」,天界页也要画出「走到第二重」那一版
+      worldRun: {
+        worldId: 'chiyan',
+        pactId: null,
+        gateId: null,
+        layer: 1,
+        bonus: 12,
+        rows: [{ foeName: '焰魄', win: true, rounds: 7, hpLeftPct: 0.62 }],
+        carriedHpPct: 0.62,
+        totalRounds: 7,
+        winStacks: 1
+      }
+    },
     settings: {
       privacyAccepted: true,
       sfxOn: false,
@@ -777,6 +794,55 @@ for (const vp of VIEWPORTS) {
     )
   }
   if (pageErrors.length) failures.push(`[390] 后期档页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+
+  /*
+   * (四)在途远征也要真的走得动。
+   *
+   * 与秘境同理:远征这一套只在单元用例里跑过,界面上「第 N 重择路」按下去会怎样,
+   * 从没有人看过。夹具身上带着一趟打到第二重的赤炎天远征(天界页会直接开在远征册上),
+   * 故这里真点一次择路:要么浮出战报、要么行程点列前移,并查占位符与页面异常。
+   */
+  await page.goto(INDEX + '#' + '/celestial', { waitUntil: 'load' })
+  await page.waitForTimeout(900)
+  checked += 1
+  const runBefore = await page.evaluate(() => document.querySelector('main')?.innerText || '')
+  /*
+   * 入口怎么认:两条路各自的按钮上写着「道源 +N」(层号那行是独立的文本,不在按钮里);
+   * 若这一趟已经走到界主,入口换成「决战」。两者必有其一 —— 都找不到就是真没入口。
+   */
+  const pickNode = page.locator('main button', { hasText: /道源 \+\d+/ }).first()
+  const runEntry = (await pickNode.count()) > 0 ? pickNode : page.locator('main button', { hasText: /决\s*战/ }).first()
+  if (!/远征 ·/.test(runBefore)) {
+    failures.push('[390-late] 天界页:在途远征没有渲染出来(夹具的 worldRun 没被读出来?)')
+  } else if ((await runEntry.count()) === 0) {
+    failures.push('[390-late] 天界页:在途远征没有可推进一步的入口(既无择路也无决战)')
+  } else {
+    const clicked = ((await runEntry.textContent()) || '').replace(/\s+/g, ' ').trim().slice(0, 18)
+    await runEntry.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(900)
+    const after = await page.evaluate(() => ({
+      text: document.querySelector('main')?.innerText || '',
+      toasts: [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()),
+      // 打输会开战报弹窗(赢了只是行程点列前移,不开弹窗)
+      report: (document.querySelector('.modal-panel h3')?.textContent || '').trim()
+    }))
+    if (!after.report && after.toasts.length === 0 && after.text === runBefore) {
+      failures.push('[390-late] 天界页:点了远征的推进入口既没战报也没变化(点了没反应)')
+    }
+    /*
+     * 开出来的战报必须**叫得出这一界**:标题得在动手前取。
+     * 从前先打后读 runWorld,而收尾那一场会把 worldRun 清空,标题就退成「远征」。
+     */
+    if (after.report && after.report !== '赤炎天') {
+      failures.push(`[390-late] 天界页:远征战报弹窗标题是「${after.report}」,应为这一界的名字(赤炎天)`)
+    }
+    if (/NaN|undefined/.test(after.text + after.toasts.join(' ') + after.report)) failures.push('[390-late] 天界页:远征推进一步后漏出占位符')
+    console.log(
+      `  在途远征推进一步(点了「${clicked}」):` +
+        (after.report ? `战报弹窗「${after.report}」` : after.toasts.length ? `战报「${after.toasts[0]?.slice(0, 24)}」` : '行程点列前移')
+    )
+  }
+  if (pageErrors.length) failures.push(`[390] 后期档页面异常(远征):${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 

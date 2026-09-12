@@ -949,12 +949,26 @@
     handleOutcome(outcome, title)
   }
 
+  /**
+   * 战报标题要在动手**之前**取。
+   *
+   * 从前写成 `handleOutcome(chooseRouteNode(i), runWorld.value?.name ?? '远征')` ——
+   * 实参从左往右求值:先打完这一场,而「连败被逐」「功成出界」都会把 worldRun 清成 null,
+   * 于是轮到读 runWorld 时它已经是空的,标题就退成了光秃秃的「远征」。
+   * 实测(后期档真点一次择路):弹窗标题「远征」,而不是「赤炎天」。
+   */
+  function titleOfRun(): string {
+    return runWorld.value?.name ?? '远征'
+  }
+
   function pickNode(i: 0 | 1): void {
-    handleOutcome(chooseRouteNode(i), runWorld.value?.name ?? '远征')
+    const title = titleOfRun()
+    handleOutcome(chooseRouteNode(i), title)
   }
 
   function fightBoss(): void {
-    handleOutcome(challengeGuardian(), runWorld.value?.name ?? '远征')
+    const title = titleOfRun()
+    handleOutcome(challengeGuardian(), title)
   }
 
   function abandonRun(): void {
