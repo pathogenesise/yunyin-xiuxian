@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 145,
+  "round": 146,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T10:53:05+00:00",
+  "updated_at": "2026-09-12T11:19:09+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 143,
+      "touched_round": 145,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -7791,6 +7791,66 @@
       "touched_round": 144,
       "summary": "「所报即所打」不只是规则同源,还包括**状态**同源:这一场从多少血开打、带没带上一场的势,都是结果的一部分。凡是「预估 / 预览 / 报价」类界面,都要对着**结算那一份输入**逐项对(规则、状态、随机源三样),少对一项就会出现「越糟越乐观」这种反向失真",
       "confidence": 0.9
+    },
+    "ISS-122": {
+      "id": "ISS-122",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T11:19:02+00:00",
+      "updated_at": "2026-09-12T11:19:09+00:00",
+      "touched_round": 145,
+      "summary": "导出失败不出声:Web 端导出走 saveAs(Blob + a[download]),受限 WebView / 应用内浏览器里 URL.createObjectURL 直接不可用 → 抛错;而调用方是 void exportSaveToDevice(),既不看返回值也不接异常。探针实测:打断下载能力后点「导出存档」= 一个未捕获页面异常 + 界面一句提示都没有。导出是丢档前唯一的保险,不能静默失败",
+      "severity": 0.45,
+      "confidence": 0.95
+    },
+    "TASK-113": {
+      "id": "TASK-113",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T11:19:02+00:00",
+      "updated_at": "2026-09-12T11:19:02+00:00",
+      "touched_round": 145,
+      "summary": "导出失败要说话(Web 分支 try/catch + 调用方兜 .catch),导入侧补 reader.onerror;并把「别承诺做不到的事」落实到文案(删掉无法兑现的「复制文本另存」);补浏览器判据(第十七件事:打断下载能力再点导出)",
+      "category": "maintainability",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-170": {
+      "id": "CHG-170",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:19:02+00:00",
+      "updated_at": "2026-09-12T11:19:02+00:00",
+      "touched_round": 145,
+      "summary": "savePlatform Web 分支包 try/catch 并 toast 失败;SettingsView onExport 兜 .catch、导入补 reader.onerror;layout-check 第十七件事(打断 URL.createObjectURL 后点导出,要求有提示);转世场景改为只钉随机不关弹窗,终局判据收窄为「转世窗关干净」",
+      "commit": "95c7c2d"
+    },
+    "EV-127": {
+      "id": "EV-127",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:19:02+00:00",
+      "updated_at": "2026-09-12T11:19:02+00:00",
+      "touched_round": 145,
+      "summary": "修前基线(探针):打断下载 → PAGEERROR「createObjectURL is not available」+ 提示为空;修后:「浏览器没能下载这份存档 —— 请换一个浏览器打开后再导出」且无页面异常。注入读数:单独去掉 savePlatform 的 try/catch 时判据仍绿(SettingsView 的 .catch 接住),单独去掉调用方 catch 亦然 —— 两层防护互为兜底;真正的红是修前那条基线。排版自检 92 组全绿(连跑确认转世假红已消)",
+      "confidence": 0.95,
+      "source": "src/core/savePlatform.ts"
+    },
+    "HYP-072": {
+      "id": "HYP-072",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:19:02+00:00",
+      "updated_at": "2026-09-12T11:19:02+00:00",
+      "touched_round": 145,
+      "summary": "「丢档前唯一的保险」这类操作,失败必须比成功更显眼:它成功时浏览器自己会给反馈(下载条),失败时却什么都没有 —— 于是静默失败恰好发生在最需要知道的那一刻。凡是「保命」操作,都要有一条判据把它的失败路径也走一遍",
+      "confidence": 0.9
     }
   },
   "edges": [
@@ -11364,6 +11424,36 @@
       "to": "HYP-071",
       "type": "validates",
       "created_at": "2026-09-12T10:53:05+00:00"
+    },
+    {
+      "from": "ISS-122",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T11:19:09+00:00"
+    },
+    {
+      "from": "TASK-113",
+      "to": "ISS-122",
+      "type": "addresses",
+      "created_at": "2026-09-12T11:19:09+00:00"
+    },
+    {
+      "from": "CHG-170",
+      "to": "TASK-113",
+      "type": "implements",
+      "created_at": "2026-09-12T11:19:09+00:00"
+    },
+    {
+      "from": "CHG-170",
+      "to": "ISS-122",
+      "type": "resolves",
+      "created_at": "2026-09-12T11:19:09+00:00"
+    },
+    {
+      "from": "EV-127",
+      "to": "HYP-072",
+      "type": "validates",
+      "created_at": "2026-09-12T11:19:09+00:00"
     }
   ]
 }
