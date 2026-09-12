@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 127,
+  "round": 128,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T04:35:59+00:00",
+  "updated_at": "2026-09-12T04:52:18+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 125,
+      "touched_round": 127,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -6635,6 +6635,66 @@
       "summary": "修前:390/375/320/430 四档复现外壳 scrollLeft=24、横向可滚 128px(故障注入把云雾挪回外壳时同样读数);修后:三档宽度 scrollLeft/可滚余量全为 0。390×844 DPR3 截图中顶栏「真机自检/炼气·一层 16/150载」与底部五栏「洞府…人物」均完整",
       "confidence": 0.95,
       "source": "scripts/layout-check.mjs"
+    },
+    "ISS-102": {
+      "id": "ISS-102",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T04:52:15+00:00",
+      "updated_at": "2026-09-12T04:52:18+00:00",
+      "touched_round": 127,
+      "summary": "玩家对震慑毫无还手之力:十三种敌人会摄魂(音波/魅惑/石化凝视/九霄神雷/无相神通……),中了就是白丢一回合;32 件法宝全在攻击侧(打/回/盾/削/震慑/破甲),没有一件能改变这个状态,而战后分析只会说「N 个回合被震慑打断,节奏尽失」—— 报了病因,却无药可抓",
+      "severity": 0.35,
+      "confidence": 0.9
+    },
+    "TASK-093": {
+      "id": "TASK-093",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T04:52:15+00:00",
+      "updated_at": "2026-09-12T04:52:15+00:00",
+      "touched_round": 127,
+      "summary": "补第一件防身型法宝效果(净念:受慑时按概率当场挣脱),接到混沌海法宝上;红线:必摄魂靶子 30 场累计被跳过回合数必须更少,且随身被动不刷出手节拍",
+      "category": "core-feature",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-152": {
+      "id": "CHG-152",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:52:15+00:00",
+      "updated_at": "2026-09-12T04:52:15+00:00",
+      "touched_round": 127,
+      "summary": "ArtifactEffect 增 { type: \"purge\"; pct };combat 增 tryStun 统一三个震慑落点;新增无相念珠(divine t31,七成基础概率、满级上限九成);artifactEffects.spec 增两例(30 场累计对比、随身被动不占节拍)",
+      "commit": "2b92edf"
+    },
+    "HYP-053": {
+      "id": "HYP-053",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:52:15+00:00",
+      "updated_at": "2026-09-12T04:52:15+00:00",
+      "touched_round": 127,
+      "summary": "「词汇表的缺口不只在攻击侧」:效果表若清一色是出手,玩家的负面状态就没有出口。判据可以从「战后分析报了哪个病因,却没有任何装备能改变它」反推 —— 报得出病因、给不出药,就是内容缺口",
+      "confidence": 0.8
+    },
+    "EV-108": {
+      "id": "EV-108",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T04:52:15+00:00",
+      "updated_at": "2026-09-12T04:52:15+00:00",
+      "touched_round": 127,
+      "summary": "必摄魂靶子 × 30 场:不带念珠被跳过 744 回合,带念珠 204 回合(降约七成,与基础概率相符)。故障注入:① 挣脱判定改成 chance=0 → 「带念珠被跳过 747 vs 不带 744」红;② 删掉 combat 里 purge 的跳过 → 对手不摄魂时触发 50 次,节拍判据红。全量 144 文件 1431 用例绿",
+      "confidence": 0.95,
+      "source": "src/core/artifactEffects.spec.ts"
     }
   },
   "edges": [
@@ -9578,6 +9638,36 @@
       "to": "HYP-052",
       "type": "validates",
       "created_at": "2026-09-12T04:35:54+00:00"
+    },
+    {
+      "from": "ISS-102",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T04:52:18+00:00"
+    },
+    {
+      "from": "TASK-093",
+      "to": "ISS-102",
+      "type": "addresses",
+      "created_at": "2026-09-12T04:52:18+00:00"
+    },
+    {
+      "from": "CHG-152",
+      "to": "TASK-093",
+      "type": "implements",
+      "created_at": "2026-09-12T04:52:18+00:00"
+    },
+    {
+      "from": "CHG-152",
+      "to": "ISS-102",
+      "type": "resolves",
+      "created_at": "2026-09-12T04:52:18+00:00"
+    },
+    {
+      "from": "EV-108",
+      "to": "HYP-053",
+      "type": "validates",
+      "created_at": "2026-09-12T04:52:18+00:00"
     }
   ]
 }
