@@ -18,11 +18,27 @@ import { resolve } from 'node:path'
 import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import { RandomService, mulberry32 } from '@/utils/random'
 import { gn } from '@/utils/gnum'
+import { MITIGATION_K } from '@/data/constants'
+import { mulN } from '@/utils/gnum'
 import { resolveCombat, makeEnemySnap } from './combat'
 import { buildPlayerSnap } from './playerSnap'
 import { enemyDef } from '@/data/enemies'
 
 const seeded = (seed = 1): RandomService => new RandomService(mulberry32(seed))
+
+/**
+ * 一只「厚甲但打不死人」的靶子:防御让减伤落在五成上下(不是被上限压死),
+ * 气血够厚到能撑过十个回合 —— 这样破甲带来的有效伤害提升才量得出来。
+ */
+function tankyWolf(): ReturnType<typeof makeEnemySnap> {
+  const snap = makeEnemySnap(enemyDef('e_wolf')!, 1, 1)
+  snap.attack = gn(1)
+  snap.defense = mulN(gn(1e6), MITIGATION_K) // 减伤 ≈ 50%
+  snap.maxHp = gn(6e6)
+  snap.speed = 1
+  snap.mods = {}
+  return snap
+}
 
 /** 从类型声明里扫出 ArtifactEffect 的判别值 —— 手写联合,只能扫源码 */
 function effectTypesFromTypes(): string[] {
@@ -82,5 +98,42 @@ describe('法宝效果 · 震慑真打断敌人那一手', () => {
     }
     expect(proc, '20 场里一次震慑都没触发 —— 效果没接上').toBeGreaterThan(0)
     expect(broken, '震慑触发了却没打断任何一手 —— 只是文案').toBeGreaterThan(0)
+  })
+})
+
+describe('法宝效果 · 破甲真让后续打得更疼', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('神鞭裂甲:同一场对局里,破甲之后回合数更少', () => {
+    /**
+     * 造一对「防御很厚、彼此都打不死」的对手,让破甲的效果能被量出来:
+     * 同一个种子跑两遍 —— 带神鞭的那一遍从第 4 回合起敌人的防御降三成,
+     * 于是同样的伤害掷点打出更高的有效伤害,结束得更早。
+     */
+    const withSunder = (): { rounds: number; text: string } => {
+      const p = buildPlayerSnap()
+      p.mods = {}
+      p.attack = gn(1e6)
+      p.defense = gn(1e12)
+      p.maxHp = gn(1e12)
+      p.artifacts = [{ def: artifactDef('af_shenbian')!, level: 0 }]
+      const enemy = tankyWolf()
+      const result = resolveCombat(p, enemy, seeded(11))
+      return { rounds: result.rounds, text: result.log.map(l => l.text).join('\n') }
+    }
+    const without = (): number => {
+      const p = buildPlayerSnap()
+      p.mods = {}
+      p.attack = gn(1e6)
+      p.defense = gn(1e12)
+      p.maxHp = gn(1e12)
+      p.artifacts = []
+      const enemy = tankyWolf()
+      return resolveCombat(p, enemy, seeded(11)).rounds
+    }
+    const a = withSunder()
+    const b = without()
+    expect(a.text, '破甲的台词没出现 —— 效果没接上').toContain('护体被撕开')
+    expect(a.rounds, `带破甲 ${a.rounds} 回合,不带 ${b} 回合 —— 破甲没有让敌人更好打`).toBeLessThan(b)
   })
 })

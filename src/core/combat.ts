@@ -31,6 +31,8 @@ interface Fighter {
   weaken: number
   /** 攻势渐涨系数(长生印规则下敌方递增) */
   atkRamp: number
+  /** 破甲:本场余下回合里防御按此比例下降(0~0.5) */
+  defSunder: number
   /** 组合技已触发次数(每场限量) */
   comboUses: number
   stats: CombatSideStats
@@ -120,16 +122,18 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     stunned: false,
     weaken: 0,
     atkRamp: 1,
+    defSunder: 0,
     comboUses: 0,
     stats: emptyStats()
   }
-  const e: Fighter = {
+ const e: Fighter = {
     snap: eEff,
     hp: { ...eEff.maxHp },
     shield: gnZero(),
     stunned: false,
     weaken: 0,
     atkRamp: 1,
+    defSunder: 0,
     comboUses: 0,
     stats: emptyStats()
   }
@@ -239,7 +243,8 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
       attacker.stats.crits += 1
     }
 
-    const red = mitigation(target.snap.defense, attacker.snap.attack, modOf(aMods, 'armorPen'))
+    const effDefense = target.defSunder > 0 ? mulN(target.snap.defense, Math.max(0.2, 1 - target.defSunder)) : target.snap.defense
+    const red = mitigation(effDefense, attacker.snap.attack, modOf(aMods, 'armorPen'))
     // 真伤:无视护盾与一切减伤词条(防御减免仍计一半)
     let taken: number
     if (opts.pierce) {
@@ -344,6 +349,9 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
       } else if (eff.type === 'stun') {
         foe.stunned = true
         push('proc', side, `【${art.name}】摄住${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的心神,那一手没能出。`)
+      } else if (eff.type === 'sunder') {
+        foe.defSunder = Math.min(0.5, Math.max(foe.defSunder, eff.pct * levelMult))
+        push('proc', side, `【${art.name}】${art.active.name},${foe.snap.isPlayer ? '你的' : `【${foe.snap.name}】的`}护体被撕开一道口子。`)
       } else {
         foe.weaken = Math.min(0.5, eff.pct * levelMult)
         push('proc', side, `【${art.name}】发威,${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的攻势被削弱了。`)

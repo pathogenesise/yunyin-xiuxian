@@ -327,9 +327,9 @@ export const ARTIFACTS: ArtifactDef[] = [
     '一鞭抽落星辰,余响三日不绝',
     { attackPct: 0.07, speed: 0.05 },
     '裂星',
-    '每 3 回合挥鞭劈落,造成 240% 攻击伤害',
-    3,
-    { type: 'damage', mult: 2.4 },
+    '每 4 回合挥鞭裂其护体,余下回合敌人防御降低 30%',
+    4,
+    { type: 'sunder', pct: 0.3 },
     'wand'
   ),
   f(

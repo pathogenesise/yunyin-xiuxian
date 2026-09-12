@@ -253,6 +253,13 @@ export type ArtifactEffect =
    * 在高界尤其要紧:敌手的一次大招被掐掉,往往比少吃几成伤害更值。
    */
   | { type: 'stun' }
+  /**
+   * 破甲:撕开敌人的护体,其防御在**本场余下回合**里按比例下降。
+   *
+   * 与削弱(压其攻势)相对:一个是让它打不动你,一个是让你打得动它。
+   * 对高防敌手(天界那些护体厚重的)尤其值。
+   */
+  | { type: 'sunder'; pct: number }
 
 export interface ArtifactDef {
   id: string
