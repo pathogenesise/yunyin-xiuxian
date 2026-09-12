@@ -40,6 +40,7 @@
  *   十九 真打一场历练战斗:战报回放要出内容、结语要写清胜负、战斗分析点得开。
  *   二十 背包里的账目:强化写着扣多少尘就扣多少,分解说给多少尘就给多少。
  *   二十一 闭关期间不许历练:点出发要当场拦下(不开模式窗),换页回来闭关还在。
+ *   二十二 减少动效真的减到了(并顺带在音效开着的情况下点一路按钮)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1362,6 +1363,80 @@ for (const vp of VIEWPORTS) {
   await ctx.close()
 }
 
+// ---- 第二十二件事:减少动效真的减到了(顺带在音效开着的情况下点一路按钮) ----
+/*
+ * 「减少动效」是个容易摆设的开关:加个类名、忘了写 CSS,界面上谁也看不出来
+ * (动效仍然在动,而这条设置一般是给晕动/省电的人用的)。
+ * 判据按「还会不会动」来量:animation-name 仍在不算,要看 duration 与 iteration ——
+ * 减动效的做法是把时长压到 0.01ms 且只跑一次。
+ * 同一场里音效与音乐都开着:每次点击都会走 unlockAudio + playSfx,这条路径
+ * 冒烟夹具一律关掉声音,此前没走过。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '音画自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: true, musicOn: true, musicVol: 60, sfxVol: 60, reduceMotion: false, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  /** 还会动的元素:名字在不算,要看时长与次数 */
+  const movingCount = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('body *')].filter(el => {
+        const cs = getComputedStyle(el)
+        if (cs.animationName === 'none') return false
+        const dur = cs.animationDuration.split(',').map(d => parseFloat(d))
+        const iter = cs.animationIterationCount.split(',')
+        return dur.some(d => d > 0.05) || iter.some(i => i === 'infinite')
+      }).length
+    )
+  const before = await movingCount()
+  if (before === 0) failures.push('[390] 减动效场景:默认设置下界面本来就不动,这条判据证明不了什么')
+  // 音效开着,一路点点按钮(每次点击都会走 unlockAudio + playSfx)
+  for (const b of [0, 1, 2]) {
+    await page.locator('main button').nth(b).click({ timeout: 2000 }).catch(() => {})
+    await page.waitForTimeout(150)
+  }
+  await page.goto(INDEX + '#' + '/settings', { waitUntil: 'load' })
+  await page.waitForTimeout(700)
+  const box = page.locator('label', { hasText: /减少动效/ }).locator('input[type=checkbox]').first()
+  if ((await box.count()) === 0) failures.push('[390] 减动效场景:设置页找不到「减少动效」开关')
+  else {
+    await box.check({ timeout: 2500 }).catch(() => {})
+    await page.waitForTimeout(400)
+    const off = await movingCount()
+    if (off !== 0) failures.push(`[390] 减动效场景:开了「减少动效」仍有 ${off} 个元素在动(开关是摆设)`)
+    await box.uncheck({ timeout: 2500 }).catch(() => {})
+    await page.waitForTimeout(400)
+    const back = await movingCount()
+    if (back === 0) failures.push('[390] 减动效场景:关掉「减少动效」之后界面也一动不动(判据两向都得立得住)')
+    console.log(`\n减动效:默认 ${before} 个在动 → 打开开关 ${off} 个 → 关回 ${back} 个(音效开着点了一路,无异常)`)
+  }
+  if (pageErrors.length) failures.push(`[390] 减动效场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
 // ---- 第二十一件事:闭关的跨页承诺 —— 闭关中不许历练,而且当场就说 ----
 /*
  * 「静坐一炷香,修炼速度 +150%;闭关期间无法外出历练」是修行页明写的一条。
@@ -1573,21 +1648,25 @@ for (const vp of VIEWPORTS) {
   // 首战间隔 12 秒 ÷ 历练速度,故最多等 30 秒
   let summary = ''
   let logLines = 0
-  for (let i = 0; i < 30 && !summary; i += 1) {
+  let lastTail = ''
+  for (let i = 0; i < 45 && !summary; i += 1) {
     await page.waitForTimeout(1000)
     const info = await page.evaluate(() => {
       const text = document.querySelector('main')?.innerText || ''
       return {
         running: /余 \d+分\d+秒/.test(text),
         lines: (text.match(/击中|施展|避开|打断|气血逆涌/g) || []).length,
-        summary: (text.match(/此战 \d+ 回合[^\n]*/) || [''])[0]
+        summary: (text.match(/此战 \d+ 回合[^\r\n]*/) || [''])[0],
+        tail: text.replace(/\s+/g, ' ').slice(-80)
       }
     })
     logLines = Math.max(logLines, info.lines)
     summary = info.summary
+    lastTail = info.tail
     if (i === 0 && !info.running) failures.push('[390] 战斗场景:点了「出发」并择了模式,历练却没跑起来')
   }
-  if (!summary) failures.push('[390] 战斗场景:等了 30 秒也没等到一场的结语(战报回放没走完?)')
+  // 首战间隔 12 秒 ÷ 历练速度;45 秒还没等到,就把当前页面写进报告(「搜寻猎物中」还是「胜 N 场」一看便知)
+  if (!summary) failures.push(`[390] 战斗场景:等了 45 秒也没等到一场的结语(战报回放没走完?) 当前页面:${lastTail}`)
   else {
     if (logLines === 0) failures.push('[390] 战斗场景:有结语却没有战报行(回放没出内容)')
     if (!/胜|负/.test(summary)) failures.push(`[390] 战斗场景:结语没写清胜负 —— ${summary}`)
