@@ -13,10 +13,11 @@
  *   二 一条具体样本也不许被「解」出东西(说明它根本没走解密);
  *   三 真密文仍解得开(修的是误判,不是把解密关掉)。
  *
- * 故障注入:去掉 decryptSave 开头的密文头检查,第一条立刻红。
+ * 故障注入:去掉 decryptSave 开头的密文头检查,第一条立刻红(实测 2000 条里 11 条中招)。
  */
 import { describe, expect, it } from 'vitest'
 import { decryptSave, encryptSave, readSaveText } from './crypto'
+import { SAVE_SERIALIZER } from './storage'
 
 /** 2026-01-01 起的毫秒基准 —— 每条样本都长这样,只有时间戳不同 */
 const BASE_AT = 1767225600000
@@ -53,5 +54,19 @@ describe('明文存档 · 不许被误当密文', () => {
     expect(cipher.startsWith('U2FsdGVkX1'), '本项目的密文都带 Salted__ 头').toBe(true)
     expect(decryptSave(cipher)).toBe(plain)
     expect(readSaveText(cipher)).toBe(plain)
+  })
+
+  /**
+   * 上面两条测的是 readSaveText;这条测**真正被调用的那一段**。
+   *
+   * 全量并行跑测试时偶发一红的那例(ISS-049)报在 savePersistence「读己所写」:
+   * 那条用例把还没落盘的**明文**交给 SAVE_SERIALIZER.deserialize ——
+   * 也就是 readSaveText 外面还包了一层 JSON.parse。修复只钉在 readSaveText 上,
+   * 若哪天有人在序列化器里另写一套解码(绕过 readSaveText),旧病会直接复发。
+   */
+  it('存档序列化器读明文也不许翻车(真正被 store 调用的那一段)', () => {
+    const data = { game: { started: true }, player: { exp: 42 } }
+    expect(SAVE_SERIALIZER.deserialize(plainEnvelope(BASE_AT))).toMatchObject({ version: 2 })
+    expect(SAVE_SERIALIZER.deserialize(SAVE_SERIALIZER.serialize(data))).toEqual(data)
   })
 })
