@@ -226,7 +226,11 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(700)
 
   const trigger = page.getByRole('button', { name: /关于/ }).first()
-  await trigger.click()
+  try {
+    await trigger.click({ timeout: 5000 })
+  } catch {
+    failures.push('[375] 弹窗焦点场景:「关于」入口点不开(页面没就绪?)')
+  }
   await page.waitForTimeout(350)
   const opened = await page.evaluate(() => {
     const panel = document.querySelector('.modal-panel')
@@ -262,7 +266,54 @@ for (const vp of VIEWPORTS) {
   }))
   if (afterEsc.stillOpen) failures.push('[375] Esc 没能关掉弹窗')
   if (!afterEsc.backOnTrigger) failures.push('[375] 关掉弹窗后焦点没还给打开它的那个按钮')
+
   if (pageErrors.length) failures.push(`[375] 弹窗焦点场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await page.close()
+}
+
+// ---- 第六件事:Tab 焦点看得见吗 ----
+{
+  const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
+  const pageErrors = []
+  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  await page.locator('input[type=checkbox]').first().check()
+  await page.getByRole('button', { name: /同意并开始/ }).first().click()
+  await page.waitForTimeout(3200)
+  await page.locator('input:not([type=file]):not([type=checkbox])').first().fill('焦点可见自检')
+  await page.getByRole('button', { name: /踏\s*入\s*仙\s*途/ }).first().click()
+  await page.waitForTimeout(1200)
+  checked += 1
+
+  for (const route of ['/cultivation', '/settings']) {
+    await page.evaluate(r => {
+      location.hash = `#${r}`
+    }, route)
+    await page.waitForTimeout(650)
+    // 从「没有焦点」的干净状态开始数 Tab,免得把上一页残留的焦点算进来
+    await page.evaluate(() => document.activeElement?.blur())
+    const seen = []
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab')
+      const info = await page.evaluate(() => {
+        const el = document.activeElement
+        if (!el || el === document.body || el === document.documentElement) return { blind: null, label: '(body)' }
+        const cs = getComputedStyle(el)
+        // 透明的轮廓等于没有 —— 只看「有没有一圈线」会把 outline:transparent 也算通过
+        const hiddenOutline = cs.outlineColor === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(cs.outlineColor)
+        const ring =
+          (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && !hiddenOutline) || cs.boxShadow !== 'none'
+        const label = `${el.tagName.toLowerCase()} «${(el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 12)}»`
+        return { blind: ring ? null : label, label }
+      })
+      seen.push(info.label)
+      if (info.blind) failures.push(`[375] ${route} 第 ${i + 1} 个 Tab 落点看不见焦点:${info.blind}`)
+    }
+    // 落点一个没数到 = 这段判据没跑到东西,也要红
+    if (seen.filter(s => s !== '(body)').length === 0) failures.push(`[375] ${route} 的 Tab 落点一个都没数到`)
+  }
+  if (pageErrors.length) failures.push(`[375] 焦点可见场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await page.close()
 }
 

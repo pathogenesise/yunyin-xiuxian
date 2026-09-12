@@ -734,6 +734,18 @@ html[data-theme='dark'] {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * 键盘焦点的可见指示 —— 统一成朱砂描边,不再听浏览器默认(默认那圈颜色
+ * 在暗色纸面上有时很淡,而 `outline-none` 这类写法一旦落到某个控件上,
+ * 键盘用户就彻底看不出走到哪了)。
+ *
+ * 只对 :focus-visible 生效:鼠标点击不该冒出一圈描边。
+ */
+:focus-visible {
+  outline: 2px solid var(--color-cinnabar);
+  outline-offset: 2px;
+}
+
 /* 滚动条 */
 *::-webkit-scrollbar {
   width: 3px;
