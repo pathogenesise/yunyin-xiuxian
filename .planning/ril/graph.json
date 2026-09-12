@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 120,
+  "round": 121,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T03:13:55+00:00",
+  "updated_at": "2026-09-12T03:31:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 119,
+      "touched_round": 120,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -6135,6 +6135,67 @@
       "touched_round": 119,
       "summary": "style.css 增全局 :focus-visible(2px 朱砂,压得住 outline-none);layout-check 增第六件事「Tab 焦点看得见吗」(两页各六个落点,透明轮廓不算)",
       "commit": "966c8a2"
+    },
+    "ISS-093": {
+      "id": "ISS-093",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:30:50+00:00",
+      "updated_at": "2026-09-12T03:31:05+00:00",
+      "touched_round": 120,
+      "summary": "界面冒烟只巡九页:流派/收藏/修仙录/洞府/本世之界/天界这六页只被排版自检量过尺寸,没人戳过它们的按钮 —— 点下去会不会抛异常、正文会不会泄漏 NaN,在早/后期两种存档状态都没看过(排版自检已铺满十五条路由,冒烟却没跟上)",
+      "severity": 0.2,
+      "confidence": 0.85,
+      "effort": 1
+    },
+    "TASK-084": {
+      "id": "TASK-084",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T03:30:50+00:00",
+      "updated_at": "2026-09-12T03:31:05+00:00",
+      "touched_round": 120,
+      "summary": "冒烟路由与排版自检对齐(9→15 页),两档各跑一遍确认新增六页干净",
+      "category": "maintainability",
+      "severity": 0.2,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "EV-100": {
+      "id": "EV-100",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:30:50+00:00",
+      "updated_at": "2026-09-12T03:30:50+00:00",
+      "touched_round": 120,
+      "summary": "ui-smoke 路由 9→15 页(与排版自检同一份清单);日常档 15 页 70 次点击、后期档 15 页 93 次点击,均无 pageerror、无 NaN/Infinity/undefined 泄漏;「点了没反应」读数 8 处逐条核对全为合理空点(已选中的设置项、无历史可退的返回、超出指纹窗口的属性行展开),读数定位为「哨兵」而非判据;全量 142 文件 1418 用例绿",
+      "confidence": 0.9,
+      "source": "scripts/ui-smoke.mjs"
+    },
+    "HYP-048": {
+      "id": "HYP-048",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:30:50+00:00",
+      "updated_at": "2026-09-12T03:30:50+00:00",
+      "touched_round": 120,
+      "summary": "工具之间要对齐覆盖面:排版自检与冒烟是两台不同的探针(量尺寸 / 戳交互),一台铺满而另一台只巡部分时,空白页只会出现在「没被戳过」的那一半。判据不是「脚本写没写」,而是两条清单指的是同一份路由表",
+      "confidence": 0.8
+    },
+    "CHG-143": {
+      "id": "CHG-143",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T03:31:05+00:00",
+      "updated_at": "2026-09-12T03:31:05+00:00",
+      "touched_round": 120,
+      "summary": "ui-smoke 路由 9→15 页,与排版自检同一份清单;两档各跑一遍确认新增六页无异常、无数字泄漏",
+      "commit": "c8909cb"
     }
   },
   "edges": [
@@ -8814,6 +8875,36 @@
       "to": "HYP-047",
       "type": "validates",
       "created_at": "2026-09-12T03:13:54+00:00"
+    },
+    {
+      "from": "ISS-093",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T03:31:05+00:00"
+    },
+    {
+      "from": "TASK-084",
+      "to": "ISS-093",
+      "type": "addresses",
+      "created_at": "2026-09-12T03:31:05+00:00"
+    },
+    {
+      "from": "CHG-143",
+      "to": "TASK-084",
+      "type": "implements",
+      "created_at": "2026-09-12T03:31:05+00:00"
+    },
+    {
+      "from": "CHG-143",
+      "to": "ISS-093",
+      "type": "resolves",
+      "created_at": "2026-09-12T03:31:05+00:00"
+    },
+    {
+      "from": "EV-100",
+      "to": "HYP-048",
+      "type": "validates",
+      "created_at": "2026-09-12T03:31:05+00:00"
     }
   ]
 }
