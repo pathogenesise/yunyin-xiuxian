@@ -102,6 +102,18 @@ export function expeditionRules(world: CelestialWorldDef, run: WorldRunState, no
   return chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(run.gateId), node?.rules)
 }
 
+/**
+ * 给规则压上「携带气血」这一层 —— 实战与天机预览都走它。
+ *
+ * 远征是连着打的:上一场剩多少血就带进下一场(playerStartHpPct 是开局上限)。
+ * 故「所见即所打」的完整版不是「规则同源」,而是「**连血量也同源**」——
+ * 预览若只看规则、不看携带气血,就会在玩家越残的时候报得越乐观。
+ */
+export function withCarriedHp(rules: CombatRules | undefined, run: WorldRunState): CombatRules {
+  const startCap = rules?.playerStartHpPct ?? 1
+  return { ...(rules ?? {}), playerStartHpPct: Math.min(startCap, run.carriedHpPct) }
+}
+
 /** 远征总场数(入界 + 三层 + 界主) */
 const RUN_FIGHTS = 5
 
@@ -140,9 +152,9 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   const stats = player.finalStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
   const foe = worldFoeSnap(foeShape, ref)
-  const rules = expeditionRules(world, run, node)
-  const startCap = rules?.playerStartHpPct ?? 1
-  const fightRules: CombatRules = { ...(rules ?? {}), playerStartHpPct: Math.min(startCap, run.carriedHpPct) }
+  const baseRules = expeditionRules(world, run, node)
+  const startCap = baseRules?.playerStartHpPct ?? 1
+  const fightRules = withCarriedHp(baseRules, run)
   const result = resolveCombat(runSnap(run), foe, rng, fightRules)
 
   const row = { foeName: foe.name, win: result.win, rounds: result.rounds, hpLeftPct: result.playerHpPct }
@@ -267,6 +279,8 @@ export interface FightPreview {
   /** 危险时间点与形势提示(信息,不是答案) */
   riskLines: string[]
   winText: string
+  /** 这一眼看到的胜算(0~1)—— 与实战同一个口径,含携带气血 */
+  rate: number
 }
 
 const RATE_WORDS = (rate: number): string => (rate >= 0.55 ? '常发' : rate >= 0.35 ? '频发' : '偶发')
@@ -279,8 +293,16 @@ const EFFECT_WORDS: Record<string, string> = {
   shield: '结盾'
 }
 
-/** 天机道:窥见一场未来之战(招式明细 + 胜算) */
-export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode): FightPreview | null {
+/**
+ * 天机道:窥见一场未来之战(招式明细 + 胜算)。
+ *
+ * 「所窥即所打」:算胜算用的规则必须与 fightStep 一模一样 —— 故走同一个
+ * withCarriedHp(**含携带气血**)。此前这里只取了 expeditionRules,
+ * 于是玩家越残,预览报得越乐观(实测:带六成气血时预览仍说「约有七成胜算」,
+ * 而按实战规则只有一成,是「凶多吉少」)。
+ * 随机源可注入,自检才能不掷运气地钉住这条口径。
+ */
+export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode, rand: RandomService = rng): FightPreview | null {
   const endgame = useEndgameStore()
   if (endgame.daoPath !== 'fate') return null
   const run = endgame.worldRun
@@ -303,9 +325,10 @@ export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode): Fi
   if (heavy) riskLines.push(`【${heavy.name}】足以重创,留足气血以备不测`)
   if ((rules?.healMult ?? 1) < 0.7) riskLines.push('此地生机稀薄,回血难以为继')
   const snap = run ? runSnap(run) : buildPlayerSnap(true)
-  const rate = sampleWinRate(snap, foe, rng, 3, rules)
+  const fightRules = world && run ? withCarriedHp(rules, run) : rules
+  const rate = sampleWinRate(snap, foe, rand, 3, fightRules)
   const winText = rate >= 0.9 ? '胜算在握' : rate >= 0.6 ? '约有七成胜算' : rate >= 0.35 ? '五五之数,凶险参半' : '凶多吉少'
-  return { skillLines, riskLines, winText }
+  return { skillLines, riskLines, winText, rate }
 }
 
 // ---------- 天道变数 ----------

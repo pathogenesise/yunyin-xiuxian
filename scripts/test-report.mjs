@@ -25,7 +25,7 @@ const CATEGORIES = [
   { name: 'Economy     资源经济', match: ['economySim', 'lootSim', 'loot.spec', 'petLuck', 'pillValue', 'veinEconomyAudit', 'veinVisibility', 'resourceGuidance', 'offlineCap', 'offlineLedger', 'offlineScope', 'veinService', 'qiRepair'] },
   {
     name: 'Regression  服务与归因',
-    match: ['loadoutService', 'battleAnalysis', 'loreService', 'contentReachability', 'contentDensity', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform', 'saveRoundTrip', 'importCorruption', 'saveMigration', 'codexSource', 'achievementHint', 'titleLadder', 'artifactEffects', 'dataHeaderAudit', 'deadExportAudit', 'chainProgression', 'vocabularyCoverage', 'uiLayering', 'goBack', 'storeResilience', 'rewardReachability', 'dataIntegrity', 'dataTextAudit']
+    match: ['loadoutService', 'battleAnalysis', 'loreService', 'contentReachability', 'contentDensity', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform', 'saveRoundTrip', 'importCorruption', 'saveMigration', 'codexSource', 'achievementHint', 'titleLadder', 'artifactEffects', 'dataHeaderAudit', 'deadExportAudit', 'chainProgression', 'vocabularyCoverage', 'uiLayering', 'fatePreview', 'goBack', 'storeResilience', 'rewardReachability', 'dataIntegrity', 'dataTextAudit']
   },
   { name: 'Celestial   真仙终局', match: ['celestialSim', 'endgameService', 'phase21', 'soulForge', 'souls.spec', 'rulesetEra', 'qimen'] },
   {
