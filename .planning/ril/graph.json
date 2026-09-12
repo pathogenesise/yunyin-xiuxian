@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 138,
+  "round": 139,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T08:36:06+00:00",
+  "updated_at": "2026-09-12T09:03:53+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 134,
+      "touched_round": 138,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -7343,6 +7343,67 @@
       "updated_at": "2026-09-12T08:36:03+00:00",
       "touched_round": 137,
       "summary": "「当场看一眼」不足以收拾取景:两个独立定时器(引擎掷事件 / 组件轮询取事件)之间有一拍错位,事件已产生而界面还没画出来。收拾取景要按「最坏一拍」来等(固定转够一圈),而不是「现在没看见就当没有」",
+      "confidence": 0.85
+    },
+    "ISS-114": {
+      "id": "ISS-114",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T09:03:48+00:00",
+      "updated_at": "2026-09-12T09:03:53+00:00",
+      "touched_round": 138,
+      "summary": "读不出来的字:① 两处禁用按钮 —— .btn-seal:disabled 用最淡的 ink-ghost 打底 + 75% 白字(1.79:1)、.btn-ghost:disabled 整块压 40% 透明(2.23:1),而它们上面的字往往正是「为什么不让我点」(修为未至圆满 / 需 筑基 境 / 灵石不足);② 21 处句子型提示落在最淡一档 ink-ghost(亮色 1.86:1、暗色 2.24:1)。排版自检此前只量尺寸与名字,从没量过「看不看得清」",
+      "severity": 0.4,
+      "confidence": 0.95
+    },
+    "TASK-105": {
+      "id": "TASK-105",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T09:03:48+00:00",
+      "updated_at": "2026-09-12T09:03:48+00:00",
+      "touched_round": 138,
+      "summary": "补对比度观测(明暗两套主题巡十页看读数),修掉两处禁用态与 21 处句子型提示,并把「禁用态对比度」写进逐页判据",
+      "category": "maintainability",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 4
+    },
+    "CHG-163": {
+      "id": "CHG-163",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:03:48+00:00",
+      "updated_at": "2026-09-12T09:03:48+00:00",
+      "touched_round": 138,
+      "summary": "style.css:.btn-seal:disabled 改 ink-faint 打底(约 3.9:1)、.btn-ghost:disabled 改「淡底淡边、字留 ink-faint」;21 处句子型提示 ghost→faint(单个词与状态色保持 ghost);measurePage 增 dimDisabled 对比度判据(<3:1 即红)",
+      "commit": "da767ac"
+    },
+    "EV-120": {
+      "id": "EV-120",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:03:48+00:00",
+      "updated_at": "2026-09-12T09:03:48+00:00",
+      "touched_round": 138,
+      "summary": "对比度实测:修前 .btn-seal:disabled 1.79:1、.btn-ghost:disabled 2.23:1、句子型 ghost 提示亮色 1.86:1 / 暗色 2.24:1;修后禁用态约 3.9:1 与 3.1:1,句子型提示升至 ink-faint(≈3.14:1)。判据的另一次收获:新判据上线即抓出洞府页那批「需 筑基 境」(2.23:1)。故障注入:还原 .btn-seal:disabled → 「/cultivation → 禁用态的字读不出来:2.11:1 «修为未至圆满»」红。修后排版自检 72 组、界面冒烟 15 页、全量 146 文件 1441 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-065": {
+      "id": "HYP-065",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T09:03:48+00:00",
+      "updated_at": "2026-09-12T09:03:48+00:00",
+      "touched_round": 138,
+      "summary": "可读性也是可以量的,而*禁用态*最容易被漏:设计时只想着「把它灰掉」,忘了那行字往往正是「为什么不让我点」—— 玩家最需要读的一句。判据要按「算出来的对比度」量前景与背景,而不是按设计师记得的那几个色号",
+      "status:": "active",
       "confidence": 0.85
     }
   },
@@ -10683,6 +10744,36 @@
       "to": "HYP-061",
       "type": "validates",
       "created_at": "2026-09-12T08:36:06+00:00"
+    },
+    {
+      "from": "ISS-114",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T09:03:53+00:00"
+    },
+    {
+      "from": "TASK-105",
+      "to": "ISS-114",
+      "type": "addresses",
+      "created_at": "2026-09-12T09:03:53+00:00"
+    },
+    {
+      "from": "CHG-163",
+      "to": "TASK-105",
+      "type": "implements",
+      "created_at": "2026-09-12T09:03:53+00:00"
+    },
+    {
+      "from": "CHG-163",
+      "to": "ISS-114",
+      "type": "resolves",
+      "created_at": "2026-09-12T09:03:53+00:00"
+    },
+    {
+      "from": "EV-120",
+      "to": "HYP-065",
+      "type": "validates",
+      "created_at": "2026-09-12T09:03:53+00:00"
     }
   ]
 }
