@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 149,
+  "round": 150,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T12:14:38+00:00",
+  "updated_at": "2026-09-12T12:41:16+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 147,
+      "touched_round": 149,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -8032,6 +8032,66 @@
       "touched_round": 148,
       "summary": "对账要挑**没有别的来源**的那一项:灵石同时被任务/成就发放,拿它做差会被别处收益搅乱;器灵尘只由分解与强化动,差一分就是错。凡「所见即所付」的判据,先选一条干净的量纲",
       "confidence": 0.85
+    },
+    "ISS-126": {
+      "id": "ISS-126",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T12:41:11+00:00",
+      "updated_at": "2026-09-12T12:41:16+00:00",
+      "touched_round": 149,
+      "summary": "闭关期间点「出发」要白走一步:承诺「闭关期间无法外出历练」由 startExploration 兜底,于是模式窗照开、三选一之后才被告知「你正在闭关静修」——话是对的,但同一句拒绝本可以当场说",
+      "severity": 0.25,
+      "confidence": 0.95
+    },
+    "TASK-117": {
+      "id": "TASK-117",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T12:41:11+00:00",
+      "updated_at": "2026-09-12T12:41:11+00:00",
+      "touched_round": 149,
+      "summary": "出发前先判闭关并当场拒绝(不开模式窗);补跨页判据:闭关起效 / 出发当场被拦 / 换页回来状态还在",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-174": {
+      "id": "CHG-174",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T12:41:11+00:00",
+      "updated_at": "2026-09-12T12:41:11+00:00",
+      "touched_round": 149,
+      "summary": "AdventureView.chooseMode 先判 isRetreating() 当场 toast 并 return(服务层兜底保留);layout-check 增第二十一件事(闭关跨页承诺)",
+      "commit": "0afcc74"
+    },
+    "EV-131": {
+      "id": "EV-131",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T12:41:11+00:00",
+      "updated_at": "2026-09-12T12:41:11+00:00",
+      "touched_round": 149,
+      "summary": "实测读数:闭关中 · 4分58秒 · 历练当场被拦(未开模式窗) · 换页仍在。故障注入:去掉早拦 → 「闭关期间点出发,还开出了模式窗(该当场拦下,不让玩家白走一步)」红。另记判据自身失误:在模板串里现场 page.evaluate 且正则转义多了一层,取到空数组;那次 evaluate 的 Promise 在 ctx 关闭后才失败,冒成「Target page … has been closed」掀翻整轮 —— 现在把取数并进前一次 evaluate。排版自检 96 组全绿,全量 147 文件 1446 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-076": {
+      "id": "HYP-076",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T12:41:11+00:00",
+      "updated_at": "2026-09-12T12:41:11+00:00",
+      "touched_round": 149,
+      "summary": "同一句拒绝,越早说越好:服务层兜底保证「结果对」,但玩家会先走完一步(选完三个模式)才发现走不通。凡是「前置条件不满足」,入口处就该拦一次井打出同一句话;服务层的那一份留着,两处各司其职",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -11725,6 +11785,36 @@
       "to": "HYP-075",
       "type": "validates",
       "created_at": "2026-09-12T12:14:38+00:00"
+    },
+    {
+      "from": "ISS-126",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T12:41:16+00:00"
+    },
+    {
+      "from": "TASK-117",
+      "to": "ISS-126",
+      "type": "addresses",
+      "created_at": "2026-09-12T12:41:16+00:00"
+    },
+    {
+      "from": "CHG-174",
+      "to": "TASK-117",
+      "type": "implements",
+      "created_at": "2026-09-12T12:41:16+00:00"
+    },
+    {
+      "from": "CHG-174",
+      "to": "ISS-126",
+      "type": "resolves",
+      "created_at": "2026-09-12T12:41:16+00:00"
+    },
+    {
+      "from": "EV-131",
+      "to": "HYP-076",
+      "type": "validates",
+      "created_at": "2026-09-12T12:41:16+00:00"
     }
   ]
 }
