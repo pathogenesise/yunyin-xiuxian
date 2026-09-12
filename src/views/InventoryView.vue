@@ -142,7 +142,11 @@
               {{ row.equipped ? '收回法宝' : '祭炼随身' }}
             </button>
             <button v-if="row.upCost" class="btn-ghost flex-1 !py-1.5 !text-[12px] tabular" @click="upgradeArtifact(row.def.id)">
-              炼化(悟道{{ row.upCost.wudao }})
+              <!--
+                两种代价都要写出来:炼化既扣悟道点、也扣灵石(见 forge.artifactUpCost),
+                而按钮此前只报悟道 —— 玩家按标签算账,回头发现灵石也少了一大截。
+              -->
+              炼化(悟道 {{ row.upCost.wudao }} · 灵石 {{ formatGN(row.upCost.stone) }})
             </button>
           </div>
         </div>

@@ -42,6 +42,7 @@
  *   二十一 闭关期间不许历练:点出发要当场拦下(不开模式窗),换页回来闭关还在。
  *   二十二 减少动效真的减到了(并顺带在音效开着的情况下点一路按钮)。
  *   二十三 洞府营造的账目:卡片写多少石就扣多少石。
+ *   二十四 法宝炼化的两笔账:按钮上两种代价都得写全,且两种都按所写扣。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -1364,6 +1365,89 @@ for (const vp of VIEWPORTS) {
   await ctx.close()
 }
 
+// ---- 第二十四件事:法宝「炼化」的两笔账,一笔都不能少写 ----
+/*
+ * 炼化既扣悟道点、也扣灵石(见 forge.artifactUpCost),而按钮此前只写「悟道 N」——
+ * 玩家按标签算账,回头发现灵石也少了一大截。判据两件:
+ *   一 按钮上必须把两种代价都写出来;
+ *   二 两种都按所写扣(读数取磁盘精确值,并等开局奖励落定)。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '炼化自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 7), qi: 1000, wudao: 5000, herb: 5, ore: 5, page: 2, dust: 2 },
+    inventory: { items: [], equipped: {}, pills: {}, artifacts: [{ defId: 'af_lihuo', level: 0 }], equippedArtifacts: [] },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__layoutSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__layoutSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  await clearOverlays(page)
+  checked += 1
+  /** 磁盘上的悟道点/灵石(等节流落盘,取精确值) */
+  const readWal = async () => {
+    await page.waitForTimeout(5600)
+    const cipher = await page.evaluate(() => localStorage.getItem('yunyin.resources') || '')
+    if (!cipher) return null
+    const plain = CryptoJS.AES.decrypt(cipher, SAVE_SECRET).toString(CryptoJS.enc.Utf8)
+    if (!plain) return null
+    const r = JSON.parse(plain)
+    const num = v => (typeof v === 'number' ? v : v.m * Math.pow(10, v.e))
+    return { wudao: r.wudao, stone: num(r.spiritStone) }
+  }
+  await page.goto(INDEX + '#' + '/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(900)
+  await page.getByRole('tab', { name: /法\s*宝/ }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(400)
+  const btn = page.locator('main button', { hasText: /炼\s*化/ }).first()
+  if ((await btn.count()) === 0) failures.push('[390] 炼化场景:背包「法宝」页找不到「炼化」入口')
+  else {
+    const label = ((await btn.textContent()) || '').replace(/\s+/g, ' ').trim()
+    const wantWudao = Number((/悟道\s*([\d,]+)/.exec(label.replace(/,/g, '')) || [])[1] ?? NaN)
+    const stoneText = (/灵石\s*([\d,.]+)\s*(万|亿|兆)?/.exec(label) || [])[0] ?? ''
+    const sm = /([\d,.]+)\s*(万|亿|兆)?/.exec(stoneText)
+    const unit = sm?.[2] === '万' ? 1e4 : sm?.[2] === '亿' ? 1e8 : sm?.[2] === '兆' ? 1e12 : 1
+    const wantStone = sm ? parseFloat(sm[1].replace(/,/g, '')) * unit : NaN
+    if (!/灵石/.test(label)) {
+      failures.push(`[390] 炼化场景:按钮只写了悟道、没写灵石 —— 实际两种都要扣(「${label}」)`)
+    }
+    const before = await readWal()
+    await btn.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(400)
+    const after = await readWal()
+    if (before && after) {
+      if (before.wudao - after.wudao !== wantWudao) {
+        failures.push(`[390] 炼化场景:按钮写悟道 ${wantWudao},实际 ${before.wudao} → ${after.wudao}`)
+      }
+      // 灵石是浮点(stoneByTier 会乘倍率),比较留一点容差
+      if (!(Math.abs(before.stone - after.stone - wantStone) < 0.01)) {
+        failures.push(`[390] 炼化场景:按钮写灵石 ${wantStone},实际 ${before.stone} → ${after.stone}`)
+      }
+      console.log(`\n法宝炼化:「${label}」→ 悟道 ${before.wudao} → ${after.wudao} · 灵石 ${before.stone} → ${after.stone}`)
+    } else {
+      failures.push('[390] 炼化场景:读不到资源分片(判据没跑到东西)')
+    }
+  }
+  if (pageErrors.length) failures.push(`[390] 炼化场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
 // ---- 第二十三件事:洞府营造的账目 —— 卡上写多少料,就扣多少料 ----
 /*
  * 洞府是中期最主要的一处灵石去处,卡上写着「建造 · 60石 6铁」。
@@ -1724,12 +1808,30 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(600)
   // 「出发」先开模式窗:此行欲作何打算
   await page.locator('.modal-panel button', { hasText: /寻常游历/ }).first().click({ timeout: 3000 }).catch(() => {})
+  /*
+   * 把这一页拉到前台:后台页面的定时器会被浏览器节流(setInterval 从 1 秒拖到 1 分钟),
+   * 而引擎的心跳正是 1 秒一拍 —— 实测不拉前台时,45 秒里一场都没打(「胜 0 场」)。
+   */
+  await page.bringToFront()
   // 首战间隔 12 秒 ÷ 历练速度,故最多等 30 秒
   let summary = ''
   let logLines = 0
   let lastTail = ''
-  for (let i = 0; i < 45 && !summary; i += 1) {
+  for (let i = 0; i < 60 && !summary; i += 1) {
     await page.waitForTimeout(1000)
+    /*
+     * 历练的第一步未必是战斗:引擎每个战斗槽位都会先掷一次「际遇」,中了就弹事件窗,
+     * 而事件窗挡着战斗(超时才会自动按默认选项处理)—— 实测这就是「等了 45 秒 0 场」的原因。
+     * 故这里遇到事件窗就当场选第一个选项把它了结,让历练继续往下走。
+     */
+    const modalChoice = page.locator('.modal-panel button').nth(0)
+    if ((await page.locator('.modal-panel').count()) > 0 && (await modalChoice.count()) > 0) {
+      const evTitle = await page.evaluate(() => (document.querySelector('.modal-panel h3')?.textContent || '').trim())
+      await modalChoice.click({ timeout: 2000 }).catch(() => {})
+      console.log(`  (历练中遇到际遇「${evTitle}」,已按第一个选项了结,继续等战斗)`)
+      await page.waitForTimeout(600)
+      continue
+    }
     const info = await page.evaluate(() => {
       const text = document.querySelector('main')?.innerText || ''
       return {
@@ -1745,7 +1847,7 @@ for (const vp of VIEWPORTS) {
     if (i === 0 && !info.running) failures.push('[390] 战斗场景:点了「出发」并择了模式,历练却没跑起来')
   }
   // 首战间隔 12 秒 ÷ 历练速度;45 秒还没等到,就把当前页面写进报告(「搜寻猎物中」还是「胜 N 场」一看便知)
-  if (!summary) failures.push(`[390] 战斗场景:等了 45 秒也没等到一场的结语(战报回放没走完?) 当前页面:${lastTail}`)
+  if (!summary) failures.push(`[390] 战斗场景:等了 60 秒也没等到一场的结语(战报回放没走完?) 当前页面:${lastTail}`)
   else {
     if (logLines === 0) failures.push('[390] 战斗场景:有结语却没有战报行(回放没出内容)')
     if (!/胜|负/.test(summary)) failures.push(`[390] 战斗场景:结语没写清胜负 —— ${summary}`)
