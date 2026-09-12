@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 113,
+  "round": 114,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T01:28:24+00:00",
+  "updated_at": "2026-09-12T01:31:54+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 111,
+      "touched_round": 113,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -5708,6 +5708,67 @@
       "touched_round": 113,
       "summary": "偶发红久拖不决,往往不是难修,而是**证据不足**:断言只留一个计数、不留「谁写的、从哪写的」,于是每次失败都只能重开一轮猜测。对不可复现的偶发缺陷,先做的是加埋点(调用栈/来源标记),让下一次发生自带线索 —— 这比继续撞运气有效",
       "confidence": 0.85
+    },
+    "ISS-086": {
+      "id": "ISS-086",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:31:45+00:00",
+      "updated_at": "2026-09-12T01:31:54+00:00",
+      "touched_round": 113,
+      "summary": "旧档迁移链路零覆盖:存档 v1→v2 改过法宝位(单→多),而启动时的 migrateLocalSchema 与导入时的 migrate 两条路都没有任何用例 —— 迁移写坏不会报错,只会「悄悄少一件东西」(法宝位空着)或「旧字段永远留在档里反复参与迁移」",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "TASK-077": {
+      "id": "TASK-077",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T01:31:45+00:00",
+      "updated_at": "2026-09-12T01:31:54+00:00",
+      "touched_round": 113,
+      "summary": "给旧档迁移补红线:v1 值搬进新字段且旧字段清掉、幂等、垃圾值归空;启动路径(旧明文档升级后落密文、垃圾分片不动不抛);导入路径(v1 存档导得进来、运行时无旧字段);另钉「其它分片仍是明文的老档也读得出来」",
+      "category": "robustness",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-093": {
+      "id": "EV-093",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:31:46+00:00",
+      "updated_at": "2026-09-12T01:31:46+00:00",
+      "touched_round": 113,
+      "summary": "saveMigration.spec 7 例;两次注入(迁移丢值 → 4 条红;迁移只搬不加密 → 密文那条红)各转红;实测现行迁移正确(值搬到位、旧字段清掉、幂等、v1 导入成功),故本轮交付的是守卫而非修复;全量 139 文件 1410 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/saveMigration.spec.ts"
+    },
+    "HYP-041": {
+      "id": "HYP-041",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:31:46+00:00",
+      "updated_at": "2026-09-12T01:31:46+00:00",
+      "touched_round": 113,
+      "summary": "迁移路径是最容易「零覆盖」的一类代码:它只在旧档上执行,开发时手边全是新档,而写坏的后果又是静默的(少一件东西、旧字段残留)。判据应钉三条:值搬到位、旧字段清掉、跑第二遍不变样 —— 第三条尤其便宜,它同时挡住「迁移写成累加」这类错误",
+      "confidence": 0.85
+    },
+    "CHG-136": {
+      "id": "CHG-136",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T01:31:53+00:00",
+      "updated_at": "2026-09-12T01:31:53+00:00",
+      "touched_round": 113,
+      "summary": "新增 saveMigration.spec(7 例):v1→v2 法宝位迁移的值/清字段/幂等/垃圾值,启动路径(旧明文档升级落密文、垃圾分片不动),导入路径(v1 存档导得进来),以及明文老档的可读性;登记进 Regression 分类",
+      "commit": "5336d1a"
     }
   },
   "edges": [
@@ -8177,6 +8238,36 @@
       "to": "HYP-040",
       "type": "validates",
       "created_at": "2026-09-12T01:28:24+00:00"
+    },
+    {
+      "from": "ISS-086",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T01:31:53+00:00"
+    },
+    {
+      "from": "TASK-077",
+      "to": "ISS-086",
+      "type": "addresses",
+      "created_at": "2026-09-12T01:31:53+00:00"
+    },
+    {
+      "from": "CHG-136",
+      "to": "TASK-077",
+      "type": "implements",
+      "created_at": "2026-09-12T01:31:54+00:00"
+    },
+    {
+      "from": "CHG-136",
+      "to": "ISS-086",
+      "type": "resolves",
+      "created_at": "2026-09-12T01:31:54+00:00"
+    },
+    {
+      "from": "EV-093",
+      "to": "HYP-041",
+      "type": "validates",
+      "created_at": "2026-09-12T01:31:54+00:00"
     }
   ]
 }
