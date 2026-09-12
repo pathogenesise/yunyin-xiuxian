@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 146,
+  "round": 147,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T11:19:09+00:00",
+  "updated_at": "2026-09-12T11:38:45+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 145,
+      "touched_round": 146,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -7851,6 +7851,67 @@
       "touched_round": 145,
       "summary": "「丢档前唯一的保险」这类操作,失败必须比成功更显眼:它成功时浏览器自己会给反馈(下载条),失败时却什么都没有 —— 于是静默失败恰好发生在最需要知道的那一刻。凡是「保命」操作,都要有一条判据把它的失败路径也走一遍",
       "confidence": 0.9
+    },
+    "ISS-123": {
+      "id": "ISS-123",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T11:38:40+00:00",
+      "updated_at": "2026-09-12T11:38:45+00:00",
+      "touched_round": 146,
+      "summary": "「切后台/离开页面时待刷存档立刻落盘」这条保命时机的接线没人端到端量过:单元用例测的是 flushSaveWrites 本身,而真正救命的是两个监听(visibilitychange→hidden 与 pagehide)究竟接上没有 —— 接不上,玩家切出去接个电话、回来时这一段时间就无声无息地没了",
+      "severity": 0.4,
+      "confidence": 0.95
+    },
+    "TASK-114": {
+      "id": "TASK-114",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T11:38:40+00:00",
+      "updated_at": "2026-09-12T11:38:40+00:00",
+      "touched_round": 146,
+      "summary": "补第十八件事:先确认节流在起作用(投脉后磁盘仍是旧值),再按真实时机触发 visibilitychange→hidden 与 pagehide,各要求磁盘追上页面",
+      "category": "maintainability",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 3
+    },
+    "CHG-171": {
+      "id": "CHG-171",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:38:41+00:00",
+      "updated_at": "2026-09-12T11:38:41+00:00",
+      "touched_round": 146,
+      "summary": "layout-check 增第十八件事(落盘时机:节流在起作用 → 切后台落盘 → pagehide 落盘),含解密分片核对磁盘值",
+      "commit": "90e744d"
+    },
+    "EV-128": {
+      "id": "EV-128",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:38:41+00:00",
+      "updated_at": "2026-09-12T11:38:41+00:00",
+      "touched_round": 146,
+      "summary": "实测读数:开局 100万 → 投脉后页面 98.16万(磁盘暂为旧值,节流中)→ 切后台落盘 · 再投一次 96.32万 → pagehide 落盘。注入读数:单独去掉 storage.ts 的监听仍绿(engine.onVisibility 也刷一次盘,两处互为兜底);两处一起去掉才红:「切后台之后磁盘还是 1000000,页面已是 98.16万 —— 待刷存档没落盘」。排版自检 93 组全绿",
+      "confidence:": 0.95,
+      "source": "scripts/layout-check.mjs",
+      "confidence": 1.0
+    },
+    "HYP-073": {
+      "id": "HYP-073",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T11:38:41+00:00",
+      "updated_at": "2026-09-12T11:38:41+00:00",
+      "touched_round": 146,
+      "summary": "判据要守「结果」而不是「某个实现」:同一次刷盘有两处监听互为兜底,盯「哪个监听还在」会误报;盯「切后台之后磁盘有没有追上页面」才是玩家真正要的那件事 —— 实现可以换,结果不能变",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -11454,6 +11515,36 @@
       "to": "HYP-072",
       "type": "validates",
       "created_at": "2026-09-12T11:19:09+00:00"
+    },
+    {
+      "from": "ISS-123",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-12T11:38:45+00:00"
+    },
+    {
+      "from": "TASK-114",
+      "to": "ISS-123",
+      "type": "addresses",
+      "created_at": "2026-09-12T11:38:45+00:00"
+    },
+    {
+      "from": "CHG-171",
+      "to": "TASK-114",
+      "type": "implements",
+      "created_at": "2026-09-12T11:38:45+00:00"
+    },
+    {
+      "from": "CHG-171",
+      "to": "ISS-123",
+      "type": "resolves",
+      "created_at": "2026-09-12T11:38:45+00:00"
+    },
+    {
+      "from": "EV-128",
+      "to": "HYP-073",
+      "type": "validates",
+      "created_at": "2026-09-12T11:38:45+00:00"
     }
   ]
 }
