@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 141,
+  "round": 142,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T09:37:05+00:00",
+  "updated_at": "2026-09-12T10:01:33+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 138,
+      "touched_round": 141,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -7525,6 +7525,66 @@
       "touched_round": 140,
       "summary": "验证「恢复」之前,先证明「改过了、而且改到盘上了」:否则「导入成功」与「那一下根本没写进去」在读数上完全一样(节流写盘让两者都显示旧值)。凡是对照类判据,都要先固定住被对照的那一项,再谈恢复",
       "confidence": 0.9
+    },
+    "ISS-117": {
+      "id": "ISS-117",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T10:01:10+00:00",
+      "updated_at": "2026-09-12T10:01:33+00:00",
+      "touched_round": 141,
+      "summary": "「长数字 + 满屏内容 + 最窄屏」这个组合没量过:主巡页在 320 用的是刚建号的空档(数字短、内容少),而后期档此前只在 390 量过 —— 九位数灵石配上两件法宝/器魂/在途秘境那一版,撑破 320 是最常见的事故形态",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-108": {
+      "id": "TASK-108",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T10:01:10+00:00",
+      "updated_at": "2026-09-12T10:01:10+00:00",
+      "touched_round": 141,
+      "summary": "后期档补一遍 320 巡页(15 条路由,与 390 共用 measurePage/problemsOf);同一份夹具两处复用,播种加只种一次的闸",
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "CHG-166": {
+      "id": "CHG-166",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:01:10+00:00",
+      "updated_at": "2026-09-12T10:01:10+00:00",
+      "touched_round": 141,
+      "summary": "layout-check 后期档增 320 窄屏巡页(15 路由);夹具 payload 提出来复用,播种统一加 __layoutSeeded 闸",
+      "commit": "ad1de04"
+    },
+    "EV-123": {
+      "id": "EV-123",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:01:10+00:00",
+      "updated_at": "2026-09-12T10:01:10+00:00",
+      "touched_round": 141,
+      "summary": "实测:320 后期档 15 页全绿(防回归)。故障注入:把秘境「此地规则」那行钉成 600px → 「[390-late] /adventure → 越界元素:p.mt-1@633」与「[320-late] /adventure → 越界元素:p.mt-1@633」同时红。另一处读数:先把顶栏数值放大到 18px 时没红 —— 顶栏本来就会截断收敛,说明这条判据不是「随便塞点东西就红」的脆判据。修回后 89 组全绿;全量 146 文件 1441 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "scripts/layout-check.mjs"
+    },
+    "HYP-068": {
+      "id": "HYP-068",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:01:10+00:00",
+      "updated_at": "2026-09-12T10:01:10+00:00",
+      "touched_round": 141,
+      "summary": "覆盖面要按**组合**算,不是按维度各来一遍就够:档位(空/后期)× 宽度(390/375/320)× 页面三者相乘,缺哪一格就漏哪一格。检查单上「每个维度都覆盖了」并不等于「每个组合都覆盖了」",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -10954,6 +11014,36 @@
       "to": "HYP-067",
       "type": "validates",
       "created_at": "2026-09-12T09:37:05+00:00"
+    },
+    {
+      "from": "ISS-117",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T10:01:33+00:00"
+    },
+    {
+      "from": "TASK-108",
+      "to": "ISS-117",
+      "type": "addresses",
+      "created_at": "2026-09-12T10:01:33+00:00"
+    },
+    {
+      "from": "CHG-166",
+      "to": "TASK-108",
+      "type": "implements",
+      "created_at": "2026-09-12T10:01:33+00:00"
+    },
+    {
+      "from": "CHG-166",
+      "to": "ISS-117",
+      "type": "resolves",
+      "created_at": "2026-09-12T10:01:33+00:00"
+    },
+    {
+      "from": "EV-123",
+      "to": "HYP-068",
+      "type": "validates",
+      "created_at": "2026-09-12T10:01:33+00:00"
     }
   ]
 }
