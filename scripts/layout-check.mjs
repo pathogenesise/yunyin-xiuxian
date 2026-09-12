@@ -68,6 +68,35 @@ const browser = await chromium.launch({ args: ['--allow-file-access-from-files',
 const failures = []
 let checked = 0
 
+/**
+ * 弹窗**里面**的控件也要过页面上那两条尺子:有可访问名、不小于 28px。
+ *
+ * 逐页巡的那一遍只量得到页面上摆着的东西 —— 弹窗没打开就不存在,于是这两条
+ * 判据一直没有覆盖弹窗内部。实测漏掉的有:共享的关闭键(一枚图标、无名、
+ * 内外边距加起来 26px,每个弹窗都有它)、纯文字按钮「立契」(18px)、
+ * 行内链接(命中区只有字体那 14px)。故这里量弹窗自己。
+ */
+async function auditModalControls(page) {
+  return page.evaluate(() => {
+    const panel = document.querySelector('.modal-panel')
+    if (!panel) return null
+    const rows = [...panel.querySelectorAll('button, a, [role=button]')]
+      .map(el => {
+        const r = el.getBoundingClientRect()
+        return {
+          name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 14),
+          h: Math.round(r.height)
+        }
+      })
+      .filter(r => r.h > 0)
+    return {
+      count: rows.length,
+      unnamed: rows.filter(r => !r.name).map(r => `${r.h}px`),
+      small: rows.filter(r => r.h < 28).map(r => `${r.h}px «${r.name || '无名'}»`)
+    }
+  })
+}
+
 for (const vp of VIEWPORTS) {
   const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr })
   const pageErrors = []
@@ -76,6 +105,14 @@ for (const vp of VIEWPORTS) {
   await page.goto(INDEX, { waitUntil: 'load' })
   // 建号:同意隐私 → 传送门(约 2.5s)→ 命名 → 踏入仙途
   await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  // 隐私弹窗也是弹窗:它的控件同样要过那两条尺子(页面上巡不到它)
+  {
+    const audit = await auditModalControls(page)
+    checked += 1
+    if (!audit || audit.count === 0) failures.push(`[${vp.tag}] 隐私弹窗里一个控件都没数到,判据没跑到东西`)
+    if (audit?.unnamed.length) failures.push(`[${vp.tag}] 隐私弹窗里有 ${audit.unnamed.length} 个无名控件`)
+    if (audit?.small.length) failures.push(`[${vp.tag}] 隐私弹窗里可点元素过小:${audit.small.join(' | ')}`)
+  }
   await page.locator('input[type=checkbox]').first().check()
   await page.getByRole('button', { name: /同意并开始/ }).first().click()
   await page.waitForTimeout(3200)
@@ -290,6 +327,12 @@ for (const vp of VIEWPORTS) {
   checked += 1
   if (opened.role !== 'dialog' || opened.modal !== 'true') failures.push('[375] 弹窗没有 dialog 语义(role/aria-modal)')
   if (!opened.inside) failures.push('[375] 弹窗打开后焦点没进去 —— 键盘用户不知道弹窗开了')
+
+  const inModal = await auditModalControls(page)
+  checked += 1
+  if (!inModal || inModal.count === 0) failures.push('[375] 弹窗场景:面板里一个控件都没数到,判据没跑到东西')
+  if (inModal?.unnamed.length) failures.push(`[375] 弹窗场景:面板里有 ${inModal.unnamed.length} 个无名控件(读屏只会念「按钮」)`)
+  if (inModal?.small.length) failures.push(`[375] 弹窗场景:面板里可点元素过小:${inModal.small.join(' | ')}`)
 
   // 连按六次 Tab:焦点必须一直在弹窗里(此前会一路跑到页面与底部导航)
   let escaped = false

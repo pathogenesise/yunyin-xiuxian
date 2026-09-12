@@ -52,7 +52,13 @@
         <h4 class="mb-0.5 font-kai text-[13px] text-ink">七、联系我们</h4>
         <p class="text-ink-faint">
           若有疑问,可通过
-          <a href="https://github.com/setube/yunyin-xiuxian/issues" target="_blank" rel="noopener noreferrer" class="text-azure">
+          <!-- 同上:行内链接的命中区要够拇指点,不能只有字体那十几 px -->
+          <a
+            href="https://github.com/setube/yunyin-xiuxian/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block py-1.5 text-azure"
+          >
             GitHub Issues
           </a>
           反馈。

@@ -20,7 +20,17 @@
           <!-- 卷轴上缘 -->
           <header v-if="props.title || props.closable" class="relative z-10 flex items-center justify-between px-5 pt-4 pb-1 shrink-0">
             <h3 class="font-kai text-lg tracking-[0.2em] text-ink">{{ props.title }}</h3>
-            <button v-if="props.closable" class="p-1 -m-1 text-ink-faint active:scale-90" @click="emit('close')">
+            <!--
+              关闭键此前只有一枚图标:读屏只念「按钮」(没有可访问名),
+              而且连内外边距只有 26px —— 拇指够得着的那条线是 28px。
+              补 aria-label 与 30px 触面(负外边距抵消,视觉位置不动)。
+            -->
+            <button
+              v-if="props.closable"
+              class="p-1.5 -m-1.5 text-ink-faint active:scale-90"
+              aria-label="关闭"
+              @click="emit('close')"
+            >
               <GameIcon name="x" :size="18" />
             </button>
           </header>

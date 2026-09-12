@@ -240,7 +240,14 @@
             {{ signedTrial ? `此生已立「${signedTrial.name}」·${signedTrial.ruleText}` : '以道果换一世逆境,所得唯有履历一笔' }}
           </span>
         </span>
-        <button v-if="!signedTrial" class="shrink-0 text-[12px] text-gold-ink underline underline-offset-2 active:text-cinnabar" @click="trialOpen = true">立契</button>
+        <!-- 拇指够得着:纯文字按钮只有 18px 高,补成 30px(弹窗里的可点元素同样受 28px 那条约束) -->
+        <button
+          v-if="!signedTrial"
+          class="shrink-0 self-center -my-1.5 px-2 py-1.5 text-[12px] text-gold-ink underline underline-offset-2 active:text-cinnabar"
+          @click="trialOpen = true"
+        >
+          立契
+        </button>
         <span v-else class="shrink-0 font-kai text-[15px] text-cinnabar">{{ signedTrial.seal }}</span>
       </p>
 
