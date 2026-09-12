@@ -58,6 +58,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   const dongfu = useDongfuStore()
   const cultivation = useCultivationStore()
   const adventure = useAdventureStore()
+  const endgameStore = useEndgameStore()
   const ui = useUiStore()
 
   if (!game.started || player.dead) return null
@@ -242,6 +243,17 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   }
   if (player.expFull) notes.push('修为已至圆满,可尝试突破')
   if (summary.ageYears > 0) notes.push(`闭关期间寿元流逝 ${summary.ageYears} 载`)
+
+  /**
+   * 在途的一次性内容**原样冻结** —— 这一点玩家看不见,得说一句。
+   *
+   * 秘境与远征都不会在缺席期间偷偷推进(见 offlineScope.spec:离线只动 exp/age/bond),
+   * 但玩家回来只看到一屏资源,很容易以为「我不在的时候那趟远征是不是黄了」。
+   * 故凡有在途内容,归来卷轴上就明说一句:它还等着你。
+   */
+  const inFlight = player as unknown as { secretRealm?: unknown }
+  if (inFlight.secretRealm) notes.push('秘境之行原样留着 —— 层数、气血与规则都未变,回来接着走')
+  if (endgameStore.worldRun) notes.push('那趟远征仍在途 —— 层数与战绩原样留着,回来接着走')
 
   if (dtSec >= OFFLINE_MODAL_MIN_SECONDS) {
     track('offlineClaims')

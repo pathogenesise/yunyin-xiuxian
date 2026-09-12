@@ -170,5 +170,28 @@ describe('离线的作用域 · 在途的东西一律不动', () => {
     expect(summary!.ageYears, '寿元没流逝').toBeGreaterThan(50)
     expect(summary!.qi, '灵气没回充').toBeGreaterThan(0)
     expect(resources.herb + resources.ore + resources.wudao, '产线一条没动').toBeGreaterThan(0)
+
+    /**
+     * 冻结要**说出来**,不能只做不说。
+     *
+     * 玩家回来只看到一屏资源,很容易以为「我不在的时候那趟远征是不是黄了」。
+     * 故凡有在途内容,归来卷轴就得有一句交代 —— 这也让「冻结」从实现细节
+     * 变成玩家看得见的承诺。
+     */
+    const notes = summary!.notes.join('\n')
+    expect(notes, '在途秘境被冻住了,却没跟玩家说').toContain('秘境之行原样留着')
+    expect(notes, '在途远征被冻住了,却没跟玩家说').toContain('那趟远征仍在途')
+  })
+
+  it('没有在途内容时,不该凭空说有人等着', () => {
+    const player = usePlayerStore()
+    const game = useGameStore()
+    game.markStarted()
+    game.lastActiveAt = Date.now() - 3 * HOUR
+    player.major = 3
+    const summary = settleOffline(Date.now())!
+    const notes = summary.notes.join('\n')
+    expect(notes).not.toContain('秘境之行原样留着')
+    expect(notes).not.toContain('那趟远征仍在途')
   })
 })
