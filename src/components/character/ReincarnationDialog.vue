@@ -1,6 +1,6 @@
 <template>
   <!-- 死亡提示 -->
-  <BaseModal :open="ui.deathDialog && !view" :closable="false">
+  <BaseModal :open="ui.deathDialog && !view" :closable="false" aria-label="寿元将尽">
     <div class="text-center">
       <p class="mt-2 font-kai text-2xl tracking-[0.4em] text-ink">寿元将尽</p>
       <p class="mt-3 text-[13px] leading-relaxed text-ink-soft">

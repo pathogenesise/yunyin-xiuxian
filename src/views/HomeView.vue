@@ -111,8 +111,8 @@
       <span class="shrink-0 text-[12px] text-ink-faint">›</span>
     </button>
 
-    <!-- 灵脉弹窗:组件自带标题卡,弹窗标题留空避免重复 -->
-    <BaseModal :open="veinOpen" title="" wide @close="veinOpen = false">
+    <!-- 灵脉弹窗:组件自带标题卡,故不画标题;但对话框自己仍要有可访问名 -->
+    <BaseModal :open="veinOpen" title="" aria-label="灵脉" wide @close="veinOpen = false">
       <VeinInvestCard />
       <template #footer>
         <button class="btn-seal w-full" @click="veinOpen = false">收 起</button>

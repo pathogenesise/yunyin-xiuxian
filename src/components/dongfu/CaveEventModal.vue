@@ -2,7 +2,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getCurrentCaveEvent, chooseCaveOption, dismissCaveEvent } from '@/core/earlyGameService'
 import type { CaveEvent } from '@/types'
+import BaseModal from '@/components/common/BaseModal.vue'
 
+/*
+ * 洞府巡游 —— 与顿悟同一个毛病(自己铺 fixed inset-0):没有 dialog 语义、
+ * 没有焦点管理、样式也自成一套。改用 BaseModal,行为一字不改:
+ * 秒数照刷、到点由引擎收场、「离开」= 关掉即散(背板/Esc/关闭键同义)。
+ */
 const event = ref<CaveEvent | null>(null)
 const remaining = ref(0)
 let timer: number | undefined
@@ -48,59 +54,26 @@ const locationLabel = computed(() =>
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="show"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4"
-        @click.self="handleIgnore"
+  <BaseModal :open="show" title="洞府巡游" @close="handleIgnore">
+    <p class="flex items-center justify-between text-[11px] text-ink-faint">
+      <span class="chip-ink !py-0 text-[10px] text-jade">{{ locationLabel }}</span>
+      <span class="tabular text-gold-ink">{{ remaining }} 秒后自散</span>
+    </p>
+    <p class="mt-3 font-kai text-[14px] tracking-widest text-ink">{{ event?.title }}</p>
+    <p class="mt-1 text-[12px] leading-relaxed text-ink-soft">{{ event?.desc }}</p>
+    <div class="mt-3 space-y-2">
+      <button
+        v-for="(opt, idx) in event?.options ?? []"
+        :key="idx"
+        class="w-full rounded-lg border border-ink/25 px-4 py-2.5 text-left transition-all active:scale-98 active:bg-ink/5"
+        @click="handleChoose(idx)"
       >
-        <div class="w-full max-w-md space-y-4 rounded-lg border border-ink/20 bg-paper p-6 shadow-xl">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <h3 class="text-lg font-bold text-ink">洞府巡游</h3>
-              <span class="rounded bg-jade/15 px-2 py-0.5 text-xs text-jade">{{
-                locationLabel
-              }}</span>
-            </div>
-            <span class="text-sm text-ink/50">{{ remaining }}秒</span>
-          </div>
-          <div class="space-y-2">
-            <h4 class="font-semibold text-ink">{{ event?.title }}</h4>
-            <p class="text-sm text-ink/70">{{ event?.desc }}</p>
-          </div>
-          <div class="space-y-2">
-            <button
-              v-for="(opt, idx) in event?.options ?? []"
-              :key="idx"
-              class="w-full rounded border border-ink/15 bg-paper px-4 py-3 text-left transition hover:border-jade hover:bg-jade/5"
-              @click="handleChoose(idx)"
-            >
-              <div class="flex items-start justify-between">
-                <span class="font-semibold text-ink">{{ opt.label }}</span>
-              </div>
-              <div class="mt-1 text-sm text-ink/60">{{ opt.effect }}</div>
-            </button>
-          </div>
-          <button
-            class="w-full rounded bg-ink/10 px-4 py-2 text-sm text-ink/70 transition hover:bg-ink/20"
-            @click="handleIgnore"
-          >
-            离开(今日不再巡游)
-          </button>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+        <span class="block font-kai text-[14px] tracking-widest text-ink">{{ opt.label }}</span>
+        <span class="mt-0.5 block text-[11px] leading-relaxed text-ink-faint">{{ opt.effect }}</span>
+      </button>
+    </div>
+    <template #footer>
+      <button class="btn-ghost w-full" @click="handleIgnore">离 开(今日不再巡游)</button>
+    </template>
+  </BaseModal>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>

@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :open="summary !== null" :closable="false">
+  <BaseModal :open="summary !== null" :closable="false" aria-label="离线归来结算">
     <div v-if="summary" class="text-center">
       <p class="font-kai text-2xl tracking-[0.5em] text-ink mt-1 animate-ink-pop">归 来</p>
       <p class="mt-2 text-[12px] text-ink-faint">

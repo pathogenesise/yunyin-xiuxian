@@ -11,7 +11,7 @@
           ref="panelRef"
           role="dialog"
           aria-modal="true"
-          :aria-label="props.title || undefined"
+          :aria-label="props.ariaLabel || props.title || undefined"
           tabindex="-1"
           class="modal-panel paper-grain relative w-full max-h-[82vh] flex flex-col overflow-hidden rounded-xl border border-ink/20 bg-paper shadow-2xl outline-none"
           :class="props.wide ? 'max-w-100' : 'max-w-90'"
@@ -56,10 +56,18 @@
       title?: string
       closable?: boolean
       wide?: boolean
+      /**
+       * 无标题弹窗的可访问名。
+       *
+       * 有的弹窗自带一张大标题卡(归来 / 寿元将尽 / 突破结果 / 灵脉),
+       * 再让 BaseModal 画一遍标题就是重复。但**对话框自己**总得有个名字 ——
+       * 不给的话 role=dialog 读出来就是光秃秃一句「对话框」。
+       */
+      ariaLabel?: string
       /** 顶层弹窗:叠在普通弹窗(z-50)之上,用于详情盖列表等场景 */
       top?: boolean
     }>(),
-    { title: '', closable: true, wide: false, top: false }
+    { title: '', closable: true, wide: false, top: false, ariaLabel: '' }
   )
 
   const emit = defineEmits<{ close: [] }>()

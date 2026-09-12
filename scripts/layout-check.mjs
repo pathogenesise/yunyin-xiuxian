@@ -18,6 +18,8 @@
  *   六 Tab 焦点看得见(全局 :focus-visible 是否有实际轮廓);
  *   七 浮出来的提示条点得掉 —— 它挂着 @click 关掉自己,不能被外框的
  *      pointer-events:none 继承掉(继承了就永远只能等超时)。
+ *   八 引擎按概率触发的两扇弹窗(顿悟 / 洞府巡游):把概率钉成必中再量一遍 ——
+ *      它们正常巡页碰不到,正是最容易悄悄退回「自己铺一层浮层」的角落。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -91,6 +93,8 @@ async function auditModalControls(page) {
       .filter(r => r.h > 0)
     return {
       count: rows.length,
+      // 对话框自己也得有个名字:读屏遇到 role=dialog 要念得出是哪一扇
+      label: (panel.getAttribute('aria-label') || panel.querySelector('h3')?.textContent || '').trim(),
       unnamed: rows.filter(r => !r.name).map(r => `${r.h}px`),
       small: rows.filter(r => r.h < 28).map(r => `${r.h}px «${r.name || '无名'}»`)
     }
@@ -110,6 +114,7 @@ for (const vp of VIEWPORTS) {
     const audit = await auditModalControls(page)
     checked += 1
     if (!audit || audit.count === 0) failures.push(`[${vp.tag}] 隐私弹窗里一个控件都没数到,判据没跑到东西`)
+    if (audit && !audit.label) failures.push(`[${vp.tag}] 隐私弹窗没有可访问名(读屏只会念「对话框」)`)
     if (audit?.unnamed.length) failures.push(`[${vp.tag}] 隐私弹窗里有 ${audit.unnamed.length} 个无名控件`)
     if (audit?.small.length) failures.push(`[${vp.tag}] 隐私弹窗里可点元素过小:${audit.small.join(' | ')}`)
   }
@@ -331,6 +336,7 @@ for (const vp of VIEWPORTS) {
   const inModal = await auditModalControls(page)
   checked += 1
   if (!inModal || inModal.count === 0) failures.push('[375] 弹窗场景:面板里一个控件都没数到,判据没跑到东西')
+  if (inModal && !inModal.label) failures.push('[375] 弹窗场景:对话框没有可访问名(读屏只会念「对话框」)')
   if (inModal?.unnamed.length) failures.push(`[375] 弹窗场景:面板里有 ${inModal.unnamed.length} 个无名控件(读屏只会念「按钮」)`)
   if (inModal?.small.length) failures.push(`[375] 弹窗场景:面板里可点元素过小:${inModal.small.join(' | ')}`)
 
@@ -452,11 +458,69 @@ for (const vp of VIEWPORTS) {
   await page.close()
 }
 
+// ---- 第八件事:引擎按概率触发的两扇弹窗(顿悟 / 洞府巡游) ----
+/*
+ * 这两扇由引擎自己掷概率弹出(顿悟 8% × 境界存在感、巡游每日一次),
+ * 正常巡页永远碰不到;而它们此前是自己铺的 fixed inset-0,没有 dialog 语义、
+ * 没有焦点管理。故这里把 Math.random 钉成 0 让那一掷必中 —— 下一次引擎心跳
+ * 就会摆上来,然后按弹窗那套尺子量一遍。夹具只作用于测试页,不动生产代码
+ * (注意 RandomService 在构造时就抓住了 Math.random 的函数引用,故引擎其余部分
+ * 的随机数不受影响)。
+ */
+{
+  const page = await browser.newPage({ viewport: { width: 375, height: 812 } })
+  const pageErrors = []
+  page.on('pageerror', e => pageErrors.push(String(e).slice(0, 160)))
+  await page.goto(INDEX, { waitUntil: 'load' })
+  await page.getByRole('button', { name: /开\s*始\s*游\s*戏/ }).first().click()
+  await page.locator('input[type=checkbox]').first().check()
+  await page.getByRole('button', { name: /同意并开始/ }).first().click()
+  await page.waitForTimeout(3200)
+  await page.locator('input:not([type=file]):not([type=checkbox])').first().fill('引擎事件自检')
+  await page.getByRole('button', { name: /踏\s*入\s*仙\s*途/ }).first().click()
+  await page.waitForTimeout(1500)
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll('.pointer-events-none.fixed button')) b.click()
+    Math.random = () => 0
+  })
+  const seen = new Map()
+  for (let i = 0; i < 40 && seen.size < 2; i += 1) {
+    await page.waitForTimeout(500)
+    const info = await page.evaluate(() => {
+      const panel = document.querySelector('.modal-panel')
+      if (!panel) return null
+      return {
+        title: (panel.querySelector('h3')?.textContent || '').trim() || '(无标题)',
+        label: panel.getAttribute('aria-label'),
+        role: panel.getAttribute('role'),
+        controls: [...panel.querySelectorAll('button, a, [role=button]')]
+          .map(el => ({ name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 14), h: Math.round(el.getBoundingClientRect().height) }))
+          .filter(c => c.h > 0)
+      }
+    })
+    if (info && !seen.has(info.title)) {
+      seen.set(info.title, info)
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(600)
+    }
+  }
+  checked += 1
+  if (seen.size === 0) failures.push('[375] 引擎事件场景:概率钉成必中之后,两扇弹窗一扇都没浮出来(触发接线断了?)')
+  for (const [title, info] of seen) {
+    if (info.role !== 'dialog') failures.push(`[375] 「${title}」没有 dialog 语义(role=${info.role})`)
+    if (!info.label) failures.push(`[375] 「${title}」没有可访问名`)
+    const bad = info.controls.filter(c => !c.name || c.h < 28)
+    if (bad.length) failures.push(`[375] 「${title}」里有 ${bad.length} 个控件不合格:${bad.map(c => `${c.h}px «${c.name || '无名'}»`).join(' | ')}`)
+  }
+  if (pageErrors.length) failures.push(`[375] 引擎事件场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await page.close()
+}
+
 await browser.close()
 console.log(`\n排版自检:${checked} 个页面 × 视口组合`)
 if (failures.length === 0) {
   console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全、控件有名且不小于 28px、选择项有选中态')
-  console.log('✓ 提示条点得掉、弹窗焦点与外壳偏移都正常')
+  console.log('✓ 提示条点得掉、弹窗焦点与外壳偏移正常、引擎事件弹窗也过同一套尺子')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {
   for (const f of failures) console.log(`✗ ${f}`)
