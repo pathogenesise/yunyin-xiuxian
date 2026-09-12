@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 142,
+  "round": 143,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T10:01:33+00:00",
+  "updated_at": "2026-09-12T10:24:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 127,
+      "touched_round": 142,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 135,
+      "touched_round": 142,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -7585,6 +7585,92 @@
       "touched_round": 141,
       "summary": "覆盖面要按**组合**算,不是按维度各来一遍就够:档位(空/后期)× 宽度(390/375/320)× 页面三者相乘,缺哪一格就漏哪一格。检查单上「每个维度都覆盖了」并不等于「每个组合都覆盖了」",
       "confidence": 0.85
+    },
+    "ISS-118": {
+      "id": "ISS-118",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:15+00:00",
+      "touched_round": 142,
+      "summary": "天道试炼(第三条终局产线)从没被真浏览器驱动过:秘境与远征都真点过了,只有它一直只在单元用例里跑 —— 应试按下之后战报开不开、写没写清结果,没人看过",
+      "severity": 0.25,
+      "confidence": 0.95
+    },
+    "ISS-119": {
+      "id": "ISS-119",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:15+00:00",
+      "touched_round": 142,
+      "summary": "法宝主动说明里手写的回合数没人与 active.interval 对账:33 件法宝的文案各写各的(「每 4 回合青莲护身…」vs 数据里的 4),改一处忘另一处不会有任何报错 —— 玩家照着文案数回合,只会觉得对不上,而没有任何地方能告诉他哪个是对的",
+      "severity": 0.3,
+      "confidence": 0.95
+    },
+    "TASK-109": {
+      "id": "TASK-109",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:10+00:00",
+      "touched_round": 142,
+      "summary": "天道试炼真打一次:切试炼册 → 按应试 → 战报须开出、写清全捷/止步第 N 战、不漏占位符;切册前先收浮层并在有残留时点名",
+      "category": "maintainability",
+      "severity": 0.25,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-110": {
+      "id": "TASK-110",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:10+00:00",
+      "touched_round": 142,
+      "summary": "法宝说明里的「每 N 回合」必须等于 active.interval(32 件受检,净念作为随身被动例外并写明理由)",
+      "category": "content-consistency",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "CHG-167": {
+      "id": "CHG-167",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:10+00:00",
+      "touched_round": 142,
+      "summary": "layout-check 后期档增「天道试炼应试」(切册前 clearOverlays);artifactEffects.spec 增「说明回合数=节拍」用例(33 件法宝,净念例外)",
+      "commit": "2d2c2c9"
+    },
+    "EV-124": {
+      "id": "EV-124",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:10+00:00",
+      "touched_round": 142,
+      "summary": "试炼读数:点了「应 试(道源 15 · 功成得 45)」→ 战报「七杀试炼」· 七杀试炼 7 战全捷,共 82 回合;故障注入(goTrial 不开战报)→ 「没有开出战报」红。法宝对账:32 件受检全对(唯一例外净念已写明);故障注入(神雷珠 interval 3→4)→ 「说明写「每 3 回合」,节拍却是 4」红。修回后排版自检 90 组全绿,全量 146 文件 1442 用例、tsc/eslint 全绿",
+      "confidence": 0.95,
+      "source": "src/core/artifactEffects.spec.ts"
+    },
+    "HYP-069": {
+      "id": "HYP-069",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-12T10:24:10+00:00",
+      "touched_round": 142,
+      "summary": "说明里写死的数字也是「声明」:凡是文案与数据各写一份的地方(「每 4 回合」vs interval、「回复五成」vs 0.5),都要有一条能解析出来的对账判据 —— 否则改一处忘另一处永远不会报错,而玩家不会去猜哪个是对的",
+      "confidence": 0.85
     }
   },
   "edges": [
@@ -11044,6 +11130,60 @@
       "to": "HYP-068",
       "type": "validates",
       "created_at": "2026-09-12T10:01:33+00:00"
+    },
+    {
+      "from": "ISS-118",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-12T10:24:14+00:00"
+    },
+    {
+      "from": "ISS-119",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-12T10:24:14+00:00"
+    },
+    {
+      "from": "TASK-109",
+      "to": "ISS-118",
+      "type": "addresses",
+      "created_at": "2026-09-12T10:24:14+00:00"
+    },
+    {
+      "from": "TASK-110",
+      "to": "ISS-119",
+      "type": "addresses",
+      "created_at": "2026-09-12T10:24:14+00:00"
+    },
+    {
+      "from": "CHG-167",
+      "to": "TASK-109",
+      "type": "implements",
+      "created_at": "2026-09-12T10:24:14+00:00"
+    },
+    {
+      "from": "CHG-167",
+      "to": "TASK-110",
+      "type": "implements",
+      "created_at": "2026-09-12T10:24:15+00:00"
+    },
+    {
+      "from": "CHG-167",
+      "to": "ISS-118",
+      "type": "resolves",
+      "created_at": "2026-09-12T10:24:15+00:00"
+    },
+    {
+      "from": "CHG-167",
+      "to": "ISS-119",
+      "type": "resolves",
+      "created_at": "2026-09-12T10:24:15+00:00"
+    },
+    {
+      "from": "EV-124",
+      "to": "HYP-069",
+      "type": "validates",
+      "created_at": "2026-09-12T10:24:15+00:00"
     }
   ]
 }
