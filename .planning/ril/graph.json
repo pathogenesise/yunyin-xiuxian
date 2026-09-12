@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 109,
+  "round": 110,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T00:35:32+00:00",
+  "updated_at": "2026-09-12T00:48:58+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 90,
+      "touched_round": 109,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -5502,6 +5502,67 @@
       "touched_round": 108,
       "summary": "新增 importCorruption.spec(9 例):信封合法但分片为垃圾的导入路全链路验证(校验/落盘/水合/修形),覆盖 8 种坏法;登记进 Regression 分类",
       "commit": "703dd3d"
+    },
+    "ISS-083": {
+      "id": "ISS-083",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:39:55+00:00",
+      "updated_at": "2026-09-12T00:48:58+00:00",
+      "touched_round": 109,
+      "summary": "离线总结漏账:归来弹窗报了修为/灵石/灵草/玄铁/悟道点/战斗/际遇/回收化尘,却没提**灵气回充**(白得的)与**寿元流逝**(要命的 —— 寿元归零就死,而玩家只会发现「怎么忽然老了」);离线结算本身改了这两项,只是没人报",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2
+    },
+    "TASK-074": {
+      "id": "TASK-074",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T00:39:55+00:00",
+      "updated_at": "2026-09-12T00:48:58+00:00",
+      "touched_round": 109,
+      "summary": "离线总结补两项:灵气回充(记实际差额)与寿元流逝(年),弹窗各成一行/一句;新增离线对账红线「变动了多少就报多少,且每项变动都有交代」",
+      "category": "core-feature",
+      "severity": 0.3,
+      "confidence": 0.85,
+      "effort": 2
+    },
+    "EV-089": {
+      "id": "EV-089",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:40:00+00:00",
+      "updated_at": "2026-09-12T00:40:00+00:00",
+      "touched_round": 109,
+      "summary": "offlineLedger.spec 2 例:60 小时归来逐项对账(灵气/灵草/玄铁/悟道/寿元 的摘要值 = 实际差额;战斗 14832 场、寿元 -60 载如实),以及封顶档同样「报的就是实际差额」;注入验证(ageYears 记 0 → 红;herb 多报 1000 → 红);弹窗新增「灵气 +X」一行,notes 增「闭关期间寿元流逝 N 载」;全量 137 文件 1400 用例绿",
+      "confidence": 0.9,
+      "source": "src/core/offlineLedger.spec.ts"
+    },
+    "HYP-037": {
+      "id": "HYP-037",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:40:00+00:00",
+      "updated_at": "2026-09-12T00:40:00+00:00",
+      "touched_round": 109,
+      "summary": "「离线总结」是可对账的:结算改了什么,摘要就得报什么 —— 拿每个资源的前后差去对摘要里报的数(受上限约束的取实际差额),并要求「凡变动过的都有交代」。这比逐项检查文案更硬:漏一项就会露馅,多报一项也会",
+      "confidence": 0.85
+    },
+    "CHG-133": {
+      "id": "CHG-133",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T00:48:58+00:00",
+      "updated_at": "2026-09-12T00:48:58+00:00",
+      "touched_round": 109,
+      "summary": "OfflineSummary 增 qi(实际差额)与 ageYears;offline.ts 记两项实时差;归来弹窗加「灵气 +X」行与「寿元流逝 N 载」说明;新增 offlineLedger.spec(2 例)并登记进 Economy 分类",
+      "commit": "471b043"
     }
   },
   "edges": [
@@ -7875,6 +7936,36 @@
       "to": "HYP-036",
       "type": "validates",
       "created_at": "2026-09-12T00:35:32+00:00"
+    },
+    {
+      "from": "ISS-083",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-12T00:48:58+00:00"
+    },
+    {
+      "from": "TASK-074",
+      "to": "ISS-083",
+      "type": "addresses",
+      "created_at": "2026-09-12T00:48:58+00:00"
+    },
+    {
+      "from": "CHG-133",
+      "to": "TASK-074",
+      "type": "implements",
+      "created_at": "2026-09-12T00:48:58+00:00"
+    },
+    {
+      "from": "CHG-133",
+      "to": "ISS-083",
+      "type": "resolves",
+      "created_at": "2026-09-12T00:48:58+00:00"
+    },
+    {
+      "from": "EV-089",
+      "to": "HYP-037",
+      "type": "validates",
+      "created_at": "2026-09-12T00:48:58+00:00"
     }
   ]
 }
