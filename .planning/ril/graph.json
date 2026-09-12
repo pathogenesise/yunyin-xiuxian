@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 130,
+  "round": 131,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T06:00:02+00:00",
+  "updated_at": "2026-09-12T06:18:00+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 129,
+      "touched_round": 130,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -6875,6 +6875,66 @@
       "summary": "修前读数:关闭键 26px 且无名(每个弹窗)、立契 18px、仓库链接 14px、隐私政策链接 17px。修后排版自检 53 组全绿(较上轮 +4:隐私弹窗 ×3 + 关于弹窗)。故障注入:还原关闭键 → 「面板里有 1 个无名控件」+「26px «无名»」红;还原仓库链接 → 「14px «github.com/set»」红。全量 144 文件 1433 用例、界面冒烟 15 页、tsc/eslint 全绿",
       "confidence": 0.95,
       "source": "scripts/layout-check.mjs"
+    },
+    "ISS-106": {
+      "id": "ISS-106",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-12T06:17:56+00:00",
+      "updated_at": "2026-09-12T06:18:00+00:00",
+      "touched_round": 130,
+      "summary": "两扇引擎按概率触发的弹窗(悟道顿悟 / 洞府巡游)是自己铺的全屏浮层:没有 role=dialog/aria-modal、没有焦点管理、样式自成一套 —— 而弹窗焦点契约与「控件要有名/≥28px」两条尺子都挂在 BaseModal 上,自己铺浮层等于同时退出三套保障,截图上看不出来。另有四个弹窗(灵脉/离线归来/寿元将尽/突破结果)自带大标题卡故 title 留空,结果 role=dialog 没有可访问名,读屏只念「对话框」",
+      "severity": 0.35,
+      "confidence": 0.95
+    },
+    "TASK-097": {
+      "id": "TASK-097",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-12T06:17:56+00:00",
+      "updated_at": "2026-09-12T06:17:56+00:00",
+      "touched_round": 130,
+      "summary": "浮层只留一个出处:两扇弹窗改走 BaseModal;BaseModal 增 ariaLabel 给无标题弹窗一个名字;判据写在源码层(uiLayering.spec)与真浏览器层(排版自检第八件事:概率钉成必中再量)",
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 4
+    },
+    "CHG-156": {
+      "id": "CHG-156",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T06:17:56+00:00",
+      "updated_at": "2026-09-12T06:17:56+00:00",
+      "touched_round": 130,
+      "summary": "EnlightenmentModal/CaveEventModal 改用 BaseModal(行为不变:到点由引擎收场,背板/Esc/关闭键=忽略);BaseModal 增 ariaLabel 并用它做 aria-label;灵脉/归来/寿元将尽/突破结果各补名字;新增 uiLayering.spec(浮层唯一出处·弹窗要有名·弹窗要关得掉);layout-check 增第八件事",
+      "commit": "f1c3083"
+    },
+    "HYP-057": {
+      "id": "HYP-057",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T06:17:56+00:00",
+      "updated_at": "2026-09-12T06:17:56+00:00",
+      "touched_round": 130,
+      "summary": "界面分层也可以有红线:凡是自己铺全屏浮层的组件,会自动同时退出多套挂在共享组件上的保障(语义/焦点/控件尺子),而这些代价在截图与渲染层面都看不出来 —— 故判据要盯源码结构(谁铺了浮层),再配合真浏览器把「打开才存在」的界面量一遍",
+      "confidence": 0.85
+    },
+    "EV-112": {
+      "id": "EV-112",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-12T06:17:56+00:00",
+      "updated_at": "2026-09-12T06:17:56+00:00",
+      "touched_round": 130,
+      "summary": "改造后真浏览器读数:两扇弹窗 role=dialog、aria-label 分别为「悟道顿悟」「洞府巡游」,选项按钮 59px、忽略/离开 41px、关闭键 28px 且有名。排版自检 54 组全绿(新增第八件事);全量 145 文件 1436 用例、界面冒烟 15 页、tsc/eslint 全绿。故障注入三处:自铺浮层的探测文件 → 「全屏浮层出处:BaseModal + 越界的 1 个」红;删掉灵脉 aria-label → 「没有名字」红;删掉 @close → 「关不掉」红",
+      "confidence": 0.95,
+      "source": "src/core/uiLayering.spec.ts"
     }
   },
   "edges": [
@@ -9938,6 +9998,36 @@
       "to": "HYP-056",
       "type": "validates",
       "created_at": "2026-09-12T06:00:02+00:00"
+    },
+    {
+      "from": "ISS-106",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-12T06:18:00+00:00"
+    },
+    {
+      "from": "TASK-097",
+      "to": "ISS-106",
+      "type": "addresses",
+      "created_at": "2026-09-12T06:18:00+00:00"
+    },
+    {
+      "from": "CHG-156",
+      "to": "TASK-097",
+      "type": "implements",
+      "created_at": "2026-09-12T06:18:00+00:00"
+    },
+    {
+      "from": "CHG-156",
+      "to": "ISS-106",
+      "type": "resolves",
+      "created_at": "2026-09-12T06:18:00+00:00"
+    },
+    {
+      "from": "EV-112",
+      "to": "HYP-057",
+      "type": "validates",
+      "created_at": "2026-09-12T06:18:00+00:00"
     }
   ]
 }
