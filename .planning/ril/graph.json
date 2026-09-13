@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 166,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T14:29:20+00:00",
+  "updated_at": "2026-09-13T14:33:53+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9377,6 +9377,30 @@
       "source": "src/core/reforge.spec.ts",
       "summary": "修复实证:上限测试用 REFORGE_MAX_COUNT 而非字面量;新增『组件不再出现 /10 · 已封存 内联』判据。全量 1480/type/lint 绿",
       "confidence": 1.0
+    },
+    "EV-156": {
+      "id": "EV-156",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:32:42+00:00",
+      "updated_at": "2026-09-13T14:32:42+00:00",
+      "touched_round": 166,
+      "source": "src/core/offline.ts:154,168·src/core/loot.ts:54-104",
+      "summary": "核验:离线每胜保底产生 dust(wins*0.3)且溢出装备按 *4 折算(offline.ts:154,168);在线 afterWin/acquireEquipment 无任何平直尘产线——离线尘埃存在系统性冗余但无 spec 断言、git 历史被改写无法确证是设计红利还是走查遗漏",
+      "confidence": 1.0
+    },
+    "DEC-031": {
+      "id": "DEC-031",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:33:53+00:00",
+      "updated_at": "2026-09-13T14:33:53+00:00",
+      "touched_round": 166,
+      "rationale": "离线尘埃(每胜0.3 + 溢出按*4)比在线(仅分解/化尘)系统性多,疑为『离线白挂也要有保底产物』的设计红利,也可能是不小心的一致性走查遗漏;但改它=资金经济调整,需产品确认离线是否该比在线多尘。故本轮只记账立档,不擅改经济。",
+      "alternatives_rejected": "直接删除/砍半离线尘(会对挂机经济造成不可见缩水);把在线也加平直尘产线(放大在线经济,影响战场价值)",
+      "summary": "离线尘埃经济差异暂缓立档:每胜0.3尘+溢出*4 疑为设计红利,改与不改均涉及经济平衡,留待产品回合确认(DEC-024『先问既有层』+可回滚原则)"
     }
   },
   "edges": [
