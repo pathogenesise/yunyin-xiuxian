@@ -20,11 +20,10 @@ import {
 } from '@/data/constants'
 import { makeEnemySnap, resolveCombat, sampleWinRate } from './combat'
 import { buildPlayerSnap } from './playerSnap'
-import { currentDaoRules } from './endgameService'
 import { generateEquipment } from './equipGen'
 import { acquireEquipment, afterWin } from './loot'
-import { autoResolveEvent } from './eventEngine'
-import { clearRegionAndUnlockNext, exploreEventChance, dangerFactorFor } from './exploration'
+import { autoResolveEvent, regionEventPoolFor } from './eventEngine'
+import { clearRegionAndUnlockNext, exploreEventChance, dangerFactorFor, explorationRules } from './exploration'
 import { currentRegionEvent, regionEventDef } from './regionEvent'
 import { placeContent } from './mortalWorldService'
 import { stoneByTier } from './formulas'
@@ -47,6 +46,12 @@ import { useQuestsStore } from '@/stores/quests'
 import { useEndgameStore } from '@/stores/endgame'
 import { useLoadoutsStore } from '@/stores/loadouts'
 import { useSettingsStore } from '@/stores/settings'
+
+/**
+ * 离线事件兜底池:世界标签不命中公共事件池时的默认通用际遇。
+ * 一律取无代价、可幂等自动结算的 general 事件(在线在绝大多数字段地界也能遇到)。
+ */
+const DEFAULT_OFFLINE_EVENT_IDS = ['ev_spring', 'ev_herb_garden', 'ev_night_talk', 'ev_falling_star', 'ev_old_man']
 
 /**
  * 结算离线收益
@@ -134,8 +139,10 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         const mobId = rng.pick([...placeContent(region.id).enemies])
         const mobDef = enemyDef(mobId)
         const dangerFactor = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
+        // 与在线同源:道途规则 × 本世逆旅契(explorationRules)一并生效——
+        // 从前离线只带 currentDaoRules,四张逆旅契的加难在本世最大时段里落空
         const winRate = mobDef
-          ? sampleWinRate(buildPlayerSnap(), makeEnemySnap(mobDef, region.tier, dangerFactor), rng, 3, currentDaoRules())
+          ? sampleWinRate(buildPlayerSnap(), makeEnemySnap(mobDef, region.tier, dangerFactor), rng, 3, explorationRules())
           : 0.3
         wins = Math.round(battles * winRate)
 
@@ -176,13 +183,19 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       }
       // 事件按默认选项自动结算
       const evCap = Math.min(events, 40)
+      // 与在线同源:事件也取自本世路线节点(regionEventPoolFor 尊重世界标签/境界门槛/once),
+      // 敌群早就走 placeContent 了,事件不能再用硬编码通用池另算一套。
+      // 机缘/奇缘那类带代价选择的不做离线替选(在线可拒,离线不能替玩家拍板),
+      // 故不用 pickEventFor 的完整分支;空池时兜底默认通用际遇
+      const worldEventTags = [...placeContent(region.id).eventTags]
+      let offlineEventPool = regionEventPoolFor({ ...region, eventTags: worldEventTags }).map(ev => ev.id)
+      if (offlineEventPool.length === 0) offlineEventPool = DEFAULT_OFFLINE_EVENT_IDS
       for (let i = 0; i < evCap; i += 1) {
         if (adventure.pendingEventId) {
           autoResolveEvent(adventure.pendingEventId, region.tier)
           adventure.setPendingEvent(null, nowMs)
         } else {
-          const pool = ['ev_spring', 'ev_herb_garden', 'ev_night_talk', 'ev_falling_star', 'ev_old_man']
-          autoResolveEvent(rng.pick(pool), region.tier)
+          autoResolveEvent(rng.pick(offlineEventPool), region.tier)
         }
       }
       // 事件只实际结算了 evCap 个;events 此前按全程估算,超额部分只是"路上料到"、
@@ -194,7 +207,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         const bossDef = enemyDef(placeContent(region.id).boss)
         if (bossDef) {
           const bossDanger = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
-          const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, currentDaoRules())
+          const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, explorationRules())
           if (bossResult.win) {
             afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT, true)
             track('kills')

@@ -1,7 +1,7 @@
 /**
  * 历练服务 —— 历练会话 / 遭遇循环 / 战斗与事件调度
  */
-import type { AdventureSession, ExploreMode } from '@/types'
+import type { AdventureSession, CombatRules, ExploreMode } from '@/types'
 import { rng } from '@/utils/random'
 import { add, gnZero } from '@/utils/gnum'
 import { enemyDef } from '@/data/enemies'
@@ -152,6 +152,16 @@ export function dangerFactorFor(
   return modeDangerMult * (1 + (regionDanger - 1) * 0.05) * petDangerMult * eventDanger
 }
 
+/**
+ * 历练战斗规则 —— 在线/离线唯一实现(与 dangerFactorFor 同一条判据:HYP-015,
+ * 同一件事两处算法必漏一处,抽成一个函数)。道途规则 × 本世逆旅契。
+ * 从前只有在线合并逆旅契,离线结算(普通战/boss战)只带 currentDaoRules,
+ * 「孤行/疾行/残躯/逆锋」四契的加难在本世最大的时段(离线挂机)里完全不生效。
+ */
+export function explorationRules(): CombatRules | undefined {
+  return mergeRules(currentDaoRules(), lifeTrialRules())
+}
+
 /** 战斗遭遇(含首领判定) */
 function runBattle(now: number): void {
   const adventure = useAdventureStore()
@@ -191,7 +201,7 @@ function runBattle(now: number): void {
   const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor)
   // 道途在世,一切战斗皆循此规则
   // 逆旅契:本世签下的契对每一场历练战斗生效(道果的非效率出口)
-  const result = resolveCombat(pSnap, eSnap, rng, mergeRules(currentDaoRules(), lifeTrialRules()))
+  const result = resolveCombat(pSnap, eSnap, rng, explorationRules())
   // Phase 32.5:「独行」之誓看的是有没有真的祭出法宝,不是有没有法宝在身
   if (useInventoryStore().equippedArtifacts.length > 0) noteTaboo('artifact')
 
