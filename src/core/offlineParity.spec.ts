@@ -52,5 +52,22 @@ describe('离线历练 · 事件池与在线同源(本世路线)', () => {
     const offline = readFileSync(src('./offline.ts'), 'utf8')
     expect(offline).toContain('regionEventPoolFor')
     expect(offline).toContain('placeContent(region.id).eventTags')
+    // 但世界事件不能无条件自动结算:身份/永久构筑类(pet/gongfa/artifact/lifespan)
+    // 会被 isOfflineSafeEvent 拦下 —— 它在离线作用域红线段言(offlineScope)里被真实验证
+    expect(offline).toContain('isOfflineSafeEvent')
+    expect(offline).toContain('OFFLINE_SAFE_EFFECTS')
+  })
+})
+
+describe('离线历练 · 区域事件加丰与加难成对(regReward)', () => {
+  it('离线普通战与首领战的奖励都并上 regionEventReward,不再只有危险', () => {
+    const offline = readFileSync(src('./offline.ts'), 'utf8')
+    // 与 danger 同源:妖潮/古墓/商队在加难的同时也加丰(奖励倍率进石头/修为/掉落数)
+    expect(offline).toContain('regionEventReward')
+    expect(offline).toMatch(
+      /afterWin\(region, modeDef\.rewardMult \* OFFLINE_BOSS_REWARD_MULT \* regionEventReward, true\)/
+    )
+    expect(offline).toContain('modeDef.rewardMult * regionEventReward')
+    expect(offline).toContain('EQUIP_DROP_CHANCE * regionEventReward')
   })
 })

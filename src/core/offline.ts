@@ -2,7 +2,7 @@
  * 离线结算 —— 「归来」系统
  * 与在线 Tick 共用同一套公式,按封顶时长折算收益
  */
-import type { OfflineSummary } from '@/types'
+import type { EventDef, OfflineSummary } from '@/types'
 import { gn, isZero, mulN, sub } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { rng } from '@/utils/random'
@@ -52,6 +52,18 @@ import { useSettingsStore } from '@/stores/settings'
  * 一律取无代价、可幂等自动结算的 general 事件(在线在绝大多数字段地界也能遇到)。
  */
 const DEFAULT_OFFLINE_EVENT_IDS = ['ev_spring', 'ev_herb_garden', 'ev_night_talk', 'ev_falling_star', 'ev_old_man']
+
+/**
+ * 在线有取舍的事件效果类(身份/永久构筑):离线的自动结算**不得替玩家拍板**。
+ * 灵兽认主(pet)、习得功法(gongfa)、收下法宝(artifact)、加寿元(lifespan)
+ * 在线都默许玩家亲手取舍 —— 缺席几小时回来发现灵兽/功法/古宝变了,比少拿点收益难受得多。
+ * 放行的是与默认通用池同族的:资源/修为/材料/丹药/装备/时效 buff(offlineScope 红线段言里
+ * 唯一受保护的是玩家分片,这里按「无拍板后果」一刀切,连法宝这类收进囊中的也不替做)。
+ */
+const OFFLINE_SAFE_EFFECTS = new Set(['stone', 'exp', 'material', 'equipment', 'pill', 'buff', 'nothing'])
+function isOfflineSafeEvent(ev: EventDef): boolean {
+  return ev.choices.every(c => c.outcomes.every(o => o.effects.every(e => OFFLINE_SAFE_EFFECTS.has(e.type))))
+}
 
 /**
  * 结算离线收益
@@ -121,9 +133,12 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       // 与在线同源:灵兽性格 × 区域事件(妖潮)修正危险,普通战与首领战共用——
       // 从前离线两处都漏,「好战更易走险路 / 谨慎避祸」离线毫无作用
       const petDangerMult = personalityEffects(player.petId).dangerMult
-      const regionEventDanger = currentRegionEvent(region.id)
-        ? regionEventDef(currentRegionEvent(region.id)!.eventId)?.dangerMult ?? 1
-        : 1
+      // 与在线同源:区域事件(妖潮/古墓/商队)同时改两件事 —— 危险(dangerMult)与加丰(rewardMult)。
+      // 危险侧此前已接进离线;奖励侧漏了的话,事件就只剩「更难」没有「更丰」——
+      // 在线 afterWin 每次取胜都乘 rewardMult,离线这里读同一份 regionEventDef,一次读两用
+      const regEvent = currentRegionEvent(region.id)
+      const regionEventDanger = regEvent ? (regionEventDef(regEvent.eventId)?.dangerMult ?? 1) : 1
+      const regionEventReward = regEvent ? (regionEventDef(regEvent.eventId)?.rewardMult ?? 1) : 1
       const remainSec = Math.max(0, (session.endsAt - (nowMs - dtSec * 1000)) / 1000)
       const simSec = Math.min(capSec, remainSec)
       const mods = player.finalStats.mods
@@ -146,10 +161,15 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           : 0.3
         wins = Math.round(battles * winRate)
 
-        // 灵石与修为
-        const stoneGain = stoneByTier(region.tier, 10 * wins * modeDef.rewardMult * (1 + modOf(mods, 'spiritStoneGain')))
+        // 灵石与修为 —— 与在线 afterWin 同源:取胜奖励乘区域事件加丰倍率(rewardMult)
+        const stoneGain = stoneByTier(
+          region.tier,
+          10 * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'spiritStoneGain'))
+        )
         resources.addStone(stoneGain)
-        player.gainExp(mulN(player.expReq, BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * (1 + modOf(mods, 'expGain'))))
+        player.gainExp(
+          mulN(player.expReq, BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')))
+        )
         // 材料 —— 离线也会撞见新灵材,只是次数封顶,免得回来一屏 toast
         const herbGain = Math.round(wins * 1.0)
         const oreGain = Math.round(wins * 0.5)
@@ -159,8 +179,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         harvestMaterials(region.tier, 'ore', oreGain)
         resources.addSmall('page', Math.round(wins * 0.15))
         resources.addSmall('dust', Math.round(wins * 0.3))
-        // 装备:最多实际生成 6 件,其余折算为器灵尘
-        const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * (1 + modOf(mods, 'dropRate')))
+        // 装备:最多实际生成 6 件,其余折算为器灵尘(掉落数与在线同源,乘事件加丰)
+        const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * regionEventReward * (1 + modOf(mods, 'dropRate')))
         const realCount = Math.min(6, equipCount)
         for (let i = 0; i < realCount; i += 1) {
           // 灵兽性格同样管离线掉落:贪宝更易稀出,谨慎稍稍寻常(与在线 afterWin 同源)
@@ -188,7 +208,9 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       // 机缘/奇缘那类带代价选择的不做离线替选(在线可拒,离线不能替玩家拍板),
       // 故不用 pickEventFor 的完整分支;空池时兜底默认通用际遇
       const worldEventTags = [...placeContent(region.id).eventTags]
-      let offlineEventPool = regionEventPoolFor({ ...region, eventTags: worldEventTags }).map(ev => ev.id)
+      let offlineEventPool = regionEventPoolFor({ ...region, eventTags: worldEventTags })
+        .filter(isOfflineSafeEvent)
+        .map(ev => ev.id)
       if (offlineEventPool.length === 0) offlineEventPool = DEFAULT_OFFLINE_EVENT_IDS
       for (let i = 0; i < evCap; i += 1) {
         if (adventure.pendingEventId) {
@@ -209,7 +231,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           const bossDanger = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
           const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, explorationRules())
           if (bossResult.win) {
-            afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT, true)
+            // 首领战奖励同样并入事件加丰倍率(在线 boss 也是 mode×regReward,离线再叠收益折损)
+            afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true)
             track('kills')
             track('bossKills')
             clearRegionAndUnlockNext(region.id)
