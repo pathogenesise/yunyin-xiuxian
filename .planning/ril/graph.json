@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 166,
+  "round": 167,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T14:33:53+00:00",
+  "updated_at": "2026-09-13T23:11:56+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 165,
+      "touched_round": 167,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -9401,6 +9401,71 @@
       "rationale": "离线尘埃(每胜0.3 + 溢出按*4)比在线(仅分解/化尘)系统性多,疑为『离线白挂也要有保底产物』的设计红利,也可能是不小心的一致性走查遗漏;但改它=资金经济调整,需产品确认离线是否该比在线多尘。故本轮只记账立档,不擅改经济。",
       "alternatives_rejected": "直接删除/砍半离线尘(会对挂机经济造成不可见缩水);把在线也加平直尘产线(放大在线经济,影响战场价值)",
       "summary": "离线尘埃经济差异暂缓立档:每胜0.3尘+溢出*4 疑为设计红利,改与不改均涉及经济平衡,留待产品回合确认(DEC-024『先问既有层』+可回滚原则)"
+    },
+    "ISS-151": {
+      "id": "ISS-151",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:06:30+00:00",
+      "updated_at": "2026-09-13T23:11:56+00:00",
+      "touched_round": 167,
+      "summary": "离线历练战斗不合并逆旅契(lifeTrialRules):settleOffline 普通战/首领战只传 currentDaoRules,四张契(孤行/疾行/残躯/逆锋)的加难在本世最大时段(离线)完全不生效——违反契约『本世历练全程生效』,同一本世同一地界离线胜率与在线系统性分叉",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "ISS-152": {
+      "id": "ISS-152",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:06:30+00:00",
+      "updated_at": "2026-09-13T23:11:56+00:00",
+      "touched_round": 167,
+      "summary": "离线事件自动结算用硬编码 5 事件池(ev_spring/herb_garden/night_talk/falling_star/old_man),不复用在线 regionEventPoolFor —— 本世 eventTags/minRealm/once 约束离线全不生效,与『敌群取自本世路线节点』处理不对称",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "TASK-141": {
+      "id": "TASK-141",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:06:30+00:00",
+      "updated_at": "2026-09-13T23:11:56+00:00",
+      "touched_round": 167,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1,
+      "summary": "抽 explorationRules() 同一实现(道途×逆旅契),在线 runBattle 与离线普通战/boss战共用;添加源码审计红线断言 offline 不再内联 currentDaoRules"
+    },
+    "TASK-142": {
+      "id": "TASK-142",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:06:30+00:00",
+      "updated_at": "2026-09-13T23:11:56+00:00",
+      "touched_round": 167,
+      "category": "correctness",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 1,
+      "summary": "离线事件池改走 placeContent(region.id).eventTags + regionEventPoolFor(尊重世界/境界/once),保留无代价默认池兜底;添加同源审计测试"
+    },
+    "CHG-191": {
+      "id": "CHG-191",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T23:11:13+00:00",
+      "updated_at": "2026-09-13T23:11:13+00:00",
+      "touched_round": 167,
+      "summary": "离线历练与在线规则同源:抽 explorationRules() 合并道途×逆旅契,离线普通战/boss战改用共用实现;离线事件池改走 placeContent 世界标签 + regionEventPoolFor(空池才兜底无代价默认事件);offlineParity.spec 新增 4 条审计+行为红线,全量 1484 测试/类型检查/lint 全绿",
+      "commit": "89c37f4"
     }
   },
   "edges": [
@@ -13808,6 +13873,54 @@
       "to": "HYP-091",
       "type": "validates",
       "created_at": "2026-09-13T14:26:16+00:00"
+    },
+    {
+      "from": "ISS-151",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-13T23:06:48+00:00"
+    },
+    {
+      "from": "ISS-152",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-13T23:06:49+00:00"
+    },
+    {
+      "from": "TASK-141",
+      "to": "ISS-151",
+      "type": "addresses",
+      "created_at": "2026-09-13T23:06:49+00:00"
+    },
+    {
+      "from": "TASK-142",
+      "to": "ISS-152",
+      "type": "addresses",
+      "created_at": "2026-09-13T23:06:49+00:00"
+    },
+    {
+      "from": "CHG-191",
+      "to": "ISS-151",
+      "type": "resolves",
+      "created_at": "2026-09-13T23:11:13+00:00"
+    },
+    {
+      "from": "CHG-191",
+      "to": "ISS-152",
+      "type": "resolves",
+      "created_at": "2026-09-13T23:11:14+00:00"
+    },
+    {
+      "from": "CHG-191",
+      "to": "TASK-141",
+      "type": "implements",
+      "created_at": "2026-09-13T23:11:14+00:00"
+    },
+    {
+      "from": "CHG-191",
+      "to": "TASK-142",
+      "type": "implements",
+      "created_at": "2026-09-13T23:11:14+00:00"
     }
   ]
 }
