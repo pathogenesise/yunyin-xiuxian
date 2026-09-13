@@ -135,6 +135,23 @@ export function stopExploration(reason: 'manual' | 'defeat' | 'complete'): void 
   }
 }
 
+/**
+ * 战斗危险因子 —— 在线/离线唯一实现(HYP-015:同源,禁内联复刻)。
+ *   base        = 历练模式倍率(normal 1 / deep 1.45 / risky 2.1)
+ *   地域差值    = 1 + (region.danger - 1) × 0.05(层级越险,敌越强)
+ *   灵兽性格    = petEff.dangerMult(好战 1.15 更高,谨慎 0.95 更低)
+ *   区域事件    = regEventDanger(妖潮更险),无事件为 1
+ * 四者相乘。离线曾漏后两项 —— 灵兽「好战/谨慎」与妖潮离线毫无作用。
+ */
+export function dangerFactorFor(
+  modeDangerMult: number,
+  regionDanger: number,
+  petDangerMult: number,
+  eventDanger: number
+): number {
+  return modeDangerMult * (1 + (regionDanger - 1) * 0.05) * petDangerMult * eventDanger
+}
+
 /** 战斗遭遇(含首领判定) */
 function runBattle(now: number): void {
   const adventure = useAdventureStore()
@@ -169,7 +186,7 @@ function runBattle(now: number): void {
   // Phase 31 A2:区域事件修正危险(妖潮更险)
   const regEv = currentRegionEvent(region.id)
   const regEventDanger = regEv ? (regionEventDef(regEv.eventId)?.dangerMult ?? 1) : 1
-  const dangerFactor = modeDef.dangerMult * (1 + (region.danger - 1) * 0.05) * petEff.dangerMult * regEventDanger
+  const dangerFactor = dangerFactorFor(modeDef.dangerMult, region.danger, petEff.dangerMult, regEventDanger)
   const pSnap = buildPlayerSnap()
   const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor)
   // 道途在世,一切战斗皆循此规则

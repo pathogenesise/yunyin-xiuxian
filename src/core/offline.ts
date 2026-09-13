@@ -24,7 +24,8 @@ import { currentDaoRules } from './endgameService'
 import { generateEquipment } from './equipGen'
 import { acquireEquipment, afterWin } from './loot'
 import { autoResolveEvent } from './eventEngine'
-import { clearRegionAndUnlockNext, exploreEventChance } from './exploration'
+import { clearRegionAndUnlockNext, exploreEventChance, dangerFactorFor } from './exploration'
+import { currentRegionEvent, regionEventDef } from './regionEvent'
 import { placeContent } from './mortalWorldService'
 import { stoneByTier } from './formulas'
 import { settleSuppressedRegions } from './suppress'
@@ -112,6 +113,12 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     const region = regionDef(session.regionId)
     if (region) {
       const modeDef = EXPLORE_MODES[session.mode]
+      // 与在线同源:灵兽性格 × 区域事件(妖潮)修正危险,普通战与首领战共用——
+      // 从前离线两处都漏,「好战更易走险路 / 谨慎避祸」离线毫无作用
+      const petDangerMult = personalityEffects(player.petId).dangerMult
+      const regionEventDanger = currentRegionEvent(region.id)
+        ? regionEventDef(currentRegionEvent(region.id)!.eventId)?.dangerMult ?? 1
+        : 1
       const remainSec = Math.max(0, (session.endsAt - (nowMs - dtSec * 1000)) / 1000)
       const simSec = Math.min(capSec, remainSec)
       const mods = player.finalStats.mods
@@ -126,7 +133,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         // 与在线同源:敌群取自本世路线节点
         const mobId = rng.pick([...placeContent(region.id).enemies])
         const mobDef = enemyDef(mobId)
-        const dangerFactor = modeDef.dangerMult * (1 + (region.danger - 1) * 0.05)
+        const dangerFactor = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
         const winRate = mobDef
           ? sampleWinRate(buildPlayerSnap(), makeEnemySnap(mobDef, region.tier, dangerFactor), rng, 3, currentDaoRules())
           : 0.3
@@ -186,8 +193,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       if (!adventure.cleared.includes(region.id) && wins >= 10) {
         const bossDef = enemyDef(placeContent(region.id).boss)
         if (bossDef) {
-          const dangerFactor = modeDef.dangerMult * (1 + (region.danger - 1) * 0.05)
-          const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, dangerFactor), rng, currentDaoRules())
+          const bossDanger = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
+          const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, currentDaoRules())
           if (bossResult.win) {
             afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT, true)
             track('kills')

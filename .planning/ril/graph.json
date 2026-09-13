@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 164,
+  "round": 165,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T13:02:57+00:00",
+  "updated_at": "2026-09-13T13:49:01+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 164,
+      "touched_round": 165,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -9235,6 +9235,54 @@
       "touched_round": 164,
       "commit": "03fae65",
       "summary": "astral 套装共鸣接入战斗:两件同套→开战护盾+5%(并入快照 shieldOnStart);astral.spec 3 例 + phase31LinkAudit 钩子物化对账判据;全量 1477 绿"
+    },
+    "EV-152": {
+      "id": "EV-152",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:40:55+00:00",
+      "updated_at": "2026-09-13T13:40:55+00:00",
+      "touched_round": 165,
+      "source": "src/core/exploration.ts:172·src/core/offline.ts:129,189",
+      "summary": "核验:在线 dangerFactor 含 petEff.dangerMult × regEventDanger,离线普通战与首领战两处都只写 modeDef.dangerMult*(1+(region.danger-1)*0.05)——灵兽性格『好战/谨慎』与妖潮离线全部落空,违背本模块『与在线同源』注释(星象修正先例)",
+      "confidence": 1.0
+    },
+    "HYP-090": {
+      "id": "HYP-090",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:42:32+00:00",
+      "updated_at": "2026-09-13T13:42:32+00:00",
+      "touched_round": 165,
+      "confidence": 0.9,
+      "summary": "离线危险因子漏两项修正不是设计而是遗漏:settleOffline 注释反复强调与在线同源(星象/敌群/表情性格均按在线),但 dangerFactor 两处仅乘 modeDef 与地界差值——灵兽性格与妖潮对离线战斗强度和胜率完全无效"
+    },
+    "ISS-149": {
+      "id": "ISS-149",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:47:19+00:00",
+      "updated_at": "2026-09-13T13:47:19+00:00",
+      "touched_round": 165,
+      "summary": "离线历练危险因子与在线不同源:离线普通战/首领战的 dangerFactor 漏乘灵兽性格(petEff.dangerMult)与区域事件(regEventDanger)——“好战更易走险路/谨慎避祸”离线不兑现,妖潮期间离线反而白过,违背同源初衷"
+    },
+    "TASK-139": {
+      "id": "TASK-139",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:47:19+00:00",
+      "updated_at": "2026-09-13T13:47:19+00:00",
+      "touched_round": 165,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "summary": "危险因子同源化:抽 dangerFactorFor(modeDangerMult,regionDanger,petDangerMult,eventDanger) 纯函数为唯一实现,在线 runBattle 离线普通/首领战四路统一调用;补“再无线内联常数”判据(HYP-015)"
     }
   },
   "edges": [
@@ -13570,6 +13618,24 @@
       "to": "TASK-137",
       "type": "implements",
       "created_at": "2026-09-13T13:02:57+00:00"
+    },
+    {
+      "from": "EV-152",
+      "to": "HYP-090",
+      "type": "validates",
+      "created_at": "2026-09-13T13:42:32+00:00"
+    },
+    {
+      "from": "TASK-139",
+      "to": "ISS-149",
+      "type": "addresses",
+      "created_at": "2026-09-13T13:49:01+00:00"
+    },
+    {
+      "from": "ISS-149",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-13T13:49:01+00:00"
     }
   ]
 }
