@@ -1,6 +1,9 @@
 /* eslint-disable no-console */
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { reforgeCost } from './reforge'
+import { REFORGE_MAX_COUNT } from '@/data/constants'
 import type { EquipmentInstance } from '@/types'
 
 // GNum 转 number(测试范围内不会溢出)
@@ -119,11 +122,20 @@ describe('Phase 30.5:重铸成本递增机制', () => {
     expect(ratio).toBeGreaterThan(360) // 理论547倍,实际365倍(GNum层级换算精度损失)
   })
 
-  it('达到上限(10次)后返回null', () => {
-    const maxed = { ...baseEquip, reforgeCount: 10 }
+  it('达到上限(REFORGE_MAX_COUNT)后返回null', () => {
+    const maxed = { ...baseEquip, reforgeCount: REFORGE_MAX_COUNT }
     const cost = reforgeCost(maxed)
     expect(cost).toBeNull()
-    console.log('\n  达到重铸上限10次后,成本返回null(无法继续重铸)')
+    console.log(`\n  达到重铸上限${REFORGE_MAX_COUNT}次后,成本返回null(无法继续重铸)`)
+  })
+
+  it('UI 展示次数分母引用同一常量,不写死数字(防漂移)', () => {
+    // 详情弹窗此前把「重铸次数 x/10」写死,改了 REFORGE_MAX_COUNT 界面却不变——
+    // 判定干到哪儿、展示止步于哪儿,会悄悄分成两个版本
+    const dialog = readFileSync(resolve(__dirname, '../components/equipment/EquipmentDetailDialog.vue'), 'utf8')
+    expect(dialog).toContain(`{{ REFORGE_MAX_COUNT }}`)
+    // 不再出现写死的「重铸次数 x/10」
+    expect(dialog).not.toContain(`/10 · 已封存`)
   })
 
   it('所有词条已封存时返回null', () => {

@@ -127,7 +127,7 @@
             </div>
           </div>
           <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
-            重铸次数 {{ inst.reforgeCount ?? 0 }}/10 · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ Math.max(0, inst.affixes.length - 1) }}
+            重铸次数 {{ inst.reforgeCount ?? 0 }}/{{ REFORGE_MAX_COUNT }} · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ Math.max(0, inst.affixes.length - 1) }}
           </p>
         </template>
         <div class="flex gap-2">
@@ -162,6 +162,7 @@
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
   import { reforgeEquipment, reforgeCost, sealAffix, sealCost } from '@/core/reforge'
+  import { REFORGE_MAX_COUNT } from '@/data/constants'
   import { usePlayerStore } from '@/stores/player'
   import { formatGN, formatPercent } from '@/utils/format'
   import { isZero, sub } from '@/utils/gnum'

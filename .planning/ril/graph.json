@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 165,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T13:52:43+00:00",
+  "updated_at": "2026-09-13T14:23:18+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 164,
+      "touched_round": 165,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -9306,6 +9306,54 @@
       "source": "src/core/battleFactor.spec.ts",
       "summary": "修复实证:纯函数四输入链乘正确;源码扫描断言 exploration/offline 都 import dangerFactorFor 且离线不再残留 (1+(region.danger-1)*0.05) 内联常数。全量 1479/type/lint 绿",
       "confidence": 1.0
+    },
+    "EV-154": {
+      "id": "EV-154",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:19:42+00:00",
+      "updated_at": "2026-09-13T14:19:42+00:00",
+      "touched_round": 165,
+      "source": "src/components/equipment/EquipmentDetailDialog.vue:130·src/data/constants.ts:190",
+      "summary": "核验:详情弹窗重铸次数分母写死 '/10',与 REFORGE_MAX_COUNT=10(constants.ts:190,reforge.ts:42 判定)分叉——改上限界面不变,是典型 UI/逻辑双版本漂移风险",
+      "confidence": 1.0
+    },
+    "HYP-091": {
+      "id": "HYP-091",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:19:42+00:00",
+      "updated_at": "2026-09-13T14:19:42+00:00",
+      "touched_round": 165,
+      "confidence": 0.95,
+      "summary": "炼器相关展示文案存在『写死数字』漂移风险:REFORGE_MAX_COUNT 已入常量表并被 reforge 判定引用,但组件 UI 仍内联 /10——凡数值走进 UI 又写死,判定与展示迟早分叉(HYP-013:手写清单守不住新字段/新数字)"
+    },
+    "ISS-150": {
+      "id": "ISS-150",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:21:13+00:00",
+      "updated_at": "2026-09-13T14:21:13+00:00",
+      "touched_round": 165,
+      "summary": "EquipmentDetailDialog 重铸次数分母写死 '/10',与 REFORGE_MAX_COUNT 判定分叉:改上限判定走常量、展示却停留旧值"
+    },
+    "TASK-140": {
+      "id": "TASK-140",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:21:13+00:00",
+      "updated_at": "2026-09-13T14:21:13+00:00",
+      "touched_round": 165,
+      "category": "maintainability",
+      "severity": 0.4,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "summary": "重铸上限称号化:EquipmentDetailDialog 分母改读 REFORGE_MAX_COUNT,reforge.spec 补防漂移判据(展示不得再现内联数字)"
     }
   },
   "edges": [
@@ -13677,6 +13725,24 @@
       "to": "HYP-090",
       "type": "validates",
       "created_at": "2026-09-13T13:52:43+00:00"
+    },
+    {
+      "from": "EV-154",
+      "to": "HYP-091",
+      "type": "validates",
+      "created_at": "2026-09-13T14:21:13+00:00"
+    },
+    {
+      "from": "TASK-140",
+      "to": "ISS-150",
+      "type": "addresses",
+      "created_at": "2026-09-13T14:23:18+00:00"
+    },
+    {
+      "from": "ISS-150",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-13T14:23:18+00:00"
     }
   ]
 }
