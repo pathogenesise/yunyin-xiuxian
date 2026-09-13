@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 162,
+  "round": 163,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-12T22:39:24+00:00",
+  "updated_at": "2026-09-13T07:47:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 156,
+      "touched_round": 162,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -9067,6 +9067,43 @@
       "summary": "远征/挑战(切磋/变数)的天界造敌口径暂缓统一:维持 finalStats 参照,不立刻改成 celestialStats+depth —— 世界 atkR 是按现行口径调校的,统一口径需连带重校敌我比值,留待产品/平衡回合",
       "rationale": "无器魂时三维均衡(forgeSoul 对 base-pct 透传),分叉仅在器魂配置下显现;对齐试炼口径会放大锐度又需重调 atkR,一次改动两处风险,先记不改",
       "alternatives_rejected": "仅把 expedition.fightStep 的 ref 换成 finalStats→celestialStats 单行改(未经数值复核,可能把远征难度整体踩穿);保留双轨(现状,但需平衡回合处理)"
+    },
+    "ISS-146": {
+      "id": "ISS-146",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T07:43:29+00:00",
+      "updated_at": "2026-09-13T07:46:53+00:00",
+      "touched_round": 162,
+      "summary": "智能收纳未启用时,历练掉落凡品/良品仍被自动回收:shouldAutoRecycle 的「一键分解勾选档」路径(decomposeRanks)不受 smartKeep.enabled 约束,而设置默认勾选 [0,1]——默认配置(未开智能收纳)下凡品/良品装备拾取即化尘,玩家并未授权",
+      "severity": 0.55,
+      "confidence": 0.95
+    },
+    "TASK-136": {
+      "id": "TASK-136",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T07:43:58+00:00",
+      "updated_at": "2026-09-13T07:46:53+00:00",
+      "touched_round": 162,
+      "category": "correctness",
+      "summary": "shouldAutoRecycle 以 smartKeep.enabled 做总闸:未启用一律不自动回收(历练/挂机掉落照常入包);一键分解勾选档改为「开启收纳后的显式废料声明」;同步 InventoryView 一键分解帮助文案与 loot/smartKeep 测试",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 2
+    },
+    "CHG-187": {
+      "id": "CHG-187",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T07:46:15+00:00",
+      "updated_at": "2026-09-13T07:46:15+00:00",
+      "touched_round": 162,
+      "summary": "智能收纳总闸:shouldAutoRecycle 未启用 smartKeep.enabled 一律 false;一键分解勾选档改为开启收纳后的废料声明;InventoryView 一键分解帮助文案更新;loot.spec 2 例、smartKeep.spec 1 例全量 1473 通过",
+      "commit": "62ec1e7"
     }
   },
   "edges": [
@@ -13318,6 +13355,30 @@
       "to": "COMP-006",
       "type": "governs",
       "created_at": "2026-09-12T22:39:24+00:00"
+    },
+    {
+      "from": "ISS-146",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-13T07:44:57+00:00"
+    },
+    {
+      "from": "TASK-136",
+      "to": "ISS-146",
+      "type": "addresses",
+      "created_at": "2026-09-13T07:44:57+00:00"
+    },
+    {
+      "from": "CHG-187",
+      "to": "TASK-136",
+      "type": "implements",
+      "created_at": "2026-09-13T07:46:53+00:00"
+    },
+    {
+      "from": "CHG-187",
+      "to": "ISS-146",
+      "type": "resolves",
+      "created_at": "2026-09-13T07:46:53+00:00"
     }
   ]
 }
