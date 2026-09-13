@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 163,
+  "round": 164,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T07:47:22+00:00",
+  "updated_at": "2026-09-13T13:02:57+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 162,
+      "touched_round": 164,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 128,
+      "touched_round": 164,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -9104,6 +9104,137 @@
       "touched_round": 162,
       "summary": "智能收纳总闸:shouldAutoRecycle 未启用 smartKeep.enabled 一律 false;一键分解勾选档改为开启收纳后的废料声明;InventoryView 一键分解帮助文案更新;loot.spec 2 例、smartKeep.spec 1 例全量 1473 通过",
       "commit": "62ec1e7"
+    },
+    "HYP-088": {
+      "id": "HYP-088",
+      "type": "hypothesis",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T11:52:27+00:00",
+      "updated_at": "2026-09-13T12:54:10+00:00",
+      "touched_round": 164,
+      "confidence": 0.9,
+      "summary": "星斗/仙甲/混沌三套 astral 共鸣声明「开战时护盾+5%」,UI 显示共鸣 active,但玩家战斗快照只物化 ironwall(playerSnap.ts:57),combat 开局护盾只读 mod 栈 shieldOnStart(combat.ts:180)——astral 钩子从未被消费,凑齐三套的高界装备零实际收益"
+    },
+    "HYP-089": {
+      "id": "HYP-089",
+      "type": "hypothesis",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T11:52:30+00:00",
+      "updated_at": "2026-09-13T12:05:14+00:00",
+      "touched_round": 164,
+      "confidence": 0.85,
+      "summary": "死亡标记复位检查:resetDeathFlag() 在 ReincarnationDialog.vue:231 confirm() 内正常调用,第二世自然死亡仍弹转世框——原假设不成立(EV-150 refutes)"
+    },
+    "EV-148": {
+      "id": "EV-148",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T11:53:21+00:00",
+      "updated_at": "2026-09-13T11:53:21+00:00",
+      "touched_round": 164,
+      "source": "src/core/playerSnap.ts:57 · src/core/combat.ts:180 · src/core/equipSet.ts:24-28",
+      "summary": "核验:hasActiveSet 全仓只以 'ironwall' 被调用一次(playerSnap.ts:57);combat 开战护盾读 modOf(mods,'shieldOnStart');equipSet 三套 hook:'astral' 无消费;equipSet.spec.ts 只验定义与 ironwall 触发,无 astral 效果断言",
+      "confidence": 1.0
+    },
+    "EV-149": {
+      "id": "EV-149",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T11:53:37+00:00",
+      "updated_at": "2026-09-13T11:53:37+00:00",
+      "touched_round": 164,
+      "source": "src/core/engine.ts:178 · src/core/reincarnation.ts:231 · App.vue:128",
+      "summary": "核验:resetDeathFlag() 定义于 engine.ts:178 但 grep 全仓无类外调用;reincarnation.ts:231 只置 ui.deathDialog=false;engine 为模块级单例(engine.ts:197),start() 不复位 deathAnnounced",
+      "confidence": 1.0
+    },
+    "ISS-147": {
+      "id": "ISS-147",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T11:54:26+00:00",
+      "updated_at": "2026-09-13T12:54:10+00:00",
+      "touched_round": 164,
+      "summary": "astral 套装共鸣效果死码:星斗/仙甲/混沌三套声明「开战时护盾+5%」且 UI 显示共鸣,但战斗零消费——凑齐两件的高界装备玩家拿到的是空头承诺"
+    },
+    "ISS-148": {
+      "id": "ISS-148",
+      "type": "issue",
+      "status": "abandoned",
+      "version": 2,
+      "created_at": "2026-09-13T11:54:26+00:00",
+      "updated_at": "2026-09-13T12:05:14+00:00",
+      "touched_round": 164,
+      "summary": "转世后死亡标记不复位 —— 假警报:resetDeathFlag 在 ReincarnationDialog.vue:231 有调用,第二世自然死亡不受影响(误判源自 grep 漏掉 components/ 目录)"
+    },
+    "TASK-137": {
+      "id": "TASK-137",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T11:55:25+00:00",
+      "updated_at": "2026-09-13T12:54:10+00:00",
+      "touched_round": 164,
+      "category": "core-feature",
+      "severity": 0.75,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "summary": "astral 套装共鸣接入战斗:hasActiveSet(equipped,'astral') 命中时将 shieldOnStart +5% 并入玩家战斗快照(或经快照物化字段),使星斗/仙甲/混沌套装的开战护盾声明兑现;补 astral 效果 spec"
+    },
+    "TASK-138": {
+      "id": "TASK-138",
+      "type": "task",
+      "status": "abandoned",
+      "version": 4,
+      "created_at": "2026-09-13T11:55:25+00:00",
+      "updated_at": "2026-09-13T12:06:03+00:00",
+      "touched_round": 164,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.85,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "summary": "转世后复位 deathAnnounced —— 假警报,无需改代码(EV-150 refutes HYP-089;ISS-148 废弃)"
+    },
+    "EV-150": {
+      "id": "EV-150",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T12:04:46+00:00",
+      "updated_at": "2026-09-13T12:04:46+00:00",
+      "touched_round": 164,
+      "source": "src/components/character/ReincarnationDialog.vue:231",
+      "summary": "更正:confirm() 在 confirmReincarnation 之后调用 engine.resetDeathFlag()——死亡标记每次确认转世都会复位,第二世自然死亡仍会正常弹转世框。此前 '无类外调用' 结论系 grep 范围遗漏 components/ 目录所致",
+      "confidence": 1.0
+    },
+    "EV-151": {
+      "id": "EV-151",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T12:53:13+00:00",
+      "updated_at": "2026-09-13T12:53:13+00:00",
+      "touched_round": 164,
+      "source": "src/core/astral.spec.ts · src/core/phase31LinkAudit.spec.ts",
+      "summary": "修复实证:两件星斗套 → buildPlayerSnap.mods.shieldOnStart≥0.05、真打一局出「灵光护体」;单件不触发;新增钩子-物化对账判据。全量 1477 测试/类型/lint 绿",
+      "confidence": 1.0
+    },
+    "CHG-188": {
+      "id": "CHG-188",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:02:57+00:00",
+      "updated_at": "2026-09-13T13:02:57+00:00",
+      "touched_round": 164,
+      "commit": "03fae65",
+      "summary": "astral 套装共鸣接入战斗:两件同套→开战护盾+5%(并入快照 shieldOnStart);astral.spec 3 例 + phase31LinkAudit 钩子物化对账判据;全量 1477 绿"
     }
   },
   "edges": [
@@ -13379,6 +13510,66 @@
       "to": "ISS-146",
       "type": "resolves",
       "created_at": "2026-09-13T07:46:53+00:00"
+    },
+    {
+      "from": "EV-148",
+      "to": "HYP-088",
+      "type": "validates",
+      "created_at": "2026-09-13T11:54:09+00:00"
+    },
+    {
+      "from": "EV-149",
+      "to": "HYP-089",
+      "type": "validates",
+      "created_at": "2026-09-13T11:54:09+00:00"
+    },
+    {
+      "from": "TASK-137",
+      "to": "ISS-147",
+      "type": "addresses",
+      "created_at": "2026-09-13T11:58:29+00:00"
+    },
+    {
+      "from": "TASK-138",
+      "to": "ISS-148",
+      "type": "addresses",
+      "created_at": "2026-09-13T11:58:29+00:00"
+    },
+    {
+      "from": "ISS-147",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-13T11:58:30+00:00"
+    },
+    {
+      "from": "ISS-148",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-13T11:58:30+00:00"
+    },
+    {
+      "from": "EV-150",
+      "to": "HYP-089",
+      "type": "refutes",
+      "created_at": "2026-09-13T12:04:46+00:00"
+    },
+    {
+      "from": "EV-151",
+      "to": "HYP-088",
+      "type": "validates",
+      "created_at": "2026-09-13T12:53:13+00:00"
+    },
+    {
+      "from": "CHG-188",
+      "to": "ISS-147",
+      "type": "resolves",
+      "created_at": "2026-09-13T13:02:57+00:00"
+    },
+    {
+      "from": "CHG-188",
+      "to": "TASK-137",
+      "type": "implements",
+      "created_at": "2026-09-13T13:02:57+00:00"
     }
   ]
 }
