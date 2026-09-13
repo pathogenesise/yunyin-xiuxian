@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 165,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T13:49:01+00:00",
+  "updated_at": "2026-09-13T13:52:43+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9251,10 +9251,10 @@
     "HYP-090": {
       "id": "HYP-090",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-13T13:42:32+00:00",
-      "updated_at": "2026-09-13T13:42:32+00:00",
+      "updated_at": "2026-09-13T13:52:43+00:00",
       "touched_round": 165,
       "confidence": 0.9,
       "summary": "离线危险因子漏两项修正不是设计而是遗漏:settleOffline 注释反复强调与在线同源(星象/敌群/表情性格均按在线),但 dangerFactor 两处仅乘 modeDef 与地界差值——灵兽性格与妖潮对离线战斗强度和胜率完全无效"
@@ -9262,20 +9262,20 @@
     "ISS-149": {
       "id": "ISS-149",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-13T13:47:19+00:00",
-      "updated_at": "2026-09-13T13:47:19+00:00",
+      "updated_at": "2026-09-13T13:52:43+00:00",
       "touched_round": 165,
       "summary": "离线历练危险因子与在线不同源:离线普通战/首领战的 dangerFactor 漏乘灵兽性格(petEff.dangerMult)与区域事件(regEventDanger)——“好战更易走险路/谨慎避祸”离线不兑现,妖潮期间离线反而白过,违背同源初衷"
     },
     "TASK-139": {
       "id": "TASK-139",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-13T13:47:19+00:00",
-      "updated_at": "2026-09-13T13:47:19+00:00",
+      "updated_at": "2026-09-13T13:52:43+00:00",
       "touched_round": 165,
       "category": "correctness",
       "severity": 0.6,
@@ -9283,6 +9283,29 @@
       "effort": 2,
       "unlock_factor": 1.0,
       "summary": "危险因子同源化:抽 dangerFactorFor(modeDangerMult,regionDanger,petDangerMult,eventDanger) 纯函数为唯一实现,在线 runBattle 离线普通/首领战四路统一调用;补“再无线内联常数”判据(HYP-015)"
+    },
+    "CHG-189": {
+      "id": "CHG-189",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:51:50+00:00",
+      "updated_at": "2026-09-13T13:51:50+00:00",
+      "touched_round": 165,
+      "commit": "2c3bd6f",
+      "summary": "离线历练危险因子同源化:dangerFactorFor 纯函数唯一实现,在线/离线普通/首领三处统一;battleFactor.spec 钉死无线内联;全量 1479 绿"
+    },
+    "EV-153": {
+      "id": "EV-153",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T13:51:50+00:00",
+      "updated_at": "2026-09-13T13:51:50+00:00",
+      "touched_round": 165,
+      "source": "src/core/battleFactor.spec.ts",
+      "summary": "修复实证:纯函数四输入链乘正确;源码扫描断言 exploration/offline 都 import dangerFactorFor 且离线不再残留 (1+(region.danger-1)*0.05) 内联常数。全量 1479/type/lint 绿",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -13636,6 +13659,24 @@
       "to": "COMP-006",
       "type": "located_in",
       "created_at": "2026-09-13T13:49:01+00:00"
+    },
+    {
+      "from": "CHG-189",
+      "to": "ISS-149",
+      "type": "resolves",
+      "created_at": "2026-09-13T13:51:50+00:00"
+    },
+    {
+      "from": "CHG-189",
+      "to": "TASK-139",
+      "type": "implements",
+      "created_at": "2026-09-13T13:51:50+00:00"
+    },
+    {
+      "from": "EV-153",
+      "to": "HYP-090",
+      "type": "validates",
+      "created_at": "2026-09-13T13:52:43+00:00"
     }
   ]
 }
