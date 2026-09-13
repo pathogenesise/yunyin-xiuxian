@@ -618,7 +618,7 @@
       ? [...settings.decomposeRanks, rank].sort((a, b) => a - b)
       : settings.decomposeRanks.filter(r => r !== rank)
     // 勾选只是「标记该档为废料」——行囊内现存同类不在此刻销毁,待玩家点「分 解」确认。
-    // (此后拾取到该档仍会自动回收,那是不占行囊的入包裁决,与行囊内已存之物无关。)
+    // (智能收纳开启后,拾取到该档才会自动回收——那是不占行囊的入包裁决,与行囊内已存之物无关;未开启则照常入包。)
   }
 
   function confirmDecompose(): void {
