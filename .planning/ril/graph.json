@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 165,
+  "round": 166,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T14:23:18+00:00",
+  "updated_at": "2026-09-13T14:29:20+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9322,10 +9322,10 @@
     "HYP-091": {
       "id": "HYP-091",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-13T14:19:42+00:00",
-      "updated_at": "2026-09-13T14:19:42+00:00",
+      "updated_at": "2026-09-13T14:28:04+00:00",
       "touched_round": 165,
       "confidence": 0.95,
       "summary": "炼器相关展示文案存在『写死数字』漂移风险:REFORGE_MAX_COUNT 已入常量表并被 reforge 判定引用,但组件 UI 仍内联 /10——凡数值走进 UI 又写死,判定与展示迟早分叉(HYP-013:手写清单守不住新字段/新数字)"
@@ -9333,20 +9333,20 @@
     "ISS-150": {
       "id": "ISS-150",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-13T14:21:13+00:00",
-      "updated_at": "2026-09-13T14:21:13+00:00",
+      "updated_at": "2026-09-13T14:28:04+00:00",
       "touched_round": 165,
       "summary": "EquipmentDetailDialog 重铸次数分母写死 '/10',与 REFORGE_MAX_COUNT 判定分叉:改上限判定走常量、展示却停留旧值"
     },
     "TASK-140": {
       "id": "TASK-140",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-13T14:21:13+00:00",
-      "updated_at": "2026-09-13T14:21:13+00:00",
+      "updated_at": "2026-09-13T14:28:04+00:00",
       "touched_round": 165,
       "category": "maintainability",
       "severity": 0.4,
@@ -9354,6 +9354,29 @@
       "effort": 1,
       "unlock_factor": 1.0,
       "summary": "重铸上限称号化:EquipmentDetailDialog 分母改读 REFORGE_MAX_COUNT,reforge.spec 补防漂移判据(展示不得再现内联数字)"
+    },
+    "CHG-190": {
+      "id": "CHG-190",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:24:22+00:00",
+      "updated_at": "2026-09-13T14:24:22+00:00",
+      "touched_round": 165,
+      "commit": "732b197",
+      "summary": "重铸上限单源化:UI 分母读 REFORGE_MAX_COUNT;reforge.spec 上限测试锚定常量+防漂移判据;全量 1480 绿"
+    },
+    "EV-155": {
+      "id": "EV-155",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T14:24:22+00:00",
+      "updated_at": "2026-09-13T14:24:22+00:00",
+      "touched_round": 165,
+      "source": "src/core/reforge.spec.ts",
+      "summary": "修复实证:上限测试用 REFORGE_MAX_COUNT 而非字面量;新增『组件不再出现 /10 · 已封存 内联』判据。全量 1480/type/lint 绿",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -13743,6 +13766,24 @@
       "to": "COMP-013",
       "type": "located_in",
       "created_at": "2026-09-13T14:23:18+00:00"
+    },
+    {
+      "from": "CHG-190",
+      "to": "ISS-150",
+      "type": "resolves",
+      "created_at": "2026-09-13T14:24:22+00:00"
+    },
+    {
+      "from": "CHG-190",
+      "to": "TASK-140",
+      "type": "implements",
+      "created_at": "2026-09-13T14:24:22+00:00"
+    },
+    {
+      "from": "EV-155",
+      "to": "HYP-091",
+      "type": "validates",
+      "created_at": "2026-09-13T14:26:16+00:00"
     }
   ]
 }
