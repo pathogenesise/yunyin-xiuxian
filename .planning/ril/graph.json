@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 167,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T23:11:56+00:00",
+  "updated_at": "2026-09-13T23:54:05+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9466,6 +9466,57 @@
       "touched_round": 167,
       "summary": "离线历练与在线规则同源:抽 explorationRules() 合并道途×逆旅契,离线普通战/boss战改用共用实现;离线事件池改走 placeContent 世界标签 + regionEventPoolFor(空池才兜底无代价默认事件);offlineParity.spec 新增 4 条审计+行为红线,全量 1484 测试/类型检查/lint 全绿",
       "commit": "89c37f4"
+    },
+    "ISS-153": {
+      "id": "ISS-153",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:51:45+00:00",
+      "updated_at": "2026-09-13T23:54:05+00:00",
+      "touched_round": 167,
+      "summary": "离线事件池指向 regionEventPoolFor 后,含 pet/gongfa/artifact/lifespan 效果的世界事件可被自动结算——实测 petId 越过 offlineScope 红线段言『玩家分片只许动 exp/age/bond』,且灵兽认主/习功法/收法宝本在线需玩家亲手取舍",
+      "severity": 0.45,
+      "confidence": 0.95,
+      "effort": 1
+    },
+    "ISS-154": {
+      "id": "ISS-154",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:51:45+00:00",
+      "updated_at": "2026-09-13T23:54:05+00:00",
+      "touched_round": 167,
+      "summary": "区域事件(妖潮1.2/古墓1.15/商队1.25)的 rewardMult 离线完全缺失:危险侧(dangerMult)此前已同源进离线,奖励侧在线 afterWin 每胜都乘而离线普通战/首领战不乘——同一次妖潮只剩『更难』没有『更丰』",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 1
+    },
+    "TASK-143": {
+      "id": "TASK-143",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-13T23:51:45+00:00",
+      "updated_at": "2026-09-13T23:54:05+00:00",
+      "touched_round": 167,
+      "category": "correctness",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 1,
+      "summary": "离线奖励并入区域事件加丰倍率(regReward):普通战石头/修为/掉落数、首领战 afterWin rewardMult 同乘 regionEventReward,与在线口径对齐;事件池加 isOfflineSafeEvent allowlist 拦下身份/永久构筑类效果(补全 TASK-142 首提交越线缺陷)"
+    },
+    "CHG-192": {
+      "id": "CHG-192",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-13T23:52:55+00:00",
+      "updated_at": "2026-09-13T23:52:55+00:00",
+      "touched_round": 167,
+      "summary": "离线区域事件两面补齐:普通战石头/修为/掉落数与首领战 afterWin 同乘 regionEventReward;世界事件池经 isOfflineSafeEvent 拦下 pet/gongfa/artifact/lifespan(含 TASK-142 首提交越线的补全);offlineScope 红线恢复 + offlineParity 新增 2 条审计,全量 1485 测试/类型/检查 lint 全绿",
+      "commit": "4b91756"
     }
   },
   "edges": [
@@ -13921,6 +13972,54 @@
       "to": "TASK-142",
       "type": "implements",
       "created_at": "2026-09-13T23:11:14+00:00"
+    },
+    {
+      "from": "ISS-153",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "ISS-154",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "TASK-143",
+      "to": "ISS-153",
+      "type": "addresses",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "TASK-143",
+      "to": "ISS-154",
+      "type": "addresses",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "CHG-192",
+      "to": "ISS-153",
+      "type": "resolves",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "CHG-192",
+      "to": "ISS-154",
+      "type": "resolves",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "CHG-192",
+      "to": "TASK-143",
+      "type": "implements",
+      "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "CHG-192",
+      "to": "TASK-142",
+      "type": "implements",
+      "created_at": "2026-09-13T23:52:55+00:00"
     }
   ]
 }
