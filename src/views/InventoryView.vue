@@ -277,7 +277,7 @@
 
     <!-- 一键分解:勾选品质(记忆勾选) -->
     <BaseModal :open="decomposeOpen" title="一键分解" @close="decomposeOpen = false">
-      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊。行囊中已存的同类须点下方「分 解」方才化尘。此规则优先于智能收纳。</p>
+      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;开启智能收纳后,拾取到所选品质的装备将自动回收为器灵尘,不再占行囊;未开启智能收纳时,拾取照常入包,此勾选仅在下方「分 解」时作为筛选。行囊中已存的同类须点下方「分 解」方才化尘。</p>
       <div class="mt-2 space-y-1">
         <label
           v-for="row in decomposeRows"

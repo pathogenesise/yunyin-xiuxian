@@ -40,17 +40,19 @@ export interface KeepVerdict {
 
 /**
  * 自动回收裁决 —— 装备进包前的第一道闸
- * 命中任一条,该件不入行囊、直接化尘(在线离线统一):
- *   1. 玩家在「一键分解」里勾选的品质档(显式废料声明)
- *   2. 智能收纳开启且判「与道无缘」
+ * **智能收纳是总闸**:没开,装备一律不替你扔 —— 历练/挂机掉落的凡俗之物也照常入包。
+ * 开启后,命中任一条、该件不入行囊、直接化尘(在线离线统一):
+ *   1. 玩家在「一键分解」里勾选的品质档(显式废料声明,开启收纳后才生效)
+ *   2. 判「与道无缘」
  * 上锁者豁免。
  */
 export function shouldAutoRecycle(item: EquipmentInstance): boolean {
   if (item.locked) return false
   const settings = useSettingsStore()
+  if (!settings.smartKeep.enabled) return false
   const q = qualityDef(item.quality)
   if (settings.decomposeRanks.includes(q.rank)) return true
-  return settings.smartKeep.enabled && !keepVerdict(item).keep
+  return !keepVerdict(item).keep
 }
 
 /** 身上有没有玩家的投入(强化 / 重铸 / 封存词条)—— 有则不参与一切自动去留 */

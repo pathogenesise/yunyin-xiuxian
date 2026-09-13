@@ -55,7 +55,8 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     }
   })
 
-  it('凡良(分解勾选档)拾取即化尘,不入行囊,器灵尘到账', () => {
+  it('智能收纳开启时,凡良(分解勾选档)拾取即化尘,不入行囊,器灵尘到账', () => {
+    useSettingsStore().smartKeep.enabled = true
     const resources = useResourcesStore()
     for (const q of ['mortal', 'fine'] as const) {
       const dustBefore = resources.dust
@@ -65,6 +66,15 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
       expect(resources.dust).toBe(dustBefore + (DECOMPOSE_DUST[qualityDef(q).rank] ?? 1))
       expect(line).toContain('自动回收')
       expect(line).toContain('器灵尘')
+    }
+  })
+
+  it('总闸:智能收纳未开启时,凡良(默认分解勾选档)照常入包,不再自动回收', () => {
+    expect(useSettingsStore().smartKeep.enabled).toBe(false)
+    for (const q of ['mortal', 'fine'] as const) {
+      const item = mk(q)
+      acquireEquipment(item)
+      expect(bagUids()).toContain(item.uid)
     }
   })
 
@@ -109,6 +119,7 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
   })
 
   it('回收裁决无随机性:同件装备重复判定结果一致(在线/离线一致的基础)', () => {
+    useSettingsStore().smartKeep.enabled = true
     const junk = mk('mortal')
     expect(shouldAutoRecycle(junk)).toBe(true)
     expect(shouldAutoRecycle({ ...junk, uid: 'dummy' })).toBe(true)

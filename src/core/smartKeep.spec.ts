@@ -91,10 +91,18 @@ describe('智能收纳 · 自动裁决的边界', () => {
     expect(keepVerdict(perfect).keep).toBe(false)
   })
 
-  it('勾了「一键分解」的品质档仍然优先 —— 显式废料声明的出口不被新规则堵死', () => {
+  it('智能收纳开启时,「一键分解」勾选的品质档仍优先 —— 显式废料声明压过保留规则', () => {
     useSettingsStore().decomposeRanks = [0]
     const setPiece = mk('set2', 'mortal', { templateId: 'w_xuantie', level: 3 })
     expect(shouldAutoRecycle(setPiece)).toBe(true)
+  })
+
+  it('总闸:智能收纳未启用时,一键分解勾选档也不自动回收', () => {
+    const settings = useSettingsStore()
+    settings.smartKeep.enabled = false
+    settings.decomposeRanks = [0, 1]
+    expect(shouldAutoRecycle(mk('plain'))).toBe(false)
+    expect(shouldAutoRecycle(mk('gated', 'mortal', { level: 3 }))).toBe(false)
   })
 
   it('挤位先挤最弱:练过的件不在候选里,同档先走层级低的', () => {

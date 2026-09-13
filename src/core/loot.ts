@@ -47,7 +47,8 @@ export interface AcquireResult {
 /**
  * 拾取一件已生成的装备:入包或折算。
  * 无论在线(战斗掉落/事件/镇压)还是离线(挂机结算),都先过自动回收裁决——
- * 命中回收规则的直接化尘不入包;forceKeep(新手馈赠)不受此闸约束。
+ * 而自动回收只有在智能收纳开启时才生效(总闸);命中回收规则的直接化尘不入包;
+ * forceKeep(新手馈赠)不受此闸约束。
  * 入包后若行囊已满,智能收纳开启时,值得收藏的新件可挤掉包内与道无缘者。
  */
 export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolean; forceKeep?: boolean } = {}): AcquireResult {
