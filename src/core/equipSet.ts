@@ -19,6 +19,9 @@ export interface EquipSetDef {
   hook: 'ironwall' | 'astral'
 }
 
+/** astral 共鸣:开战时护盾 = 最大生命的 5%(并入快照盾 mod,共三层同一常量) */
+export const ASTRAL_SET_SHIELD = 0.05
+
 const SET_DEFS: Map<string, EquipSetDef> = new Map([
   ['s_tiebi', { id: 's_tiebi', name: '铁壁共鸣', required: 2, effectDesc: '受到致命伤害时,首次保留 1 点气血', hook: 'ironwall' }],
   ['s_xingdou', { id: 's_xingdou', name: '星斗共鸣', required: 2, effectDesc: '每场战斗开始时获得一层星光护体(护盾+5%)', hook: 'astral' }],

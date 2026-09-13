@@ -9,7 +9,7 @@ import { useEndgameStore } from '@/stores/endgame'
 import { modOf } from './statsCalc'
 import { detectBuild } from './buildDetect'
 import { stackedMods, swordPurity, SWORD_LAYER_MODS } from './daoDepth'
-import { hasActiveSet } from './equipSet'
+import { hasActiveSet, ASTRAL_SET_SHIELD } from './equipSet'
 
 /**
  * 构建玩家战斗快照。
@@ -39,6 +39,12 @@ export function buildPlayerSnap(celestial = false): CombatantSnap {
   if (endgame.daoPath === 'sword') {
     const purity = swordPurity(stats.mods, artifacts.length, build)
     mods = stackedMods(stats.mods, SWORD_LAYER_MODS, purity.layers)
+  }
+  // Phase 31 S5:astral 共鸣(同套 2 件 → 开战时护盾+5%)——并入盾 mod,与词条/功法
+  // 同走 shieldOnStart 一条道,combat 开战盾逻辑(read mods.shieldOnStart)直接生效,
+  // powerRating/战报随 mods 透明展示。不进 finalStats:机制钩子不改面板与流派检测。
+  if (hasActiveSet(inventory.equippedItems, 'astral')) {
+    mods = stackedMods(mods, { shieldOnStart: ASTRAL_SET_SHIELD }, 1)
   }
 
   return {

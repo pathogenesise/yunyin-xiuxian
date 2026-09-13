@@ -17,6 +17,9 @@ import { weatherDef } from './weather'
 import { SECRET_REALMS } from './secretRealm'
 import { PETS } from '@/data/pets'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { equipSetDef, type EquipSetDef } from './equipSet'
 
 describe('联动审计 · ①师承非职业', () => {
   it('四种师承词条方向不同(非同一维度叠加)', () => {
@@ -89,6 +92,21 @@ describe('联动审计 · ④共鸣非最优套装化', () => {
 
   it('共鸣触发条件宽松(2 件即可),不强制 6 件收集', () => {
     expect(EQUIPMENT_TEMPLATES.filter(t => t.set).length).toBeGreaterThan(0)
+  })
+
+  it('每种机制钩子都在 playerSnap 有物化点 —— 声明必须兑现(星斗/仙甲/混沌 RE: TASK-137)', () => {
+    // 历史暗伤:astral 三套声明「开战护盾+5%」、UI 显示「共鸣」,战斗却零消费
+    // (ironwall 有 ironwallBrace 物化点)。声明即承诺,判据拿着 playerSnap 源码
+    // 与共鸣定义对账:每一类钩子,源码里都必须写着同一钩子名的物化点。
+    const src = readFileSync(resolve(__dirname, './playerSnap.ts'), 'utf8')
+    const hooks = [...new Set(EQUIPMENT_TEMPLATES.map(t => (t.set ? equipSetDef(t.set)?.hook : undefined)).filter(Boolean))] as EquipSetDef['hook'][]
+    expect(hooks.length).toBeGreaterThanOrEqual(2)
+    for (const hook of hooks) {
+      expect(
+        src.includes(`'${hook}'`),
+        `playerSnap 未物化共鸣钩子 \`${hook}\` —— 套装声明了效果,战斗却不会兑现`
+      ).toBe(true)
+    }
   })
 })
 
