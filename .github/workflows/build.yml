@@ -101,9 +101,15 @@ jobs:
       - name: 同步 Capacitor
         run: bunx cap sync android
 
-      # 签名口令走 Secrets 注入(不落在仓库文件里)。仓库设置里需配置
-      # KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD 两个 secret,否则产出未签名 APK
-      # (build.gradle 会在日志里打 WARNING,一眼可查)。
+      # 签名口令走 Secrets 注入(不落在仓库文件里)。
+      # 没配 secret 时 gradle 会静默产出「未签名 APK」——那种包手机根本装不上。
+      # 与其让 CI 绿着吐一个废包,不如红着把话说明白:下面是硬闸门。
+      - name: 校验签名 Secret 已配置
+        if: ${{ secrets.KEYSTORE_STORE_PASSWORD == '' || secrets.KEYSTORE_KEY_PASSWORD == '' }}
+        run: |
+          echo "::error::未配置 KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD —— 请在仓库 Settings → Secrets and variables → Actions 添加这两个 secret(值 = android/release.keystore 的原口令)"
+          exit 1
+
       - name: 构建 APK (Release)
         working-directory: android
         env:
