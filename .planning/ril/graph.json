@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 171,
+  "round": 172,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T16:26:43+00:00",
+  "updated_at": "2026-09-14T16:43:27+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9858,6 +9858,41 @@
       "touched_round": 171,
       "commit": "280b204986249ec297462603340068a84b2767ce",
       "summary": "离线普通战结算并入 doubleDropRate(期望值 doubleMult),offlineParity 增红线断言"
+    },
+    "ISS-167": {
+      "id": "ISS-167",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-14T16:34:42+00:00",
+      "updated_at": "2026-09-14T16:43:27+00:00",
+      "touched_round": 172,
+      "summary": "adventure.session sanitize 漏校验 stoneGain/expGain 两个 GNum:重建对象经 ...s 原样保留,损坏档把二者设成 null/数字/字符串时首胜 add(s.stoneGain,…) 读 .m 抛 TypeError(或静默归零),被 tickSafe 吞掉后每胜都抛、历练永久卡死;现有测试只覆盖 {} 且全落在被丢弃的会话上"
+    },
+    "TASK-152": {
+      "id": "TASK-152",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-14T16:34:42+00:00",
+      "updated_at": "2026-09-14T16:42:29+00:00",
+      "touched_round": 172,
+      "category": "correctness",
+      "severity": 0.5,
+      "confidence": 0.9,
+      "effort": 1,
+      "summary": "session sanitize 把 stoneGain/expGain 走 gn() 归一(与 player.sanitize 同法),storeResilience 补 null/数字/坏对象三种形状的存活会话回归"
+    },
+    "CHG-201": {
+      "id": "CHG-201",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T16:42:29+00:00",
+      "updated_at": "2026-09-14T16:42:29+00:00",
+      "touched_round": 172,
+      "commit": "cbcd49f1808d2d677bf4336fb786369d39e06914",
+      "summary": "历练会话 sanitize 补 stoneGain/expGain gn() 归一;storeResilience 增 null/裸数字两种损坏形状回归"
     }
   },
   "edges": [
@@ -14541,6 +14576,18 @@
       "to": "ISS-166",
       "type": "resolves",
       "created_at": "2026-09-14T16:26:43+00:00"
+    },
+    {
+      "from": "TASK-152",
+      "to": "ISS-167",
+      "type": "addresses",
+      "created_at": "2026-09-14T16:35:32+00:00"
+    },
+    {
+      "from": "CHG-201",
+      "to": "ISS-167",
+      "type": "resolves",
+      "created_at": "2026-09-14T16:43:27+00:00"
     }
   ]
 }
