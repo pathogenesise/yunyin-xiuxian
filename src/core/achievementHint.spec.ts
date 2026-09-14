@@ -17,12 +17,17 @@ import { resolve } from 'node:path'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import { COUNTER_DIRECTIONS, achievementDirection } from '@/ui/achievementHint'
 
-/** 从类型声明里扫出 CounterKey 的联合成员 —— 手写联合,故只能扫源码 */
+/**
+ * 从类型声明里扫出 CounterKey 的联合成员 —— 手写联合,故只能扫源码。
+ * 结束点取后一个类型声明(同 vocabularyCoverage 的 unionMembers),不能用空行切块:
+ * Windows 上 CRLF 行尾下没有 `\n\n`,切块会滑到文件尾把无关字面量扫进来。
+ */
 function counterKeysFromTypes(): string[] {
   const src = readFileSync(resolve(__dirname, '../types/index.ts'), 'utf8')
   const start = src.indexOf('export type CounterKey =')
   expect(start, 'types/index.ts 里找不到 CounterKey').toBeGreaterThanOrEqual(0)
-  const block = src.slice(start, src.indexOf('\n\n', start))
+  const end = src.indexOf('export type AchvCond', start)
+  const block = src.slice(start, end > 0 ? end : undefined)
   return [...new Set([...block.matchAll(/'([A-Za-z]+)'/g)].map(m => m[1]!))]
 }
 

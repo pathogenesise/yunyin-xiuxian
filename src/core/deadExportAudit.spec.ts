@@ -81,11 +81,17 @@ const AUDIT_MODULES = new Set([
   'core/trialMotivation.ts'
 ])
 
+/**
+ * 全扫描统一用正斜杠路径(Win 上 join 产出 `\`,会打不中机制表里的正斜杠键)。
+ * 文件系统操作仍用各自平台的 join,只有进比较的字符串归一。
+ */
+const posix = (p: string): string => p.replace(/\\/g, '/')
+
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry)
     if (statSync(full).isDirectory()) walk(full, out)
-    else if (/\.(ts|vue)$/.test(entry) && !entry.endsWith('.d.ts')) out.push(full)
+    else if (/\.(ts|vue)$/.test(entry) && !entry.endsWith('.d.ts')) out.push(posix(full))
   }
   return out
 }
@@ -147,14 +153,14 @@ function scanExports(): { dead: DeadExport[]; specOnly: DeadExport[]; scanned: n
         'name' in node && node.name && ts.isIdentifier(node.name as ts.Node) ? (node.name as ts.Identifier).text : null
       if (name && hasExportModifier(node)) {
         bump(declarations, name)
-        if (!declFile.has(name)) declFile.set(name, relative(SRC, file))
+        if (!declFile.has(name)) declFile.set(name, posix(relative(SRC, file)))
         if (!declPath.has(name)) declPath.set(name, file)
       }
       if (ts.isVariableStatement(node) && hasExportModifier(node)) {
         for (const d of node.declarationList.declarations) {
           if (ts.isIdentifier(d.name)) {
             bump(declarations, d.name.text)
-            if (!declFile.has(d.name.text)) declFile.set(d.name.text, relative(SRC, file))
+            if (!declFile.has(d.name.text)) declFile.set(d.name.text, posix(relative(SRC, file)))
             if (!declPath.has(d.name.text)) declPath.set(d.name.text, file)
           }
         }
@@ -209,10 +215,11 @@ function scanExports(): { dead: DeadExport[]; specOnly: DeadExport[]; scanned: n
     const base = spec.startsWith('@/')
       ? join(SRC, spec.slice(2))
       : spec.startsWith('.')
-        ? join(from.slice(0, from.lastIndexOf('/')), spec)
+        // Win 路径是 `\`,`lastIndexOf('/')` 恒为 -1 会把目录切成坏路径 —— 两种分隔符都找
+        ? join(from.slice(0, Math.max(from.lastIndexOf('/'), from.lastIndexOf('\\'))), spec)
         : null
     if (!base) return null
-    for (const cand of [base, `${base}.ts`, `${base}.vue`, join(base, 'index.ts')]) {
+    for (const cand of [base, `${base}.ts`, `${base}.vue`, join(base, 'index.ts')].map(posix)) {
       if (files.includes(cand)) return cand
     }
     return null
@@ -229,7 +236,7 @@ function scanExports(): { dead: DeadExport[]; specOnly: DeadExport[]; scanned: n
     return out
   }
   const runtimeModules = new Set<string>()
-  const entry = join(SRC, 'main.ts')
+  const entry = posix(join(SRC, 'main.ts'))
   const queue = files.includes(entry) ? [entry] : []
   while (queue.length > 0) {
     const cur = queue.pop()!

@@ -34,12 +34,15 @@ function walk(dir: string, out: string[] = []): string[] {
   return out
 }
 
-/** 每一类是在哪些模块里被 collect 的(相对 src/ 的路径) */
+/** 每一类是在哪些模块里被 collect 的(相对 src/ 的路径,统一正斜杠) */
 function collectorsOf(cat: CollectionCategory): string[] {
   const hits: string[] = []
   for (const file of walk(SRC)) {
     const src = readFileSync(file, 'utf8')
-    if (new RegExp(`collect\\(\\s*'${cat}'`).test(src)) hits.push(file.slice(SRC.length + 1))
+    if (new RegExp(`collect\\(\\s*'${cat}'`).test(src)) {
+      // Windows 上 walk 的 join 产出 `core\loot.ts`,机制表是正斜杠,必须归一
+      hits.push(file.slice(SRC.length + 1).replace(/\\/g, '/'))
+    }
   }
   return hits.sort()
 }
