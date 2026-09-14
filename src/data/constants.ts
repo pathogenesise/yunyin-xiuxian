@@ -320,4 +320,11 @@ export const REINCARNATE_APTITUDE_FLOOR = 5
 export const OFFLINE_BOSS_REWARD_MULT = 0.75
 
 // ============ 创角 ============
-export const CREATE_REROLL_LIMIT = 8
+/**
+ * 建号「逆天改命」的次数上限。
+ *
+ * null = 不限次:灵根是玩家对这副牌的第一印象,不满意就该能一直刷到掷中自己认的那一副,
+ * 不必为「还剩几次」分心。转世另说 —— 转世的灵根仍是系统发下来的一张牌,没有挑选界面。
+ * 要收紧为有限次数时改成具体数字即可:store 的扣减/耗尽分支与界面文案都读这一个常量。
+ */
+export const CREATE_REROLL_QUOTA: number | null = null
