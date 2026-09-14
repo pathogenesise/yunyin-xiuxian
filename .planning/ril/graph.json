@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 168,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T14:07:07+00:00",
+  "updated_at": "2026-09-14T14:35:46+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9609,10 +9609,10 @@
     "TASK-146": {
       "id": "TASK-146",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-14T12:26:38+00:00",
-      "updated_at": "2026-09-14T12:26:38+00:00",
+      "updated_at": "2026-09-14T14:35:46+00:00",
       "touched_round": 168,
       "category": "core-feature",
       "severity": 0.45,
@@ -9651,6 +9651,17 @@
       "touched_round": 168,
       "commit": "e75d3e3",
       "summary": "不可逆资源操作统一二步确认:熔炉全熔改『熔尽本包→N道源』+确认面板、天道写按钮代价内联+确认+触控放大、悟道分岔永久抉择二步确认;playwright 定向验证全链路"
+    },
+    "CHG-195": {
+      "id": "CHG-195",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T14:35:46+00:00",
+      "updated_at": "2026-09-14T14:35:46+00:00",
+      "touched_round": 168,
+      "commit": "4225e24",
+      "summary": "移动端 hover-only 信息内联:灵根资质亮字、天赋点按展开、挑战变数/契约规则入行+aria-pressed、区域适配原因展开、秘境多行 toast 合并(ToastHost pre-line)"
     }
   },
   "edges": [
@@ -14250,6 +14261,18 @@
       "to": "ISS-157",
       "type": "resolves",
       "created_at": "2026-09-14T14:07:07+00:00"
+    },
+    {
+      "from": "CHG-195",
+      "to": "ISS-158",
+      "type": "resolves",
+      "created_at": "2026-09-14T14:35:46+00:00"
+    },
+    {
+      "from": "CHG-195",
+      "to": "ISS-159",
+      "type": "resolves",
+      "created_at": "2026-09-14T14:35:46+00:00"
     }
   ]
 }
