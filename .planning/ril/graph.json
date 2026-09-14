@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 168,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-13T23:57:10+00:00",
+  "updated_at": "2026-09-14T12:45:49+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 167,
+      "touched_round": 168,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -8772,7 +8772,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 158,
+      "touched_round": 168,
       "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
     },
     "EV-142": {
@@ -9514,9 +9514,132 @@
       "version": 1,
       "created_at": "2026-09-13T23:52:55+00:00",
       "updated_at": "2026-09-13T23:52:55+00:00",
-      "touched_round": 167,
+      "touched_round": 168,
       "summary": "离线区域事件两面补齐:普通战石头/修为/掉落数与首领战 afterWin 同乘 regionEventReward;世界事件池经 isOfflineSafeEvent 拦下 pet/gongfa/artifact/lifespan(含 TASK-142 首提交越线的补全);offlineScope 红线恢复 + offlineParity 新增 2 条审计,全量 1485 测试/类型/检查 lint 全绿",
       "commit": "4b91756"
+    },
+    "ISS-155": {
+      "id": "ISS-155",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:23:15+00:00",
+      "updated_at": "2026-09-14T12:23:15+00:00",
+      "touched_round": 168,
+      "summary": "天道熔炉一键熔尽全部库存:furnaceConvert 对灵草/玄铁/残页/器灵尘做 floor(have/per) 全量转换、无确认无部分兑换,按钮文案『per→1道源』读起来像按需兑换;行尾误触即整包资源蒸发(这些资源同时是炼丹/锻造/悟功法开支)"
+    },
+    "ISS-156": {
+      "id": "ISS-156",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:23:15+00:00",
+      "updated_at": "2026-09-14T12:23:15+00:00",
+      "touched_round": 168,
+      "summary": "天道『写』按钮退化:代价道源10(rewriteMark 直接 spendDaoSource)只在 hover title,移动端完全看不见;按钮约18px高远低于44px触控目标,与『忆/变』并排易误触;一点即扣10道源无确认不可撤销"
+    },
+    "ISS-157": {
+      "id": "ISS-157",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:23:15+00:00",
+      "updated_at": "2026-09-14T12:23:15+00:00",
+      "touched_round": 168,
+      "summary": "满级功法悟道分岔为永久选择(chooseBranch 已选即拒改、转世不失),仅有红色警告文案无二次确认;手机误触即锁死一世构筑方向"
+    },
+    "ISS-158": {
+      "id": "ISS-158",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:24:41+00:00",
+      "updated_at": "2026-09-14T12:24:41+00:00",
+      "touched_round": 168,
+      "summary": "移动端 hover-only 关键信息不可见:灵根资质(CharacterView:20)、天赋效果描述(CharacterView:260)、挑战书变数/立约规则(CelestialView:315-345)、历练区域适配原因(AdventureView:123)都只在 :title 悬浮里;手机无 hover,这些决定构筑/抉择的信息读不到"
+    },
+    "ISS-159": {
+      "id": "ISS-159",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:24:41+00:00",
+      "updated_at": "2026-09-14T12:24:41+00:00",
+      "touched_round": 168,
+      "summary": "SecretRealmCard.fight 同步逐条 push 多行战报 r.lines:toast 宿主上限5条(每推保留后4条),6+行报告把自家前面的行挤掉,长剧情/奖励清单读不全"
+    },
+    "ISS-160": {
+      "id": "ISS-160",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:24:41+00:00",
+      "updated_at": "2026-09-14T12:24:41+00:00",
+      "touched_round": 168,
+      "summary": "Android release 签名私钥 android/release.keystore 与明文口令 keystore.properties 入库(git ls-files):任何克隆者都能以 appId games.wenzi.yunyin 伪签 APK;口令明文入历史事后难清;README 零说明(安全/卫生)"
+    },
+    "TASK-144": {
+      "id": "TASK-144",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:26:38+00:00",
+      "updated_at": "2026-09-14T12:26:38+00:00",
+      "touched_round": 168,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.92,
+      "effort": 3,
+      "summary": "不可逆资源操作防误触:①熔炉全熔改部分兑换+确认(或至少『熔尽全包,共+N道源』确认框)并改文案点明全熔;②『写』按钮代价内联『(道源10)』+二次确认+触控区≥44px;③满级功法悟道分岔加二次确认『择【xx】道,终身不改?』"
+    },
+    "TASK-145": {
+      "id": "TASK-145",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-14T12:26:38+00:00",
+      "updated_at": "2026-09-14T12:44:06+00:00",
+      "touched_round": 168,
+      "category": "security",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 2,
+      "summary": "Android 签名降险:把 keystore.properties 的口令从明文改为 CI secret 注入(工作流写文件后构建、*.properties 加入 gitignore),或在 README 增『签名公钥随仓库分发不构成防伪,仅供 CI 出包』的风险说明;至少移除明文口令"
+    },
+    "TASK-146": {
+      "id": "TASK-146",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:26:38+00:00",
+      "updated_at": "2026-09-14T12:26:38+00:00",
+      "touched_round": 168,
+      "category": "core-feature",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 3,
+      "summary": "移动端 hover-only 信息内联化:灵根资质/天赋描述/变数契约规则/区域适配原因改为可见文本或点击展开;秘境多行战报合并为单条多行 toast 防自截断"
+    },
+    "COMP-017": {
+      "id": "COMP-017",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T12:30:11+00:00",
+      "updated_at": "2026-09-14T12:30:11+00:00",
+      "touched_round": 168,
+      "summary": "天道终局系统(endgameService + endgame store + CelestialView):道源/道痕/熔炉/远征试炼/转世保留物"
+    },
+    "CHG-193": {
+      "id": "CHG-193",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-14T12:43:21+00:00",
+      "updated_at": "2026-09-14T12:45:49+00:00",
+      "touched_round": 168,
+      "commit": "7501e41",
+      "summary": "Android 签名口令移出仓库:CI Secrets 注入+本地不入库覆盖,无口令不配签名并告警;README 披露私钥随仓库分发风险"
     }
   },
   "edges": [
@@ -14020,6 +14143,84 @@
       "to": "TASK-142",
       "type": "implements",
       "created_at": "2026-09-13T23:52:55+00:00"
+    },
+    {
+      "from": "TASK-144",
+      "to": "ISS-155",
+      "type": "addresses",
+      "created_at": "2026-09-14T12:30:11+00:00"
+    },
+    {
+      "from": "TASK-144",
+      "to": "ISS-156",
+      "type": "addresses",
+      "created_at": "2026-09-14T12:30:11+00:00"
+    },
+    {
+      "from": "TASK-144",
+      "to": "ISS-157",
+      "type": "addresses",
+      "created_at": "2026-09-14T12:30:11+00:00"
+    },
+    {
+      "from": "TASK-145",
+      "to": "ISS-160",
+      "type": "addresses",
+      "created_at": "2026-09-14T12:30:11+00:00"
+    },
+    {
+      "from": "TASK-146",
+      "to": "ISS-158",
+      "type": "addresses",
+      "created_at": "2026-09-14T12:30:11+00:00"
+    },
+    {
+      "from": "TASK-146",
+      "to": "ISS-159",
+      "type": "addresses",
+      "created_at": "2026-09-14T12:30:11+00:00"
+    },
+    {
+      "from": "ISS-155",
+      "to": "COMP-017",
+      "type": "located_in",
+      "created_at": "2026-09-14T12:31:29+00:00"
+    },
+    {
+      "from": "ISS-156",
+      "to": "COMP-017",
+      "type": "located_in",
+      "created_at": "2026-09-14T12:31:29+00:00"
+    },
+    {
+      "from": "ISS-158",
+      "to": "COMP-017",
+      "type": "located_in",
+      "created_at": "2026-09-14T12:31:29+00:00"
+    },
+    {
+      "from": "ISS-159",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-14T12:31:29+00:00"
+    },
+    {
+      "from": "ISS-160",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-14T12:31:29+00:00"
+    },
+    {
+      "from": "ISS-157",
+      "to": "COMP-017",
+      "type": "located_in",
+      "created_at": "2026-09-14T12:31:29+00:00"
+    },
+    {
+      "from": "CHG-193",
+      "to": "ISS-160",
+      "type": "resolves",
+      "created_at": "2026-09-14T12:45:49+00:00"
     }
   ]
 }
