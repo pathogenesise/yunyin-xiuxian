@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 173,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T18:53:53+00:00",
+  "updated_at": "2026-09-14T19:20:28+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9978,6 +9978,31 @@
       "touched_round": 172,
       "commit": "47b37f5",
       "summary": "历练页适配钮补触达区 + 四处图标钮补可访问名(RIL TASK-153/154·ISS-168/169)"
+    },
+    "ISS-170": {
+      "id": "ISS-170",
+      "type": "issue",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-14T19:08:25+00:00",
+      "updated_at": "2026-09-14T19:19:32+00:00",
+      "touched_round": 173,
+      "summary": "core/choiceAnalysis.ts 是孤文件:0 处引用、0 个 spec,同类分析模块(compoundingAudit/celestialSim/economySim/impactSurface)皆有 spec,唯它从 Phase 29 引入起就死在这里",
+      "severity": 0.3
+    },
+    "TASK-155": {
+      "id": "TASK-155",
+      "type": "task",
+      "status": "active",
+      "version": 4,
+      "created_at": "2026-09-14T19:10:11+00:00",
+      "updated_at": "2026-09-14T19:20:28+00:00",
+      "touched_round": 173,
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.97,
+      "effort": 1,
+      "summary": "删除孤文件 core/choiceAnalysis.ts —— 0 引用 0 spec,同类分析模块以 spec 为锚,它无锚可留"
     }
   },
   "edges": [
@@ -14721,6 +14746,12 @@
       "to": "TASK-154",
       "type": "implements",
       "created_at": "2026-09-14T18:53:04+00:00"
+    },
+    {
+      "from": "TASK-155",
+      "to": "ISS-170",
+      "type": "addresses",
+      "created_at": "2026-09-14T19:10:11+00:00"
     }
   ]
 }
