@@ -10,8 +10,8 @@
 # 最新版本
 docker run -d -p 8080:80 ghcr.io/setube/yunyin-xiuxian:latest
 
-# 指定版本号（取 package.json 的 version，当前为 1.33.0）
-docker run -d -p 8080:80 ghcr.io/setube/yunyin-xiuxian:1.33.0
+# 指定版本号（取 package.json 的 version，将下面的 <version> 换成实际版本号）
+docker run -d -p 8080:80 ghcr.io/setube/yunyin-xiuxian:<version>
 
 # 指定提交
 docker run -d -p 8080:80 ghcr.io/setube/yunyin-xiuxian:<commit-sha>
@@ -26,7 +26,7 @@ docker run -d -p 8080:80 ghcr.io/setube/yunyin-xiuxian:<commit-sha>
 docker build -t yunyin-xiuxian:latest .
 
 # 构建时指定版本号
-docker build -t yunyin-xiuxian:1.33.0 .
+docker build -t yunyin-xiuxian:<version> .
 ```
 
 ### 方式三：docker compose
