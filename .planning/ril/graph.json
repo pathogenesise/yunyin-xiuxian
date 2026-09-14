@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 168,
+  "round": 169,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T14:35:46+00:00",
+  "updated_at": "2026-09-14T15:01:34+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9662,6 +9662,111 @@
       "touched_round": 168,
       "commit": "4225e24",
       "summary": "移动端 hover-only 信息内联:灵根资质亮字、天赋点按展开、挑战变数/契约规则入行+aria-pressed、区域适配原因展开、秘境多行 toast 合并(ToastHost pre-line)"
+    },
+    "ISS-161": {
+      "id": "ISS-161",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T14:40:35+00:00",
+      "updated_at": "2026-09-14T14:40:35+00:00",
+      "touched_round": 169,
+      "summary": "首屏元信息:index.html theme-color #F3EFE4 为静态亮色,不随 dark/auto 主题同步——暗色玩家在浏览器地址栏/PWA 标题栏看到亮米色衬底;description 开头多一个空格(index.html:7)"
+    },
+    "ISS-162": {
+      "id": "ISS-162",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T14:40:35+00:00",
+      "updated_at": "2026-09-14T14:40:35+00:00",
+      "touched_round": 169,
+      "summary": "README 系文档一致性:QQ 深链双写(config.yml:4 qm.qq.com/q/1IftIfOkzy vs README:206 q/2BVaTTwDkI,同群两链接至少一条失效);README.Docker 硬编码版本 1.33.0 三处(升级即漂移);.gitignore 断言 .env* 例外 !.env.example 但仓库无 .env.example 且 .env.production 被跟踪(规则与现实相悖);docs/ 整目录被 gitignore 排除出版本控制"
+    },
+    "ISS-163": {
+      "id": "ISS-163",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T14:40:36+00:00",
+      "updated_at": "2026-09-14T14:40:36+00:00",
+      "touched_round": 169,
+      "summary": "yunyin.yml 构建产物验证步骤半死:判据 stat mtime 距今>300s 永不在 CI 命中(build 与本步骤同 job 紧邻执行),只告警不断言失败——留着不咬人的噪声步骤"
+    },
+    "TASK-147": {
+      "id": "TASK-147",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-14T14:41:11+00:00",
+      "updated_at": "2026-09-14T15:01:34+00:00",
+      "touched_round": 169,
+      "category": "docs",
+      "severity": 0.4,
+      "confidence": 0.95,
+      "effort": 1,
+      "summary": "首屏 theme-color 随主题动态同步:applyTheme 里同步 meta[name=theme-color](亮 #F3EFE4 / 暗 #211F1C),顺手修掉 description 前置空格;系统 auto 切换时一并跟随"
+    },
+    "TASK-148": {
+      "id": "TASK-148",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-14T14:41:11+00:00",
+      "updated_at": "2026-09-14T15:01:34+00:00",
+      "touched_round": 169,
+      "category": "docs",
+      "severity": 0.35,
+      "confidence": 0.95,
+      "effort": 2,
+      "summary": "README 系一致性收口:QQ 深链统一为 README 现用那条(或其一保留);README.Docker 版本号改 <version> 占位+仅留一处真实示例;.env 规则对齐现实(补 .env.example 模板或从 git 移除 .env.production);docs/ gitignore 决策(排除生成物改窄条目或保留并说明)"
+    },
+    "TASK-149": {
+      "id": "TASK-149",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-14T14:41:11+00:00",
+      "updated_at": "2026-09-14T15:01:34+00:00",
+      "touched_round": 169,
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 0.95,
+      "effort": 1,
+      "summary": "yunyin.yml 半死验证步骤实质化:改成校验 dist/index.html 存在且非空、含 #app 挂载点,或直接删除(避免 CI 噪声)"
+    },
+    "CHG-196": {
+      "id": "CHG-196",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T15:01:34+00:00",
+      "updated_at": "2026-09-14T15:01:34+00:00",
+      "touched_round": 169,
+      "commit": "4a38d20",
+      "summary": "theme-color 随主题动态同步+description 空格;theme.spec 新增亮暗断言"
+    },
+    "CHG-197": {
+      "id": "CHG-197",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T15:01:34+00:00",
+      "updated_at": "2026-09-14T15:01:34+00:00",
+      "touched_round": 169,
+      "commit": "10eb0f2",
+      "summary": "README 系一致性:QQ 链接统一、Docker 版本占位、.env 规则对齐、设计文档入库"
+    },
+    "CHG-198": {
+      "id": "CHG-198",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T15:01:34+00:00",
+      "updated_at": "2026-09-14T15:01:34+00:00",
+      "touched_round": 169,
+      "commit": "0267363",
+      "summary": "yunyin.yml 产物校验实质化:#app 挂载点+入口脚本,删 mtime 死判据"
     }
   },
   "edges": [
@@ -14273,6 +14378,42 @@
       "to": "ISS-159",
       "type": "resolves",
       "created_at": "2026-09-14T14:35:46+00:00"
+    },
+    {
+      "from": "TASK-147",
+      "to": "ISS-161",
+      "type": "addresses",
+      "created_at": "2026-09-14T14:41:50+00:00"
+    },
+    {
+      "from": "TASK-148",
+      "to": "ISS-162",
+      "type": "addresses",
+      "created_at": "2026-09-14T14:41:50+00:00"
+    },
+    {
+      "from": "TASK-149",
+      "to": "ISS-163",
+      "type": "addresses",
+      "created_at": "2026-09-14T14:41:50+00:00"
+    },
+    {
+      "from": "CHG-196",
+      "to": "ISS-161",
+      "type": "resolves",
+      "created_at": "2026-09-14T15:01:34+00:00"
+    },
+    {
+      "from": "CHG-197",
+      "to": "ISS-162",
+      "type": "resolves",
+      "created_at": "2026-09-14T15:01:34+00:00"
+    },
+    {
+      "from": "CHG-198",
+      "to": "ISS-163",
+      "type": "resolves",
+      "created_at": "2026-09-14T15:01:34+00:00"
     }
   ]
 }
