@@ -92,6 +92,12 @@ bun run build:apk
 
 > **关于 Android 签名**：签名私钥文件（`android/release.keystore`）作为历史遗留随仓库分发，它只提供「用同一把钥匙签出的 APK」这一致性，**不构成官方性与防伪**——任何克隆仓库的人理论上都能用它签出包。因此：签名口令绝不入库，CI 由 GitHub Secrets（`KEYSTORE_STORE_PASSWORD` / `KEYSTORE_KEY_PASSWORD`）注入；本地出包请在 shell 里临时 `export` 这两个环境变量（或建一个不入库的 `android/keystore.local.properties`）。请以本仓库 release 页发布的 APK 与 Docker 镜像为准。
 
+### 多端安装
+
+- **Web / PWA**：直接部署 `dist/`（或走下方 Docker 镜像），移动浏览器打开即玩，可「添加到主屏幕」。
+- **Android**：CI 会把签好的 APK 作为 `android-apk` 产物上传；本地出包在 `android/app/build/outputs/apk/release/yunyin-<版本号>.apk`。把 APK 传到手机后点击安装（系统会提示允许安装未知来源应用，放行即可；覆盖安装需签名一致——自己构建的包与官方签名不同，需先卸载旧版）。
+- **Windows 桌面（Electron）**：`pkg/yunyin-<版本号>-win.zip`，解压后运行其中的 `云隐修仙录.exe`；杀毒软件若误报，是未签名 exe 的通病，可加入白名单。
+
 推送到 `main` 会经 GitHub Actions 走同一道闸：类型检查、ESLint、单元测试全绿后才构建 Electron 与 Android 产物、发布 Release，并推送 Docker 镜像。
 
 ### Docker 部署
