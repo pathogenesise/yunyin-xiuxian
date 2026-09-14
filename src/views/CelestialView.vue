@@ -319,15 +319,21 @@
                 class="chip-ink"
                 :class="draft.mutatorIds.includes(m.id) ? 'border-violet-ink text-violet-ink' : 'border-ink/25 text-ink-faint'"
                 :title="m.text"
+                :aria-pressed="draft.mutatorIds.includes(m.id)"
                 @click="toggleDraftMutator(m.id)"
               >
                 {{ m.name }}
               </button>
             </div>
+            <!-- 变数已选的,把效果正文亮出来 —— 手机没有 hover,赌约规则得看得见 -->
+            <p v-if="selectedMutators.length" class="mt-1 text-[10px] leading-relaxed text-violet-ink">
+              {{ selectedMutators.map(m => `${m.name}：${m.text}`).join('；') }}
+            </p>
             <div class="mt-1.5 flex flex-wrap gap-1.5">
               <button
                 class="chip-ink"
                 :class="draft.pactId === null ? 'border-jade text-jade' : 'border-ink/25 text-ink-faint'"
+                :aria-pressed="draft.pactId === null"
                 @click="setDraftPact(null)"
               >
                 不立契
@@ -338,11 +344,15 @@
                 class="chip-ink"
                 :class="draft.pactId === p.id ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
                 :title="p.ruleText"
+                :aria-pressed="draft.pactId === p.id"
                 @click="setDraftPact(p.id)"
               >
                 {{ p.name }}
               </button>
             </div>
+            <p v-if="challengePact" class="mt-1 text-[10px] leading-relaxed text-ink-soft">
+              立约「{{ challengePact.name }}」：{{ challengePact.ruleText }}
+            </p>
             <input
               v-model="draft.name"
               maxlength="8"
@@ -1100,6 +1110,9 @@
   // ---- 天道挑战书 ----
   const draft = ref<ChallengeDraft>({ worldId: CELESTIAL_WORLDS[0]!.id, mutatorIds: [], pactId: null, name: '' })
   const challengeVerdict = ref<ChallengeVerdict | null>(null)
+  /** 已选变数(把效果正文亮到行内,移动端不靠 hover) */
+  const selectedMutators = computed(() => MUTATORS.filter(m => draft.value.mutatorIds.includes(m.id)))
+  const challengePact = computed(() => (draft.value.pactId ? pactDef(draft.value.pactId) ?? null : null))
 
   function setDraftWorld(id: string): void {
     draft.value = { ...draft.value, worldId: id }

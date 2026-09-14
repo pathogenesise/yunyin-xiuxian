@@ -15,11 +15,19 @@
           <span
             v-for="root in player.linggen?.roots ?? []"
             :key="root.element"
-            class="grid h-6 w-6 place-items-center rounded-full border text-[11px] font-kai"
-            :style="{ borderColor: ELEMENTS[root.element].color, color: ELEMENTS[root.element].color }"
+            class="flex flex-col items-center"
             :title="`资质 ${root.aptitude}`"
           >
-            {{ ELEMENTS[root.element].char }}
+            <span
+              class="grid h-6 w-6 place-items-center rounded-full border text-[11px] font-kai"
+              :style="{ borderColor: ELEMENTS[root.element].color, color: ELEMENTS[root.element].color }"
+            >
+              {{ ELEMENTS[root.element].char }}
+            </span>
+            <!-- 资质直接亮在圆环下,不再只藏 hover —— 手机上看得到才谈得上权衡 -->
+            <span class="mt-0.5 text-[9px] leading-none tabular" :style="{ color: ELEMENTS[root.element].color }">
+              {{ root.aptitude }}
+            </span>
           </span>
         </div>
         <span class="ml-auto text-[11px] text-ink-faint tabular">×{{ player.linggen?.growthMult.toFixed(2) }}</span>
@@ -251,17 +259,26 @@
         <span v-else class="shrink-0 font-kai text-[15px] text-cinnabar">{{ signedTrial.seal }}</span>
       </p>
 
-      <div class="mt-2 flex flex-wrap gap-1.5">
-        <span
-          v-for="t in ownedTalents"
-          :key="t!.id"
-          class="chip-ink border-current"
-          :style="{ color: TALENT_GRADE_COLORS[t!.grade] }"
-          :title="t!.desc"
-        >
-          {{ t!.name }}
-        </span>
-        <span v-if="!ownedTalents.length" class="text-[11px] text-ink-ghost">转世后可觉醒先天之姿</span>
+      <div class="mt-2">
+        <div class="flex flex-wrap gap-1.5">
+          <!-- 天赋效果不再只藏 hover:点一下芯片,下面展开一行说明(手机上看得见才算数) -->
+          <button
+            v-for="t in ownedTalents"
+            :key="t!.id"
+            class="chip-ink border-current bg-transparent text-left"
+            :style="{ color: TALENT_GRADE_COLORS[t!.grade] }"
+            :title="t!.desc"
+            :aria-expanded="talentTap === t!.id"
+            @click="talentTap = talentTap === t!.id ? null : t!.id"
+          >
+            {{ t!.name }}
+          </button>
+          <span v-if="!ownedTalents.length" class="text-[11px] text-ink-ghost">转世后可觉醒先天之姿</span>
+        </div>
+        <p v-if="talentTap && tappedTalent" class="mt-1.5 text-[10px] leading-relaxed text-ink-faint">
+          <span :style="{ color: TALENT_GRADE_COLORS[tappedTalent.grade] }">{{ tappedTalent.name }}</span>
+          ：{{ tappedTalent.desc }}
+        </p>
       </div>
       <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">兵解转世保留道果 / 天赋 / 法宝,功法折半,余者归尘。金丹境方可自行兵解。</p>
       <template #footer>
@@ -565,6 +582,12 @@
 
   // ---- 轮回 ----
   const rebirthOpen = ref(false)
+  /** 天赋芯片点按展开(移动端无 hover,效果说明内联显示);关弹窗复位 */
+  const talentTap = ref<string | null>(null)
+  const tappedTalent = computed(() => (talentTap.value ? talentDef(talentTap.value) : undefined))
+  watch(rebirthOpen, open => {
+    if (!open) talentTap.value = null
+  })
   const bondDialog = ref(false)
   const bond = computed(() => player.bond)
   const bondDef = computed(() => (bond.value ? (daoluDef(bond.value.daoluId) ?? null) : null))

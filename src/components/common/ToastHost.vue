@@ -13,7 +13,7 @@
         v-for="t in ui.toasts"
         :key="t.id"
         type="button"
-        class="pointer-events-auto max-w-90 cursor-pointer rounded-lg border px-4 py-2 text-left text-[13px] shadow-md font-kai tracking-wide active:opacity-60"
+        class="pointer-events-auto max-w-90 cursor-pointer rounded-lg border px-4 py-2 text-left text-[13px] shadow-md font-kai tracking-wide active:opacity-60 whitespace-pre-line"
         :class="KIND_CLASS[t.kind]"
         @click="ui.dismissToast(t.id)"
       >

@@ -120,10 +120,20 @@
             >
               {{ chip.name }}·{{ ECO_LEVEL_NAMES[chip.level] }}
             </span>
-            <span v-if="row.adaptation" class="ml-auto text-[10px] text-ink-soft tabular" :title="row.adaptation.reasons.join(';')">
+            <!-- 适配原因点按展开:手机没有 hover,得知道自己为什么被看好/看衰 -->
+            <button
+              v-if="row.adaptation"
+              class="ml-auto text-[10px] text-ink-soft tabular active:scale-95"
+              :title="row.adaptation.reasons.join(';')"
+              :aria-expanded="adaptExpand === row.def.id"
+              @click="adaptExpand = adaptExpand === row.def.id ? null : row.def.id"
+            >
               适配
               <span class="text-gold-ink">{{ starsText(row.adaptation.stars) }}</span>
-            </span>
+            </button>
+          </div>
+          <div v-if="adaptExpand === row.def.id && row.adaptation" class="mt-1">
+            <p v-for="(r, i) in row.adaptation.reasons" :key="i" class="text-[10px] leading-relaxed text-ink-faint">· {{ r }}</p>
           </div>
         </div>
         </template>
@@ -227,6 +237,8 @@
   /** 今日星象:值日之宿所利界域,由此知今日该往哪一片地界走 */
   const mansionLine = computed(() => todayMansionLine())
   const favoredWorldName = computed(() => worldDef(favoredWorld(todayMansion())).name)
+  /** 区域适配原因点按展开(移动端无 hover) */
+  const adaptExpand = ref<string | null>(null)
 
   /**
    * 从本世之界页带回来的地界 —— 直接打开出行方式弹窗。

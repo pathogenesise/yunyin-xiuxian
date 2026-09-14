@@ -96,6 +96,7 @@
   function fight(): void {
     const r = fightSecretLayer()
     if (!r) return
-    for (const line of r.lines) ui.toast(line, r.win ? 'info' : 'warn')
+    // 战报合并为单条多行 toast:逐条 push 会被 toast 位(上限 5)把自己前面的行挤掉,长战报读不全
+    if (r.lines.length) ui.toast(r.lines.join('\n'), r.win ? 'info' : 'warn')
   }
 </script>
