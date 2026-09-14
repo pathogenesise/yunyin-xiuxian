@@ -8,6 +8,14 @@ on:
       - '**.md'
       - '.github/**'
 
+# 同一分支只留一条流水线。两个 run 同时进 release job,会在同一个 tag 下
+# 「先删旧资产、再传新资产」,互相删掉对方刚传的文件,Release 里就会缺东西。
+# 用 cancel-in-progress: false 而不是 true —— 取消进行中的 run,有可能正好
+# 砍在「已删完、还没传完」的窗口里,留下一个资产不全的 Release。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # 1. 构建 Electron 客户端
   build-electron:
@@ -20,7 +28,7 @@ jobs:
           - os: windows-latest
             platform: win
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -34,7 +42,7 @@ jobs:
           bun run test
 
       - name: 缓存 Electron Builder
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/AppData/Local/electron/Cache
@@ -44,15 +52,13 @@ jobs:
             electron-${{ runner.os }}-
 
       - name: 构建 Electron
-        run: |
-          bun install
-          bun run build:electron --${{ matrix.platform }}
+        run: bun run build:electron --${{ matrix.platform }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 【关键点】上传 zip 产物
       - name: 上传 Electron 安装包
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: electron-${{ matrix.platform }}
           path: |
@@ -63,7 +69,7 @@ jobs:
     name: 构建 Android APK
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -76,23 +82,21 @@ jobs:
           bun run test
 
       - name: 配置 Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '21'
       - name: 配置 Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       # 使用官方 Gradle Action（内置智能缓存）
       - name: 配置 Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: false
 
       - name: 构建前端
-        run: |
-          bun install
-          bun run build
+        run: bun run build
 
       - name: 同步 Capacitor
         run: bunx cap sync android
@@ -104,7 +108,7 @@ jobs:
           ./gradlew assembleRelease --build-cache
 
       - name: 上传 APK 产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-apk
           path: android/app/build/outputs/apk/release/*.apk
@@ -116,7 +120,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -130,7 +134,7 @@ jobs:
 
       # 1. 下载时，不使用 merge-multiple，防止覆盖冲突
       - name: 下载构建产物
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ./raw-assets
 
@@ -164,7 +168,7 @@ jobs:
 
       # 4. 上传新文件
       - name: 创建 GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
           name: Release ${{ steps.get_version.outputs.VERSION }}

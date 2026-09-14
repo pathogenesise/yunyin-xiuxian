@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -32,10 +32,14 @@ jobs:
           bun run test
       - name: 构建
         run: bun run build
+      # 前置条件:仓库需在 Settings → Pages → Build and deployment 里把 Source 选成
+      # GitHub Actions。configure-pages 拿不到站点就会直接失败(Not Found)。
+      # 不要改用 enablement: true 绕过:该参数要求非 GITHUB_TOKEN 的凭据
+      # (PAT 的 repo 权限或 GitHub App 的 administration:write + pages:write)。
       - name: 配置 Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: 上传构建产物
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -48,4 +52,4 @@ jobs:
     steps:
       - name: 发布到 Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
