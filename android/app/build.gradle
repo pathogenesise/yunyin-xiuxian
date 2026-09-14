@@ -12,12 +12,37 @@ def versionParts = appVersionName.split('\\.')
 def versionPart = { int i -> i < versionParts.length ? versionParts[i].toInteger() : 0 }
 def appVersionCode = versionPart(0) * 10000 + versionPart(1) * 100 + versionPart(2)
 
-// 签名配置从 keystore.properties 读取。
-// 该文件与 release.keystore 随仓库分发,CI 无需额外配置即可产出签名 APK。
+// 签名口令:优先走环境变量(CI 由 GitHub Secrets 注入 KEYSTORE_STORE_PASSWORD /
+// KEYSTORE_KEY_PASSWORD),回退到 keystore.properties。仓库内的 keystore.properties
+// 只存 storeFile/keyAlias,不含口令 —— 口令不入库,克隆者拿不到签名私钥口令。
+// 无口令时(本地未设环境变量):不配 release 签名,照常出包(不能安装)但不至于失败。
 def keystorePropsFile = rootProject.file('keystore.properties')
 def keystoreProps = new Properties()
 if (keystorePropsFile.exists()) {
     keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+// 本地覆盖:不入库的 keystore.local.properties 可补口令与别名(见 android/.gitignore),
+// 供本地出包用,避免把口令提交进共享的 keystore.properties。
+def localPropsFile = rootProject.file('keystore.local.properties')
+def localProps = new Properties()
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { localProps.load(it) }
+}
+// 口令优先级:环境变量(CI Secrets) > 本地覆盖文件 > 共享属性文件。
+def pick = { String key, String envName, props, local ->
+    def v = System.getenv(envName)
+    if (v != null) return v
+    if (local != null && local[key]) return local[key].toString()
+    if (props != null && props[key]) return props[key].toString()
+    return null
+}
+def storePassword = pick('storePassword', 'KEYSTORE_STORE_PASSWORD', keystoreProps, localProps)
+def keyPassword = pick('keyPassword', 'KEYSTORE_KEY_PASSWORD', keystoreProps, localProps)
+// 哨兵:口令齐备才配签名;缺任何一位就直接跳过(出包但未签名)。
+// 不希望 CI 在某次构建里悄悄产出「没签名的 release」—— 无口令时显式打日志,一眼可查。
+def signingAvailable = storePassword != null && storePassword.length() > 0 && keyPassword != null && keyPassword.length() > 0 && keystorePropsFile.exists()
+if (!signingAvailable) {
+    println "WARNING: 未找到签名口令(KEYSTORE_STORE_PASSWORD/KEYSTORE_KEY_PASSWORD),本次构建产出未签名 APK"
 }
 
 android {
@@ -26,11 +51,11 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropsFile.exists()) {
+            if (signingAvailable) {
                 keyAlias keystoreProps['keyAlias']
-                keyPassword keystoreProps['keyPassword']
+                keyPassword keyPassword
                 storeFile rootProject.file(keystoreProps['storeFile'])
-                storePassword keystoreProps['storePassword']
+                storePassword storePassword
                 v1SigningEnabled true
                 v2SigningEnabled true
             }
@@ -52,12 +77,12 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.release
+            if (signingAvailable) signingConfig signingConfigs.release
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            if (signingAvailable) signingConfig signingConfigs.release
         }
     }
     applicationVariants.all { variant ->

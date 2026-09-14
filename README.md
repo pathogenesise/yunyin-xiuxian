@@ -85,9 +85,12 @@ bun run build:electron
 # 同步 Web 产物到 Android 工程（Capacitor）
 bun run build:android
 
-# 直接出 Release APK（需 android/keystore.properties 提供签名）
+# 直接出 Release APK（签名口令来自环境变量或开发机本地
+# KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD，见下）
 bun run build:apk
 ```
+
+> **关于 Android 签名**：签名私钥文件（`android/release.keystore`）作为历史遗留随仓库分发，它只提供「用同一把钥匙签出的 APK」这一致性，**不构成官方性与防伪**——任何克隆仓库的人理论上都能用它签出包。因此：签名口令绝不入库，CI 由 GitHub Secrets（`KEYSTORE_STORE_PASSWORD` / `KEYSTORE_KEY_PASSWORD`）注入；本地出包请在 shell 里临时 `export` 这两个环境变量（或建一个不入库的 `android/keystore.local.properties`）。请以本仓库 release 页发布的 APK 与 Docker 镜像为准。
 
 推送到 `main` 会经 GitHub Actions 走同一道闸：类型检查、ESLint、单元测试全绿后才构建 Electron 与 Android 产物、发布 Release，并推送 Docker 镜像。
 

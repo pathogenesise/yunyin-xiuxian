@@ -101,8 +101,14 @@ jobs:
       - name: 同步 Capacitor
         run: bunx cap sync android
 
+      # 签名口令走 Secrets 注入(不落在仓库文件里)。仓库设置里需配置
+      # KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD 两个 secret,否则产出未签名 APK
+      # (build.gradle 会在日志里打 WARNING,一眼可查)。
       - name: 构建 APK (Release)
         working-directory: android
+        env:
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease --build-cache
