@@ -116,7 +116,11 @@
           <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="applyLoadout(lo.id)">换装</button>
           <!-- 删除二步确认:一套构筑是心血,误触垃圾桶不该直接没 -->
           <template v-if="confirmDelete !== lo.id">
-            <button class="p-1 text-ink-ghost active:text-cinnabar" @click="confirmDelete = lo.id">
+            <button
+              class="-m-1.5 flex min-h-[28px] min-w-[28px] items-center justify-center p-1.5 text-ink-ghost active:text-cinnabar"
+              aria-label="删除构筑"
+              @click="confirmDelete = lo.id"
+            >
               <GameIcon name="trash" :size="12" />
             </button>
           </template>

@@ -16,7 +16,7 @@
           class="w-full rounded-md border border-ink/20 bg-paper-deep/60 px-3 py-2 font-kai text-[15px] tracking-widest text-ink outline-none focus:border-cinnabar/50"
           placeholder="取一个道号"
         />
-        <button class="btn-ghost shrink-0 !px-3" @click="randomName">
+        <button class="btn-ghost shrink-0 !px-3" aria-label="随机取一个道号" @click="randomName">
           <GameIcon name="refresh" :size="15" />
         </button>
       </div>

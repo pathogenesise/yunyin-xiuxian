@@ -121,9 +121,10 @@
               {{ chip.name }}·{{ ECO_LEVEL_NAMES[chip.level] }}
             </span>
             <!-- 适配原因点按展开:手机没有 hover,得知道自己为什么被看好/看衰 -->
+            <!-- min-h-[28px] 是排版自检的尺子:展开按钮此前只有 15px 高,拇指点不着 -->
             <button
               v-if="row.adaptation"
-              class="ml-auto text-[10px] text-ink-soft tabular active:scale-95"
+              class="ml-auto inline-flex min-h-[28px] items-center text-[10px] text-ink-soft tabular active:scale-95"
               :title="row.adaptation.reasons.join(';')"
               :aria-expanded="adaptExpand === row.def.id"
               @click="adaptExpand = adaptExpand === row.def.id ? null : row.def.id"

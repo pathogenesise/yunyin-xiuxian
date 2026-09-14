@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 172,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T16:43:27+00:00",
+  "updated_at": "2026-09-14T18:48:46+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -506,7 +506,7 @@
       "version": 2,
       "created_at": "2026-09-09T15:18:26+00:00",
       "updated_at": "2026-09-10T14:11:58+00:00",
-      "touched_round": 14,
+      "touched_round": 172,
       "confidence": 0.75,
       "summary": "转世泄漏的确定性成分是有意还是 bug 需拆分:镇压/世界记忆=设计;lastCaveEventDay/winStreak/eventChains=本世进程应清;secretRealm/regionEvent=一次性内容应清"
     },
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 168,
+      "touched_round": 172,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1823,7 +1823,7 @@
       "version": 1,
       "created_at": "2026-09-11T08:22:14+00:00",
       "updated_at": "2026-09-11T08:22:14+00:00",
-      "touched_round": 56,
+      "touched_round": 172,
       "summary": "修行目标系统(goal.ts 纯函数 + HomeView 指引卡):给方向不替玩家做决定"
     },
     "TASK-032": {
@@ -9893,6 +9893,91 @@
       "touched_round": 172,
       "commit": "cbcd49f1808d2d677bf4336fb786369d39e06914",
       "summary": "历练会话 sanitize 补 stoneGain/expGain gn() 归一;storeResilience 增 null/裸数字两种损坏形状回归"
+    },
+    "ISS-168": {
+      "id": "ISS-168",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-14T18:22:04+00:00",
+      "updated_at": "2026-09-14T18:46:46+00:00",
+      "touched_round": 172,
+      "summary": "历练页『适配』展开按钮只有 15px 高,低于项目自定 28px 最小触达区下限(layout-check 在 390-late/320-late 两档实测报错)",
+      "severity": 0.55
+    },
+    "ISS-169": {
+      "id": "ISS-169",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-14T18:22:07+00:00",
+      "updated_at": "2026-09-14T18:46:47+00:00",
+      "touched_round": 172,
+      "summary": "四处图标按钮无 aria-label:装备详情锁钮/背包构筑删除钮/建号随机道号钮、装备详情分解钮 —— 读屏只念『按钮』,违反 TopStatusBar 自述的可访问名标准",
+      "severity": 0.45
+    },
+    "TASK-153": {
+      "id": "TASK-153",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-14T18:22:28+00:00",
+      "updated_at": "2026-09-14T18:48:46+00:00",
+      "touched_round": 172,
+      "category": "dx",
+      "severity": 0.55,
+      "confidence": 0.98,
+      "effort": 1,
+      "summary": "历练页『适配』展开钮补足 28px 触达区:加 py/最小高度,视觉上保留行内小字观感(layout-check 需转绿)"
+    },
+    "TASK-154": {
+      "id": "TASK-154",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-14T18:22:36+00:00",
+      "updated_at": "2026-09-14T18:46:47+00:00",
+      "touched_round": 172,
+      "category": "dx",
+      "severity": 0.45,
+      "confidence": 0.95,
+      "effort": 1,
+      "summary": "四处图标按钮补 aria-label(toggleLock/释装分解/随机道号/删构筑),触达区一并≥28px"
+    },
+    "EV-157": {
+      "id": "EV-157",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T18:43:46+00:00",
+      "updated_at": "2026-09-14T18:43:46+00:00",
+      "touched_round": 172,
+      "source": "layout-check.mjs 390-late/320-late /adventure 可点元素过小:15px",
+      "summary": "『适配 ★★★☆☆』展开钮 15px,低于 28px 下限",
+      "confidence": 1.0
+    },
+    "EV-158": {
+      "id": "EV-158",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T18:43:46+00:00",
+      "updated_at": "2026-09-14T18:43:46+00:00",
+      "touched_round": 172,
+      "source": "layout-check.mjs re-run after fix",
+      "summary": "修正后 101 页面×视口全部 ✓,控件有名且≥28px",
+      "confidence": 1.0
+    },
+    "CHG-202": {
+      "id": "CHG-202",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T18:48:46+00:00",
+      "updated_at": "2026-09-14T18:48:46+00:00",
+      "touched_round": 172,
+      "commit": "M",
+      "summary": "历练页适配展开钮补足 28px 触达区;装备详情锁/分解、构筑删除、随机道号四处图标钮补 aria-label 并保证 28px"
     }
   },
   "edges": [
@@ -14588,6 +14673,30 @@
       "to": "ISS-167",
       "type": "resolves",
       "created_at": "2026-09-14T16:43:27+00:00"
+    },
+    {
+      "from": "TASK-153",
+      "to": "ISS-168",
+      "type": "addresses",
+      "created_at": "2026-09-14T18:23:02+00:00"
+    },
+    {
+      "from": "TASK-154",
+      "to": "ISS-169",
+      "type": "addresses",
+      "created_at": "2026-09-14T18:23:02+00:00"
+    },
+    {
+      "from": "ISS-168",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-14T18:23:48+00:00"
+    },
+    {
+      "from": "ISS-169",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-14T18:23:48+00:00"
     }
   ]
 }

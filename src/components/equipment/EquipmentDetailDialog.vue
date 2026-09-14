@@ -5,7 +5,11 @@
         <QualityTag :quality="inst.quality" />
         <span class="text-[11px] text-ink-faint">{{ EQUIP_SLOT_NAMES[template.slot] }} · {{ inst.tier }} 阶</span>
         <span v-if="inst.level > 0" class="text-[11px] text-gold-ink tabular">+{{ inst.level }}</span>
-        <button class="ml-auto text-ink-faint active:scale-90" @click="toggleLock">
+        <button
+          class="-m-1.5 flex min-h-[28px] min-w-[28px] items-center justify-center p-1.5 text-ink-faint active:scale-90"
+          :aria-label="inst.locked ? '解锁' : '锁定'"
+          @click="toggleLock"
+        >
           <GameIcon :name="inst.locked ? 'lock' : 'unlock'" :size="15" />
         </button>
       </div>
@@ -135,7 +139,12 @@
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
           <!-- 分解二步确认:一件淬养过的装备(强化/封存/重铸)误触垃圾桶不该直接没 -->
           <template v-if="decomposeArm !== inst?.uid">
-            <button class="btn-ghost px-3" :disabled="isEquipped || inst?.locked" @click="decomposeArm = inst?.uid ?? null">
+            <button
+              class="btn-ghost px-3"
+              :disabled="isEquipped || inst?.locked"
+              aria-label="分解这件装备"
+              @click="decomposeArm = inst?.uid ?? null"
+            >
               <GameIcon name="trash" :size="15" />
             </button>
           </template>
