@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 169,
+  "round": 170,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T15:11:33+00:00",
+  "updated_at": "2026-09-14T15:45:14+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9778,6 +9778,42 @@
       "touched_round": 169,
       "rationale": "用户本轮目标点名打磨/交互/易用/文档,而 RIL 默认 category_weight(docs=1、core-feature=6)会让这类 task 的 priority_score 远低于 3.0 阈值(实测 TASK-147/148 仅 0.38/0.235)。本项目正确性高度成熟(151 resolved issues、1486 测试全绿),剩余价值集中在易用性与文档——故本轮按用户指令直接执行低于阈值的 docs/UX 任务,默认评分留待预算放宽或权重调整",
       "alternatives_rejected": "死守 score>3.0 门槛会导致只做权重高的正确性任务,与本轮用户明确目标是同一件事的背反;改全局权重则影响后续所有轮次的排序,越权"
+    },
+    "ISS-164": {
+      "id": "ISS-164",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T15:44:32+00:00",
+      "updated_at": "2026-09-14T15:44:32+00:00",
+      "touched_round": 170,
+      "summary": "洞府巡游『每日一次』闸门用 UTC 日(lastCaveEventDay = floor(Date.now()/86400000),三处),而日课用本地日 todayStr——UTC+8 玩家在本地 16:00 被翻到明天:同一本地日可两次巡游白嫖奖励,或跨了本地午夜却巡不了"
+    },
+    "ISS-165": {
+      "id": "ISS-165",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T15:44:32+00:00",
+      "updated_at": "2026-09-14T15:44:32+00:00",
+      "touched_round": 170,
+      "summary": "跨午夜启动/冻结恢复:引擎先 settleOffline 后 rolloverDailyIfNeeded——离线击杀先计入『昨日』日课 delta(可能顺手领走昨日未领奖励),随后 rollover 才把今日 base 定为含离线数据的新起点;离线收益对『归来之日』不可见"
+    },
+    "TASK-150": {
+      "id": "TASK-150",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-14T15:44:32+00:00",
+      "updated_at": "2026-09-14T15:45:14+00:00",
+      "touched_round": 170,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "『每日』口径与时序统一:①巡游日闸门改 todayLocalNum()(与 todayStr 同一本地日),三处触发/选择/离开一致;②engine.start 与冻结恢复的离线分支先 rolloverDailyIfNeeded() 再 settleOffline(),离线收益归归来之日",
+      "lock_owner": "main-150",
+      "lock_until": "2026-09-14T17:15:14+00:00"
     }
   },
   "edges": [
@@ -14425,6 +14461,18 @@
       "to": "ISS-163",
       "type": "resolves",
       "created_at": "2026-09-14T15:01:34+00:00"
+    },
+    {
+      "from": "TASK-150",
+      "to": "ISS-164",
+      "type": "addresses",
+      "created_at": "2026-09-14T15:45:14+00:00"
+    },
+    {
+      "from": "TASK-150",
+      "to": "ISS-165",
+      "type": "addresses",
+      "created_at": "2026-09-14T15:45:14+00:00"
     }
   ]
 }

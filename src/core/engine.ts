@@ -36,6 +36,9 @@ class GameEngine {
       sanitizeOfflineInputs()
       // 旧存档补种:把过去凭丹炉等级"能炼"的方子折算成掌握度(幂等)
       if (game.started) seedLoreIfNeeded()
+      // 先翻日再结算离线:跨午夜归来时,离线收益记入"归来之日"的日课,
+      // 而不是先攒进昨日 delta(可能顺手领走昨日未领奖励)再被 rollover 重置
+      rolloverDailyIfNeeded()
       if (game.started && game.lastActiveAt > 0) {
         settleOffline(now)
       }
@@ -45,7 +48,6 @@ class GameEngine {
     game.stampActive(now)
     this.lastTickAt = now
     this.lastStampAt = now
-    rolloverDailyIfNeeded()
 
     if (this.timer === undefined) {
       this.timer = window.setInterval(() => this.tickSafe(), TICK_MS)
@@ -104,7 +106,9 @@ class GameEngine {
     if (dt <= 0) return
 
     if (dt > OFFLINE_MIN_SECONDS) {
-      // 长时间停摆(休眠/后台冻结):走离线结算
+      // 长时间停摆(休眠/后台冻结):走离线结算。与 start 同理,先翻日再结算,
+      // 冻结跨午夜恢复时离线收益归"归来之日"
+      rolloverDailyIfNeeded()
       settleOffline(now)
     } else {
       this.advance(dt, now)

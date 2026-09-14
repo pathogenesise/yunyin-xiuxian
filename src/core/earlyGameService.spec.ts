@@ -5,6 +5,7 @@ import { useResourcesStore } from '@/stores/resources'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useAdventureStore } from '@/stores/adventure'
 import { gn, gnZero, toNum } from '@/utils/gnum'
+import { todayLocalNum } from '@/utils/time'
 import {
   dismissCaveEvent,
   dismissEnlightenment,
@@ -30,7 +31,7 @@ describe('洞府巡游(Phase 28)', () => {
 
   it('当日已巡游后不再触发', () => {
     const player = usePlayerStore()
-    const today = Math.floor(Date.now() / 86400000)
+    const today = todayLocalNum()
     player.markCaveEventToday(today)
     expect(mayTriggerCaveEvent()).toBeNull()
   })
@@ -41,7 +42,7 @@ describe('洞府巡游(Phase 28)', () => {
     expect(ev).not.toBeNull()
     expect(getCurrentCaveEvent()).not.toBeNull()
 
-    const today = Math.floor(Date.now() / 86400000)
+    const today = todayLocalNum()
     dismissCaveEvent()
     // 模块态清空
     expect(getCurrentCaveEvent()).toBeNull()
@@ -304,7 +305,7 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
   it('金丹巡游存在感 0.25:掷败则今日让位(不反复重掷)', () => {
     const player = usePlayerStore()
     player.major = 2
-    const today = Math.floor(Date.now() / 86400000)
+    const today = todayLocalNum()
     vi.spyOn(Math, 'random').mockReturnValue(0.9) // 0.9 > 0.25 → 今日让位
     expect(mayTriggerCaveEvent()).toBeNull()
     expect(player.lastCaveEventDay).toBe(today)

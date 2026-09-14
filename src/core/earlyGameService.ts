@@ -17,6 +17,7 @@ import {
   earlyEventDecay
 } from '@/data/earlyGame'
 import { gn } from '@/utils/gnum'
+import { todayLocalNum } from '@/utils/time'
 
 function telemetry(): ReturnType<typeof usePacingTelemetry> {
   return usePacingTelemetry()
@@ -235,7 +236,7 @@ export function mayTriggerCaveEvent(): CaveEvent | null {
   if (caveEvent) return caveEvent // 已有未处理事件
 
   const player = usePlayerStore()
-  const today = Math.floor(Date.now() / 86400000)
+  const today = todayLocalNum()
   if (player.lastCaveEventDay === today) return null // 今日已触发
 
   // EARLY_EVENT_DECAY:巡游是"前期活跃",元婴后让位给更重要的系统(存在感归零完全退出)。
@@ -314,7 +315,7 @@ export function chooseCaveOption(optionIndex: number): void {
     cult.addBuff(`cave_penalty_${opt.penalty.type}`, now)
   }
 
-  const today = Math.floor(Date.now() / 86400000)
+  const today = todayLocalNum()
   player.markCaveEventToday(today)
   // 选完给一句回执——此前选完弹窗直接关,拿到什么全凭感觉
   useUiStore().toast(`洞府巡游·${opt.effect}`, 'success')
@@ -330,7 +331,7 @@ export function chooseCaveOption(optionIndex: number): void {
 export function dismissCaveEvent(): void {
   if (!caveEvent) return
   telemetry().record('cave_ignore', 'modal', '洞府巡游离开')
-  const today = Math.floor(Date.now() / 86400000)
+  const today = todayLocalNum()
   usePlayerStore().markCaveEventToday(today)
   caveEvent = null
 }
