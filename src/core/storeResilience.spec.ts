@@ -272,6 +272,28 @@ describe('坏档韧性 · 活状态(引擎每 tick 都读的那些)', () => {
     expect(adventure.session).toBeNull()
   })
 
+  it('历练会话:stoneGain/expGain 损坏(null/裸数字)被 gn() 归一,不再让首胜崩', () => {
+    setActivePinia(createPinia())
+    const adventure = useAdventureStore()
+    // null 形状:旧版 sanitize 经 ...s 原样保留,首胜 add(null,…) 读 .m 抛 TypeError、
+    // 被 tickSafe 吞掉后历练永久卡死;现在必须归一为合法 GNum
+    adventure.$patch({
+      session: { regionId: 'qingyun', mode: 'normal', startedAt: 1, endsAt: 2, nextBattleAt: 3, wins: 0, losses: 0, events: 0, stoneGain: null, expGain: null, itemGain: 0 }
+    } as never)
+    adventure.sanitize()
+    expect(adventure.session).not.toBeNull()
+    expect(adventure.session!.stoneGain).toEqual({ m: 0, e: 0 })
+    expect(adventure.session!.expGain).toEqual({ m: 0, e: 0 })
+
+    // 裸数字:也归一成 GNum,而不是 (123).m → undefined 的静默归零路径
+    adventure.$patch({
+      session: { regionId: 'qingyun', mode: 'normal', startedAt: 1, endsAt: 2, nextBattleAt: 3, wins: 0, losses: 0, events: 0, stoneGain: 123, expGain: 456, itemGain: 0 }
+    } as never)
+    adventure.sanitize()
+    expect(adventure.session!.stoneGain.m).toBeCloseTo(1.23, 10)
+    expect(adventure.session!.expGain.m).toBeCloseTo(4.56, 10)
+  })
+
   it('区域动态事件:endsAt 坏了就清掉(否则要么永不失效要么当场失效)', () => {
     setActivePinia(createPinia())
     const player = usePlayerStore()
