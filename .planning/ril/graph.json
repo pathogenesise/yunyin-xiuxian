@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 172,
+  "round": 173,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T18:48:46+00:00",
+  "updated_at": "2026-09-14T18:53:53+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9972,12 +9972,12 @@
       "id": "CHG-202",
       "type": "change",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-14T18:48:46+00:00",
-      "updated_at": "2026-09-14T18:48:46+00:00",
+      "updated_at": "2026-09-14T18:53:03+00:00",
       "touched_round": 172,
-      "commit": "M",
-      "summary": "历练页适配展开钮补足 28px 触达区;装备详情锁/分解、构筑删除、随机道号四处图标钮补 aria-label 并保证 28px"
+      "commit": "47b37f5",
+      "summary": "历练页适配钮补触达区 + 四处图标钮补可访问名(RIL TASK-153/154·ISS-168/169)"
     }
   },
   "edges": [
@@ -14697,6 +14697,30 @@
       "to": "COMP-006",
       "type": "located_in",
       "created_at": "2026-09-14T18:23:48+00:00"
+    },
+    {
+      "from": "CHG-202",
+      "to": "ISS-168",
+      "type": "resolves",
+      "created_at": "2026-09-14T18:53:03+00:00"
+    },
+    {
+      "from": "CHG-202",
+      "to": "ISS-169",
+      "type": "resolves",
+      "created_at": "2026-09-14T18:53:03+00:00"
+    },
+    {
+      "from": "CHG-202",
+      "to": "TASK-153",
+      "type": "implements",
+      "created_at": "2026-09-14T18:53:03+00:00"
+    },
+    {
+      "from": "CHG-202",
+      "to": "TASK-154",
+      "type": "implements",
+      "created_at": "2026-09-14T18:53:04+00:00"
     }
   ]
 }
