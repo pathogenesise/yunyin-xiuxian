@@ -47,7 +47,7 @@
               v-for="b in branches"
               :key="b.id"
               class="flex w-full items-center justify-between gap-2 rounded-md border border-ink/20 px-3 py-2 text-left active:scale-98"
-              @click="choose(b.id)"
+              @click="branchConfirm = b.id"
             >
               <span class="min-w-0">
                 <span class="font-kai text-[13px] text-ink">{{ b.name }}</span>
@@ -56,6 +56,16 @@
               </span>
               <span class="shrink-0 text-[10px] text-azure">择此道 →</span>
             </button>
+            <!-- 永久抉择二步确认:选了就改不了,按一下不该就此了结 -->
+            <div v-if="branchConfirm" class="rounded-md bg-cinnabar/5 px-3 py-2">
+              <p class="text-[10px] leading-relaxed text-cinnabar/90">
+                道分歧路,一经择定<strong>终身不改</strong>(转世仍随你)。确认择【{{ gongfaBranchDef(branchConfirm)?.name ?? '' }}】?
+              </p>
+              <div class="mt-1.5 flex justify-end gap-2">
+                <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="branchConfirm = null">再想想</button>
+                <button class="btn-seal !px-3 !py-1 !text-[11px]" @click="confirmBranch()">确认择道</button>
+              </div>
+            </div>
           </div>
         </div>
         <!-- 满级却无分支:也要交代一句,免得玩家满世界找入口 -->
@@ -78,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useUiStore } from '@/stores/ui'
   import { useCultivationStore } from '@/stores/cultivation'
   import { useDongfuStore } from '@/stores/dongfu'
@@ -129,11 +139,24 @@
     return id ? gongfaBranchDef(id) : undefined
   })
 
+  /** 悟道分岔确认态(按分支 id):永久抉择先确认。换功法/关弹窗即复位 */
+  const branchConfirm = ref<string | null>(null)
+  watch(def, () => {
+    branchConfirm.value = null
+  })
+
   function choose(branchId: string): void {
     if (!def.value) return
     if (cultivation.chooseBranch(def.value.id, branchId)) {
       ui.toast(`已悟道「${gongfaBranchDef(branchId)?.name ?? ''}」`, 'rare')
     }
+  }
+
+  function confirmBranch(): void {
+    if (!branchConfirm.value) return
+    const id = branchConfirm.value
+    branchConfirm.value = null
+    choose(id)
   }
 
   function close(): void {

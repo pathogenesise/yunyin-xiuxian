@@ -417,13 +417,28 @@
               >
                 忆
               </button>
+              <!-- 重写要花道源,代价内联在按钮上(不再是 hover 专属),触控面放大,并加一步确认 -->
+              <template v-if="mark.cleared && mark.replay && rewriteConfirm === i">
+                <button
+                  class="shrink-0 rounded border border-cinnabar/50 bg-cinnabar/10 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
+                  @click="rewriteConfirm = null"
+                >
+                  算了
+                </button>
+                <button
+                  class="shrink-0 rounded bg-cinnabar px-2 py-1 font-kai text-[10px] text-paper active:scale-90"
+                  @click="doRewrite(mark)"
+                >
+                  确认重写
+                </button>
+              </template>
               <button
-                v-if="mark.cleared && mark.replay"
-                class="shrink-0 rounded border border-cinnabar/40 px-1.5 py-0.5 font-kai text-[10px] text-cinnabar active:scale-90"
-                :title="`以今日之你重打此战,快过 ${mark.rounds} 回合即【胜于旧我】(道源 ${REWRITE_ENTRY_COST})`"
-                @click="goRewrite(mark)"
+                v-else-if="mark.cleared && mark.replay"
+                class="shrink-0 rounded border border-cinnabar/40 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
+                :title="`以今日之你重打此战,快过 ${mark.rounds} 回合即【胜于旧我】`"
+                @click="rewriteConfirm = i"
               >
-                写
+                写(道源{{ REWRITE_ENTRY_COST }})
               </button>
             </div>
           </div>
@@ -558,11 +573,28 @@
     <BaseModal :open="furnaceOpen" title="天道熔炉" @close="furnaceOpen = false">
       <p class="mb-2 text-[11px] leading-relaxed text-ink-faint">前尘俗物,皆可熔作道源。</p>
       <div class="card-ink divide-y divide-ink/7 px-4">
-        <div v-for="row in furnaceRows" :key="row.rate.resource" class="flex items-center justify-between py-2.5">
-          <span class="text-[12px] text-ink-soft">{{ row.rate.name }}(存 {{ formatNum(row.have) }})</span>
-          <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="furnaceConvert(row.rate)">
-            {{ row.rate.per }} → 1 道源
-          </button>
+        <div v-for="row in furnaceRows" :key="row.rate.resource" class="py-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[12px] text-ink-soft">{{ row.rate.name }}(存 {{ formatNum(row.have) }})</span>
+            <!-- 全熔防误触:文案亮出『整包』与可得道源(不再是『按 25:1 换』的可兑换暗示),再按一下才熔 -->
+            <button
+              class="btn-ghost !px-3 !py-1 !text-[11px] tabular"
+              :disabled="furnacePreview(row.rate) <= 0"
+              @click="furnaceConfirm = row.rate.resource"
+            >
+              熔尽本包 → {{ furnacePreview(row.rate) }} 道源
+            </button>
+          </div>
+          <div v-if="furnaceConfirm === row.rate.resource" class="mt-1.5 rounded-md bg-cinnabar/5 px-3 py-2">
+            <p class="text-[10px] leading-relaxed text-cinnabar/90">
+              将 <span class="tabular">{{ row.rate.name }} ×{{ formatNum(row.have) }}</span> 尽数熔作道源,共
+              <span class="tabular">+{{ furnacePreview(row.rate) }}</span> 缕 —— 此举不可逆,这些资源再无炼丹/锻造/参悟之途。
+            </p>
+            <div class="mt-1.5 flex justify-end gap-2">
+              <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="furnaceConfirm = null">再想想</button>
+              <button class="btn-seal !px-3 !py-1 !text-[11px] tabular" @click="doFurnace(row.rate)">确认熔尽</button>
+            </div>
+          </div>
         </div>
         <div class="flex items-center justify-between py-2.5">
           <span class="text-[12px] text-ink-soft">灵石(存 {{ formatGN(resources.spiritStone) }})</span>
@@ -717,7 +749,8 @@
     EXPEDITION_ROUTE_LAYERS,
     FURNACE_RATES,
     TRIALS,
-    daoPathDef
+    daoPathDef,
+    type FurnaceRate
   } from '@/data/endgame'
   import { PACTS, pactDef } from '@/data/pacts'
   import { GATES, gateDef } from '@/data/qimen'
@@ -799,6 +832,19 @@
   // Phase 30.9:道源说明弹窗 / 道果链路 / 首次终局教学
   const daoSourceDialogOpen = ref(false)
   const furnaceOpen = ref(false)
+  /** 熔炉全熔确认态(按资源键)。熔炉弹窗关闭即复位,不残留旧行 */
+  const furnaceConfirm = ref<FurnaceRate['resource'] | null>(null)
+  watch(furnaceOpen, open => {
+    if (!open) furnaceConfirm.value = null
+  })
+  /** 全熔一包可得道源(预览,与 furnaceConvert 同口径 floor(have/per)) */
+  function furnacePreview(rate: FurnaceRate): number {
+    return Math.floor(resources[rate.resource] / rate.per)
+  }
+  function doFurnace(rate: FurnaceRate): void {
+    furnaceConfirm.value = null
+    furnaceConvert(rate)
+  }
   const tutorialOpen = ref(false)
   const fruitInfo = computed(() => fruitMarginalInfo())
   // 首次进入天界(已解锁且未见过教学):自动弹终局导览
@@ -1029,6 +1075,8 @@
   }
 
   // ---- 重写此痕:以今日之你,快过当年 ----
+  /** 重写确认态(按道痕索引):写入要花道源,需要看明白再点 */
+  const rewriteConfirm = ref<number | null>(null)
   function goRewrite(mark: (typeof endgame.marks)[number]): void {
     const result = rewriteMark(mark)
     if (result) {
@@ -1040,6 +1088,10 @@
         reward: 0
       }
     }
+  }
+  function doRewrite(mark: (typeof endgame.marks)[number]): void {
+    rewriteConfirm.value = null
+    goRewrite(mark)
   }
 
   /** 道途行为叙事(本世道痕 ≥2 则方语) */
