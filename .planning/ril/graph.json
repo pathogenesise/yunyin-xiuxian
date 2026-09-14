@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 170,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T15:45:14+00:00",
+  "updated_at": "2026-09-14T15:47:14+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9782,38 +9782,47 @@
     "ISS-164": {
       "id": "ISS-164",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-14T15:44:32+00:00",
-      "updated_at": "2026-09-14T15:44:32+00:00",
+      "updated_at": "2026-09-14T15:47:14+00:00",
       "touched_round": 170,
       "summary": "洞府巡游『每日一次』闸门用 UTC 日(lastCaveEventDay = floor(Date.now()/86400000),三处),而日课用本地日 todayStr——UTC+8 玩家在本地 16:00 被翻到明天:同一本地日可两次巡游白嫖奖励,或跨了本地午夜却巡不了"
     },
     "ISS-165": {
       "id": "ISS-165",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-14T15:44:32+00:00",
-      "updated_at": "2026-09-14T15:44:32+00:00",
+      "updated_at": "2026-09-14T15:47:14+00:00",
       "touched_round": 170,
       "summary": "跨午夜启动/冻结恢复:引擎先 settleOffline 后 rolloverDailyIfNeeded——离线击杀先计入『昨日』日课 delta(可能顺手领走昨日未领奖励),随后 rollover 才把今日 base 定为含离线数据的新起点;离线收益对『归来之日』不可见"
     },
     "TASK-150": {
       "id": "TASK-150",
       "type": "task",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-14T15:44:32+00:00",
-      "updated_at": "2026-09-14T15:45:14+00:00",
+      "updated_at": "2026-09-14T15:47:14+00:00",
       "touched_round": 170,
       "category": "correctness",
       "severity": 0.55,
       "confidence": 0.9,
       "effort": 2,
-      "summary": "『每日』口径与时序统一:①巡游日闸门改 todayLocalNum()(与 todayStr 同一本地日),三处触发/选择/离开一致;②engine.start 与冻结恢复的离线分支先 rolloverDailyIfNeeded() 再 settleOffline(),离线收益归归来之日",
-      "lock_owner": "main-150",
-      "lock_until": "2026-09-14T17:15:14+00:00"
+      "summary": "『每日』口径与时序统一:①巡游日闸门改 todayLocalNum()(与 todayStr 同一本地日),三处触发/选择/离开一致;②engine.start 与冻结恢复的离线分支先 rolloverDailyIfNeeded() 再 settleOffline(),离线收益归归来之日"
+    },
+    "CHG-199": {
+      "id": "CHG-199",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T15:47:14+00:00",
+      "updated_at": "2026-09-14T15:47:14+00:00",
+      "touched_round": 170,
+      "commit": "4f58e6b",
+      "summary": "每日口径与时序:巡游日闸门 UTC→本地日(三处)、引擎先翻日再离线结算;earlyGameService.spec 同口径"
     }
   },
   "edges": [
@@ -14473,6 +14482,18 @@
       "to": "ISS-165",
       "type": "addresses",
       "created_at": "2026-09-14T15:45:14+00:00"
+    },
+    {
+      "from": "CHG-199",
+      "to": "ISS-164",
+      "type": "resolves",
+      "created_at": "2026-09-14T15:47:14+00:00"
+    },
+    {
+      "from": "CHG-199",
+      "to": "ISS-165",
+      "type": "resolves",
+      "created_at": "2026-09-14T15:47:14+00:00"
     }
   ]
 }
