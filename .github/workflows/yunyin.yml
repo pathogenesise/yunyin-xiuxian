@@ -57,17 +57,9 @@ jobs:
             echo "构建失败：dist/index.html 不存在"
             exit 1
           fi
-
-          BUILD_TIME=$(stat -c %Y dist/index.html 2>/dev/null || stat -f %m dist/index.html 2>/dev/null || echo "0")
-          CURRENT_TIME=$(date +%s)
-          TIME_DIFF=$((CURRENT_TIME - BUILD_TIME))
-
-          echo "构建产物信息:"
-          echo "  时间差: ${TIME_DIFF}秒"
-
-          if [ $TIME_DIFF -gt 300 ]; then
-            echo "警告: 构建产物可能不是最新的（超过5分钟）"
-          fi
+          # 实质校验:挂载点与入口脚本就位,才算一份能跑的产物(旧的 mtime 判据在 CI 永不命中,已删)
+          grep -q 'id="app"' dist/index.html || { echo "构建失败：index.html 缺少 #app 挂载点"; exit 1; }
+          grep -q 'src=.*main' dist/index.html || grep -q 'assets/' dist/index.html || { echo "构建失败：index.html 未引用入口脚本"; exit 1; }
 
           echo "构建产物验证通过"
           ls -la dist/
