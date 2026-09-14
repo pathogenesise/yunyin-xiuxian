@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 170,
+  "round": 171,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-14T15:47:14+00:00",
+  "updated_at": "2026-09-14T16:18:49+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9823,6 +9823,32 @@
       "touched_round": 170,
       "commit": "4f58e6b",
       "summary": "每日口径与时序:巡游日闸门 UTC→本地日(三处)、引擎先翻日再离线结算;earlyGameService.spec 同口径"
+    },
+    "ISS-166": {
+      "id": "ISS-166",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-14T16:17:12+00:00",
+      "updated_at": "2026-09-14T16:17:12+00:00",
+      "touched_round": 171,
+      "summary": "离线历练漏接 doubleDropRate:在线 afterWin 每战掷 doubled(×2 灵石/修为/材料/装备),离线结算公式只有 spiritStoneGain/expGain/dropRate/luck,福缘词条对离线零效果——违反『在线/离线同源』铁律(离线本就按期望结算,乘数期望×(1+p)即可对齐,不改变量级预期)"
+    },
+    "TASK-151": {
+      "id": "TASK-151",
+      "type": "task",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-14T16:17:12+00:00",
+      "updated_at": "2026-09-14T16:18:49+00:00",
+      "touched_round": 171,
+      "category": "correctness",
+      "severity": 0.5,
+      "confidence": 0.85,
+      "effort": 2,
+      "summary": "离线历练并入 doubleDropRate:按期望值 doubleMult=1+clamp01(modOf(doubleDropRate)),乘入离线石头/修为/材料/装备数,与在线 afterWin 期望一致;offlineParity 增断言",
+      "lock_owner": "main-151",
+      "lock_until": "2026-09-14T17:48:49+00:00"
     }
   },
   "edges": [
@@ -14494,6 +14520,12 @@
       "to": "ISS-165",
       "type": "resolves",
       "created_at": "2026-09-14T15:47:14+00:00"
+    },
+    {
+      "from": "TASK-151",
+      "to": "ISS-166",
+      "type": "addresses",
+      "created_at": "2026-09-14T16:18:49+00:00"
     }
   ]
 }

@@ -162,25 +162,28 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         wins = Math.round(battles * winRate)
 
         // 灵石与修为 —— 与在线 afterWin 同源:取胜奖励乘区域事件加丰倍率(rewardMult)
+        // 福缘(doubleDropRate)也同源:在线每战掷一次翻倍、期望 ×(1+p);
+        // 离线按期望值计入(doubleMult),与 winRate 的期望结算一致,词条不再对离线失效
+        const doubleMult = 1 + Math.min(1, Math.max(0, modOf(mods, 'doubleDropRate')))
         const stoneGain = stoneByTier(
           region.tier,
-          10 * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'spiritStoneGain'))
+          10 * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'spiritStoneGain')) * doubleMult
         )
         resources.addStone(stoneGain)
         player.gainExp(
-          mulN(player.expReq, BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')))
+          mulN(player.expReq, BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')) * doubleMult)
         )
         // 材料 —— 离线也会撞见新灵材,只是次数封顶,免得回来一屏 toast
-        const herbGain = Math.round(wins * 1.0)
-        const oreGain = Math.round(wins * 0.5)
+        const herbGain = Math.round(wins * 1.0 * doubleMult)
+        const oreGain = Math.round(wins * 0.5 * doubleMult)
         resources.addSmall('herb', herbGain)
         resources.addSmall('ore', oreGain)
         harvestMaterials(region.tier, 'herb', herbGain)
         harvestMaterials(region.tier, 'ore', oreGain)
-        resources.addSmall('page', Math.round(wins * 0.15))
-        resources.addSmall('dust', Math.round(wins * 0.3))
-        // 装备:最多实际生成 6 件,其余折算为器灵尘(掉落数与在线同源,乘事件加丰)
-        const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * regionEventReward * (1 + modOf(mods, 'dropRate')))
+        resources.addSmall('page', Math.round(wins * 0.15 * doubleMult))
+        resources.addSmall('dust', Math.round(wins * 0.3 * doubleMult))
+        // 装备:最多实际生成 6 件,其余折算为器灵尘(掉落数与在线同源,乘事件加丰与福缘)
+        const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * regionEventReward * (1 + modOf(mods, 'dropRate')) * doubleMult)
         const realCount = Math.min(6, equipCount)
         for (let i = 0; i < realCount; i += 1) {
           // 灵兽性格同样管离线掉落:贪宝更易稀出,谨慎稍稍寻常(与在线 afterWin 同源)

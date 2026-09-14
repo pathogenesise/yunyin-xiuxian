@@ -47,6 +47,16 @@ describe('离线历练 · 战斗规则与在线同源(逆旅契)', () => {
   })
 })
 
+describe('离线历练 · doubleDropRate 与在线同源', () => {
+  it('离线普通战结算并入福缘词条:doubleDropRate 按期望值乘入灵石/修为/材料/装备', () => {
+    const offline = readFileSync(src('./offline.ts'), 'utf8')
+    // 词条不能只对在线 afterWin 生效 —— 离线普通战公式必须读到它(首领战走 afterWin 天然生效)
+    expect(offline).toContain("modOf(mods, 'doubleDropRate')")
+    // 期望值乘子(doubleMult)要真的乘进了四处产出公式(stones/exp/materials/equip)
+    expect(offline).toContain('* doubleMult')
+  })
+})
+
 describe('离线历练 · 事件池与在线同源(本世路线)', () => {
   it('离线事件走 placeContent 的 regionEventPoolFor,不再只剩硬编码通用池', () => {
     const offline = readFileSync(src('./offline.ts'), 'utf8')
