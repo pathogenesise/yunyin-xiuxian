@@ -33,6 +33,25 @@ describe('自动战斗', () => {
     expect(result.log[result.log.length - 1]!.t).toBe('win')
   })
 
+  /**
+   * 先手判定随战斗结果带出(供战后分析讲清「差多少」)。
+   *
+   * 判据是**阈值**语义本身:1 + 先手判定修正 ≥ 对手速度 才算抢先,差一点就是没有 ——
+   * 这条一旦被写成连续收益,词条文案与分析面板就又要开始撒谎。
+   */
+  it('先手判定如实带出:恰好持平也算抢先,差一点就不算', () => {
+    const enemy = { ...makeEnemySnap(wolf, 1, 1), speed: 1.1 }
+    const atPar = resolveCombat({ ...playerSnap(10), mods: { speed: 0.1 } }, enemy, seeded(7))
+    expect(atPar.firstMove, '战果里应当带上先手判定').toBeDefined()
+    expect(atPar.firstMove!.playerSpeed).toBeCloseTo(1.1, 10)
+    expect(atPar.firstMove!.enemySpeed).toBeCloseTo(1.1, 10)
+    expect(atPar.firstMove!.playerFirst, '持平即抢先(≥)').toBe(true)
+
+    const justShort = resolveCombat({ ...playerSnap(10), mods: { speed: 0.09 } }, enemy, seeded(7))
+    expect(justShort.firstMove!.playerFirst, '差 0.01 就是没抢先').toBe(false)
+    expect(justShort.firstMove!.playerSpeed).toBeCloseTo(1.09, 10)
+  })
+
   it('战力悬殊过大则败,不会死循环', () => {
     const enemy = makeEnemySnap(enemyDef('e_hmdemon')!, 20, 2)
     const result = resolveCombat(playerSnap(1), enemy, seeded(4))

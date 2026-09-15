@@ -71,4 +71,46 @@ describe('战斗分析', () => {
     expect(rows.map(r => r.label)).toContain('真伤承伤占比')
     expect(rows.map(r => r.label)).toContain('护盾吸收')
   })
+
+  /**
+   * 先手判定是一条阈值,不是连续收益。
+   *
+   * 从前词条写「出手速度提升 6%」,玩家自然会以为多打一点就多赚一点;真相是
+   * 差一点就完全没有。故战后分析要把**两个数与差额**摆出来:既解释「你为什么后手」,
+   * 也给出「再凑几个百分点能跨线」——解释原因、给方向,不替玩家做决定。
+   */
+  describe('先手判定', () => {
+    const withFirst = (win: boolean, playerFirst: boolean, ps: number, es: number): CombatResult => ({
+      ...result(win, stats({})),
+      firstMove: { playerFirst, playerSpeed: ps, enemySpeed: es }
+    })
+
+    it('数据行用两个数说话(不再让人对着百分比猜)', () => {
+      const rows = battleDataRows(withFirst(true, true, 1.06, 1.05))
+      const row = rows.find(r => r.label === '先手')
+      expect(row, '战报里应当有一行先手读数').toBeDefined()
+      expect(row!.value).toContain('1.06')
+      expect(row!.value).toContain('1.05')
+      expect(row!.value).toContain('抢先')
+    })
+
+    it('被抢先时给出「还差多少」,而不是笼统说速度不够', () => {
+      const a = analyzeBattle(withFirst(false, false, 1.02, 1.1), null)!
+      const hit = a.findings.find(f => f.text.includes('先手判定'))
+      expect(hit, '被抢先应当被点名').toBeDefined()
+      expect(hit!.text).toContain('8%')
+      expect(hit!.text, '要说清这是一条阈值').toContain('阈值')
+    })
+
+    it('抢到了就不唠叨:胜利时不给先手告警', () => {
+      const a = analyzeBattle(withFirst(true, true, 1.2, 1.05), null)!
+      expect(a.findings.some(f => f.text.includes('先手判定'))).toBe(false)
+    })
+
+    it('旧战报(没有 firstMove)照常工作', () => {
+      const rows = battleDataRows(result(true, stats({})))
+      expect(rows.some(r => r.label === '先手')).toBe(false)
+      expect(analyzeBattle(result(false, stats({})), null)).not.toBeNull()
+    })
+  })
 })

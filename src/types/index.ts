@@ -728,6 +728,14 @@ export interface CombatResult {
   log: CombatLogEntry[]
   rounds: number
   playerHpPct: number
+  /**
+   * 先手判定 —— 谁先出手,以及那次判定用的两个数。
+   *
+   * 这是一条**阈值**判定(1 + 先手判定修正 ≥ 对手速度),不是连续收益:
+   * 差一点就是完全没抢先。故把两个数如实记下来,交给战后分析讲清楚
+   * 「你差多少」,而不是让玩家对着「出手速度 +6%」猜自己为什么还是后手。
+   */
+  firstMove?: { playerFirst: boolean; playerSpeed: number; enemySpeed: number }
   /** 战斗遥测(旧存档可能缺失) */
   stats?: { player: CombatSideStats; enemy: CombatSideStats }
 }

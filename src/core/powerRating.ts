@@ -100,8 +100,8 @@ export function ratePower(stats: FinalStats): PowerRating {
     term('护盾强度', v('shieldPower'), 0.5),
     term('闪避率', v('dodgeRate'), 1.5)
   ]
-  // 身法:出手/先手/连击
-  const speedTerms = [term('出手速度', v('speed'), 2), term('先手', v('firstStrike')), term('连击率', v('comboRate'), 1.5)]
+  // 身法:先手判定(阈值)/首回合伤害/连击率 —— 名字与 statNames 一致,面板与战力理由不许各叫各的
+  const speedTerms = [term('先手判定', v('speed'), 2), term('首回合伤害', v('firstStrike')), term('连击率', v('comboRate'), 1.5)]
   // 恢复:吸血/回合回复/溢疗(量纲归一:小数值键放大)
   const recoveryTerms = [
     term('吸血', v('lifesteal'), 8),

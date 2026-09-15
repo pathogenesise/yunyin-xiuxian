@@ -329,7 +329,9 @@
     const b = battle.value
     if (!b) return null
     const r = b.result
-    return `此战 ${r.rounds} 回合 · 战后气血 ${Math.round(r.playerHpPct * 100)}% · ${r.win ? '胜' : '负'}`
+    // 结语只多四个字,却是每个玩家每场都会读到的一行:抢先 / 被抢先
+    const first = r.firstMove ? (r.firstMove.playerFirst ? ' · 抢先' : ' · 被抢先') : ''
+    return `此战 ${r.rounds} 回合 · 战后气血 ${Math.round(r.playerHpPct * 100)}% · ${r.win ? '胜' : '负'}${first}`
   })
 
   // ---- 战斗分析(第三层信息) ----

@@ -8,7 +8,13 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   maxHpPct: '生命上限',
   critRate: '暴击率',
   critDamage: '暴击伤害',
-  speed: '出手速度',
+  /**
+   * 先手判定(speed)——这个名字必须与机制同形。
+   *
+   * 它是一条**阈值**:1 + 本项修正 ≥ 对手速度即抢先(见 core/combat.ts)。
+   * 从前叫「出手速度」,读起来像连续收益,于是「+6% 为什么还是后手」成了必然的困惑。
+   */
+  speed: '先手判定',
   damageBonus: '伤害增幅',
   damageReduction: '伤害减免',
   cultivationSpeed: '修炼速度',
@@ -25,7 +31,8 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   qiCapPct: '灵气上限',
   beastPct: '灵兽效果',
   armorPen: '破甲',
-  firstStrike: '先手伤害',
+  // 与 speed 分开命名:那个管「谁先出手」,这个管「首回合打得更重」(先发/雷霆词条)
+  firstStrike: '首回合伤害',
   counterRate: '反击概率',
   lifesteal: '吸血',
   shieldOnStart: '开战护盾',

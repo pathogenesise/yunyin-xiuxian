@@ -41,6 +41,8 @@ export function battleDataRows(result: CombatResult): { label: string; value: st
   const p = s.player
   const attempts = p.hitsLanded + p.missedHits
   const rows: { label: string; value: string }[] = [
+    // 先手放第一行:它决定了整场的节奏,而且是一条**阈值**判定 —— 两个数摆出来,玩家才知道自己差在哪
+    ...(result.firstMove ? [firstMoveRow(result)] : []),
     { label: '总输出', value: formatGN(p.dealt) },
     { label: '总承伤', value: formatGN(p.taken) },
     { label: '真伤承伤占比', value: formatPercent(share(p.pierceTaken, p.taken)) },
@@ -53,6 +55,51 @@ export function battleDataRows(result: CombatResult): { label: string; value: st
   ]
   if (attempts === 0) return rows.slice(0, 6)
   return rows
+}
+
+/**
+ * 先手判定的读数与差额。
+ *
+ * 一律用**显示出来的那两个数**算差额(先各留两位再相减):显示 1.02 与 1.10 却报「还差 9%」
+ * 会让人对着数字算不明白 —— 浮点误差不该出现在玩家读的那句话里。
+ */
+function firstMoveReadout(result: CombatResult): { playerSpeed: number; enemySpeed: number; gapPct: number; text: string } {
+  const f = result.firstMove!
+  const playerSpeed = Math.round(f.playerSpeed * 100) / 100
+  const enemySpeed = Math.round(f.enemySpeed * 100) / 100
+  const gapPct = Math.max(0, Math.round((enemySpeed - playerSpeed) * 100))
+  return {
+    playerSpeed,
+    enemySpeed,
+    gapPct,
+    text: f.playerFirst
+      ? `你抢先 ${playerSpeed.toFixed(2)} ≥ 敌 ${enemySpeed.toFixed(2)}`
+      : `敌先动(你 ${playerSpeed.toFixed(2)} < 敌 ${enemySpeed.toFixed(2)})`
+  }
+}
+
+/** 先手判定的读数行:「你 1.06 ≥ 敌 1.05」比「出手速度 +6%」诚实得多 */
+function firstMoveRow(result: CombatResult): { label: string; value: string } {
+  return { label: '先手', value: firstMoveReadout(result).text }
+}
+
+/**
+ * 被抢先时给一条**可行动**的解释:还差多少能跨过对手那一线。
+ *
+ * 「出手速度 +6%」这种写法会让人以为多打一点就多赚一点;真相是差一点就完全没有。
+ * 故这里把差额直接换算成词条还差几个百分点 —— 解释原因、给方向,不替玩家做决定。
+ */
+function firstMoveFinding(result: CombatResult): AnalysisFinding[] {
+  const f = result.firstMove
+  if (!f || f.playerFirst) return []
+  const { playerSpeed, enemySpeed, gapPct: gap } = firstMoveReadout(result)
+  if (gap <= 0) return []
+  return [
+    {
+      text: `先手判定是一条阈值:你 ${playerSpeed.toFixed(2)} < 敌 ${enemySpeed.toFixed(2)},被对手抢了先。先手类词条再凑 ${gap}% 即可跨过这条线(跨过即抢先,不必堆更多)。`,
+      styleHints: ['fengmang']
+    }
+  ]
 }
 
 function defeatFindings(p: CombatSideStats, maxHpProxy: GNum, rounds: number): AnalysisFinding[] {
@@ -112,7 +159,8 @@ export function analyzeBattle(result: CombatResult, currentStyleId: string | nul
   }
   // 用 taken+healed 近似血量池(承伤超过血池才落败)
   const p = s.player
-  const findings = defeatFindings(p, p.taken, result.rounds)
+  // 被抢先排在最前:它解释的是「整场节奏为什么在对方手里」,比逐项伤害占比更靠前
+  const findings = [...firstMoveFinding(result), ...defeatFindings(p, p.taken, result.rounds)]
   const hintCount = new Map<string, number>()
   for (const f of findings) {
     f.styleHints.forEach((id, idx) => {

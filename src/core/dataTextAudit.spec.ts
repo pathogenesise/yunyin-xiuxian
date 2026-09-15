@@ -412,4 +412,26 @@ describe('术语一致性 · 用户可见文本', () => {
       expect(all, `${term} 一个例子都没有 —— 术语约定与内容脱节了`).toContain(term)
     }
   })
+
+  /**
+   * 名与机制同形:先手判定(speed)那条**阈值**不许再叫「出手速度」。
+   *
+   * 「出手速度提升 6%」读起来是连续收益,真相是「1 + 修正 ≥ 对手速度」的开关:
+   * 差一点就完全没有。术语不对,玩家对词条的理解就必然是错的 ——
+   * 这条红线盯的是名字,战后分析(两数 + 差额)盯的是解释。
+   */
+  it('「出手速度」这个名字退休:它实际是阈值判定,一律叫「先手判定」', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}出手速度.{0,16}/g)) hits.push(`${file} 「${m[0]}」`)
+    }
+    expect(hits, `「出手速度」已改名「先手判定」(它是阈值不是连续收益):\n${hits.join('\n')}`).toEqual([])
+  })
+
+  it('先手判定与首回合伤害各留一名,不许互相借名', () => {
+    const all = userText().map(u => u.text).join('\n')
+    expect(all, '先手判定(speed)应当出现在用户可见文本里').toContain('先手判定')
+    expect(all, '首回合伤害(firstStrike)应当出现在用户可见文本里').toContain('首回合伤害')
+    expect(all, '「先手伤害」这个旧名会让两件事混为一谈').not.toContain('先手伤害')
+  })
 })

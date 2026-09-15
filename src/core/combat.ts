@@ -437,7 +437,10 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
   }
 
   let rounds = 0
-  const pFirst = 1 + modOf(pEff.mods, 'speed') >= eEff.speed
+  // 先手判定:一条阈值,不是连续收益 —— 两个数都要留着给战后分析(见 CombatResult.firstMove)
+  const pSpeed = 1 + modOf(pEff.mods, 'speed')
+  const eSpeed = eEff.speed
+  const pFirst = pSpeed >= eSpeed
   const perRounds = rules?.perRounds
   // Phase 30.7: Boss 阶段系统 + 机制家族
   let phaseIdx = -1
@@ -506,7 +509,15 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     win = false
     push('lose', 'sys', `鏖战多时仍未能建功,【${eSnap.name}】遁走,你无功而返。`)
   }
-  return { win, log, rounds, playerHpPct: hpPct(p), stats: { player: p.stats, enemy: e.stats } }
+  return {
+    win,
+    log,
+    rounds,
+    playerHpPct: hpPct(p),
+    // 先手判定如实带出:这是条阈值(见 CombatResult.firstMove 的注释),战后分析据此讲清「差多少」
+    firstMove: { playerFirst: pFirst, playerSpeed: pSpeed, enemySpeed: eSpeed },
+    stats: { player: p.stats, enemy: e.stats }
+  }
 }
 
 /** 战力估算用:双方快照的简化胜率(离线结算取样) */
