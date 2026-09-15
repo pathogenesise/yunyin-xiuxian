@@ -113,15 +113,26 @@ export const useCultivationStore = defineStore(
       return true
     }
 
+    /**
+     * 施加状态 —— 同一状态重复施加时**时长叠加**,不是取较长者刷新。
+     *
+     * 旧实现 Math.max(旧 endsAt, now + dur) 等价于「刷新」:buff 还剩 20 分钟时再服同一味丹,
+     * 那 20 分钟被清零重算,药力白丢。改为把新时长加到已有剩余时长上(尚在生效的实例以
+     * 旧 endsAt 为基准),「药力化开」这句承诺的时长才足额兑现。
+     *
+     * 已过期(理论上 pruneBuffs 已清,但离线/坏档可能残留)的实例以 now 为基准,
+     * 不把历史负剩余时间叠进来。
+     */
     function addBuff(defId: string, now: number): void {
       const def = buffDef(defId)
       if (!def) return
-      const endsAt = now + def.durationSec * 1000
+      const add = def.durationSec * 1000
       const existing = buffs.value.find(b => b.defId === defId)
       if (existing) {
-        buffs.value = buffs.value.map(b => (b.defId === defId ? { ...b, endsAt: Math.max(b.endsAt, endsAt) } : b))
+        const endsAt = Math.max(existing.endsAt, now) + add
+        buffs.value = buffs.value.map(b => (b.defId === defId ? { ...b, endsAt } : b))
       } else {
-        buffs.value = [...buffs.value, { defId, endsAt }]
+        buffs.value = [...buffs.value, { defId, endsAt: now + add }]
       }
     }
 
