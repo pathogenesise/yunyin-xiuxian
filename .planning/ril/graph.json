@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 191,
+  "round": 192,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T13:32:56+00:00",
+  "updated_at": "2026-09-15T14:03:28+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 178,
+      "touched_round": 192,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -10210,11 +10210,11 @@
     "ISS-173": {
       "id": "ISS-173",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T05:37:04+00:00",
-      "updated_at": "2026-09-15T05:37:04+00:00",
-      "touched_round": 178,
+      "updated_at": "2026-09-15T14:03:22+00:00",
+      "touched_round": 192,
       "severity": 0.3,
       "confidence": 0.9,
       "effort": 2,
@@ -10808,7 +10808,7 @@
       "version": 1,
       "created_at": "2026-09-15T12:18:33+00:00",
       "updated_at": "2026-09-15T12:18:33+00:00",
-      "touched_round": 187,
+      "touched_round": 192,
       "confidence": 0.85,
       "summary": "挤压类排版事故有共同形状:一行 flex 里同时存在「可收缩的文字」与「不受限的邻居」(右列/圆环/按钮),窄屏上文字那格被压扁 —— 横向溢出判据永远量不到,必须另量宽度、行数与元素相交"
     },
@@ -11246,6 +11246,68 @@
       "rationale": "DEC-030(暂缓统一口径)的前提被测量推翻:当时的顾虑是「世界 atkR 按现行口径调校,统一口径需连带重校敌我比值」。量下来(真仙·赤炎天):玩家天界三维恒 7.53e7,而敌人攻击随凡界装备从 5.57e7 涨到 7.17e7(+29%)——所谓\"现行口径\"本身就是倒挂(凡界装备替天界敌人加难度),与 buildPlayerSnap(celestial=true) 写在注释里的法则(凡器入天界数值尽去,只余器魂)直接冲突。而世界形状是在 SIM_REFERENCE + depth 的模拟空间里调校的(celestialSim 的六项发布条件守着它),故把实战参照改成与玩家出手同源的 celestialStats 并补上 depth,是回到已被审计的口径,而不是重新平衡。全量 1567 用例(含终局守恒审计)在改后全绿,佐证了这一点",
       "alternatives_rejected": "①维持双轨、只在文档里说明 —— 玩家看得见的手感倒挂不会因为写了文档就消失;②改世界形状(atkR)去迁就 finalStats 参照 —— 那是真·重新平衡,且会让模拟空间的六项发布条件失效,代价远大于收益;③只改挑战不改远征(或反之)—— 同一名玩家在两套天界内容里继续面对两把尺子,正是这条 issue 本身;④顺手把 equipFlats 也抹掉 —— 那会改玩家在天界的实际战力(+0.07% 量级),超出本轮\"统一口径\"的范围,已单独立案(ISS-194)",
       "summary": "统一天界口径:远征/挑战/变数与试炼共用 celestialStats + celestialDepthScale;DEC-030 的\"暂缓\"依据被测量推翻"
+    },
+    "TASK-177": {
+      "id": "TASK-177",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T14:03:12+00:00",
+      "updated_at": "2026-09-15T14:03:22+00:00",
+      "touched_round": 192,
+      "category": "correctness",
+      "severity": 0.45,
+      "confidence": 0.95,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "summary": "先手判定说实话:术语改名(speed→先手判定 / firstStrike→首回合伤害)+ CombatResult 带出判定两数 + 战后分析给「差多少」的可行动结论 + 战斗结语标抢先/被抢先 + dataTextAudit 红线(用户可见文本不许再出现「出手速度」)"
+    },
+    "EV-172": {
+      "id": "EV-172",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T14:03:13+00:00",
+      "updated_at": "2026-09-15T14:03:13+00:00",
+      "touched_round": 192,
+      "source": "src/core/combat.spec.ts「先手判定如实带出:恰好持平也算抢先,差一点就不算」+ src/core/battleAnalysis.spec.ts「被抢先时给出还差多少」+ dataTextAudit 两条术语红线",
+      "confidence": 0.95,
+      "summary": "阈值语义被钉住(1.10 ≥ 1.10 抢先、1.09 < 1.10 后手),战后分析用显示出来的两数算差额(修掉一处浮点误差导致「差 9%」的读数),旧战报无 firstMove 时照常工作"
+    },
+    "CHG-225": {
+      "id": "CHG-225",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-15T14:03:13+00:00",
+      "updated_at": "2026-09-15T14:03:19+00:00",
+      "touched_round": 192,
+      "commit": "b1392f8",
+      "summary": "术语与解释对齐:speed→先手判定、firstStrike→首回合伤害;CombatResult.firstMove 带出两数;分析面板先手行 + 差额结论;结语标抢先/被抢先;dataTextAudit 新增两条红线"
+    },
+    "DEC-044": {
+      "id": "DEC-044",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T14:03:19+00:00",
+      "updated_at": "2026-09-15T14:03:19+00:00",
+      "touched_round": 192,
+      "rationale": "speed 词条的缺陷不是数值,是**名与机制不同形**:机制是「1+修正 ≥ 对手速度」的阈值开关,文案却写成「出手速度提升 N%」,读起来像连续收益。两条路——改机制(让 speed 连续生效)或改名字与解释。选后者的理由:①EV-002 早已确认速度的可堆叠性是设计(量纲差异不是缺陷);②改机制要动战斗回合顺序与全部敌我速度取值,是平衡重做;③玩家真正缺的不是「更多收益」,而是「知道还差多少」——这是解释层的欠账。故:术语改名(speed→先手判定、firstStrike→首回合伤害,两件事各留一名)+ 把判定两数与差额送进战后分析 + 结语标抢先/被抢先 + 红线禁止「出手速度」回到用户可见文本",
+      "alternatives_rejected": "①把 speed 改成连续收益(每次出手更快/额外回合)—— 改的是战斗引擎与全体敌我速度取值,属平衡重做,且与既有设计(速度是阈值型培养深度)冲突;②只改文案不改解释 —— 玩家仍不知道「还差多少」,下次照样困惑;③把阈值改成百分比概率抢先(1.06 vs 1.05 → 更高概率抢先)—— 概率化会让「差一点」变成运气,反而更难复盘;④在战报里加一行先手文字 —— 战报是逐回合回放,插系统行会打断节奏,放战后分析更合适",
+      "summary": "先手判定按「改名 + 解释」而非改机制收口:阈值语义保留,差额与两数必须让玩家看得见"
+    },
+    "ISS-195": {
+      "id": "ISS-195",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T14:03:28+00:00",
+      "updated_at": "2026-09-15T14:03:28+00:00",
+      "touched_round": 192,
+      "severity": 0.3,
+      "confidence": 0.9,
+      "summary": "残留(数值层,未做):低档先手词条在先手判定上近乎无效 —— 实测 132 只敌人,无加成抢先 40 次、+3% 仍是 40 次、+6% 才 49 次。ISS-173 已把名字与解释改对(阈值语义 + 差额),但「迅捷 +3~6% 跨不过大多数敌人都那一线」的粒度问题仍在;要动就得给低档更细的粒度或重排敌人速度档,属平衡取舍"
     }
   },
   "edges": [
@@ -16721,6 +16783,42 @@
       "to": "DEC-030",
       "type": "supersedes",
       "created_at": "2026-09-15T13:32:55+00:00"
+    },
+    {
+      "from": "TASK-177",
+      "to": "ISS-173",
+      "type": "addresses",
+      "created_at": "2026-09-15T14:03:12+00:00"
+    },
+    {
+      "from": "DEC-044",
+      "to": "COMP-013",
+      "type": "governs",
+      "created_at": "2026-09-15T14:03:19+00:00"
+    },
+    {
+      "from": "CHG-225",
+      "to": "TASK-177",
+      "type": "implements",
+      "created_at": "2026-09-15T14:03:19+00:00"
+    },
+    {
+      "from": "CHG-225",
+      "to": "ISS-173",
+      "type": "resolves",
+      "created_at": "2026-09-15T14:03:19+00:00"
+    },
+    {
+      "from": "EV-172",
+      "to": "HYP-095",
+      "type": "validates",
+      "created_at": "2026-09-15T14:03:19+00:00"
+    },
+    {
+      "from": "ISS-195",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-15T14:03:28+00:00"
     }
   ]
 }
