@@ -186,6 +186,20 @@ export function affixDef(id: string): AffixDef | undefined {
   return BY_ID.get(id)
 }
 
+/**
+ * 词条稀有度的高低序(0 最常见,3 最难得)。
+ *
+ * 它一直只活在数据里(reforge 按它加权抽取),界面上从没露过面 ——
+ * 于是玩家看到一件装备的四条词条时,分不出哪条是随手给的、哪条是撞上的大运。
+ * 展示层现在按它排序上色,故序也一并写在这里,免得界面另编一套。
+ */
+export const AFFIX_RARITY_RANK: Record<AffixRarity, number> = {
+  common: 0,
+  rare: 1,
+  epic: 2,
+  legendary: 3
+}
+
 /** 词条实际数值 = min + (max - min) × roll */
 export function affixValue(def: AffixDef, roll: number): number {
   const v = def.min + (def.max - def.min) * Math.max(0, Math.min(1, roll))

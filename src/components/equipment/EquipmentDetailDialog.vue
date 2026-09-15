@@ -47,8 +47,12 @@
         <p class="mb-1.5 font-kai text-[12px] tracking-[0.3em] text-ink-faint">词 条</p>
         <div v-for="(line, i) in resolved.affixLines" :key="i" class="mb-1.5 rounded-md bg-violet-ink/7 px-3 py-1.5">
           <div class="flex items-center justify-between">
-            <div>
-              <span class="font-kai text-[12px] text-violet-ink">「{{ line.name }}」</span>
+            <div class="min-w-0">
+              <!-- 稀有度上色 + 名目:排序说明得了「为什么这条排在前面」 -->
+              <span class="font-kai text-[12px]" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">「{{ line.name }}」</span>
+              <span class="ml-1 text-[9px] opacity-80" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
+                {{ AFFIX_RARITY_META[line.rarity].name }}
+              </span>
               <span class="ml-1 text-[12px] text-ink-soft">{{ line.desc }}</span>
             </div>
             <button
@@ -191,7 +195,7 @@
   import { formatGN, formatPercent } from '@/utils/format'
   import { isZero, sub } from '@/utils/gnum'
   import type { AnyStatKey, GNum } from '@/types'
-  import { STAT_NAMES } from '@/ui/statNames'
+  import { AFFIX_RARITY_META, STAT_NAMES } from '@/ui/statNames'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
   import GameIcon from '@/components/common/GameIcon.vue'

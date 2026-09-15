@@ -30,7 +30,9 @@ import {
   ARTIFACT_WEAKEN_CAP,
   artifactActiveText,
   artifactDef,
-  artifactLevelLabel
+  artifactLevelLabel,
+  artifactNextLevelGain,
+  artifactPassiveAt
 } from '@/data/artifacts'
 import { RandomService, mulberry32 } from '@/utils/random'
 import { gn, toNum } from '@/utils/gnum'
@@ -273,6 +275,68 @@ describe('法宝说明 · 数字随祭炼等级走', () => {
     expect(label).toContain('祭炼')
     expect(label, `法宝等级不该借用「阶」:${label}`).not.toContain('阶')
     expect(label).toContain('3')
+  })
+})
+
+/**
+ * 祭炼下一重的账 —— 「值不值」要在按下之前答得出来。
+ *
+ * 炼化按钮原先只报代价(悟道点 × 灵石),收益留给玩家自己按 ×1.08 心算。
+ * 这里把下一重逐项算好(被动、神通主体、吸命回补),顶上封顶的标出来 ——
+ * 判据是**逐项对得上独立复算**,且不会出现「越炼越弱」或「到顶还劝你炼」。
+ */
+describe('法宝说明 · 下一重给多少', () => {
+  const sutra = artifactDef('af_shenbian')! // 破甲 30%,有 50% 上限
+  const nianzhu = artifactDef('af_wuxiangzhu')! // 净念 70%,有 90% 上限
+  const qin = artifactDef('af_xianqin')! // 震慑:没有数值
+  const fuchen = artifactDef('af_xuanxu')! // 吸命:伤害 + 回补,回补有 100% 上限
+
+  it('已至满重就没有「下一重」这一说', () => {
+    expect(artifactNextLevelGain(qin, 9)).toBeNull()
+    expect(artifactNextLevelGain(qin, 99)).toBeNull()
+    expect(artifactNextLevelGain(qin, 8)?.level).toBe(9)
+  })
+
+  it('被动逐项与 artifactPassiveAt 的下一重值一致', () => {
+    for (const level of [0, 4, 8]) {
+      const gain = artifactNextLevelGain(sutra, level)!
+      const now = artifactPassiveAt(sutra, level)
+      const next = artifactPassiveAt(sutra, level + 1)
+      expect(gain.passive.length).toBe(Object.keys(sutra.passive).length)
+      for (const p of gain.passive) {
+        expect(p.from).toBeCloseTo(now[p.key] ?? 0, 10)
+        expect(p.to).toBeCloseTo(next[p.key] ?? 0, 10)
+        expect(p.to, '祭炼不该让被动变小').toBeGreaterThanOrEqual(p.from)
+      }
+    }
+  })
+
+  it('神通主体按封顶报数:神鞭重 8 → 50%(已至上限),净念重 8 → 九成', () => {
+    const s8 = artifactNextLevelGain(sutra, 8)!
+    expect(s8.active!.to).toBeCloseTo(ARTIFACT_SUNDER_CAP, 10)
+    expect(s8.active!.capped, '已经顶到 50% 了,得说清楚再炼也不会更多').toBe(true)
+    const s7 = artifactNextLevelGain(sutra, 7)!
+    expect(s7.active!.capped).toBe(false)
+    const n8 = artifactNextLevelGain(nianzhu, 8)!
+    expect(n8.active!.to).toBeCloseTo(ARTIFACT_PURGE_CAP, 10)
+    expect(n8.active!.capped).toBe(true)
+  })
+
+  it('震慑这类没有数值的神通,如实说「不随祭炼变」', () => {
+    const gain = artifactNextLevelGain(qin, 3)!
+    expect(gain.active).toBeNull()
+    // 但它仍有被动可涨 —— 否则这件法宝炼了等于没炼,那是另一个 bug
+    expect(gain.passive.length).toBeGreaterThan(0)
+  })
+
+  it('吸命的两笔账都在:伤害继续涨,回补到顶后标出来', () => {
+    const low = artifactNextLevelGain(fuchen, 0)!
+    expect(low.active!.to).toBeGreaterThan(low.active!.from)
+    expect(low.heal).toBeDefined()
+    expect(low.heal!.capped).toBe(false)
+    const high = artifactNextLevelGain(fuchen, 8)!
+    expect(high.heal!.to).toBeCloseTo(ARTIFACT_DRAIN_HEAL_CAP, 10)
+    expect(high.heal!.capped, '回补已经吃到十成,再炼也只是伤害在涨').toBe(true)
   })
 })
 

@@ -1,6 +1,19 @@
 /** 属性中文名映射(展示层共用) */
 import { formatPercent } from '@/utils/format'
-import type { AnyStatKey, StatMods } from '@/types'
+import type { AffixRarity, AnyStatKey, StatMods } from '@/types'
+
+/**
+ * 词条稀有度的名目与颜色(展示层)。
+ *
+ * 稀有度此前只在数据里参与加权抽取,界面上从没露过面;现在装备卡片按它排序上色,
+ * 玩家才看得出「这一条是撞上的大运」还是「这条是搭头」。名目沿用本作的四档叫法。
+ */
+export const AFFIX_RARITY_META: Record<AffixRarity, { name: string; color: string }> = {
+  common: { name: '常见', color: 'var(--color-ink-faint)' },
+  rare: { name: '稀有', color: 'var(--color-azure)' },
+  epic: { name: '珍稀', color: 'var(--color-violet-ink)' },
+  legendary: { name: '传世', color: 'var(--color-gold-ink)' }
+}
 
 export const STAT_NAMES: Record<AnyStatKey, string> = {
   attackPct: '攻击',

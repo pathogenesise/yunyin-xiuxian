@@ -1,11 +1,11 @@
 /**
  * 装备生成与数值解析 —— Template + 随机品质 + 随机词条 → Instance
  */
-import type { AnyStatKey, EquipmentInstance, EquipSlot, GNum, QualityDef, StatMods } from '@/types'
+import type { AffixRarity, AnyStatKey, EquipmentInstance, EquipSlot, GNum, QualityDef, StatMods } from '@/types'
 import type { RandomService } from '@/utils/random'
 import { uid } from '@/utils/id'
 import { gnZero, mulN, add } from '@/utils/gnum'
-import { AFFIXES, affixDef, affixValue } from '@/data/affixes'
+import { AFFIXES, AFFIX_RARITY_RANK, affixDef, affixValue } from '@/data/affixes'
 import { EQUIPMENT_TEMPLATES, equipmentTemplate } from '@/data/equipment'
 import { QUALITIES, qualityDef } from '@/data/qualities'
 import { EQUIP_BASE_FACTOR, EQUIP_LEVEL_BONUS, EQUIP_QUALITY_FLAT_EXP, QUALITY_TIER_SHIFT } from '@/data/constants'
@@ -113,8 +113,25 @@ export function generateEquipment(tier: number, rng: RandomService, opts: GenOpt
 export interface ResolvedEquipStats {
   flats: { attack: GNum; defense: GNum; maxHp: GNum }
   mods: StatMods
-  /** 词条展示行 */
-  affixLines: { id: string; name: string; desc: string }[]
+  /**
+   * 词条展示行 —— **已是展示序**(见 sortAffixLines),不是掷出的先后。
+   * 掷出的顺序是随机的,照着印出来等于把「哪条要紧」交给运气。
+   */
+  affixLines: { id: string; name: string; desc: string; rarity: AffixRarity }[]
+}
+
+/**
+ * 词条展示序:先稀有的(传世 → 常见),同稀有度先看掷得满的,最后按 id 稳定。
+ *
+ * 判据:玩家扫一眼装备卡片,第一条就该是这件东西最值钱的地方。
+ * 稀有度写在词条定义里(权重推出来的),成色就是这一件的 roll —— 两者都是既有数据。
+ */
+export function sortAffixLines<T extends { id: string; roll: number }>(rolls: readonly T[]): T[] {
+  return [...rolls].sort((a, b) => {
+    const ra = AFFIX_RARITY_RANK[affixDef(a.id)?.rarity ?? 'common']
+    const rb = AFFIX_RARITY_RANK[affixDef(b.id)?.rarity ?? 'common']
+    return rb - ra || b.roll - a.roll || a.id.localeCompare(b.id)
+  })
 }
 
 /** 解析装备实例的实际数值 */
@@ -122,7 +139,7 @@ export function resolveEquipStats(inst: EquipmentInstance): ResolvedEquipStats {
   const template = equipmentTemplate(inst.templateId)
   const flats = { attack: gnZero(), defense: gnZero(), maxHp: gnZero() }
   const mods: StatMods = {}
-  const affixLines: { id: string; name: string; desc: string }[] = []
+  const affixLines: ResolvedEquipStats['affixLines'] = []
   if (!template) return { flats, mods, affixLines }
 
   const q = qualityDef(inst.quality)
@@ -141,12 +158,12 @@ export function resolveEquipStats(inst: EquipmentInstance): ResolvedEquipStats {
       mods[key] = (mods[key] ?? 0) + (template.fixedMods[key] ?? 0)
     }
   }
-  for (const roll of inst.affixes) {
+  for (const roll of sortAffixLines(inst.affixes)) {
     const def = affixDef(roll.id)
     if (!def) continue
     const value = affixValue(def, roll.roll)
     mods[def.key] = (mods[def.key] ?? 0) + value / 100
-    affixLines.push({ id: def.id, name: def.name, desc: def.desc.replace('{v}', String(value)) })
+    affixLines.push({ id: def.id, name: def.name, desc: def.desc.replace('{v}', String(value)), rarity: def.rarity })
   }
   return { flats, mods, affixLines }
 }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { mulberry32, RandomService } from '@/utils/random'
 import { qualityDef } from '@/data/qualities'
-import { affixDef } from '@/data/affixes'
+import { AFFIX_RARITY_RANK, affixDef } from '@/data/affixes'
 import { equipmentTemplate } from '@/data/equipment'
 import { isZero } from '@/utils/gnum'
-import { generateEquipment, resolveEquipStats, rollQuality } from './equipGen'
+import { generateEquipment, resolveEquipStats, rollQuality, sortAffixLines } from './equipGen'
+import type { EquipmentInstance } from '@/types'
 
 const seeded = (seed = 42): RandomService => new RandomService(mulberry32(seed))
 
@@ -64,5 +65,51 @@ describe('装备生成', () => {
     expect(isZero(before.flats.attack)).toBe(false)
     expect(after.flats.attack.m * Math.pow(10, after.flats.attack.e - before.flats.attack.e)).toBeGreaterThan(before.flats.attack.m)
     expect(after.affixLines.length).toBe(inst.affixes.length)
+  })
+
+  /**
+   * 词条展示序 —— 掷出的顺序是随机的,照着印等于把「哪条要紧」交给运气。
+   * 判据:先稀有的(传世→常见),同稀有度先看掷得满的;一条不丢、一条不重。
+   */
+  it('词条按稀有度与成色排序,而不是掷出的先后', () => {
+    const inst: EquipmentInstance = {
+      uid: 'u-sort',
+      templateId: 'w_xuantie',
+      quality: 'heaven',
+      tier: 6,
+      level: 0,
+      // 故意把常见词条放在最前、传世词条放在最后,且常见那条掷得更满
+      affixes: [
+        { id: 'pen1', roll: 1 }, // 稀有
+        { id: 'atk2', roll: 0.2 }, // 稀有,掷得不满
+        { id: 'pen3', roll: 0 } // 传世
+      ]
+    }
+    const lines = resolveEquipStats(inst).affixLines
+    expect(lines.map(l => l.id)).toEqual(['pen3', 'pen1', 'atk2'])
+    for (const l of lines) expect(l.rarity).toBe(affixDef(l.id)!.rarity)
+  })
+
+  it('排序不丢不重,且稀有度确实单调不升', () => {
+    const rng = seeded(2026)
+    for (let i = 0; i < 60; i += 1) {
+      const inst = generateEquipment(4 + (i % 12), rng, { minQualityRank: 4 })
+      const lines = resolveEquipStats(inst).affixLines
+      expect(new Set(lines.map(l => l.id)), '排序不该改变词条集合').toEqual(new Set(inst.affixes.map(a => a.id)))
+      for (let k = 1; k < lines.length; k += 1) {
+        const prev = AFFIX_RARITY_RANK[lines[k - 1]!.rarity]
+        const cur = AFFIX_RARITY_RANK[lines[k]!.rarity]
+        expect(prev, `第 ${k} 条比前一条更稀有,排序没生效`).toBeGreaterThanOrEqual(cur)
+      }
+    }
+  })
+
+  it('同稀有度按成色降序,而 sortAffixLines 不改动入参', () => {
+    const rolls = [
+      { id: 'atk2', roll: 0.2 },
+      { id: 'def2', roll: 0.9 }
+    ]
+    expect(sortAffixLines(rolls).map(r => r.id)).toEqual(['def2', 'atk2'])
+    expect(rolls.map(r => r.id), '排序函数不该就地改数组').toEqual(['atk2', 'def2'])
   })
 })

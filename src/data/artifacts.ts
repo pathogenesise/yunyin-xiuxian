@@ -1,5 +1,5 @@
 /** 法宝池 —— 45 件,拥有被动属性与自动触发的主动神通 */
-import type { ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
+import type { AnyStatKey, ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
 import { formatPercent } from '@/utils/format'
 
 function f(
@@ -739,6 +739,64 @@ export function artifactActiveText(def: ArtifactDef, level = 0): string {
 export function artifactLevelLabel(level: number): string {
   const lv = Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))
   return `祭炼 ${lv}/${ARTIFACT_MAX_LEVEL} 重`
+}
+
+/** 某类效果的封顶(没有封顶的返回 undefined)—— 与 artifactEffectValues 用的是同一批常数 */
+function effectCap(eff: ArtifactEffect): number | undefined {
+  switch (eff.type) {
+    case 'weaken':
+      return ARTIFACT_WEAKEN_CAP
+    case 'sunder':
+      return ARTIFACT_SUNDER_CAP
+    case 'purge':
+      return ARTIFACT_PURGE_CAP
+    default:
+      return undefined
+  }
+}
+
+export interface ArtifactNextLevelGain {
+  /** 目标重数(即 level + 1) */
+  level: number
+  /** 各被动项的现值 → 下一重值 */
+  passive: { key: AnyStatKey; from: number; to: number }[]
+  /** 神通主体数值;震慑没有数值,故为 null */
+  active: { from: number; to: number; capped: boolean } | null
+  /** 吸命的回补比例(只有吸命有) */
+  heal?: { from: number; to: number; capped: boolean }
+}
+
+/**
+ * 祭炼到下一重,具体能多拿多少。
+ *
+ * 炼化按钮此前只报代价(悟道点 × 灵石),收益留给玩家自己按 ×1.08 心算 ——
+ * 而「值不值」正是按下之前要想清楚的事。这里把下一重的账算好交给界面:
+ * 被动逐项、神通主体、吸命的回补,顶上封顶的也标出来(再炼也不会更多了)。
+ * 已至满重返回 null。
+ */
+export function artifactNextLevelGain(def: ArtifactDef, level = 0): ArtifactNextLevelGain | null {
+  const lv = Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))
+  if (lv >= ARTIFACT_MAX_LEVEL) return null
+  const next = lv + 1
+  const from = artifactEffectValues(def, lv)
+  const to = artifactEffectValues(def, next)
+  const passive = Object.keys(def.passive).map(k => {
+    const key = k as AnyStatKey
+    return { key, from: artifactPassiveAt(def, lv)[key] ?? 0, to: artifactPassiveAt(def, next)[key] ?? 0 }
+  })
+  const cap = effectCap(def.active.effect)
+  return {
+    level: next,
+    passive,
+    active:
+      def.active.effect.type === 'stun'
+        ? null
+        : { from: from.amount, to: to.amount, capped: cap !== undefined && to.amount >= cap - 1e-9 },
+    heal:
+      to.heal === undefined
+        ? undefined
+        : { from: from.heal ?? 0, to: to.heal, capped: to.heal >= ARTIFACT_DRAIN_HEAL_CAP - 1e-9 }
+  }
 }
 
 /**

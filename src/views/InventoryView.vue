@@ -144,6 +144,13 @@
           <p class="mt-1 text-[11px] text-violet-ink">
             神通「{{ row.def.active.name }}」:{{ artifactActiveText(row.def, row.owned.level) }}
           </p>
+          <!--
+            下一重给多少:按钮只报代价,玩家得自己按 ×1.08 心算 —— 而「值不值」
+            正是按下之前要想清楚的事(数值由 artifactNextLevelGain 算,含封顶提示)。
+          -->
+          <p v-if="nextGainText(row.def.id, row.owned.level)" class="mt-1 text-[10px] leading-relaxed text-ink-faint tabular">
+            下一重:{{ nextGainText(row.def.id, row.owned.level) }}
+          </p>
           <div class="mt-2.5 flex gap-2">
             <button
               class="btn-seal flex-1 !py-1.5 !text-[12px]"
@@ -395,6 +402,7 @@
     artifactActiveText,
     artifactDef,
     artifactLevelLabel,
+    artifactNextLevelGain,
     artifactPassiveAt,
     ARTIFACT_LEVEL_BONUS,
     ARTIFACT_MAX_LEVEL,
@@ -684,5 +692,39 @@
     return Object.entries(artifactPassiveAt(def, level)).map(
       ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`
     )
+  }
+
+  /** 神通主体那个数说的是什么(用药名之外的话:威力 / 护盾 / 破解…) */
+  const ACTIVE_NOUNS: Record<string, string> = {
+    damage: '威力',
+    drain: '威力',
+    heal: '回复',
+    shield: '护盾',
+    weaken: '削弱',
+    sunder: '破甲',
+    purge: '挣脱'
+  }
+
+  /**
+   * 祭炼下一重的账:被动逐项 + 神通主体 + 吸命回补,到顶的标「已至上限」。
+   * 已达满重(artifactNextLevelGain 返回 null)时不显示这一行。
+   */
+  function nextGainText(defId: string, level: number): string {
+    const def = artifactDef(defId)
+    const gain = def ? artifactNextLevelGain(def, level) : null
+    if (!gain) return ''
+    const parts = gain.passive.map(
+      p => `${STAT_NAMES[p.key] ?? p.key} ${formatPercent(p.from)} → ${formatPercent(p.to)}`
+    )
+    if (gain.active) {
+      const noun = ACTIVE_NOUNS[def!.active.effect.type] ?? '效果'
+      parts.push(`神通${noun} ${formatPercent(gain.active.from)} → ${formatPercent(gain.active.to)}${gain.active.capped ? '(已至上限)' : ''}`)
+    } else {
+      parts.push('神通不随祭炼变')
+    }
+    if (gain.heal) {
+      parts.push(`回补 ${formatPercent(gain.heal.from)} → ${formatPercent(gain.heal.to)}${gain.heal.capped ? '(已至上限)' : ''}`)
+    }
+    return parts.join(' · ')
   }
 </script>
