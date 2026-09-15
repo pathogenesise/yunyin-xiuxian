@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 174,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T00:47:17+00:00",
+  "updated_at": "2026-09-15T01:09:21+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3668,10 +3668,10 @@
     "HYP-016": {
       "id": "HYP-016",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T17:35:59+00:00",
-      "updated_at": "2026-09-11T17:35:59+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 88,
       "confidence": 0.85,
       "summary": "可达性判据要按「发放点」倒推:凡内容表里的东西(称号/奖励/条件类型),都必须有一个真实的发放或求值点;没有就是看得见拿不到"
@@ -4061,10 +4061,10 @@
     "HYP-019": {
       "id": "HYP-019",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T18:33:38+00:00",
-      "updated_at": "2026-09-11T18:33:38+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 82,
       "confidence": 0.8,
       "summary": "『窄屏排版』可以自动核到一半:横向溢出/越界元素/导航项数/页面异常都能用无头浏览器在两种手机视口下量出来;但字体渲染与安全区仍需真机,自动化只能证明『不会横向溢出』"
@@ -4191,10 +4191,10 @@
     "HYP-020": {
       "id": "HYP-020",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T19:42:24+00:00",
-      "updated_at": "2026-09-11T19:42:24+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 84,
       "confidence": 0.85,
       "summary": "同一类内容(一次性副本:远征/试炼/秘境)必须共用同一套难度口径(按玩家缩放);口径分叉会让其中一个默默变成换装检查 —— 判据是「同一名玩家在不同境界遇到的敌我比值不随境界陡增」"
@@ -4237,10 +4237,10 @@
     "HYP-021": {
       "id": "HYP-021",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T19:45:44+00:00",
-      "updated_at": "2026-09-11T19:45:44+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 87,
       "confidence": 0.85,
       "summary": "『数值体检』要比『有没有增长』更细一层:凡有折扣/倍率/封顶的产线,都应断言其**比率**(增益 ÷ 期望),因为高界量级下 clamp 与精度丢失只体现在比率上"
@@ -4394,10 +4394,10 @@
     "HYP-022": {
       "id": "HYP-022",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T20:01:43+00:00",
-      "updated_at": "2026-09-11T20:01:43+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 89,
       "confidence": 0.8,
       "summary": "『文案数值对账』在视图层的正确形态是**定点接线 + 定点红线**,不是通用规则:模板数字的归属需逐条判断(SVG 的 0%/100%、CSS 的 calc、游戏常量、表数据混在一起),通用扫描会又漏又吵"
@@ -4431,10 +4431,10 @@
     "HYP-023": {
       "id": "HYP-023",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T20:07:49+00:00",
-      "updated_at": "2026-09-11T20:07:49+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 90,
       "summary": "术语一旦有两三种近义写法就会持续漂移(数据文案、视图模板、UI 标签各写各的);按「用户可见文本」抽取的红线能把它钉住 —— 但对风味文案里的四字成语(机缘自来/天降机缘)必须留例外,否则红线会逼着人改成语",
       "confidence": 0.7
@@ -4504,10 +4504,10 @@
     "HYP-024": {
       "id": "HYP-024",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T20:37:05+00:00",
-      "updated_at": "2026-09-11T20:37:05+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 91,
       "summary": "「页面上的数量」这一类缺陷能靠定点接线守住:数量只在内容增长时变,没人会想起改文案 —— 故判据要两条腿,一条钉「读的是来源表」(改内容即跟着变),一条钉「玩家看到的数没变」(换算法不是改文案的借口);但数值与字面量必须分开看,不能写「模板里不许出现汉字数字」这种通用规则(风味成语、九宫这类固有说法会被误伤)",
       "confidence": 0.75
@@ -4565,10 +4565,10 @@
     "HYP-025": {
       "id": "HYP-025",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T20:41:11+00:00",
-      "updated_at": "2026-09-11T20:41:11+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 92,
       "summary": "文案里的数字有两类来源:一类是「数出来」(表长度,内容增长时才变),另一类是「抄过来」(容量/门槛/倍率,调数值时就变)。后者更该接线,但它的正确形态不只是接线 —— 还要把文案断言的那条**算术事实**一起断言(「不能全部点满」= 全部脉上限之和 > 总容量),否则接线只保证数字一致,不保证说法仍然成立",
       "confidence": 0.75
@@ -4626,10 +4626,10 @@
     "HYP-026": {
       "id": "HYP-026",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T20:58:01+00:00",
-      "updated_at": "2026-09-11T20:58:01+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 107,
       "summary": "「境界是不是只是数值台阶」可以用一条结构判据提前发现:每个境界至少要有一条门槛恰好落在该境的内容(本项目取功法 —— 参悟池按 minRealm ≤ 当前+1 过滤,表里有就一定会撞见);判据读表而不读感觉,故内容缺哪一境会立刻点名",
       "confidence": 0.7
@@ -4687,10 +4687,10 @@
     "HYP-027": {
       "id": "HYP-027",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T21:09:09+00:00",
-      "updated_at": "2026-09-11T21:09:09+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 94,
       "summary": "「有没有取舍」可以写成算术:可选项数必须大于槽位数(法宝件数 > 法宝位、灵脉上限之和 > 总容量)。这类判据比「内容够不够丰富」这种感觉判断可靠 —— 它不评价内容好坏,只在选择消失的那一刻变红",
       "confidence": 0.75
@@ -4748,10 +4748,10 @@
     "HYP-028": {
       "id": "HYP-028",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T21:21:48+00:00",
-      "updated_at": "2026-09-11T21:21:48+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 103,
       "summary": "「内容只起于第一界」这类偏斜能用起点分布发现:把每条链/每条线(奇缘、门派、机缘)的起点门槛列出来,若最大值仍停在第一界,说明后几界玩家只能重复早期内容;判据「至少一条起点在后界 + 每条都起得了头」既不逼着每界都造新链,也拦得住「全起于人间」的回退",
       "confidence": 0.7
@@ -4809,10 +4809,10 @@
     "HYP-029": {
       "id": "HYP-029",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T21:41:20+00:00",
-      "updated_at": "2026-09-11T21:41:20+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 96,
       "summary": "「省电」与「丢档」是一对:凡是把写入推迟/合批的层,都必须回答「这一批没写成功怎么办」—— 否则 catch 一吞、队列一清,失败就变成玩家看不见的静默丢档;正确形态是失败分片留在队列重试 + 状态可观测(订阅/可读)+ 恢复可报,并有一条端到端检查(卡死存储后界面必须说话)",
       "confidence": 0.8
@@ -4870,10 +4870,10 @@
     "HYP-030": {
       "id": "HYP-030",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T21:56:27+00:00",
-      "updated_at": "2026-09-11T21:56:27+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 101,
       "summary": "「玩家的疑问」可以变成一条可审计的等式:面板显示 X,那么用来解释 X 的那份明细必须逐键相加等于 X。凡合并过程里有非线性(递减词条按来源强弱打折、软阈值对合计折算),就必须把折算摊回来源 —— 否则「解释了」与「没解释」在玩家眼里一样,甚至更糟",
       "confidence": 0.75
@@ -4944,10 +4944,10 @@
     "HYP-031": {
       "id": "HYP-031",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T22:10:04+00:00",
-      "updated_at": "2026-09-11T22:10:04+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 98,
       "summary": "「明细之和 = 那个数」这类等式要真的能红,等式两边就必须各走各的路:若把结果定义成明细的求和,审计就成了同义反复(删一条词条两边一起少)。故被解释的那个数必须来自独立算式,明细只负责把算式摊开",
       "confidence": 0.85
@@ -5005,10 +5005,10 @@
     "HYP-032": {
       "id": "HYP-032",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T22:29:17+00:00",
-      "updated_at": "2026-09-11T22:29:17+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 100,
       "summary": "凡「清单决定范围」的地方(存档分片、清档、迁移、扫描),判断范围都不能靠人手维护 —— 必须从真实来源倒推(store 源码里的 persistConfig)。手写清单的失效方式总是静默的:新加的东西不在范围内,不报错、不提示,只是悄悄少一块;而往返一致性(导出→导入)是这类契约最直接的端到端验证",
       "confidence": 0.85
@@ -5266,10 +5266,10 @@
     "HYP-033": {
       "id": "HYP-033",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T23:33:27+00:00",
-      "updated_at": "2026-09-11T23:33:27+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 104,
       "summary": "凡「估算/基准模型」,它的每一分假设都必须能从真实数据里找到出处,并在测试里与真实上限比对 —— 模型算得出玩家凑不出的加成,不会报错、也不会崩,只会让所有以它为基准的结论一路偏下去(而且是朝乐观方向偏,最不易被发现)",
       "confidence": 0.8
@@ -5327,10 +5327,10 @@
     "HYP-034": {
       "id": "HYP-034",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-11T23:46:16+00:00",
-      "updated_at": "2026-09-11T23:46:16+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 106,
       "summary": "「基准模型有多真」可以写成一条包夹判据:满配真实档 ≤ 模型 ≤ 裸档真实档。左端拦「模型乐观到连满配都达不到」,右端拦「模型悲观到比裸档还慢」;两侧都用真实 store 通路量,而不是照公式再抄一遍 —— 抄一遍只会得到同义反复",
       "confidence": 0.85
@@ -5411,10 +5411,10 @@
     "HYP-035": {
       "id": "HYP-035",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T00:07:51+00:00",
-      "updated_at": "2026-09-12T00:07:51+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 107,
       "summary": "「只有图标的控件」是随手就会写的形态,而它不会报错、不会崩、排版也正常 —— 只是对读屏使用者与全部按名字找控件的自动化不可见。故这类缺陷只能靠一条逐页扫可访问名的检查来守(aria-label 或可见文字),它同时也是自动化自己能用名字点按钮的前提",
       "confidence": 0.85
@@ -5484,10 +5484,10 @@
     "HYP-036": {
       "id": "HYP-036",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T00:26:14+00:00",
-      "updated_at": "2026-09-12T00:26:14+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 108,
       "summary": "「坏档进得了游戏」是三层契约,缺一层都测不全:①导入校验(明确拒绝还是接受)、②落盘(拒绝时不许动现有档)、③水合与修形(接受后不许抛、字段类型可用)。前两层各有旧例,第三层要在真 pinia + 真持久化插件下跑才算数 —— 光测 store.sanitize 不等于测这条路",
       "confidence": 0.8
@@ -5545,10 +5545,10 @@
     "HYP-037": {
       "id": "HYP-037",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T00:40:00+00:00",
-      "updated_at": "2026-09-12T00:40:00+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 109,
       "summary": "「离线总结」是可对账的:结算改了什么,摘要就得报什么 —— 拿每个资源的前后差去对摘要里报的数(受上限约束的取实际差额),并要求「凡变动过的都有交代」。这比逐项检查文案更硬:漏一项就会露馅,多报一项也会",
       "confidence": 0.85
@@ -5606,10 +5606,10 @@
     "HYP-038": {
       "id": "HYP-038",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T00:57:16+00:00",
-      "updated_at": "2026-09-12T00:57:16+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 110,
       "summary": "触控尺寸可以量、也值得守:无头浏览器能量每个可点元素的包围盒,「高度 < 28px」这一类离群值(实测 191 里 47 个)几乎全是「把文字行直接当按钮」;补纵向内边距即可,视觉密度几乎不变(负外边距抵掉占用),而拇指命中率明显改善",
       "confidence": 0.85
@@ -5667,10 +5667,10 @@
     "HYP-039": {
       "id": "HYP-039",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T01:15:37+00:00",
-      "updated_at": "2026-09-12T01:15:37+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 133,
       "summary": "「偶发、与环境无关、只和输入内容有关」的缺陷,大多是「把不合格式的输入交给了宽容的解析器」:CryptoJS 的 Base64 解析会跳过非法字符,于是明文也能解出乱码而不报错。判据要钉在**入口格式**上(先认密文头),而不是靠在出口加 try/catch 兜 —— 兜住异常挡不住「解出乱码但不抛」这一类",
       "confidence": 0.9
@@ -5701,10 +5701,10 @@
     "HYP-040": {
       "id": "HYP-040",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T01:28:17+00:00",
-      "updated_at": "2026-09-12T01:28:17+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 113,
       "summary": "偶发红久拖不决,往往不是难修,而是**证据不足**:断言只留一个计数、不留「谁写的、从哪写的」,于是每次失败都只能重开一轮猜测。对不可复现的偶发缺陷,先做的是加埋点(调用栈/来源标记),让下一次发生自带线索 —— 这比继续撞运气有效",
       "confidence": 0.85
@@ -5751,10 +5751,10 @@
     "HYP-041": {
       "id": "HYP-041",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T01:31:46+00:00",
-      "updated_at": "2026-09-12T01:31:46+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 113,
       "summary": "迁移路径是最容易「零覆盖」的一类代码:它只在旧档上执行,开发时手边全是新档,而写坏的后果又是静默的(少一件东西、旧字段残留)。判据应钉三条:值搬到位、旧字段清掉、跑第二遍不变样 —— 第三条尤其便宜,它同时挡住「迁移写成累加」这类错误",
       "confidence": 0.85
@@ -5812,10 +5812,10 @@
     "HYP-042": {
       "id": "HYP-042",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T01:37:30+00:00",
-      "updated_at": "2026-09-12T01:37:30+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 114,
       "summary": "给「未收录」指路的小字必须与真实收录点同源,否则它比不写更坏(玩家照着找,找不到)。判据:扫 collect() 调用点 → 模块映射到机制关键字 → 要求说明文字里出现该关键字;这条同时给出反向保护 —— 说明里提到「能炼」就得真有炼丹收录点",
       "confidence": 0.85
@@ -5873,10 +5873,10 @@
     "HYP-043": {
       "id": "HYP-043",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T01:48:09+00:00",
-      "updated_at": "2026-09-12T01:48:09+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 122,
       "summary": "「离线/后台推进」这类代码的作用域是可以写成闭集的:与其列一张「哪些能动」的长清单(会随内容增长而漏),不如断言**没变的部分**——比较运行前后的键集合,多动一个键就报出名字。这条比逐项检查更强,也更容易维护",
       "confidence": 0.85
@@ -5934,10 +5934,10 @@
     "HYP-044": {
       "id": "HYP-044",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T02:08:33+00:00",
-      "updated_at": "2026-09-12T02:08:33+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 116,
       "summary": "「藏内容」与「不给线索」是两件事:成就藏名字是为了成时自现的惊喜,但方向(哪条路会推进它)该给。方向能从条件结构里推出来 —— 与其手写一张清单,不如让类型系统与源码扫描双向核(计数器联合 ↔ 方向表),这样新增条件必然带着方向一起进来",
       "confidence": 0.85
@@ -5995,10 +5995,10 @@
     "HYP-045": {
       "id": "HYP-045",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T02:39:59+00:00",
-      "updated_at": "2026-09-12T02:39:59+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 117,
       "summary": "「点了没反应」不宜做通用判据(页面本身每秒都在变、选中靠类名),但很适合做**读数**:先扫出来分类,若某处是静默失败就修,若全是「点已选中项」这类合理空点,就留着当哨兵。真正可判的是它的邻居问题:选中态必须对机器可读(aria-pressed/aria-selected),且一组里恰好一个",
       "confidence": 0.85
@@ -6056,10 +6056,10 @@
     "HYP-046": {
       "id": "HYP-046",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T02:51:43+00:00",
-      "updated_at": "2026-09-12T02:51:43+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 118,
       "summary": "「弹窗」是可被无头验证的完整契约,四条缺一不可:语义(role/aria-modal)、打开即入焦、Tab 困在面板内、关闭归还焦点。只测「能不能关」会漏掉最要紧的用户群 —— 键盘与读屏用户打开弹窗后会被困在背后的页面里",
       "confidence": 0.85
@@ -6117,10 +6117,10 @@
     "HYP-047": {
       "id": "HYP-047",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T03:13:36+00:00",
-      "updated_at": "2026-09-12T03:13:36+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 119,
       "summary": "「看得见焦点」可以自动判:Tab 到每个落点读 computed style,要求轮廓(非透明)或阴影之一可见。注意两个坑:透明轮廓不能算可见(outline-none 在 Tailwind 里正是 2px solid transparent),以及残留焦点会把 Tab 序列算歪(每页先 blur 再数)",
       "confidence": 0.85
@@ -6178,10 +6178,10 @@
     "HYP-048": {
       "id": "HYP-048",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T03:30:50+00:00",
-      "updated_at": "2026-09-12T03:30:50+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 120,
       "summary": "工具之间要对齐覆盖面:排版自检与冒烟是两台不同的探针(量尺寸 / 戳交互),一台铺满而另一台只巡部分时,空白页只会出现在「没被戳过」的那一半。判据不是「脚本写没写」,而是两条清单指的是同一份路由表",
       "confidence": 0.8
@@ -6289,10 +6289,10 @@
     "HYP-049": {
       "id": "HYP-049",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T03:49:23+00:00",
-      "updated_at": "2026-09-12T03:49:23+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 123,
       "summary": "「每境都得有点什么」这条判据可以按内容类型逐一铺开:功法、丹方、称号各来一遍之后,长尾境界的空白就一处也藏不住了。补法尽量走**既有获取路径**(称号挂到已有成就上,不新增成就),这样可达性天然成立,不必再养一套新的发放机制",
       "confidence": 0.85
@@ -6400,10 +6400,10 @@
     "HYP-050": {
       "id": "HYP-050",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T04:00:56+00:00",
-      "updated_at": "2026-09-12T04:00:56+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 125,
       "summary": "「效果词汇表是否只是换皮」可以这样判:取高界那批内容,要求至少一件使用的效果**不在基础集**里(基础集从既有内容归纳:打/回/盾/削)。这条比逐件看文案硬,也能顺手逼出「声明了却没人用」的死词汇 —— 新增机制时会一起变红",
       "confidence": 0.85
@@ -6593,10 +6593,10 @@
     "HYP-052": {
       "id": "HYP-052",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T04:35:41+00:00",
-      "updated_at": "2026-09-12T04:35:41+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 126,
       "summary": "「声明即承诺」可以推广到所有情境触发型内容:凡声明了触发条件的,都要有一条红线证明那个条件在玩法代码里真的被制造出来 —— 源码扫描证明调用点 + 带种子的随机源证明够得着,两样都不掷运气",
       "confidence": 0.8
@@ -6616,10 +6616,10 @@
     "HYP-051": {
       "id": "HYP-051",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T04:35:47+00:00",
-      "updated_at": "2026-09-12T04:35:47+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 126,
       "summary": "「真机看排版」的自动化替代是量外壳自己:overflow-hidden 的容器玩家滚不动但浏览器滚得动(焦点回到 body 时会触发),只量 documentElement 的溢出会永远漏掉这一类",
       "confidence": 0.8
@@ -6676,10 +6676,10 @@
     "HYP-053": {
       "id": "HYP-053",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T04:52:15+00:00",
-      "updated_at": "2026-09-12T04:52:15+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 127,
       "summary": "「词汇表的缺口不只在攻击侧」:效果表若清一色是出手,玩家的负面状态就没有出口。判据可以从「战后分析报了哪个病因,却没有任何装备能改变它」反推 —— 报得出病因、给不出药,就是内容缺口",
       "confidence": 0.8
@@ -6736,10 +6736,10 @@
     "HYP-054": {
       "id": "HYP-054",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T05:26:12+00:00",
-      "updated_at": "2026-09-12T05:26:12+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 128,
       "summary": "「报得出病因、给不出药就是内容缺口」可以反过来当审计法:把战后分析每一条会报出来的病因,与全部属性轴逐一对照 —— 凡是报了却没有任何东西能改变的,就是缺的那条轴",
       "confidence": 0.8
@@ -6796,10 +6796,10 @@
     "HYP-055": {
       "id": "HYP-055",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T05:26:17+00:00",
-      "updated_at": "2026-09-12T05:26:17+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 128,
       "summary": "挂上去的交互必须验证它真的接得上:模板里的 @click、pointer-events、过渡时长这类跨层约定类型系统看不见,只能靠真浏览器量「点了之后发生了什么、多快发生」—— 其中无限动画会污染离场时长探测,是最隐蔽的一种",
       "confidence": 0.85
@@ -6856,10 +6856,10 @@
     "HYP-056": {
       "id": "HYP-056",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T05:59:53+00:00",
-      "updated_at": "2026-09-12T05:59:53+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 143,
       "summary": "判据的作用域要和界面的层级对齐:只在页面层跑的检查覆盖不到浮层 —— 凡是「打开才存在」的界面(弹窗/抽屉/浮层),都得在打开状态下再量一遍,否则共享组件里的问题会同时躲开所有页面级检查",
       "confidence": 0.85
@@ -6916,10 +6916,10 @@
     "HYP-057": {
       "id": "HYP-057",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T06:17:56+00:00",
-      "updated_at": "2026-09-12T06:17:56+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 130,
       "summary": "界面分层也可以有红线:凡是自己铺全屏浮层的组件,会自动同时退出多套挂在共享组件上的保障(语义/焦点/控件尺子),而这些代价在截图与渲染层面都看不出来 —— 故判据要盯源码结构(谁铺了浮层),再配合真浏览器把「打开才存在」的界面量一遍",
       "confidence": 0.85
@@ -7002,10 +7002,10 @@
     "HYP-058": {
       "id": "HYP-058",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T06:50:28+00:00",
-      "updated_at": "2026-09-12T06:50:28+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 134,
       "summary": "「假红」也要查到底:一条判据时红时绿,往往不是被测对象不稳,而是取景里混进了别的活物(随机浮层、第三方脚本)。处理不是放宽阈值或加重试,而是把取景收拾干净(钉死随机源、按脚本出处分流异常),否则真正的问题会被红绿噪声掩盖",
       "confidence": 0.85
@@ -7062,10 +7062,10 @@
     "HYP-059": {
       "id": "HYP-059",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T07:09:32+00:00",
-      "updated_at": "2026-09-12T07:09:32+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 136,
       "summary": "判据的样本也要和目标对齐:同一页面在空档与后期档是两副样子(长数字、满屏内容、在途状态),只用刚建号那份档去量,漏掉的恰恰是玩家看得最多的那一版 —— 巡页之前先问「该拿哪份档来巡」",
       "confidence": 0.85
@@ -7085,10 +7085,10 @@
     "HYP-060": {
       "id": "HYP-060",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T07:16:28+00:00",
-      "updated_at": "2026-09-12T07:16:28+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 133,
       "summary": "偶发缺陷要收口,得能说出「它现在为什么不可能再发生」:只报「跑了很多遍没再出现」是弱证据。找到那条概率路径(把不合格式的输入交给宽容的解析器,实测 2000 条明文里 11 条中招)、把它变成结构性不可能(入口先认密文头)、再用一条能被打红的回归钉住 —— 三样齐了才算闭环",
       "confidence": 0.85
@@ -7157,10 +7157,10 @@
     "HYP-061": {
       "id": "HYP-061",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T07:32:03+00:00",
-      "updated_at": "2026-09-12T07:32:03+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 137,
       "summary": "「钉死随机源」只在场景动手之前有效:引擎是按拍推进的,从进入游戏到判据动手之间它已经掷过骰子,浮上来的东西得当场收掉 —— 收拾取景要三件一起做(收提示条、钉随机、关已开浮层),少一件就还会偶发假红",
       "confidence": 0.85
@@ -7217,10 +7217,10 @@
     "HYP-062": {
       "id": "HYP-062",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T07:56:16+00:00",
-      "updated_at": "2026-09-12T07:56:16+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 135,
       "summary": "「先动手、再读状态」是这类实时界面里最顺手也最容易写错的一行:实参求值顺序让「我改完状态再取名」看起来毫无问题,而收尾那一步恰恰会把状态清空。凡战报/结算的标题,都该在动作之前取",
       "confidence": 0.85
@@ -7277,10 +7277,10 @@
     "HYP-063": {
       "id": "HYP-063",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T08:14:01+00:00",
-      "updated_at": "2026-09-12T08:14:01+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 136,
       "summary": "判据要能自己指认「屏幕上现在是谁」:浮层场景里,拿错扇面板会把诊断指向无辜的人(顿悟被当成突破结果)。凡是「点一下应当开出某扇窗」的判据,都要按内容认窗,并在失败时列出当前所有开着的窗",
       "confidence": 0.85
@@ -7337,10 +7337,10 @@
     "HYP-064": {
       "id": "HYP-064",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T08:36:03+00:00",
-      "updated_at": "2026-09-12T08:36:03+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 137,
       "summary": "「当场看一眼」不足以收拾取景:两个独立定时器(引擎掷事件 / 组件轮询取事件)之间有一拍错位,事件已产生而界面还没画出来。收拾取景要按「最坏一拍」来等(固定转够一圈),而不是「现在没看见就当没有」",
       "confidence": 0.85
@@ -7397,10 +7397,10 @@
     "HYP-065": {
       "id": "HYP-065",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T09:03:48+00:00",
-      "updated_at": "2026-09-12T09:03:48+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 138,
       "summary": "可读性也是可以量的,而*禁用态*最容易被漏:设计时只想着「把它灰掉」,忘了那行字往往正是「为什么不让我点」—— 玩家最需要读的一句。判据要按「算出来的对比度」量前景与背景,而不是按设计师记得的那几个色号",
       "status:": "active",
@@ -7458,10 +7458,10 @@
     "HYP-066": {
       "id": "HYP-066",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T09:16:36+00:00",
-      "updated_at": "2026-09-12T09:16:36+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 139,
       "summary": "最根本的那条承诺最容易被漏检:引擎在跑、数在涨,是放置玩法的前提,却因为「单元用例直接调引擎」而无人从界面这头看过。凡是「应用启动后应当持续发生」的事,都值得在真浏览器里量一次「它真的在发生」",
       "confidence": 0.85
@@ -7518,10 +7518,10 @@
     "HYP-067": {
       "id": "HYP-067",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T09:37:01+00:00",
-      "updated_at": "2026-09-12T09:37:01+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 140,
       "summary": "验证「恢复」之前,先证明「改过了、而且改到盘上了」:否则「导入成功」与「那一下根本没写进去」在读数上完全一样(节流写盘让两者都显示旧值)。凡是对照类判据,都要先固定住被对照的那一项,再谈恢复",
       "confidence": 0.9
@@ -7578,10 +7578,10 @@
     "HYP-068": {
       "id": "HYP-068",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T10:01:10+00:00",
-      "updated_at": "2026-09-12T10:01:10+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 141,
       "summary": "覆盖面要按**组合**算,不是按维度各来一遍就够:档位(空/后期)× 宽度(390/375/320)× 页面三者相乘,缺哪一格就漏哪一格。检查单上「每个维度都覆盖了」并不等于「每个组合都覆盖了」",
       "confidence": 0.85
@@ -7664,10 +7664,10 @@
     "HYP-069": {
       "id": "HYP-069",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T10:24:10+00:00",
-      "updated_at": "2026-09-12T10:24:10+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 154,
       "summary": "说明里写死的数字也是「声明」:凡是文案与数据各写一份的地方(「每 4 回合」vs interval、「回复五成」vs 0.5),都要有一条能解析出来的对账判据 —— 否则改一处忘另一处永远不会报错,而玩家不会去猜哪个是对的",
       "confidence": 0.85
@@ -7724,10 +7724,10 @@
     "HYP-070": {
       "id": "HYP-070",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T10:41:26+00:00",
-      "updated_at": "2026-09-12T10:41:26+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 143,
       "summary": "「说过一次」不等于「交代清楚」:启动提示只活两三秒,而玩家发现异常的时机往往晚得多(先看见数字不对,再回来找原因)。凡是要玩家采取行动的坏消息(存档坏了、写不进去),都得在**他会去找答案的地方**常驻一条,并写清「哪一件坏了、原物还在不在、该做什么」",
       "confidence": 0.85
@@ -7784,10 +7784,10 @@
     "HYP-071": {
       "id": "HYP-071",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T10:53:01+00:00",
-      "updated_at": "2026-09-12T10:53:01+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 144,
       "summary": "「所报即所打」不只是规则同源,还包括**状态**同源:这一场从多少血开打、带没带上一场的势,都是结果的一部分。凡是「预估 / 预览 / 报价」类界面,都要对着**结算那一份输入**逐项对(规则、状态、随机源三样),少对一项就会出现「越糟越乐观」这种反向失真",
       "confidence": 0.9
@@ -7844,10 +7844,10 @@
     "HYP-072": {
       "id": "HYP-072",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T11:19:02+00:00",
-      "updated_at": "2026-09-12T11:19:02+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 145,
       "summary": "「丢档前唯一的保险」这类操作,失败必须比成功更显眼:它成功时浏览器自己会给反馈(下载条),失败时却什么都没有 —— 于是静默失败恰好发生在最需要知道的那一刻。凡是「保命」操作,都要有一条判据把它的失败路径也走一遍",
       "confidence": 0.9
@@ -7905,10 +7905,10 @@
     "HYP-073": {
       "id": "HYP-073",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T11:38:41+00:00",
-      "updated_at": "2026-09-12T11:38:41+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 146,
       "summary": "判据要守「结果」而不是「某个实现」:同一次刷盘有两处监听互为兜底,盯「哪个监听还在」会误报;盯「切后台之后磁盘有没有追上页面」才是玩家真正要的那件事 —— 实现可以换,结果不能变",
       "confidence": 0.85
@@ -7965,10 +7965,10 @@
     "HYP-074": {
       "id": "HYP-074",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T11:56:11+00:00",
-      "updated_at": "2026-09-12T11:56:11+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 147,
       "summary": "驱动流程前先弄清「真实流程有几步」:同一处入口在探针里少点一步,表现与「功能坏了」一模一样(点出发其实先弹模式窗)。判据要按玩家真实走的步数来搭 —— 少一步会把「我没搭对」误报成「它坏了」",
       "confidence": 0.85
@@ -8025,10 +8025,10 @@
     "HYP-075": {
       "id": "HYP-075",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T12:14:33+00:00",
-      "updated_at": "2026-09-12T12:14:33+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 148,
       "summary": "对账要挑**没有别的来源**的那一项:灵石同时被任务/成就发放,拿它做差会被别处收益搅乱;器灵尘只由分解与强化动,差一分就是错。凡「所见即所付」的判据,先选一条干净的量纲",
       "confidence": 0.85
@@ -8085,10 +8085,10 @@
     "HYP-076": {
       "id": "HYP-076",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T12:41:11+00:00",
-      "updated_at": "2026-09-12T12:41:11+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 149,
       "summary": "同一句拒绝,越早说越好:服务层兜底保证「结果对」,但玩家会先走完一步(选完三个模式)才发现走不通。凡是「前置条件不满足」,入口处就该拦一次井打出同一句话;服务层的那一份留着,两处各司其职",
       "confidence": 0.85
@@ -8157,10 +8157,10 @@
     "HYP-077": {
       "id": "HYP-077",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T13:02:36+00:00",
-      "updated_at": "2026-09-12T13:02:36+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 150,
       "summary": "读数要么准,要么别报:固定的假读数会训练人忽略整张表。凡是「点了没反应」这类读数,先问「变化是不是没落在我的指纹里」(样式、选中态、跨页状态),能收进指纹的就收进去 —— 这张表才有资格当哨兵",
       "confidence": 0.85
@@ -8217,10 +8217,10 @@
     "HYP-078": {
       "id": "HYP-078",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T13:35:28+00:00",
-      "updated_at": "2026-09-12T13:35:28+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 151,
       "summary": "「设置里的开关」都要有一条两向判据:只验「打开后变了」可能碰上本来就那样(界面本来就不动),只验「关掉后不变」则永远绿。两向都立得住,才说明这个开关真的接上了线",
       "confidence": 0.85
@@ -8277,10 +8277,10 @@
     "HYP-079": {
       "id": "HYP-079",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T14:22:58+00:00",
-      "updated_at": "2026-09-12T14:22:58+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 152,
       "summary": "对账要么取精确值,要么把判据的量纲选在界面精度之上:界面把 89979 显示成「8.998万」,1 位漂移就此隐形 —— 那时绿的不是账目对,而是看不出来。凡「所见即所付」的判据,先问一句「这份读数的最小刻度是多少」",
       "confidence": 0.9
@@ -8337,10 +8337,10 @@
     "HYP-080": {
       "id": "HYP-080",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T14:55:39+00:00",
-      "updated_at": "2026-09-12T14:55:39+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 153,
       "summary": "「两种代价」最容易只写一半:实现里两笔都扣,界面却只报一笔,而玩家只会按标签算账。凡是多资源消耗的动作,按钮上要么都写、要么都不写(让玩家点开看价),绝不能写一半",
       "confidence": 0.9
@@ -8501,10 +8501,10 @@
     "HYP-081": {
       "id": "HYP-081",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T16:30:19+00:00",
-      "updated_at": "2026-09-12T16:30:19+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 155,
       "summary": "勾选即销毁源于一条陈旧设计决策(注释写着「新勾选一档 = 宣告该档是废料」)——它把「此后拾取自动回收」(不占行囊的入包裁决)错当成「行囊内已存之物也当场销毁」,两件事被并成了一句",
       "confidence": 0.9
@@ -8587,10 +8587,10 @@
     "HYP-082": {
       "id": "HYP-082",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T17:16:08+00:00",
-      "updated_at": "2026-09-12T17:16:08+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 156,
       "summary": "智能收纳建模时把「件上有没有玩家的投入」漏在外:投入只写在 level/reforgeCount/sealedAffixIds 三个字段上,而裁决里一个都没读过 —— 工具便默认「没提过就是可以扔」",
       "confidence": 0.9
@@ -8657,10 +8657,10 @@
     "HYP-083": {
       "id": "HYP-083",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T20:56:57+00:00",
-      "updated_at": "2026-09-12T20:56:57+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 158,
       "summary": "寿元加算(lifespanBonusYears)从不被 sanitize:写坏/导入的字符串、NaN 一路进 lifespanMax=floor(base×(1+pct)+该栏),把寿元上限烧成 NaN,引擎死亡判据 age<NaN 恒 false → 下次 tick 即「油尽灯枯」,玩家无从干预",
       "confidence": 0.95
@@ -8668,10 +8668,10 @@
     "HYP-084": {
       "id": "HYP-084",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T20:56:57+00:00",
-      "updated_at": "2026-09-12T20:56:57+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 158,
       "summary": "事件灵石代价不守恒:负灵石支出在入不敷出时用「余额拷贝」喂 spendStone(让 gte 恒真),结局是把整份余额清零;另有事件(凝本源为一丹)在 cond 声明 300 灵石门槛、结算却分文不扣 → 免费取物",
       "confidence": 0.9
@@ -8679,10 +8679,10 @@
     "HYP-085": {
       "id": "HYP-085",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T20:56:57+00:00",
-      "updated_at": "2026-09-12T20:56:57+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 158,
       "summary": "天劫计数在成败判定之前:track('tribulations') 不认 success,失败也累计 —— 连败三次就会解锁成就 a_trib3「渡过 3 次天劫」,与「渡过」语义不符",
       "confidence": 0.95
@@ -8790,10 +8790,10 @@
     "HYP-086": {
       "id": "HYP-086",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T21:00:41+00:00",
-      "updated_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 158,
       "summary": "远征/挑战(切磋/变数)与试炼同为天界内容却双轨:前者按 finalStats(凡界满装)造敌、玩家按 celestialStats 打且敌方 mods 无 depthScale;后者(celestialStats+depth)才是「三维与词条互相对消」的设计口径。装备越厚、器魂配置越足,分叉越明显 —— 反成长/双标准",
       "confidence": 0.6
@@ -8813,10 +8813,10 @@
     "HYP-087": {
       "id": "HYP-087",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-12T21:00:41+00:00",
-      "updated_at": "2026-09-12T21:00:41+00:00",
+      "updated_at": "2026-09-15T01:09:21+00:00",
       "touched_round": 161,
       "summary": "离线年龄不封顶是设计,配错的 lastActiveAt(旧备份/时钟回拨)却把「该有点惩罚」变成「必死」:资源按 8h×0.9 结算、年龄按全程 —— 导入旧档的代价远大于设计意图",
       "confidence": 0.5
