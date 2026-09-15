@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 187,
+  "round": 189,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T12:18:58+00:00",
+  "updated_at": "2026-09-15T13:03:54+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 187,
+      "touched_round": 189,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -7724,13 +7724,13 @@
     "HYP-070": {
       "id": "HYP-070",
       "type": "hypothesis",
-      "status": "stale",
-      "version": 2,
+      "status": "active",
+      "version": 3,
       "created_at": "2026-09-12T10:41:26+00:00",
-      "updated_at": "2026-09-15T01:09:21+00:00",
-      "touched_round": 143,
+      "updated_at": "2026-09-15T13:03:42+00:00",
+      "touched_round": 189,
       "summary": "「说过一次」不等于「交代清楚」:启动提示只活两三秒,而玩家发现异常的时机往往晚得多(先看见数字不对,再回来找原因)。凡是要玩家采取行动的坏消息(存档坏了、写不进去),都得在**他会去找答案的地方**常驻一条,并写清「哪一件坏了、原物还在不在、该做什么」",
-      "confidence": 0.85
+      "confidence": 0.9
     },
     "ISS-121": {
       "id": "ISS-121",
@@ -10819,7 +10819,7 @@
       "version": 1,
       "created_at": "2026-09-15T12:18:37+00:00",
       "updated_at": "2026-09-15T12:18:37+00:00",
-      "touched_round": 187,
+      "touched_round": 189,
       "summary": "排版/交互自检(scripts/layout-check.mjs):全量路由 × 五档视口的渲染判据与夹具"
     },
     "EV-165": {
@@ -10868,6 +10868,250 @@
       "rationale": "挤压类事故的共同形状是「一行里可收缩的文字 + 不受限的邻居」,而现有自检只量横向溢出与越界元素 —— 卡片没溢出,只是挤,于是长期全绿。故本轮把判据从「有没有溢出」扩到「有没有被挤」:文字竖排(宽<40px 且≥3 行)、数字与量词分家、标点孤字、操作块与头部相交;并在夹具里钉死「最挤的一档」,而不是等随机建号抽到。判据一律量渲染结果,不在源码里认形状 —— 源码正则认标点会把 }} ) 这类代码误判(本轮试过,当场误报)",
       "alternatives_rejected": "①只修地界卡不碰自检 —— 同类问题四处已经存在且无人量,补一次还会再来;②在源码层用正则找「标点单独成行」—— 误报 }}) 与 }} 这类插值收尾,且看不见真实折行(试过,已弃);③把「最挤的一档」交给随机建号去撞 —— 空档抽到双灵根就永远量不到杂灵根,故夹具钉死五系杂灵根;④提高对比度判据阈值以消掉假红 —— 假红的根因是没合成半透明底,改阈值等于把真问题一起放过",
       "summary": "挤压类事故的判据取向:量渲染不量源码、夹具钉死最挤的一档、透明底要合成后再算对比度"
+    },
+    "ISS-187": {
+      "id": "ISS-187",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T12:36:55+00:00",
+      "updated_at": "2026-09-15T13:03:53+00:00",
+      "touched_round": 189,
+      "severity": 0.45,
+      "confidence": 0.95,
+      "summary": "全局异常处理是句空话:main.ts 的 errorHandler 只 console.error + toast「出现异常,已记录」,全库没有任何留档(51.la 只统计 PV,无 error 上报)。玩家遇到异常时,除了「刚才好像卡了一下」给不出任何凭据;控制台在手机上根本看不到。未处理的 Promise 拒绝更是连 toast 都没有"
+    },
+    "TASK-171": {
+      "id": "TASK-171",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T12:36:55+00:00",
+      "updated_at": "2026-09-15T13:03:54+00:00",
+      "touched_round": 189,
+      "category": "core-feature",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 2,
+      "unlock_factor": 1.2,
+      "summary": "异常留档:新增 diag 分片(最近 20 条,同一条连发只加计数),errorHandler 与 unhandledrejection 都记;设置页「诊断」块显示最近一条并提供复制/清空;异常随导出存档一起带出(改「已记录」这句空话)。诊断数据本身也要 sanitize,坏档不许把设置页拖白"
+    },
+    "COMP-020": {
+      "id": "COMP-020",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T12:36:55+00:00",
+      "updated_at": "2026-09-15T12:36:55+00:00",
+      "touched_round": 189,
+      "summary": "诊断/异常留档(diag 分片 + main 全局处理器 + 设置页诊断块)"
+    },
+    "ISS-188": {
+      "id": "ISS-188",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:53+00:00",
+      "touched_round": 189,
+      "severity": 0.5,
+      "confidence": 0.95,
+      "summary": "浏览器自检从不上 CI:三个工作流里没有任何 scripts/ 引用,layout-check(162 组页面×视口、触达区、对比度、焦点、弹窗语义、离屏回放)与 ui-smoke 只活在「谁记得在本地跑一次」;而发版是 tag 触发,等于每一个发出去的包都没有 UI 层面的门。脚本头部写着「不写进依赖,免得 CI 背一个浏览器」,但那个取舍从未进图谱,也没人再问过值不值"
+    },
+    "TASK-172": {
+      "id": "TASK-172",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:54+00:00",
+      "touched_round": 189,
+      "category": "dx",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1.3,
+      "summary": "把浏览器自检接进 CI:build.yml 加 ui-check job(所有构建 needs 它),deploy.yml 在上传产物前跑同一套;playwright 仍不进 package.json,CI 里 npm install --no-save playwright@1.63.0 + npx playwright install --with-deps chromium"
+    },
+    "ISS-189": {
+      "id": "ISS-189",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:53+00:00",
+      "touched_round": 189,
+      "severity": 0.45,
+      "confidence": 0.95,
+      "summary": "敌人卡在窄屏上被挤:名字最长 9 字(残魂·堕落冰魄仙子)+ 标签最多 5 枚(首领/宿敌/3 特性)+ 适配星级,原来全塞在一行 nowrap 的 flex 里 —— 320 下名字被折成两行、标签压在一起。巡页用的档里敌人名字都短、认知层为 0(特性根本不显示),这一档从来没被量过"
+    },
+    "ISS-190": {
+      "id": "ISS-190",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:53+00:00",
+      "touched_round": 189,
+      "severity": 0.35,
+      "confidence": 0.95,
+      "summary": "战斗卡里的行内按钮触达区不足:「此物所知 »」「战斗分析 »」实测只有 15px 高(layout-check 新增的敌人卡场景当场报出)。这是同类缺陷第三次出现(此前是历练页「适配」展开钮)——行内文字当按钮,视觉上没问题,拇指点不着"
+    },
+    "TASK-173": {
+      "id": "TASK-173",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:54+00:00",
+      "touched_round": 189,
+      "category": "core-feature",
+      "severity": 0.45,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "summary": "敌人卡分层:第一行只答「这是谁、我打它多合适」(名字 nowrap + 适配星级),标签另起一行(首领/宿敌/特性,在那一行里自己换行);行内按钮补 28px 触达区(负外边距抵掉视觉高度);自检补「最挤一档」夹具(认知层 2 + 宿敌 + 首领 + 真仙境敌人)与敌人名字不许折行的判据"
+    },
+    "ISS-191": {
+      "id": "ISS-191",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:53+00:00",
+      "touched_round": 189,
+      "severity": 0.6,
+      "confidence": 0.98,
+      "summary": "道侣意图会被反复重弹:speakIntent 只问 willSpeak(酝酿度够不够),不问「她是不是已经说过、还在等你回应」,而它由 maybeEncounter 在每一场战斗里调用(历练战斗间隔 12 秒)。实测酝酿度过线后连调四次全部开口(raised 1→4、pending 恒 true),玩家体感是「这句话触发概率怎么这么高」,其实一次都没被回应"
+    },
+    "TASK-174": {
+      "id": "TASK-174",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T13:02:37+00:00",
+      "updated_at": "2026-09-15T13:03:54+00:00",
+      "touched_round": 189,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.98,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "summary": "道侣意图不重弹:speakIntent 在 intentPending 时直接返回(她还在等你回应),并补回归用例——连问五次都是 null、raised 不再涨;回应之后(回绝/沉默)酝酿度 ×0.4 落回门槛以下,再由新的经历重新催生"
+    },
+    "COMP-021": {
+      "id": "COMP-021",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:02:41+00:00",
+      "updated_at": "2026-09-15T13:02:41+00:00",
+      "touched_round": 189,
+      "summary": "道侣意图系统(bondIntent 数据 + daoluService.speakIntent/sparkIntent/respondIntent + 人物页意图卡)"
+    },
+    "CHG-219": {
+      "id": "CHG-219",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:37+00:00",
+      "updated_at": "2026-09-15T13:03:37+00:00",
+      "touched_round": 189,
+      "commit": "6d5c715",
+      "summary": "异常留档:diag 分片(20 条封顶/连发去重/坏档自修)+ errorHandler 与 unhandledrejection 接线 + 设置页诊断块(可复制/清空)+ 分片登记进导出与 sanitize"
+    },
+    "CHG-220": {
+      "id": "CHG-220",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:37+00:00",
+      "updated_at": "2026-09-15T13:03:37+00:00",
+      "touched_round": 189,
+      "commit": "ddb7094",
+      "summary": "浏览器自检进 CI:build.yml 新增 ui-check job(构建均 needs 它),deploy.yml 上传产物前跑同一套;playwright 仍不进 package.json"
+    },
+    "CHG-221": {
+      "id": "CHG-221",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "commit": "e6f60e1",
+      "summary": "敌人卡分层(名字+星级一行 / 标签一行)+ 行内按钮补 28px 触达区;自检新增 [320-battle] 最挤一档场景与敌人名字不许折行判据"
+    },
+    "CHG-222": {
+      "id": "CHG-222",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "commit": "268f5bb",
+      "summary": "speakIntent 在 intentPending 时直接返回:她还在等你回应时不重复开口,raised 只数真正的开口"
+    },
+    "EV-167": {
+      "id": "EV-167",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "source": "真浏览器验证(node .tmp-diagcheck.mjs):注入一次未处理 Promise 拒绝 → 设置页诊断块出现该条 → 重载后仍在;复制按钮在 file:// 下失败并给出退路;新增 30 条单元用例",
+      "confidence": 0.95,
+      "summary": "「已记录」从此可查:异常落进 diag 分片、活过重载、随导出存档一起走 —— 玩家终于有东西可以交出来"
+    },
+    "EV-168": {
+      "id": "EV-168",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "source": "node scripts/layout-check.mjs:162 个页面×视口组合全绿(含新增 [320-battle] 场景);CI 两条工作流按同样的命令序列在本地跑通,YAML 用 Bun.YAML 解析核对 job 依赖",
+      "confidence": 0.9,
+      "summary": "浏览器自检已能在 CI 里跑(本地等价验证);敌人卡最挤一档与新判据都在夹具里钉住"
+    },
+    "EV-169": {
+      "id": "EV-169",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "source": "src/core/bondIntent.spec.ts「她还在等回应时,不会重复开口」+ 复现记录(酝酿度 1.867,连调四次 speakIntent:raised 1→4、pending 恒 true)",
+      "confidence": 1.0,
+      "summary": "重弹是可复现的结构性缺陷(不是概率),修复后连问五次都是 null;四套道侣用例 79 条全绿"
+    },
+    "DEC-041": {
+      "id": "DEC-041",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "rationale": "浏览器自检此前不进 CI,理由是「免得 CI 背一个浏览器」(只写在脚本注释里,从未进图谱)。如今判据已长到 162 组页面×视口 + 触达区/对比度/焦点/弹窗语义/离线回放,而发版是 tag 触发 —— 判据的存在价值取决于「它会不会自己跑」。故接进 CI:build.yml 单起 ui-check job 并让所有构建 needs 它(判据红则 APK/安装包/Release 一起停),deploy.yml 在上传 Pages 产物前跑同一套(main 每次提交都过)。playwright 仍不进 package.json:它是只有这一关才需要的重量级依赖,进 devDependencies 会让每次本机 bun install 都背一份;CI 按版本号 npm install --no-save 装,版本与本地跑通的那支一致",
+      "alternatives_rejected": "①把 playwright 写进 devDependencies —— 本机每次装依赖都背一份浏览器依赖树,而 99% 的本机开发不需要跑它;②只在 tag 发版时跑 —— main 上的每次提交(Deploy 到 Pages)会带着没有 UI 门的那一版上线;③只跑布局巡页、不跑交互场景 —— 触达区/焦点/弹窗/离线回放这几类正是巡页量不到的部分;④让 ui-check 与构建并行(不 needs) —— 判据红时包已经出来了,门就形同虚设",
+      "summary": "浏览器自检进 CI 的立场:判据要自己跑才算数;所有构建与发布 needs ui-check;playwright 不进 package.json"
+    },
+    "DEC-042": {
+      "id": "DEC-042",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:03:38+00:00",
+      "updated_at": "2026-09-15T13:03:38+00:00",
+      "touched_round": 189,
+      "rationale": "诊断留档的形状由「玩家会不会交出来」决定:①必须是独立分片(与 pacing 遥测同理)—— 它不是游戏进度,却必须随「导出存档」一起走,那是玩家报问题时唯一会交的东西;②只留摘要(时间/来源/摘要/路由/次数),不记调用栈也不记玩家数据 —— 留档是给人看的线索,不是全量日志,也避免把玩家内容塞进要外发的文件;③同一条连发只加计数,因为挂机时同一条异常可能每秒一次,不去重会把 20 格刷满、真正有用的第一条反被挤掉;④诊断自身绝不再抛(record 先自修),否则记录异常的那一行会成为第二个异常",
+      "alternatives_rejected": "①塞进 settings 分片 —— 混进用户设置,清设置/迁移时容易连带;②只在内存里留、不落盘 —— 刷新即失,恰恰玩家是在刷新后才发现要报;③记完整堆栈 —— 体积大且会把玩家数据带进导出文件,收益(定位)与成本不成比例;④不登记进 PERSISTED_STORES、单独一个 localStorage 键 —— 导出不含它,玩家交出来的文件里就没有线索,等于白记",
+      "summary": "诊断留档的取舍:独立分片、只记摘要、连发去重、随导出走、自身绝不再抛"
     }
   },
   "edges": [
@@ -16127,6 +16371,138 @@
       "to": "COMP-019",
       "type": "governs",
       "created_at": "2026-09-15T12:18:58+00:00"
+    },
+    {
+      "from": "TASK-171",
+      "to": "ISS-187",
+      "type": "addresses",
+      "created_at": "2026-09-15T12:36:55+00:00"
+    },
+    {
+      "from": "ISS-187",
+      "to": "COMP-020",
+      "type": "located_in",
+      "created_at": "2026-09-15T12:36:55+00:00"
+    },
+    {
+      "from": "ISS-188",
+      "to": "COMP-019",
+      "type": "located_in",
+      "created_at": "2026-09-15T13:02:40+00:00"
+    },
+    {
+      "from": "TASK-172",
+      "to": "ISS-188",
+      "type": "addresses",
+      "created_at": "2026-09-15T13:02:40+00:00"
+    },
+    {
+      "from": "ISS-189",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-15T13:02:41+00:00"
+    },
+    {
+      "from": "TASK-173",
+      "to": "ISS-189",
+      "type": "addresses",
+      "created_at": "2026-09-15T13:02:41+00:00"
+    },
+    {
+      "from": "ISS-190",
+      "to": "COMP-019",
+      "type": "located_in",
+      "created_at": "2026-09-15T13:02:41+00:00"
+    },
+    {
+      "from": "TASK-173",
+      "to": "ISS-190",
+      "type": "addresses",
+      "created_at": "2026-09-15T13:02:41+00:00"
+    },
+    {
+      "from": "ISS-191",
+      "to": "COMP-021",
+      "type": "located_in",
+      "created_at": "2026-09-15T13:02:41+00:00"
+    },
+    {
+      "from": "TASK-174",
+      "to": "ISS-191",
+      "type": "addresses",
+      "created_at": "2026-09-15T13:02:41+00:00"
+    },
+    {
+      "from": "CHG-219",
+      "to": "TASK-171",
+      "type": "implements",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-219",
+      "to": "ISS-187",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-220",
+      "to": "TASK-172",
+      "type": "implements",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-220",
+      "to": "ISS-188",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-221",
+      "to": "TASK-173",
+      "type": "implements",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-221",
+      "to": "ISS-189",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-221",
+      "to": "ISS-190",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-222",
+      "to": "TASK-174",
+      "type": "implements",
+      "created_at": "2026-09-15T13:03:41+00:00"
+    },
+    {
+      "from": "CHG-222",
+      "to": "ISS-191",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:03:42+00:00"
+    },
+    {
+      "from": "EV-167",
+      "to": "HYP-070",
+      "type": "validates",
+      "created_at": "2026-09-15T13:03:42+00:00"
+    },
+    {
+      "from": "DEC-041",
+      "to": "COMP-019",
+      "type": "governs",
+      "created_at": "2026-09-15T13:03:42+00:00"
+    },
+    {
+      "from": "DEC-042",
+      "to": "COMP-020",
+      "type": "governs",
+      "created_at": "2026-09-15T13:03:42+00:00"
     }
   ]
 }
