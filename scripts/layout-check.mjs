@@ -2488,7 +2488,8 @@ for (const vp of VIEWPORTS) {
       return fonts.map(f => f.familyName)
     })()
     if (!kaiFonts) failures.push('[楷体] 顶栏里找不到 font-kai 的元素,判据没量到东西')
-    else if (!kaiFonts.includes('LXGW WenKai')) {
+    // 只认前缀:字形分支可能换(原版 / GB / 屏幕阅读版),但「用的是我们内置那一支」不许变
+    else if (!kaiFonts.some(f => f.startsWith('LXGW WenKai'))) {
       failures.push(`[楷体] 楷体文字不是内置字体画的(实际 ${kaiFonts.join(' + ')})—— 字体没加载成功?`)
     } else {
       console.log(`\n楷体统一:顶栏名字由 ${kaiFonts.join(' + ')} 渲染`)
