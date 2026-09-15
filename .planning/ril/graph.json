@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 189,
+  "round": 190,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T13:03:54+00:00",
+  "updated_at": "2026-09-15T13:24:18+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10138,12 +10138,12 @@
     "HYP-092": {
       "id": "HYP-092",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T04:06:09+00:00",
-      "updated_at": "2026-09-15T04:06:09+00:00",
-      "touched_round": 176,
-      "confidence": 0.6,
+      "updated_at": "2026-09-15T13:24:18+00:00",
+      "touched_round": 190,
+      "confidence": 0.95,
       "summary": "SW 的 browser-级行为(离线重开/安装提示/更新接管)本环境无浏览器可基站内验证,需真机 E2E;若人工验证发现问题,回滚 sw.js 注册一行即可"
     },
     "EV-160": {
@@ -11112,6 +11112,66 @@
       "rationale": "诊断留档的形状由「玩家会不会交出来」决定:①必须是独立分片(与 pacing 遥测同理)—— 它不是游戏进度,却必须随「导出存档」一起走,那是玩家报问题时唯一会交的东西;②只留摘要(时间/来源/摘要/路由/次数),不记调用栈也不记玩家数据 —— 留档是给人看的线索,不是全量日志,也避免把玩家内容塞进要外发的文件;③同一条连发只加计数,因为挂机时同一条异常可能每秒一次,不去重会把 20 格刷满、真正有用的第一条反被挤掉;④诊断自身绝不再抛(record 先自修),否则记录异常的那一行会成为第二个异常",
       "alternatives_rejected": "①塞进 settings 分片 —— 混进用户设置,清设置/迁移时容易连带;②只在内存里留、不落盘 —— 刷新即失,恰恰玩家是在刷新后才发现要报;③记完整堆栈 —— 体积大且会把玩家数据带进导出文件,收益(定位)与成本不成比例;④不登记进 PERSISTED_STORES、单独一个 localStorage 键 —— 导出不含它,玩家交出来的文件里就没有线索,等于白记",
       "summary": "诊断留档的取舍:独立分片、只记摘要、连发去重、随导出走、自身绝不再抛"
+    },
+    "ISS-192": {
+      "id": "ISS-192",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T13:23:42+00:00",
+      "updated_at": "2026-09-15T13:24:18+00:00",
+      "touched_round": 190,
+      "severity": 0.5,
+      "confidence": 0.95,
+      "summary": "「断网还能重开」这句承诺从来没有被验证过:public/sw.js 的策略只写在注释里(导航 network-first、产物 cache-first、activate 清旧缓存),而仓库自己写着「browser-级行为本环境无法验证,需真机 E2E」。离线坏掉的形态是所有离线用户看到白屏或 503 兜底页,完全静默;CACHE_VERSION 又是个纯人工旋钮,没人记得改也无人报警"
+    },
+    "TASK-175": {
+      "id": "TASK-175",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T13:23:42+00:00",
+      "updated_at": "2026-09-15T13:24:18+00:00",
+      "touched_round": 190,
+      "category": "test-quality",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 2,
+      "unlock_factor": 1.2,
+      "summary": "离线自检 scripts/offline-check.mjs:起本地静态服务(dist 临时副本)量四件事——SW 是否接管、缓存是否备下导航页与产物且清掉旧版本、断网重载能否起来、线上换了 index.html 后能否拿到新的(发版接管);接进 CI 的 ui-check 与 deploy 两道闸"
+    },
+    "COMP-022": {
+      "id": "COMP-022",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:23:43+00:00",
+      "updated_at": "2026-09-15T13:23:43+00:00",
+      "touched_round": 190,
+      "summary": "Service Worker 离线层(public/sw.js + main.ts 注册 + scripts/offline-check.mjs 验证)"
+    },
+    "EV-170": {
+      "id": "EV-170",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:23:47+00:00",
+      "updated_at": "2026-09-15T13:23:47+00:00",
+      "touched_round": 190,
+      "source": "node scripts/offline-check.mjs(localhost + 无头 Chromium):四件事全绿;两处故障注入——①导航不落缓存 → 「断网重载落到了 503 兜底页」转红 ②导航改缓存优先 → 「线上换了 index.html 仍是旧页面」转红",
+      "confidence": 0.95,
+      "summary": "SW 的浏览器级行为在本环境**可以**自动验证(localhost 是安全上下文,不需要真机):离线可重开、旧缓存会被清、发版能接管三条都认结果,且判据对两处典型破坏都敏感"
+    },
+    "CHG-223": {
+      "id": "CHG-223",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-15T13:23:47+00:00",
+      "updated_at": "2026-09-15T13:23:57+00:00",
+      "touched_round": 190,
+      "commit": "ec52902",
+      "summary": "新增 scripts/offline-check.mjs(本地静态服务 + 四件事);build.yml 的 ui-check 与 deploy.yml 各加一步离线自检"
     }
   },
   "edges": [
@@ -16503,6 +16563,36 @@
       "to": "COMP-020",
       "type": "governs",
       "created_at": "2026-09-15T13:03:42+00:00"
+    },
+    {
+      "from": "TASK-175",
+      "to": "ISS-192",
+      "type": "addresses",
+      "created_at": "2026-09-15T13:23:42+00:00"
+    },
+    {
+      "from": "ISS-192",
+      "to": "COMP-022",
+      "type": "located_in",
+      "created_at": "2026-09-15T13:23:43+00:00"
+    },
+    {
+      "from": "EV-170",
+      "to": "HYP-092",
+      "type": "validates",
+      "created_at": "2026-09-15T13:23:47+00:00"
+    },
+    {
+      "from": "CHG-223",
+      "to": "TASK-175",
+      "type": "implements",
+      "created_at": "2026-09-15T13:23:47+00:00"
+    },
+    {
+      "from": "CHG-223",
+      "to": "ISS-192",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:23:47+00:00"
     }
   ]
 }
