@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 197,
+  "round": 198,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T16:33:23+00:00",
+  "updated_at": "2026-09-15T23:36:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -7724,11 +7724,11 @@
     "HYP-070": {
       "id": "HYP-070",
       "type": "hypothesis",
-      "status": "active",
-      "version": 3,
+      "status": "resolved",
+      "version": 4,
       "created_at": "2026-09-12T10:41:26+00:00",
-      "updated_at": "2026-09-15T13:03:42+00:00",
-      "touched_round": 189,
+      "updated_at": "2026-09-15T23:22:38+00:00",
+      "touched_round": 198,
       "summary": "「说过一次」不等于「交代清楚」:启动提示只活两三秒,而玩家发现异常的时机往往晚得多(先看见数字不对,再回来找原因)。凡是要玩家采取行动的坏消息(存档坏了、写不进去),都得在**他会去找答案的地方**常驻一条,并写清「哪一件坏了、原物还在不在、该做什么」",
       "confidence": 0.9
     },
@@ -10565,11 +10565,11 @@
     "HYP-094": {
       "id": "HYP-094",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T10:31:00+00:00",
-      "updated_at": "2026-09-15T10:31:00+00:00",
-      "touched_round": 185,
+      "updated_at": "2026-09-15T23:22:35+00:00",
+      "touched_round": 198,
       "confidence": 0.95,
       "summary": "旧 addBuff 的 Math.max(旧 endsAt, now+dur) 在语义上等于「刷新」而非「保留」:同一状态生效期间再次施加,已有剩余时长必然被压到 now+完整时长,续服丹药时那部分剩余时长被吞掉"
     },
@@ -10804,11 +10804,11 @@
     "HYP-095": {
       "id": "HYP-095",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T12:18:33+00:00",
-      "updated_at": "2026-09-15T12:18:33+00:00",
-      "touched_round": 192,
+      "updated_at": "2026-09-15T23:22:42+00:00",
+      "touched_round": 198,
       "confidence": 0.85,
       "summary": "挤压类排版事故有共同形状:一行 flex 里同时存在「可收缩的文字」与「不受限的邻居」(右列/圆环/按钮),窄屏上文字那格被压扁 —— 横向溢出判据永远量不到,必须另量宽度、行数与元素相交"
     },
@@ -11203,11 +11203,11 @@
     "ISS-194": {
       "id": "ISS-194",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T13:32:43+00:00",
-      "updated_at": "2026-09-15T13:32:43+00:00",
-      "touched_round": 191,
+      "updated_at": "2026-09-15T23:23:01+00:00",
+      "touched_round": 198,
       "severity": 0.25,
       "confidence": 0.9,
       "summary": "残留:celestialStats 仍带 inventory.equipFlats(装备的**平铺**三维,只有词条被器魂替换),实测满装时玩家天界攻击 +0.07%。量级远小于倒挂(29%),但同属「凡器数值没抹净」;修它要动 celestialStats 本身,即玩家在天界的战力,故本轮只记录不动手"
@@ -11300,11 +11300,11 @@
     "ISS-195": {
       "id": "ISS-195",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T14:03:28+00:00",
-      "updated_at": "2026-09-15T14:03:28+00:00",
-      "touched_round": 192,
+      "updated_at": "2026-09-15T23:23:00+00:00",
+      "touched_round": 198,
       "severity": 0.3,
       "confidence": 0.9,
       "summary": "残留(数值层,未做):低档先手词条在先手判定上近乎无效 —— 实测 132 只敌人,无加成抢先 40 次、+3% 仍是 40 次、+6% 才 49 次。ISS-173 已把名字与解释改对(阈值语义 + 差额),但「迅捷 +3~6% 跨不过大多数敌人都那一线」的粒度问题仍在;要动就得给低档更细的粒度或重排敌人速度档,属平衡取舍"
@@ -11568,6 +11568,167 @@
       "touched_round": 197,
       "commit": "028eb19",
       "summary": "装备表重排为 288 件(32 阶 × 9 部位,一阶一名,补齐 168 件);掉落按阶取 + 退档兜底;EquipmentTemplate.minTier → tier;红线补「每阶每部位有名目」「名字不许跨阶掉出」与仙界印记「雷」;敌人补偿增速 1.105→1.113;inflationAudit 平铺占比判据改结构判断 + 五种子均值;修两处坏夹具;排版自检两处启动判据改轮询"
+    },
+    "ISS-201": {
+      "id": "ISS-201",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T23:22:22+00:00",
+      "updated_at": "2026-09-15T23:23:00+00:00",
+      "touched_round": 198,
+      "severity": 0.3,
+      "confidence": 0.95,
+      "summary": "人间界那批老装备的名字没跟着地界走:霜出现在黑风林(青霜剑)、星落在幽冥海(星髓链/踏云靴)、雷进了迷雾沼泽(紫电长枪/五雷符)、剑冢一阶却全是通用仙侠件(流云仙衣/龙鳞腕甲/蟒纹玉带/月华坠/紫霞戒)、雪岭一阶顶着紫金/追星/龙魂/琉璃/金光——名字看不出是哪一阶的东西。同一批还把 README 拖成了旧账:46 部功法(实际 63)、107 条分支(141)、77 装备模板(288)、区域尽头写着九幽魔渊(只是 16 阶,现排到 32 阶的道祖悟道崖)"
+    },
+    "TASK-183": {
+      "id": "TASK-183",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T23:22:22+00:00",
+      "updated_at": "2026-09-15T23:23:01+00:00",
+      "touched_round": 198,
+      "category": "maintainability",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 3,
+      "unlock_factor": 1.1,
+      "summary": "收拾批次:①35 件老装备改名+改描述,按各自地界归位(id 不动,旧存档照常认得;共鸣件例外,名字归共鸣组);②README 数字与描述跟表走,并新增红线(README 特色段与系统一览表的数字必须能从表里数出来);③排版自检两处启动时序判据改轮询、节流判据投入前先等满窗口"
+    },
+    "ISS-202": {
+      "id": "ISS-202",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T23:22:27+00:00",
+      "updated_at": "2026-09-15T23:23:00+00:00",
+      "touched_round": 198,
+      "severity": 0.35,
+      "confidence": 0.9,
+      "summary": "灵兽的高界只有一只:仙界应龙、神界麒麟(混沌海两只)——而灵兽位只有一个,「带哪只」这个选择在那两界根本不存在。原判据只要求「每界 ≥1 条发放路径」,与法宝那条「件数要多于槽位数」相比明显偏松"
+    },
+    "TASK-184": {
+      "id": "TASK-184",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T23:22:27+00:00",
+      "updated_at": "2026-09-15T23:23:01+00:00",
+      "touched_round": 198,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 3,
+      "unlock_factor": 1.2,
+      "summary": "手感批次:①灵兽每界补到两只(仙界青鸾、神界白泽各配一条际遇),判据改为「每界可结缘 ≥2 只」(不定名那一池子按池子大小算);②先手判定对齐档位(敌人速度 5% 一档,而词条最低档 3~6% 跨不过任何一档):迅捷 5–10/流光 10–15/瞬影 15–25,装备固有与法宝被动等 10 处低于 5% 的一并抬起,新增 speedGranularity 红线;③图鉴装备深度第二档由「见过精品」(靠运气)换成「曾上手」(强化或装备过即算,由玩家推进)"
+    },
+    "TASK-185": {
+      "id": "TASK-185",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T23:22:31+00:00",
+      "updated_at": "2026-09-15T23:23:01+00:00",
+      "touched_round": 198,
+      "category": "correctness",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.1,
+      "summary": "口径批次:①ISS-194 收口——celestialStats 不再带凡界装备的平铺三维(器魂给的是路数,三维本就该归零),判据随之从 0.5% 收紧到 0.05%;②法宝 minTier → fromTier(装备的 tier 是「本件专属」,法宝的是「从这阶起可现世」的累积池),图鉴补上「N 阶起可现世」,与装备「一阶一名」明确区分"
+    },
+    "EV-177": {
+      "id": "EV-177",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:31+00:00",
+      "updated_at": "2026-09-15T23:22:31+00:00",
+      "touched_round": 198,
+      "confidence": 0.95,
+      "source": "src/core/speedGranularity.spec.ts + src/core/contentDensity.spec.ts + src/core/celestialCaliber.spec.ts(收紧后)",
+      "summary": "实测:132 只敌人速度按 5% 一档(0.65~1.45),先手词条最低档 3% 跨不过任何一档——无加成抢先 40 次、+3% 仍 40 次;改档后每掷至少跨过 1.05 那一档,红线在故障注入(改回 3%)下变红。灵兽:仙界/神界各补一只后四界均可结缘 ≥2 只。天界:凡界装备在天界的影响从 +0.07% 降到 0(判据 0.05% 内)"
+    },
+    "EV-178": {
+      "id": "EV-178",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:31+00:00",
+      "updated_at": "2026-09-15T23:22:31+00:00",
+      "touched_round": 198,
+      "confidence": 0.9,
+      "source": "src/stores/cultivation.ts:117 注释 + src/stores/cultivation.spec.ts「状态时长叠加」",
+      "summary": "HYP-094 已按设计落地:addBuff 的 Math.max(旧 endsAt, now) + dur 是**有意**的时长叠加(续服同一味丹,药力足额叠上),注释与 spec 都已写明 —— 该假设可以收口了"
+    },
+    "EV-179": {
+      "id": "EV-179",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:35+00:00",
+      "updated_at": "2026-09-15T23:22:35+00:00",
+      "touched_round": 198,
+      "confidence": 0.9,
+      "source": "src/views/SettingsView.vue 常驻坏档条 + scripts/layout-check.mjs 坏档场景(轮询后)",
+      "summary": "HYP-070 已落地:坏档/写不进去这类要玩家采取行动的坏消息,除启动提示外还在设置页常驻一条,写清哪一片坏了、原档备份在哪;排版自检逐条核这句 —— 该假设可以收口"
+    },
+    "EV-180": {
+      "id": "EV-180",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:35+00:00",
+      "updated_at": "2026-09-15T23:22:35+00:00",
+      "touched_round": 198,
+      "confidence": 0.9,
+      "source": "src/core/uiLayering.spec.ts + scripts/layout-check.mjs 挤压类两条通用判据",
+      "summary": "HYP-095 已落地:挤压类排版事故(可收缩文字 + 不受限邻居)已收成两条通用判据 —— 文字被挤成竖排、数字与量词被换行拆开,全页面生效 —— 该假设可以收口"
+    },
+    "CHG-231": {
+      "id": "CHG-231",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:55+00:00",
+      "updated_at": "2026-09-15T23:22:55+00:00",
+      "touched_round": 198,
+      "commit": "33a00b8",
+      "summary": "35 件老装备按地界改名+改描述(共鸣件例外);README 数字与描述跟表走 + 新红线(README 数量必须能从表数出);排版自检两处启动判断改轮询、节流判据投入前等满窗口"
+    },
+    "CHG-232": {
+      "id": "CHG-232",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:55+00:00",
+      "updated_at": "2026-09-15T23:22:55+00:00",
+      "touched_round": 198,
+      "commit": "1ea1cb2",
+      "summary": "灵兽:仙界青鸾/神界白泽 + 两条际遇,判据改「每界可结缘 ≥2 只」;先手判定档位对齐 5% 步长(迅捷 5–10/流光 10–15/瞬影 15–25)+ 10 处装备/法宝 speed 抬起 + speedGranularity 红线;图鉴装备深度加「曾上手」档"
+    },
+    "CHG-233": {
+      "id": "CHG-233",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:22:55+00:00",
+      "updated_at": "2026-09-15T23:22:55+00:00",
+      "touched_round": 198,
+      "commit": 52573.0,
+      "summary": "celestialStats 不再带凡界平铺三维(ISS-194 收口),判据从 0.5% 收紧到 0.05%;法宝 minTier → fromTier,图鉴补「N 阶起可现世」"
+    },
+    "CHG-234": {
+      "id": "CHG-234",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T23:36:24+00:00",
+      "updated_at": "2026-09-15T23:36:24+00:00",
+      "touched_round": 198,
+      "commit": "17525b6",
+      "summary": "装备卡加 data-uid;排版自检的锻造场景改按 uid 找件(原写死「青云道袍」,改名后静默落空并假报「判据没跑到东西」)"
     }
   },
   "edges": [
@@ -17205,6 +17366,96 @@
       "to": "TASK-182",
       "type": "implements",
       "created_at": "2026-09-15T16:33:23+00:00"
+    },
+    {
+      "from": "TASK-183",
+      "to": "ISS-201",
+      "type": "addresses",
+      "created_at": "2026-09-15T23:22:22+00:00"
+    },
+    {
+      "from": "TASK-184",
+      "to": "ISS-202",
+      "type": "addresses",
+      "created_at": "2026-09-15T23:22:27+00:00"
+    },
+    {
+      "from": "TASK-184",
+      "to": "ISS-195",
+      "type": "addresses",
+      "created_at": "2026-09-15T23:22:27+00:00"
+    },
+    {
+      "from": "TASK-185",
+      "to": "ISS-194",
+      "type": "addresses",
+      "created_at": "2026-09-15T23:22:31+00:00"
+    },
+    {
+      "from": "EV-179",
+      "to": "HYP-070",
+      "type": "validates",
+      "created_at": "2026-09-15T23:22:42+00:00"
+    },
+    {
+      "from": "EV-180",
+      "to": "HYP-095",
+      "type": "validates",
+      "created_at": "2026-09-15T23:22:42+00:00"
+    },
+    {
+      "from": "EV-178",
+      "to": "HYP-094",
+      "type": "validates",
+      "created_at": "2026-09-15T23:22:42+00:00"
+    },
+    {
+      "from": "CHG-231",
+      "to": "ISS-201",
+      "type": "resolves",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-231",
+      "to": "TASK-183",
+      "type": "implements",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-232",
+      "to": "ISS-202",
+      "type": "resolves",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-232",
+      "to": "TASK-184",
+      "type": "implements",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-232",
+      "to": "ISS-195",
+      "type": "resolves",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-233",
+      "to": "ISS-194",
+      "type": "resolves",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-233",
+      "to": "TASK-185",
+      "type": "implements",
+      "created_at": "2026-09-15T23:23:00+00:00"
+    },
+    {
+      "from": "CHG-234",
+      "to": "TASK-183",
+      "type": "implements",
+      "created_at": "2026-09-15T23:36:24+00:00"
     }
   ]
 }
