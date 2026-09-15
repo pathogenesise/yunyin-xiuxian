@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T03:20:06+00:00",
+  "updated_at": "2026-09-15T03:32:51+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10073,6 +10073,45 @@
       "source": "bun run test:155 files/1488 tests pass;bun run build ok;bun run lint ok",
       "summary": "PWA 落地 + 孤文件删除后全量验证:155 测试文件 1488 用例全过、vue-tsc+vite 构建绿、eslint 无告警;dist 含 manifest/icon-192/512/maskable/apple-touch-icon 且 index.html 正确引用",
       "confidence": 1.0
+    },
+    "TASK-157": {
+      "id": "TASK-157",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T03:30:49+00:00",
+      "updated_at": "2026-09-15T03:30:49+00:00",
+      "touched_round": 176,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.85,
+      "effort": 4,
+      "summary": "补 Service Worker 离线缓存:manifest 已让安装性成立(ISS-171 已闭),但无 SW 则断网重开/桌面 Chrome 安装不完整;需设计 hash 路由 + legacy polyfill + 外部统计脚本(51.la 只走网络)缓存策略,避免发版后旧缓存卡死玩家"
+    },
+    "TASK-158": {
+      "id": "TASK-158",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T03:32:51+00:00",
+      "updated_at": "2026-09-15T03:32:51+00:00",
+      "touched_round": 176,
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.95,
+      "effort": 1,
+      "summary": "设置页音量滑块(背景音乐/音效)补 aria-label,夜间模式/战报速度分段按钮补 role=group 可访问组语义"
+    },
+    "CHG-205": {
+      "id": "CHG-205",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T03:32:51+00:00",
+      "updated_at": "2026-09-15T03:32:51+00:00",
+      "touched_round": 176,
+      "commit": "76465718e47e",
+      "summary": "设置页 a11y:两个音量 range 补可访问名,两个分段控件补 role=group+aria-label"
     }
   },
   "edges": [
@@ -14858,6 +14897,18 @@
       "to": "TASK-156",
       "type": "governs",
       "created_at": "2026-09-15T03:16:22+00:00"
+    },
+    {
+      "from": "TASK-157",
+      "to": "ISS-171",
+      "type": "addresses",
+      "created_at": "2026-09-15T03:30:50+00:00"
+    },
+    {
+      "from": "CHG-205",
+      "to": "TASK-158",
+      "type": "implements",
+      "created_at": "2026-09-15T03:32:51+00:00"
     }
   ]
 }
