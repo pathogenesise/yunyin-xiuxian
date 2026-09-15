@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 190,
+  "round": 191,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T13:24:18+00:00",
+  "updated_at": "2026-09-15T13:32:56+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -2979,7 +2979,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:41:15+00:00",
       "updated_at": "2026-09-11T16:41:15+00:00",
-      "touched_round": 91,
+      "touched_round": 191,
       "summary": "界域志/经典系统(classics.ts 典籍志 + yijing.ts 易 + RealmCodexView):承载传统经典的阅读与术数玩法"
     },
     "CHG-078": {
@@ -3289,7 +3289,7 @@
       "version": 1,
       "created_at": "2026-09-11T17:02:06+00:00",
       "updated_at": "2026-09-11T17:02:06+00:00",
-      "touched_round": 162,
+      "touched_round": 191,
       "summary": "远征(expedition.ts):道途规则 × 天道契约 × 天道变数 × 三重择路 × 奇门择门 → 入界/三层/界主,预估与实战共用 expeditionRules"
     },
     "DEC-024": {
@@ -8794,7 +8794,7 @@
       "version": 2,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-15T01:09:21+00:00",
-      "touched_round": 158,
+      "touched_round": 191,
       "summary": "远征/挑战(切磋/变数)与试炼同为天界内容却双轨:前者按 finalStats(凡界满装)造敌、玩家按 celestialStats 打且敌方 mods 无 depthScale;后者(celestialStats+depth)才是「三维与词条互相对消」的设计口径。装备越厚、器魂配置越足,分叉越明显 —— 反成长/双标准",
       "confidence": 0.6
     },
@@ -9063,7 +9063,7 @@
       "version": 1,
       "created_at": "2026-09-12T22:37:15+00:00",
       "updated_at": "2026-09-12T22:37:15+00:00",
-      "touched_round": 162,
+      "touched_round": 191,
       "summary": "远征/挑战(切磋/变数)的天界造敌口径暂缓统一:维持 finalStats 参照,不立刻改成 celestialStats+depth —— 世界 atkR 是按现行口径调校的,统一口径需连带重校敌我比值,留待产品/平衡回合",
       "rationale": "无器魂时三维均衡(forgeSoul 对 base-pct 透传),分叉仅在器魂配置下显现;对齐试炼口径会放大锐度又需重调 atkR,一次改动两处风险,先记不改",
       "alternatives_rejected": "仅把 expedition.fightStep 的 ref 换成 finalStats→celestialStats 单行改(未经数值复核,可能把远征难度整体踩穿);保留双轨(现状,但需平衡回合处理)"
@@ -9627,7 +9627,7 @@
       "version": 1,
       "created_at": "2026-09-14T12:30:11+00:00",
       "updated_at": "2026-09-14T12:30:11+00:00",
-      "touched_round": 168,
+      "touched_round": 191,
       "summary": "天道终局系统(endgameService + endgame store + CelestialView):道源/道痕/熔炉/远征试炼/转世保留物"
     },
     "CHG-193": {
@@ -11172,6 +11172,80 @@
       "touched_round": 190,
       "commit": "ec52902",
       "summary": "新增 scripts/offline-check.mjs(本地静态服务 + 四件事);build.yml 的 ui-check 与 deploy.yml 各加一步离线自检"
+    },
+    "ISS-193": {
+      "id": "ISS-193",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T13:32:42+00:00",
+      "updated_at": "2026-09-15T13:32:55+00:00",
+      "touched_round": 191,
+      "severity": 0.6,
+      "confidence": 0.95,
+      "summary": "天界敌我口径倒挂:远征/挑战按 finalStats(含凡界装备)造敌,玩家却按 celestialStats 出手(凡器数值已被器魂抹平),且远征/挑战的敌人词条从不乘 celestialDepthScale。实测(真仙·赤炎天·同一形状,只改凡界装备):玩家天界攻击恒 7.53e7,敌人攻击从 5.57e7(无装)涨到 7.17e7(满装,+29%)——「凡界装备越好,天界内容越难」,与「凡器入天界数值尽去」的法则相反"
+    },
+    "TASK-176": {
+      "id": "TASK-176",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T13:32:42+00:00",
+      "updated_at": "2026-09-15T13:32:56+00:00",
+      "touched_round": 191,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 2,
+      "unlock_factor": 1.2,
+      "summary": "统一天界口径:gauntlet 增 celestialFoeCaliber(celestialStats) 给出参照+加厚,远征(实战/预览/预估)、挑战、道途变数一律走它;补 celestialCaliber.spec(装备三档比率红线 + 加厚生效 + 源码级不许退回 finalStats)"
+    },
+    "ISS-194": {
+      "id": "ISS-194",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:32:43+00:00",
+      "updated_at": "2026-09-15T13:32:43+00:00",
+      "touched_round": 191,
+      "severity": 0.25,
+      "confidence": 0.9,
+      "summary": "残留:celestialStats 仍带 inventory.equipFlats(装备的**平铺**三维,只有词条被器魂替换),实测满装时玩家天界攻击 +0.07%。量级远小于倒挂(29%),但同属「凡器数值没抹净」;修它要动 celestialStats 本身,即玩家在天界的战力,故本轮只记录不动手"
+    },
+    "EV-171": {
+      "id": "EV-171",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:32:50+00:00",
+      "updated_at": "2026-09-15T13:32:50+00:00",
+      "touched_round": 191,
+      "source": "src/core/celestialCaliber.spec.ts + 临时探针(真仙·赤炎天·同一敌人形状,装备 无/中/满三档,器魂不变)",
+      "confidence": 0.95,
+      "summary": "倒挂是可复现的:修复前敌人攻击随凡界装备 +29%,玩家天界三维不动;修复后两者比率都 <0.07%(残差来自 equipFlats)。故障注入(远征实战退回 finalStats 且不加厚)被源码级判据当场抓住"
+    },
+    "CHG-224": {
+      "id": "CHG-224",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-15T13:32:50+00:00",
+      "updated_at": "2026-09-15T13:32:55+00:00",
+      "touched_round": 191,
+      "commit": "f588958",
+      "summary": "gauntlet 增 celestialFoeCaliber(参照+加厚一次给全);远征实战/预览/天机预估、挑战、道途变数改走它并带上 depth;新增 celestialCaliber.spec 钉住倒挂红线与源码级口径"
+    },
+    "DEC-043": {
+      "id": "DEC-043",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T13:32:50+00:00",
+      "updated_at": "2026-09-15T13:32:50+00:00",
+      "touched_round": 191,
+      "rationale": "DEC-030(暂缓统一口径)的前提被测量推翻:当时的顾虑是「世界 atkR 按现行口径调校,统一口径需连带重校敌我比值」。量下来(真仙·赤炎天):玩家天界三维恒 7.53e7,而敌人攻击随凡界装备从 5.57e7 涨到 7.17e7(+29%)——所谓\"现行口径\"本身就是倒挂(凡界装备替天界敌人加难度),与 buildPlayerSnap(celestial=true) 写在注释里的法则(凡器入天界数值尽去,只余器魂)直接冲突。而世界形状是在 SIM_REFERENCE + depth 的模拟空间里调校的(celestialSim 的六项发布条件守着它),故把实战参照改成与玩家出手同源的 celestialStats 并补上 depth,是回到已被审计的口径,而不是重新平衡。全量 1567 用例(含终局守恒审计)在改后全绿,佐证了这一点",
+      "alternatives_rejected": "①维持双轨、只在文档里说明 —— 玩家看得见的手感倒挂不会因为写了文档就消失;②改世界形状(atkR)去迁就 finalStats 参照 —— 那是真·重新平衡,且会让模拟空间的六项发布条件失效,代价远大于收益;③只改挑战不改远征(或反之)—— 同一名玩家在两套天界内容里继续面对两把尺子,正是这条 issue 本身;④顺手把 equipFlats 也抹掉 —— 那会改玩家在天界的实际战力(+0.07% 量级),超出本轮\"统一口径\"的范围,已单独立案(ISS-194)",
+      "summary": "统一天界口径:远征/挑战/变数与试炼共用 celestialStats + celestialDepthScale;DEC-030 的\"暂缓\"依据被测量推翻"
     }
   },
   "edges": [
@@ -16593,6 +16667,60 @@
       "to": "ISS-192",
       "type": "resolves",
       "created_at": "2026-09-15T13:23:47+00:00"
+    },
+    {
+      "from": "TASK-176",
+      "to": "ISS-193",
+      "type": "addresses",
+      "created_at": "2026-09-15T13:32:42+00:00"
+    },
+    {
+      "from": "ISS-193",
+      "to": "COMP-014",
+      "type": "located_in",
+      "created_at": "2026-09-15T13:32:43+00:00"
+    },
+    {
+      "from": "ISS-193",
+      "to": "ISS-194",
+      "type": "causes",
+      "created_at": "2026-09-15T13:32:43+00:00"
+    },
+    {
+      "from": "EV-171",
+      "to": "HYP-086",
+      "type": "validates",
+      "created_at": "2026-09-15T13:32:50+00:00"
+    },
+    {
+      "from": "CHG-224",
+      "to": "TASK-176",
+      "type": "implements",
+      "created_at": "2026-09-15T13:32:50+00:00"
+    },
+    {
+      "from": "CHG-224",
+      "to": "ISS-193",
+      "type": "resolves",
+      "created_at": "2026-09-15T13:32:50+00:00"
+    },
+    {
+      "from": "DEC-043",
+      "to": "COMP-014",
+      "type": "governs",
+      "created_at": "2026-09-15T13:32:50+00:00"
+    },
+    {
+      "from": "DEC-043",
+      "to": "COMP-017",
+      "type": "governs",
+      "created_at": "2026-09-15T13:32:55+00:00"
+    },
+    {
+      "from": "DEC-043",
+      "to": "DEC-030",
+      "type": "supersedes",
+      "created_at": "2026-09-15T13:32:55+00:00"
     }
   ]
 }
