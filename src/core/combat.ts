@@ -375,6 +375,13 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
         const dmgAmt = mulN(self.snap.attack, eff.mult * levelMult)
         applyDamage(self, foe, dmgAmt)
         push('proc', side, `${name}的【${art.name}】自行出手——${art.active.name}!`, dmgAmt)
+      } else if (eff.type === 'drain') {
+        // 吸命:伤害与回复是同一件事的两面 —— 打出多少,按比例补回自身
+        const dmgAmt = mulN(self.snap.attack, eff.mult * levelMult)
+        applyDamage(self, foe, dmgAmt)
+        const returned = mulN(dmgAmt, Math.min(1, eff.healPct * levelMult))
+        healSelf(self, returned)
+        push('proc', side, `${name}的【${art.name}】吸取敌手精血——${art.active.name}!`, dmgAmt)
       } else if (eff.type === 'shield') {
         gainShield(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
         push('shield', side, `【${art.name}】灵光大盛,护盾加身。`)

@@ -276,7 +276,69 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
 
   // ---- 神将:神将兵符(神界,补该境空白) ----
   b('s_shenjiang', 'b_shenjiang_fa', '天罚', '受符行刑,攻势更烈', { attackPct: 0.3, critRate: 0.08, damageBonus: 0.15 }),
-  b('s_shenjiang', 'b_shenjiang_zhen', '军律', '结阵自守,受击愈稳', { defensePct: 0.3, damageReduction: 0.15, maxHpPct: 0.3 })
+  b('s_shenjiang', 'b_shenjiang_zhen', '军律', '结阵自守,受击愈稳', { defensePct: 0.3, damageReduction: 0.15, maxHpPct: 0.3 }),
+
+  // ======== 第二轮扩功法(ISS-198):人间界后段 + 仙界/神界/混沌海逐境补足 ========
+  // 门槛规则与上一批一致:每条分支的份量以装备词条最低档为单位折算,
+  // 同品质档位不低于此前的均值(判据见 gongfaBranch.spec「份量随品质递增」),
+  // 同一部功法的两条路份量相当(比值 ≤2)。
+
+  // ---- 炼虚:太虚炼神篇 ----
+  b('m_taixu', 'b_taixu_lian', '炼神', '炼神不辍,气机自循', { cultivationSpeed: 0.12, qiRegen: 0.12, defensePct: 0.06 }),
+  b('m_taixu', 'b_taixu_huan', '还虚', '形还于虚,伤不著身', { defensePct: 0.15, damageReduction: 0.06, maxHpPct: 0.03 }),
+  // ---- 合体:形神合一诀 ----
+  b('s_xingshen', 'b_xingshen_yi', '合一', '形与神合,伤处自弥', { maxHpPct: 0.18, defensePct: 0.09, regenPerRound: 0.03 }),
+  b('s_xingshen', 'b_xingshen_ning', '凝形', '身如凝铁,万击不移', { defensePct: 0.12, maxHpPct: 0.15, damageReduction: 0.06 }),
+  // ---- 大乘:无量寿光经 ----
+  b('m_wuliang', 'b_wuliang_shou', '寿光', '光寿同长,劫来愈坚', { cultivationSpeed: 0.12, lifespanPct: 0.1, maxHpPct: 0.09 }),
+  b('m_wuliang', 'b_wuliang_ming', '明照', '一光照彻,气机自涌', { cultivationSpeed: 0.09, maxHpPct: 0.12, qiRegen: 0.2 }),
+  // ---- 大乘:菩提明镜功 ----
+  b('s_puti', 'b_puti_jing', '明镜', '镜上无尘,福祸先知', { expGain: 0.12, breakthroughRate: 0.04, luck: 0.1 }),
+  b('s_puti', 'b_puti_wu', '悟禅', '一悟一禅,道基自厚', { cultivationSpeed: 0.12, breakthroughRate: 0.05, expGain: 0.12 }),
+  // ---- 渡劫:九霄劫印 ----
+  b('x_jiuxiao', 'b_jiuxiao_yin', '劫印', '以劫为印,印出则雷散', { tribulationResist: 0.2, damageReduction: 0.1, lowHpReduction: 0.3 }),
+  b('x_jiuxiao', 'b_jiuxiao_yinlei', '引雷', '引劫入体,反劈其敌', { attackPct: 0.14, tribulationResist: 0.15, speed: 0.06 }),
+  // ---- 真仙:仙光护体诀 ----
+  b('s_xianguang', 'b_xianguang_hu', '护体', '仙光成壁,先折其锋', {
+    shieldOnStart: 0.2,
+    shieldPower: 0.24,
+    damageReduction: 0.11,
+    defensePct: 0.12
+  }),
+  b('s_xianguang', 'b_xianguang_zhao', '光照', '光及周身,伤处自愈', { maxHpPct: 0.18, regenPerRound: 0.04, damageReduction: 0.12 }),
+  // ---- 玄仙:玄仙御气经 ----
+  b('m_xuanxian', 'b_xuanxian_yu', '御气', '御气而行,一息千里', { cultivationSpeed: 0.18, qiRegen: 0.24, speed: 0.12 }),
+  b('m_xuanxian', 'b_xuanxian_ti', '淬体', '气淬其身,内外俱坚', { cultivationSpeed: 0.15, defensePct: 0.18, maxHpPct: 0.15 }),
+  // ---- 金仙:金阙玉章 ----
+  b('m_jinque', 'b_jinque_jin', '金性', '金性入剑,一斩无回', { attackPct: 0.18, damageBonus: 0.12, critRate: 0.03 }),
+  b('m_jinque', 'b_jinque_yu', '玉章', '玉章镇身,万法不侵', { defensePct: 0.21, maxHpPct: 0.18, damageReduction: 0.06 }),
+  // ---- 太乙:太乙救苦经 ----
+  b('m_taiyijiu', 'b_taiyi_jiu', '救苦', '苦海之中,一念自起', { maxHpPct: 0.24, regenPerRound: 0.05, lowHpReduction: 0.3 }),
+  b('m_taiyijiu', 'b_taiyi_du', '渡厄', '厄临不惊,劫来愈稳', { tribulationResist: 0.25, damageReduction: 0.12, maxHpPct: 0.15 }),
+  // ---- 大罗:罗天星辰诀 ----
+  b('s_luotian', 'b_luotian_xing', '星辰', '星光照眼,虚影无所遁', { accuracy: 0.1, critRate: 0.06, critDamage: 0.4 }),
+  b('s_luotian', 'b_luotian_luo', '罗天', '罗天垂网,一发不止', { attackPct: 0.14, damageBonus: 0.15, comboRate: 0.18 }),
+  // ---- 神人:藐姑射神章 ----
+  b('x_miaogushe', 'b_miaogushe_shen', '神凝', '神凝不散,锋刃难及', { damageReduction: 0.15, maxHpPct: 0.27, dodgeRate: 0.08 }),
+  b('x_miaogushe', 'b_miaogushe_you', '游世', '游乎四海之外,来去无踪', { speed: 0.2, dodgeRate: 0.12, damageReduction: 0.14 }),
+  // ---- 神将:天关神兵诀 ----
+  b('m_tianguan', 'b_tianguan_bing', '神兵', '神兵在握,甲胄如纸', { attackPct: 0.3, armorPen: 0.2, critDamage: 0.16 }),
+  b('m_tianguan', 'b_tianguan_guan', '守关', '一夫当关,万军莫开', { defensePct: 0.3, maxHpPct: 0.3, shieldPower: 0.16 }),
+  // ---- 神王:神王御极经 ----
+  b('m_shenwang', 'b_shenwang_yu', '御极', '御极临下,一击定局', { attackPct: 0.3, damageBonus: 0.2, executeDamage: 0.1 }),
+  b('m_shenwang', 'b_shenwang_wang', '王权', '王权在身,身即法度', { defensePct: 0.3, maxHpPct: 0.3 }),
+  // ---- 神帝:神帝临尘章 ----
+  b('m_shendi', 'b_shendi_lin', '临尘', '帝临尘世,言出法随', { attackPct: 0.3, speed: 0.2, stunRate: 0.06 }),
+  b('m_shendi', 'b_shendi_ze', '垂泽', '帝泽垂身,伤处自生', { cultivationSpeed: 0.28, maxHpPct: 0.3, regenPerRound: 0.04 }),
+  // ---- 混沌真灵:真灵不昧诀 ----
+  b('s_zhenling', 'b_zhenling_bu', '不昧', '真灵不昧,万劫不迷', { cultivationSpeed: 0.24, breakthroughRate: 0.06, luck: 0.15 }),
+  b('s_zhenling', 'b_zhenling_ling', '守灵', '守住一点真灵,身自不散', { maxHpPct: 0.3, damageReduction: 0.15, qiRegen: 0.16 }),
+  // ---- 混沌神魔:神魔开天经 ----
+  b('m_shenmo', 'b_shenmo_kai', '开天', '以身开界,一击断世', { attackPct: 0.3, critRate: 0.07 }),
+  b('m_shenmo', 'b_shenmo_mo', '神魔', '神魔一体,气血两旺', { maxHpPct: 0.3, attackPct: 0.24 }),
+  // ---- 混沌道祖:道祖本源经 ----
+  b('m_daozu', 'b_daozu_ben', '本源', '追本溯源,气机自归', { cultivationSpeed: 0.32, qiRegen: 0.28, breakthroughRate: 0.05 }),
+  b('m_daozu', 'b_daozu_dao', '道祖', '道生一,一化万', { attackPct: 0.3, defensePct: 0.21 })
 ]
 
 const BY_ID = new Map(GONGFA_BRANCHES.map(b => [b.id, b]))

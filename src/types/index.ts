@@ -281,6 +281,14 @@ export type ArtifactEffect =
    * 故它是随身被动:不受 interval 的节拍约束(数据里 interval 记 1,即常在)。
    */
   | { type: 'purge'; pct: number }
+  /**
+   * 吸命:造成伤害,并把其中 healPct 回补自身。
+   *
+   * 与「打出伤害」+「回复生命」分开写不同:它的回复**挂在伤害上** ——
+   * 打得越狠,回得越多。于是高界法宝里终于有了一件同时管输出与续航的,
+   * 而不必让两个法宝位去凑一件事(位只有两个,凑它就是放弃另一种手艺)。
+   */
+  | { type: 'drain'; mult: number; healPct: number }
 
 export interface ArtifactDef {
   id: string

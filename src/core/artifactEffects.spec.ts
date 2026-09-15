@@ -23,7 +23,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import { RandomService, mulberry32 } from '@/utils/random'
-import { gn } from '@/utils/gnum'
+import { gn, toNum } from '@/utils/gnum'
 import { MITIGATION_K } from '@/data/constants'
 import { mulN } from '@/utils/gnum'
 import { resolveCombat, makeEnemySnap } from './combat'
@@ -137,7 +137,7 @@ describe('法宝效果 · 词汇表不虚设', () => {
       /** 数据里写的百分比 */
       let actual: number | null = null
       if (eff.type === 'heal' || eff.type === 'shield') actual = eff.pctMaxHp * 100
-      else if (eff.type === 'damage') actual = eff.mult * 100
+      else if (eff.type === 'damage' || eff.type === 'drain') actual = eff.mult * 100
       else if (eff.type === 'weaken' || eff.type === 'sunder') actual = eff.pct * 100
       else if (eff.type === 'purge') actual = eff.pct * 100
       if (actual === null) continue
@@ -149,6 +149,16 @@ describe('法宝效果 · 词汇表不虚设', () => {
       // 浮点比较留一点余量(0.1 的倍数级别)
       if (Math.abs(claimed - actual) > 0.01) {
         bad.push(`${a.name}:说明写 ${claimed}%,数据是 ${actual}%`)
+      }
+      // 吸命还有第二个数:回复占比(`healPct`)也要与「回复其中 N%」对得上
+      if (eff.type === 'drain') {
+        const back = /回复其中\s*([\d.]+)\s*%/.exec(desc)
+        checkedCount += 1
+        if (!back) {
+          bad.push(`${a.name}:吸命却没说回复几成(「${desc}」)`)
+        } else if (Math.abs(Number(back[1]) - eff.healPct * 100) > 0.01) {
+          bad.push(`${a.name}:说明写回复其中 ${back[1]}%,数据是 ${eff.healPct * 100}%`)
+        }
       }
     }
     expect(checkedCount, '一件法宝的数值都没扫到,判据形同虚设').toBeGreaterThan(25)
@@ -288,5 +298,55 @@ describe('法宝效果 · 净念真能挣脱震慑', () => {
       noStun.stats!.player.artifactProcs,
       `对手不摄魂,念珠却"触发"了 ${noStun.stats!.player.artifactProcs} 次 —— 随身被动被当成每回合出手了`
     ).toBe(0)
+  })
+})
+
+/**
+ * 吸命(drain)—— 高界法宝的第五种手艺:**打的与回的,是同一件事**。
+ *
+ * 此前高界法宝的续航全是「回复 N% 生命」(与输出各占一件),故一个法宝位永远要在
+ * 「打得更疼」与「活得久一点」之间二选一。吸命让一份伤害同时办两件事,
+ * 于是「带哪一件」这个问题在高界多出一种答案。
+ *
+ * 这里量的是真发生:同一批种子、同一只靶子,带拂尘的那一场回的血更多,
+ * 且日志里留得下「吸取敌手精血」那一条。故障注入:把 combat 里 drain 那条分支
+ * 删掉,它就掉进 else 的 weaken 分支 —— 回血不见了,判据立刻红。
+ */
+describe('法宝效果 · 吸命真把伤害补回自己身上', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  /** 一只打得疼你但打不死你的靶子:好让"回血"这件事有量可量 */
+  function bleedingFoe(): ReturnType<typeof makeEnemySnap> {
+    const foe = tankyWolf()
+    foe.attack = gn(3e5)
+    return foe
+  }
+
+  function fight(withDrain: boolean, seed: number): ReturnType<typeof resolveCombat> {
+    const p = buildPlayerSnap()
+    p.mods = {}
+    p.attack = gn(1e6)
+    p.defense = gn(1e6)
+    p.maxHp = gn(1e9)
+    p.artifacts = withDrain ? [{ def: artifactDef('af_xuanxu')!, level: 0 }] : []
+    return resolveCombat(p, bleedingFoe(), seeded(seed))
+  }
+
+  it('带玄虚拂尘的那一场,自己回的血更多,日志里留得下「吸取敌手精血」', () => {
+    let withDrain = 0
+    let bare = 0
+    let sawLine = 0
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const a = fight(true, seed)
+      const b = fight(false, seed)
+      if (a.log.map(l => l.text).join('\n').includes('吸取敌手精血')) sawLine += 1
+      withDrain += toNum(a.stats!.player.healed)
+      bare += toNum(b.stats!.player.healed)
+    }
+    expect(sawLine, '12 场里一次吸命都没触发 —— 效果没接上').toBeGreaterThan(0)
+    expect(
+      withDrain,
+      `12 场累计回血:带拂尘 ${withDrain.toExponential(2)},不带 ${bare.toExponential(2)} —— 吸命没有把伤害补回来`
+    ).toBeGreaterThan(bare)
   })
 })

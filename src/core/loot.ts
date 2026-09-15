@@ -1,7 +1,7 @@
 /**
  * 掉落服务 —— 战斗胜利后的奖励结算
  */
-import type { EquipmentInstance, GNum, RegionDef } from '@/types'
+import type { ArtifactDef, EquipmentInstance, GNum, RegionDef } from '@/types'
 import { rng } from '@/utils/random'
 import { gnZero, isZero, mulN } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
@@ -139,11 +139,32 @@ export function randomDropPill(major: number): string | null {
   return picked.id
 }
 
-/** 随机一件玩家层级可及的法宝 */
+/** 就近加成的窗口与幅度:层级差 5 阶以内的法宝吃加成,同层级的那件最多 ×6 */
+export const ARTIFACT_NEAR_WINDOW = 5
+export const ARTIFACT_NEAR_BONUS = 1
+
+/**
+ * 一件法宝在某个层级下的掉落权重。
+ *
+ * 池子始终是「minTier ≤ 当前层级」的全部法宝 —— 高界走一趟也会捡到人间界的旧葫芦,
+ * 这本身不算错(图鉴要补齐)。但若权重只按品质折算,层级越高越不对劲:
+ * 品质权重让凡品(40)压过神品(7.7),于是到了混沌海,掉出来的多半还是墨玉葫芦,
+ * 而本界域那几件反而撞不见 —— 新加的法宝谁也看不到,等于没加。
+ *
+ * 故在品质权重上加一层**就近加成**:越贴近当前层级越容易被抽中。
+ * 用加法而非指数衰减,是为了不把旧法宝彻底关掉(图鉴里的旧格子仍点得亮)。
+ */
+export function artifactDropWeight(def: ArtifactDef, tier: number): number {
+  const qualityWeight = 100 / (1 + qualityDef(def.quality).rank * 1.5)
+  const distance = Math.max(0, tier - def.minTier)
+  return qualityWeight * (1 + ARTIFACT_NEAR_BONUS * Math.max(0, ARTIFACT_NEAR_WINDOW - distance))
+}
+
+/** 随机一件玩家层级可及的法宝(品质与就近加成共同定权重,见 artifactDropWeight) */
 export function randomDropArtifact(tier: number): string | null {
   const pool = ARTIFACTS.filter(a => a.minTier <= tier)
   if (pool.length === 0) return null
-  return rng.weighted(pool, a => 100 / (1 + qualityDef(a.quality).rank * 1.5)).id
+  return rng.weighted(pool, a => artifactDropWeight(a, tier)).id
 }
 
 /**

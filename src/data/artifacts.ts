@@ -1,4 +1,4 @@
-/** 法宝池 —— 33 件,拥有被动属性与自动触发的主动神通 */
+/** 法宝池 —— 45 件,拥有被动属性与自动触发的主动神通 */
 import type { ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
 
 function f(
@@ -180,7 +180,6 @@ export const ARTIFACTS: ArtifactDef[] = [
     'profound',
     13,
     '推演周天,窥探命数',
-    // 推演得见的,自然打得中 —— 这是本池里唯一带命中的法宝,专治幻影(见 SpecialKey accuracy)
     // 推演得见的,自然打得中 —— 这是本池里唯一带命中的法宝,专治幻影(见 SpecialKey accuracy)
     { luck: 0.06, cultivationSpeed: 0.06, accuracy: 0.06 },
     '星辉',
@@ -439,6 +438,171 @@ export const ARTIFACTS: ArtifactDef[] = [
     { type: 'weaken', pct: 0.2 },
     'sparkles'
   ),
+
+  // ============ 仙界初段(21-25 阶)============
+  // 与装备同一条理由:仙界原本四件法宝全在 23 阶,刚飞升的真仙一路上捡到的东西
+  // 与「过仙门者方称仙人」毫无关系。此为仙界两端补上本界域的名目与手艺。
+  f(
+    'af_yunhai',
+    '云海幡',
+    'immortal',
+    21,
+    '幡一展,周身便是过仙门那一日的云海',
+    { dodgeRate: 0.04, speed: 0.04 },
+    '云障',
+    '每 4 回合云海四合,获得 13% 生命护盾',
+    4,
+    { type: 'shield', pctMaxHp: 0.13 },
+    'cloud'
+  ),
+  f(
+    'af_xinggui',
+    '星轨盘',
+    'immortal',
+    22,
+    '盘上星轨自行转动,转一圈便是一劫',
+    { accuracy: 0.06, critRate: 0.03 },
+    '星陨',
+    '每 3 回合引星陨落,造成 250% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.5 },
+    'star'
+  ),
+  f(
+    'af_xuanxu',
+    '玄虚拂尘',
+    'immortal',
+    24,
+    '拂尘一扬,扫落的不只是尘',
+    { attackPct: 0.06, damageBonus: 0.05 },
+    '拂尘',
+    '每 3 回合扫落敌人气机,造成 230% 攻击伤害并回复其中 60%',
+    3,
+    { type: 'drain', mult: 2.3, healPct: 0.6 },
+    'wind'
+  ),
+  f(
+    'af_yujingyin',
+    '玉京道印',
+    'immortal',
+    25,
+    '玉京山上的一枚旧印,落印处仙兵皆伏',
+    { defensePct: 0.07, shieldPower: 0.08 },
+    '玉京',
+    '每 4 回合玉京垂护,敌人伤害降低 18%',
+    4,
+    { type: 'weaken', pct: 0.18 },
+    'gem'
+  ),
+
+  // ============ 神界初段(26-29 阶)============
+  f(
+    'af_shenyuling',
+    '神域令旗',
+    'divine',
+    26,
+    '旗出则一方神域随旗而动',
+    { attackPct: 0.07, speed: 0.04 },
+    '神域',
+    '每 3 回合神域压落,造成 270% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.7 },
+    'shield'
+  ),
+  f(
+    'af_yunshengu',
+    '陨神战鼓',
+    'divine',
+    27,
+    '鼓面蒙的是陨神之皮,一响便摄人心神',
+    { damageBonus: 0.06, critDamage: 0.12 },
+    '战鼓',
+    '每 3 回合鼓声催战,造成 250% 攻击伤害并回复其中 50%',
+    3,
+    { type: 'drain', mult: 2.5, healPct: 0.5 },
+    'bell'
+  ),
+  f(
+    'af_wanshendeng',
+    '万神灯',
+    'divine',
+    28,
+    '灯里燃的是万神殿堂聚了万年的香火',
+    { maxHpPct: 0.07, regenPerRound: 0.01 },
+    '香火',
+    '每 4 回合香火回照,回复 17% 生命',
+    4,
+    { type: 'heal', pctMaxHp: 0.17 },
+    'flame'
+  ),
+  f(
+    'af_diquefu',
+    '帝阙神符',
+    'divine',
+    29,
+    '符上只有一个字,却是帝阙之下九千级天阶的凭据',
+    { breakthroughRate: 0.03, luck: 0.04 },
+    '帝威',
+    '每 4 回合帝威加身,获得 15% 生命护盾',
+    4,
+    { type: 'shield', pctMaxHp: 0.15 },
+    'scroll'
+  ),
+
+  // ============ 混沌海(30-32 阶)============
+  f(
+    'af_zhenlingfan',
+    '真灵幡',
+    'divine',
+    30,
+    '幡上真灵浮沉,似是徘徊又似在守着什么',
+    { cultivationSpeed: 0.07, qiRegen: 0.08 },
+    '真灵',
+    '每 4 回合真灵回照,回复 19% 生命',
+    4,
+    { type: 'heal', pctMaxHp: 0.19 },
+    'ghost'
+  ),
+  f(
+    'af_hongmengchi',
+    '鸿蒙尺',
+    'divine',
+    31,
+    '一尺量的是天地未判时的长短',
+    { armorPen: 0.06, damageBonus: 0.06 },
+    '开天',
+    '每 3 回合开天一击,造成 290% 攻击伤害',
+    3,
+    { type: 'damage', mult: 2.9 },
+    'wand'
+  ),
+  f(
+    'af_benyuanlian',
+    '本源莲台',
+    'divine',
+    32,
+    '莲台托着一点本源,任劫火也烧不动',
+    { defensePct: 0.08, damageReduction: 0.05 },
+    '本源',
+    '每 4 回合本源护持,获得 17% 生命护盾',
+    4,
+    { type: 'shield', pctMaxHp: 0.17 },
+    'leaf'
+  ),
+  f(
+    'af_shenmojing',
+    '神魔镜',
+    'divine',
+    32,
+    '镜里照出的是魔,镜外站着的是神',
+    { accuracy: 0.06, damageBonus: 0.05 },
+    '神魔',
+    '每 3 回合神魔噬影,造成 260% 攻击伤害并回复其中 60%',
+    3,
+    { type: 'drain', mult: 2.6, healPct: 0.6 },
+    'circle-dot'
+  ),
+
   /*
    * 第一件防身型法宝。
    *

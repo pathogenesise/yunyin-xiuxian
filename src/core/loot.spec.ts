@@ -7,7 +7,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { rng } from '@/utils/random'
-import { afterWin, acquireEquipment } from './loot'
+import { afterWin, acquireEquipment, artifactDropWeight, randomDropArtifact } from './loot'
+import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import { regionDef } from '@/data/regions'
 import { usePlayerStore } from '@/stores/player'
 import { shouldAutoRecycle } from './smartKeep'
@@ -124,5 +125,46 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     expect(shouldAutoRecycle(junk)).toBe(true)
     expect(shouldAutoRecycle({ ...junk, uid: 'dummy' })).toBe(true)
     expect(shouldAutoRecycle(mk('spirit'))).toBe(false)
+  })
+})
+
+/**
+ * 法宝掉落的取样口径 —— 「高界该掉高界的东西」不能只写在注释里。
+ *
+ * 池子本身一直是「minTier ≤ 当前层级」(旧法宝仍可能掉,图鉴要补齐),
+ * 但权重从前只按品质折算:凡品 40 对神品 7.7,于是到了混沌海,
+ * 掉出来的多半还是人间界的墨玉葫芦 —— 本界域的法宝反而撞不见。
+ * 现加一层就近加成(见 loot.artifactDropWeight),此处钉住它的三条承诺:
+ * 同品质下近者更重、旧物不被关掉、高层级时高界之物占多数。
+ */
+describe('法宝掉落 · 高界的池子该像高界', () => {
+  it('池子不关门:凡层级可及的法宝,权重都大于零', () => {
+    for (const tier of [1, 10, 20, 26, 32]) {
+      const reachable = ARTIFACTS.filter(a => a.minTier <= tier)
+      expect(reachable.length).toBeGreaterThan(0)
+      for (const a of reachable) {
+        expect(artifactDropWeight(a, tier), `${a.name} 在 ${tier} 阶被完全关掉了`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('同品质下,同层级的那件明显更重(约六倍)', () => {
+    const near = artifactDef('af_benyuanlian')! // 混沌海 · 32 阶 · 神品
+    const old = artifactDef('af_zaohua')! // 人间界 · 20 阶 · 神品
+    const ratio = artifactDropWeight(near, 32) / artifactDropWeight(old, 32)
+    expect(ratio, `同品质的 32 阶法宝只比 20 阶的重 ${ratio.toFixed(2)} 倍`).toBeGreaterThan(5)
+    expect(ratio).toBeLessThan(7)
+  })
+
+  it('到混沌海走一趟,掉出来的大半是仙/神/混沌之物', () => {
+    let high = 0
+    const n = 1200
+    for (let i = 0; i < n; i += 1) {
+      const id = randomDropArtifact(32)
+      expect(id, '32 阶抽不出任何法宝').toBeTruthy()
+      if (artifactDef(id!)!.minTier >= 21) high += 1
+    }
+    // 实测约 0.63(改动前约 0.40)—— 阈值留足余量,免得这条统计判据自己变得时红时绿
+    expect(high / n, `${n} 次里只有 ${high} 次抽到仙界以上的法宝`).toBeGreaterThan(0.55)
   })
 })

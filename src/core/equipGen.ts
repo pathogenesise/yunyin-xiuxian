@@ -18,6 +18,45 @@ export interface GenOptions {
   luck?: number
 }
 
+/** 单个槽位的候选窗:该槽位里最近的 K 件 —— 旧模不该在终局满地掉 */
+const NEAR_TEMPLATE_WINDOW = 6
+
+/** 九个可掉落槽位(法宝是另一套池子,见 artifacts) */
+const DROP_SLOTS: EquipSlot[] = [
+  'weapon',
+  'head',
+  'body',
+  'wrist',
+  'belt',
+  'boots',
+  'necklace',
+  'ring',
+  'talisman'
+]
+
+/** 某槽位在某层级下够得着的模板:minTier ≤ 层级,按由近及远取前 K 件 */
+function nearTemplates(tier: number, slot: EquipSlot) {
+  const eligible = EQUIPMENT_TEMPLATES.filter(t => t.minTier <= tier && t.slot === slot)
+  return [...eligible].sort((a, b) => b.minTier - a.minTier).slice(0, Math.min(NEAR_TEMPLATE_WINDOW, eligible.length))
+}
+
+/**
+ * 某层级(可选槽位)下真正进池的装备模板。
+ *
+ * 抽出来独立成函数不是为了好看 —— 判据要能**直接问池子**:
+ * 「这 120 件里,有没有哪件在任何层级都进不了池?」池子藏在生成器内部时,
+ * 这种问题只能靠反复抽样去猜,而抽样永远证明不了「掉不出来」。
+ *
+ * **不指定槽位时先按槽位分组**,是这里唯一一条不能省的结构:
+ * 从前不分槽位、全表取「最近的 6 件」,而仙界/神界/混沌海各自恰有 9 件、
+ * 表序固定 —— 于是排在中间与后面的三个槽位(项链/戒指/灵符)永远挤不进窗口,
+ * 打多少场都掉不出来,图鉴里那九格谁也点不亮。(ISS-196)
+ */
+export function equipTemplatePool(tier: number, slot?: EquipSlot) {
+  if (slot !== undefined) return nearTemplates(tier, slot)
+  return DROP_SLOTS.flatMap(s => nearTemplates(tier, s))
+}
+
 /** 品质随机:层级越高、气运越高,高品质权重越大 */
 export function rollQuality(tier: number, rng: RandomService, opts: GenOptions = {}): QualityDef {
   const luck = opts.luck ?? 0
@@ -33,13 +72,12 @@ export function rollQuality(tier: number, rng: RandomService, opts: GenOptions =
 
 /** 生成一件装备实例 */
 export function generateEquipment(tier: number, rng: RandomService, opts: GenOptions = {}): EquipmentInstance {
-  const eligible = EQUIPMENT_TEMPLATES.filter(
-    t => t.minTier <= tier && (opts.slot === undefined || t.slot === opts.slot) && t.slot !== 'artifact'
-  )
+  // 未指定槽位:九个槽位一视同仁(掉了什么槽位,不该由表的行序决定),
+  // 槽位之内再按「最近的优先」挑具体模板。
+  const slot = opts.slot ?? DROP_SLOTS[Math.min(DROP_SLOTS.length - 1, rng.int(0, DROP_SLOTS.length - 1))]!
+  const eligible = equipTemplatePool(tier, slot)
   // 优先掉落接近当前层级的模板
-  const sorted = [...eligible].sort((a, b) => b.minTier - a.minTier)
-  const top = sorted.slice(0, Math.min(6, sorted.length))
-  const template = rng.weighted(top, t => 1 + t.minTier)
+  const template = rng.weighted(eligible, t => 1 + t.minTier)
 
   const quality = rollQuality(tier, rng, opts)
   const [minA, maxA] = quality.affixes
