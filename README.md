@@ -98,7 +98,18 @@ bun run build:apk
 - **Android**：CI 会把签好的 APK 作为 `android-apk` 产物上传；本地出包在 `android/app/build/outputs/apk/release/yunyin-<版本号>.apk`。把 APK 传到手机后点击安装（系统会提示允许安装未知来源应用，放行即可；覆盖安装需签名一致——自己构建的包与官方签名不同，需先卸载旧版）。
 - **Windows 桌面（Electron）**：`pkg/yunyin-<版本号>-win.zip`，解压后运行其中的 `云隐修仙录.exe`；杀毒软件若误报，是未签名 exe 的通病，可加入白名单。
 
-推送到 `main` 会经 GitHub Actions 走同一道闸：类型检查、ESLint、单元测试全绿后才构建 Electron 与 Android 产物、发布 Release，并推送 Docker 镜像。
+推送到 `main` 会经 GitHub Actions 走同一道闸：类型检查、ESLint、单元测试全绿后才部署 Web/PWA 到 Pages、推送 Docker 镜像。
+
+**发版是一个显式动作 —— 推 tag。** 构建 Electron 与 Android 产物、发布 Release 的那条流水线只在 tag 上触发：
+
+```bash
+# 1. 先提 package.json 的版本号(它决定 APK 的 versionName/versionCode)
+# 2. 打 tag 并推上去
+git tag v1.34.0
+git push origin main v1.34.0
+```
+
+这条流水线第一件事是核对 tag 与 package.json 是否同一个版本，对不上直接红掉 —— 免得发出「Release 页写着 v1.34.0、装到手机上却是 1.33.0」的包。
 
 ### Docker 部署
 

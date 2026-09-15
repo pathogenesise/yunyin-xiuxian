@@ -1,25 +1,52 @@
 name: 构建多平台程序 (Electron & Android)
 
+# 只在推 tag(v1.2.3)时触发。
+#
+# 原先是挂在 main 的每次 push 上:提交一次就跑一遍两平台构建,并且把同一版本的
+# Release 资产「先删后传」—— 于是每个提交都会留下一个 release,谁也没法从发布页
+# 看出哪一次才是真正的发版。改成 tag 触发后,发版成了一个显式动作
+# (`git push origin v1.2.3`);main 上的每次提交仍由 deploy.yml 过同一道闸
+# (类型检查 + ESLint + 单测),闸门没丢,只是不再顺手发版。
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '.github/**'
+    tags:
+      - 'v*.*.*'
 
-# 同一分支只留一条流水线。两个 run 同时进 release job,会在同一个 tag 下
+# 同一个 tag 只留一条流水线。两个 run 同时进 release job,会在同一个 tag 下
 # 「先删旧资产、再传新资产」,互相删掉对方刚传的文件,Release 里就会缺东西。
 # 用 cancel-in-progress: false 而不是 true —— 取消进行中的 run,有可能正好
 # 砍在「已删完、还没传完」的窗口里,留下一个资产不全的 Release。
+# (失败后重跑用 Actions 页面的 Re-run:同一个 tag 的 run 串行,不会互相踩。)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  # 0. 版本闸门:tag 必须与 package.json 是同一个版本
+  #
+  # 两处版本号各有各的用处 —— tag 决定 Release 挂在哪个名下,package.json 决定
+  # APK 的 versionName/versionCode(android/app/build.gradle 从它读)。两者对不上,
+  # 就会出现「Release 页写着 v1.34.0、装到手机上却是 1.33.0」,玩家的升级提示与
+  # 实际版本对不起来。宁可在这里红掉,也不要发出一个自相矛盾的版本。
+  guard:
+    name: 版本闸门
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: 校验 tag 与 package.json 版本一致
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PKG="v$(node -p "require('./package.json').version")"
+          echo "tag = $TAG · package.json = $PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag($TAG)与 package.json 的版本($PKG)不一致 —— 先把 package.json 的版本提上去再打 tag"
+            exit 1
+          fi
+
   # 1. 构建 Electron 客户端
   build-electron:
     name: 构建 Electron (${{ matrix.os }})
+    needs: guard
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -67,6 +94,7 @@ jobs:
   # 2. 构建 Android APK
   build-android:
     name: 构建 Android APK
+    needs: guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -127,7 +155,7 @@ jobs:
 
   # 3. 发布 Release
   release:
-    needs: [build-electron, build-android]
+    needs: [guard, build-electron, build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -140,9 +168,9 @@ jobs:
 
       - name: 获取版本号
         id: get_version
-        run: |
-          VERSION=$(bun -e "console.log(require('./package.json').version)")
-          echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
+        # tag 即版本(闸门已确认它与 package.json 一致),不再从 package.json 反推 ——
+        # 触发这次运行的就是某个 tag,Release 理应挂在那个 tag 上
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
       # 1. 下载时，不使用 merge-multiple，防止覆盖冲突
       - name: 下载构建产物
