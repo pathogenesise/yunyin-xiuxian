@@ -8,10 +8,15 @@
       </div>
       <div class="ink-divider my-3" />
       <!-- 灵根 -->
-      <div class="flex items-center gap-3">
-        <span class="font-kai text-[12px] tracking-widest text-ink-faint">灵根</span>
-        <span class="font-kai text-[13px] text-cinnabar">{{ player.linggen?.gradeName }}</span>
-        <div class="flex gap-1.5">
+      <!--
+        灵根名必须 nowrap 且不参与收缩:窄屏上「杂灵根」曾被两侧
+        (灵根圆环 + ×倍率)挤到只剩 24px 宽,一个字一行竖排下来。
+        改成一整行可换行:挤不下时让 ×倍率 落到下一行,而不是把名字压扁。
+      -->
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span class="shrink-0 font-kai text-[12px] tracking-widest text-ink-faint">灵根</span>
+        <span class="shrink-0 whitespace-nowrap font-kai text-[13px] text-cinnabar">{{ player.linggen?.gradeName }}</span>
+        <div class="flex shrink-0 gap-1.5">
           <span
             v-for="root in player.linggen?.roots ?? []"
             :key="root.element"
@@ -30,7 +35,9 @@
             </span>
           </span>
         </div>
-        <span class="ml-auto text-[11px] text-ink-faint tabular">×{{ player.linggen?.growthMult.toFixed(2) }}</span>
+        <span class="ml-auto shrink-0 whitespace-nowrap text-[11px] text-ink-faint tabular">
+          ×{{ player.linggen?.growthMult.toFixed(2) }}
+        </span>
       </div>
       <!-- 天然牌面(Phase 32.2):转世发下的这张牌决定路好不好走,而非走得多快 -->
       <div v-if="tendencies.length" class="mt-2 space-y-1">

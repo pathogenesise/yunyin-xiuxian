@@ -30,12 +30,14 @@
       <p v-if="player.suppressedRegions.length > 0" class="text-[10px] text-gold-ink">
         镇压收益中 {{ player.suppressedRegions.length }} 处 —— 与历练互不冲突,可同时收取;一次只能历练一处。
       </p>
-      <!-- 镇压的门槛与期限一次说清:从前三判据与 72 小时复聚都只活在代码里 -->
+      <!--
+        镇压规则压成一行:地界行里已经逐项写着「当前值 / 需≤阈值」,
+        这里只交代一句总纲(四条长句堆在列表前面就是一堵文字墙)。
+      -->
       <p class="text-[10px] leading-relaxed text-ink-faint">
-        镇压:在某地打满 {{ SUPPRESS_THRESHOLDS.minFights }} 战,且平均
-        {{ SUPPRESS_THRESHOLDS.maxAvgRounds }} 回合内取胜、受伤不过
-        {{ Math.round(SUPPRESS_THRESHOLDS.maxAvgDamageTaken * 100) }}%,此地便退出历练、转为自动产出;
-        资格取得即永久,可随时切回历练。持续镇压 {{ REVIVE_AFTER_HOURS }} 小时后妖气复聚,该地重新成为历练之地。
+        镇压门槛:{{ SUPPRESS_THRESHOLDS.minFights }} 战 · 均
+        {{ SUPPRESS_THRESHOLDS.maxAvgRounds }} 回合 · 受伤 ≤{{ Math.round(SUPPRESS_THRESHOLDS.maxAvgDamageTaken * 100) }}%;
+        资格永久,守满 {{ REVIVE_AFTER_HOURS }} 小时妖气复聚。
       </p>
       <div class="space-y-2.5">
         <template v-for="group in groupedRows" :key="group.world.id">
@@ -47,19 +49,28 @@
         <div
           v-for="row in group.rows"
           :key="row.def.id"
+          data-region-card
           class="card-ink px-4 py-3"
           :class="{ 'opacity-70': !row.canEnter, '!border-gold-ink/30 bg-gold-ink/5': row.suppressed }"
         >
-          <div class="flex items-center gap-3">
+          <!--
+            第一行只放「图标 + 名字 + 标签 + 一个短动作」。
+
+            产出速率、守土时长、复聚倒计时这些**长信息一律下移成整行** —— 从前它们和名字挤在同一行,
+            右侧那一列 `shrink-0` 把左边的名字压到只剩一个字宽,「青云山麓」当场变成竖排,
+            标签还会盖到产出字上(无头浏览器量的「横向溢出」抓不到这种挤压:它不溢出,只是挤)。
+          -->
+          <div class="flex items-start gap-3">
             <span
               class="grid h-10 w-10 shrink-0 place-items-center rounded-md"
               :class="row.suppressed ? 'bg-gold-ink/15 text-gold-ink' : row.canEnter ? 'bg-indigo-ink/10 text-indigo-ink' : 'bg-ink/6 text-ink-ghost'"
             >
               <GameIcon :name="row.suppressed ? 'shield-check' : row.canEnter ? row.def.icon : 'lock'" :size="18" />
             </span>
-            <div class="min-w-0 grow">
-              <p class="flex items-center gap-2">
-                <span class="font-kai text-[15px] tracking-wider text-ink">{{ row.def.name }}</span>
+            <div data-region-head class="min-w-0 grow">
+              <!-- 标签与名字同排但**可换行**:窄屏上宁可标签绕到下一行,也不许把名字挤成竖排 -->
+              <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span data-region-name class="font-kai text-[15px] tracking-wider text-ink">{{ row.def.name }}</span>
                 <span v-if="row.suppressed && !row.revived" class="chip-ink border-gold-ink/60 text-[9px] text-gold-ink">已镇压</span>
                 <span v-else-if="row.revived" class="chip-ink border-cinnabar/60 text-[9px] text-cinnabar">妖气复聚</span>
                 <span v-else-if="row.cleared" class="chip-ink border-jade/60 text-[9px] text-jade">已靖</span>
@@ -82,39 +93,59 @@
               已通关的地界仍可再历 —— 「已靖」只是标记,不是封路。
               首领已清之后进去仍能刷杂兵、拾遗、碰机缘
             -->
-            <!-- 未取收益时:可历练;取得过镇压资格者,还可一键切回收益态(无需再镇压) -->
-            <div v-if="row.canEnter && !row.suppressed" class="flex shrink-0 flex-col items-stretch gap-1">
-              <button class="btn-seal !px-4 !py-2 !text-[13px]" @click="chooseMode(row.def)">出发</button>
-              <button
-                v-if="row.qualified"
-                class="chip-ink justify-center !py-1 !text-[10px] active:scale-95"
-                @click.stop="suppress(row.def.id)"
-              >
-                转为镇压收益
-              </button>
-              <span v-if="row.qualified" class="text-center text-[9px] leading-tight text-gold-ink">
-                {{ rateText(row.def, row.recall) }}
-              </span>
-            </div>
-            <div v-else-if="row.suppressed" class="shrink-0 text-right">
-              <span class="block text-[11px] text-gold-ink">
-                自动产出中 · {{ rateText(row.def, row.recall) }}
-              </span>
-              <!-- 守土之年:守得越久,兴衰越盛,产出随之上浮 -->
-              <span class="block text-[10px] text-ink-faint">
-                已守 {{ heldText(row.def.id) }} · {{ prosperityName(row.recall.prosperity) }}
-              </span>
-              <!-- 复聚有确定期限,就该有倒计时:否则玩家只会看到镇压某天突然消失 -->
-              <span class="block text-[10px]" :class="row.reviveInHours <= 12 ? 'text-cinnabar' : 'text-ink-faint'">
-                妖气 {{ reviveText(row.reviveInHours) }}后复聚
-              </span>
-              <button
-                class="-ml-1.5 mt-0.5 rounded-md px-1.5 py-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
-                @click.stop="unsuppress(row.def.id)"
-              >
-                停取收益,改去历练
-              </button>
-            </div>
+            <button
+              v-if="row.canEnter && !row.suppressed"
+              data-region-action
+              class="btn-seal shrink-0 !px-4 !py-2 !text-[13px]"
+              @click="chooseMode(row.def)"
+            >
+              出发
+            </button>
+          </div>
+
+          <!--
+            镇压中的产出条:整行铺开、可换行。
+            速率放在这里而不是右上角,长数字(1.2 亿灵石/时 · 玄铁 12/时)才有地方舒展
+          -->
+          <div
+            v-if="row.suppressed"
+            data-region-action
+            data-suppress-info
+            class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-gold-ink/10 px-2.5 py-1.5"
+          >
+            <span class="text-[11px] text-gold-ink tabular">自动产出 · {{ rateText(row.def, row.recall) }}</span>
+            <!-- 守土之年:守得越久,兴衰越盛,产出随之上浮 -->
+            <span class="text-[10px] text-ink-faint tabular">已守 {{ heldText(row.def.id) }}</span>
+            <!-- 复聚有确定期限,就该有倒计时:否则玩家只会看到镇压某天突然消失 -->
+            <span class="text-[10px] tabular" :class="row.reviveInHours <= 12 ? 'text-cinnabar' : 'text-ink-faint'">
+              妖气 {{ reviveText(row.reviveInHours) }}后复聚
+            </span>
+            <!-- 停取收益是次级动作:放在产出条里,不跟名字抢那一行 -->
+            <button
+              class="ml-auto inline-flex min-h-[28px] items-center px-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
+              @click.stop="unsuppress(row.def.id)"
+            >
+              停取收益,改去历练
+            </button>
+          </div>
+
+          <!--
+            已取得镇压资格、眼前正在历练的地界:转收益的入口与产出同样整行铺开,
+            不去挤右上角那枚「出发」
+          -->
+          <div
+            v-else-if="row.canEnter && row.qualified"
+            data-region-action
+            class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-ink/4 px-2.5 py-1.5"
+          >
+            <span class="text-[10px] text-ink-faint">已取得镇压资格</span>
+            <span class="text-[10px] text-gold-ink tabular">{{ rateText(row.def, row.recall) }}</span>
+            <button
+              class="ml-auto chip-ink min-h-[28px] !text-[10px] active:scale-95"
+              @click.stop="suppress(row.def.id)"
+            >
+              转为镇压收益
+            </button>
           </div>
           <p class="mt-2 text-[11px] leading-relaxed text-ink-faint">
             <template v-if="row.canEnter">{{ row.def.desc }}</template>

@@ -57,6 +57,14 @@
  *      一个字都不说 —— 桌面/安卓用应用自己的存储,在那儿喊「iOS 会清掉存档」是胡说。
  *   三十二 楷体统一:构建产物里内置字体必须排在字体栈第一位(系统楷体留作兜底),
  *      并且真渲染时楷体文字确实由它画出来(字体文件坏了、404 了都在这儿现形)。
+ *   三十三 地界卡不许挤压:名字必须单行,头部与操作块不许相交。夹具里备了镇压中、
+ *      临期复聚、已取得资格三态 —— 从前夹具一个镇压区域都没有,于是「自动产出」
+ *      把地界名压成竖排的事故全绿通过(横向溢出量不到挤压:卡片没溢出,只是挤)。
+ *   三十四 两条通用挤压判据,全页面生效:①文字被挤成竖排(宽 < 40px 且折成 3 行以上);
+ *      ②数字与量词被换行拆开(「2,798 石」不许变成「2,798 / 石」)。两者都是
+ *      「卡片没溢出、只是挤」这一类,横向溢出永远查不出来。
+ *   三十五 标点不许被折成孤字:模板里把标点另起一行写(HTML 会把换行折成空格),
+ *      窄屏上句号就会独自占一行 —— 量的是渲染结果,比在源码里认标点准。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -283,16 +291,46 @@ async function measurePage(page) {
         .map(el => {
           const cs = getComputedStyle(el)
           const lum = c => {
-            const m = /rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(c)
-            if (!m) return null
+            if (!c) return null
             const f = v => {
               const s = v / 255
               return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
             }
-            return 0.2126 * f(+m[1]) + 0.7152 * f(+m[2]) + 0.0722 * f(+m[3])
+            return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
           }
-          const lf = lum(cs.color)
-          const lb = lum(cs.backgroundColor)
+          /**
+           * 把一层层半透明底色**合成**成实际看到的颜色。
+           *
+           * .btn-ghost:disabled 的底是 rgb(ink / 0.04),只看这一层的 RGB 会当成纯黑,
+           * 于是浅字对它算出 2.46:1 的假红。真实观感是「卡片色 + 4% 墨」,约 4:1。
+           */
+          const parse = c => {
+            const m = /rgba?\(([^)]+)\)/.exec(c)
+            if (!m) return null
+            const p = m[1].split(/[,\s/]+/).filter(Boolean).map(Number)
+            if (p.length < 3) return null
+            return { rgb: p.slice(0, 3), a: p.length > 3 ? p[3] : 1 }
+          }
+          const paintOf = start => {
+            const layers = []
+            let n = start
+            while (n) {
+              const c = parse(getComputedStyle(n).backgroundColor)
+              if (c && c.a > 0) {
+                layers.push(c)
+                if (c.a >= 0.999) break
+              }
+              n = n.parentElement
+            }
+            let base = [255, 255, 255]
+            for (let i = layers.length - 1; i >= 0; i -= 1) {
+              const { rgb, a } = layers[i]
+              base = [0, 1, 2].map(k => rgb[k] * a + base[k] * (1 - a))
+            }
+            return base
+          }
+          const lf = lum(parse(cs.color)?.rgb ?? null)
+          const lb = lum(paintOf(el))
           if (lf === null || lb === null) return null
           const ratio = (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05)
           return { ratio: Math.round(ratio * 100) / 100, text: (el.textContent || '').trim().slice(0, 12) }
@@ -313,6 +351,153 @@ async function measurePage(page) {
           .filter(el => el.getBoundingClientRect().height > 24)
           .slice(0, 3)
           .map(el => `${Math.round(el.getBoundingClientRect().height)}px «${(el.textContent || '').trim().slice(0, 10)}»`)
+      })(),
+      /**
+       * 地界卡不许把名字挤成竖排,也不许让操作块压到名字那一行。
+       *
+       * 「横向溢出」量不出这类事故:卡片并没有溢出,只是右侧那一列把左边的名字压到只剩一个字宽,
+       * 「青云山麓」当场变成一字一行,标签还会盖到产出字上 —— 玩家先看见,脚本量不到。
+       * 故直接量两块元素的位置关系(名字高度 + 头部与操作块是否相交)。
+       */
+      regionCards: (() => {
+        const tall = []
+        const overlap = []
+        for (const card of document.querySelectorAll('[data-region-card]')) {
+          const name = card.querySelector('[data-region-name]')
+          const label = (name?.textContent || '').trim()
+          if (name) {
+            const h = Math.round(name.getBoundingClientRect().height)
+            // 15px 楷体单行约 22px;超过 30px 就是折行了(竖排四行能到 88px)
+            if (h > 30) tall.push(`${h}px «${label}»`)
+          }
+          const head = card.querySelector('[data-region-head]')
+          if (!head) continue
+          const a = head.getBoundingClientRect()
+          for (const act of card.querySelectorAll('[data-region-action]')) {
+            const b = act.getBoundingClientRect()
+            if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) {
+              overlap.push(`«${label}» 与操作块重叠`)
+            }
+          }
+        }
+        return { tall: tall.slice(0, 3), overlap: overlap.slice(0, 3) }
+      })(),
+      /**
+       * 通用挤压判据之一:**被挤成竖排的文字**。
+       *
+       * 一行 flex 里塞了「长文字 + shrink-0 的右列」时,左列会被压到只剩一个字宽,
+       * 于是「青云山麓」一字一行 —— 卡片并没有溢出,横向溢出查不出来。
+       * 判据取「宽度 < 40px 且折成 3 行以上」:正常的排版不会出现这种盒子。
+       */
+      verticalTexts: [...document.querySelectorAll('span, p, div, h1, h2, h3, button')]
+        .filter(el => {
+          const text = (el.textContent || '').trim()
+          if (text.length < 3) return false
+          if (el.querySelector('span, p, div, button, a')) return false // 只看最内层文字
+          const r = el.getBoundingClientRect()
+          if (r.width <= 0 || r.width >= 40) return false
+          const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 16
+          return r.height > lineHeight * 2.5
+        })
+        .slice(0, 3)
+        .map(el => `${Math.round(el.getBoundingClientRect().width)}px 宽 «${(el.textContent || '').trim().slice(0, 10)}»`),
+      /**
+       * 通用挤压判据之二:**数字与量词分家**。
+       *
+       * 「升级 · 2,798石 50铁」在 320 宽上会断成「升级 · 2,798 / 石 50铁」——
+       * 数与单位跨行看着像两个数。用 Range 逐字取矩形,量出「数字|量词」是否被换行拆开。
+       */
+      unitBreaks: (() => {
+        const UNITS = '石铁尘株张载年次件层场阶枚缕时日'
+        const rectAt = (node, i) => {
+          const r = document.createRange()
+          r.setStart(node, i)
+          r.setEnd(node, i + 1)
+          const box = r.getBoundingClientRect()
+          return box.width > 0 || box.height > 0 ? box : null
+        }
+        const out = []
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+        let node = walker.nextNode()
+        while (node && out.length < 3) {
+          const t = node.nodeValue || ''
+          if (!/[\d,.][\s]*[石铁尘株张载年次件层场阶枚缕]/.test(t)) {
+            node = walker.nextNode()
+            continue
+          }
+          // 只量**标签/代价**这类短文本(≤24 字):长句子里的正常换行不算事故,
+          // 否则整页散文都会被卷进来,判据就没人看了
+          if (t.trim().length > 24) {
+            node = walker.nextNode()
+            continue
+          }
+          for (let i = 1; i < t.length; i += 1) {
+            const ch = t[i]
+            if (!UNITS.includes(ch)) continue
+            let j = i - 1
+            while (j >= 0 && /\s/.test(t[j])) j -= 1
+            if (j < 0 || !/[\d,.]/.test(t[j])) continue
+            const a = rectAt(node, j)
+            const b = rectAt(node, i)
+            if (a && b && Math.abs(a.top - b.top) > 4) {
+              out.push(`«${t.trim().slice(0, 14)}»`)
+              break
+            }
+          }
+          node = walker.nextNode()
+        }
+        return out
+      })(),
+      /**
+       * 通用挤压判据之三:**孤零零的标点**。
+       *
+       * 「……仍受益的财富」换行 + 后面单独一个「。」时,句号会被推到下一行独自站着
+       * (模板里把标点另起一行写的必然结果)。判据:某段只含标点的文字,
+       * 与同一父节点里其余文字不在同一行。
+       */
+      orphanPunctuation: (() => {
+        const out = []
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+        let node = walker.nextNode()
+        while (node && out.length < 3) {
+          const t = node.nodeValue || ''
+          const trimmed = t.trim()
+          // 只认中文标点:半角「?」这类是占位符(未知装备就写着「?」),不是折行事故
+          if (!/^[。、,]{1,2}$/.test(trimmed)) {
+            node = walker.nextNode()
+            continue
+          }
+          const parent = node.parentElement
+          if (!parent) {
+            node = walker.nextNode()
+            continue
+          }
+          // 父节点里必须还有别的文字 —— 整块内容只有标点(装饰)不算孤字
+          const siblings = [...parent.childNodes].filter(n => n !== node && n.nodeType === Node.TEXT_NODE && (n.nodeValue || '').trim())
+          if (siblings.length === 0) {
+            node = walker.nextNode()
+            continue
+          }
+          const r = document.createRange()
+          r.setStart(node, 0)
+          r.setEnd(node, t.length)
+          const box = r.getBoundingClientRect()
+          if (box.width <= 0 && box.height <= 0) {
+            node = walker.nextNode()
+            continue
+          }
+          // 同一父节点里,有没有别的文字落在同一行(±4px)
+          const alone = siblings.every(sn => {
+            const sr = document.createRange()
+            sr.setStart(sn, 0)
+            sr.setEnd(sn, (sn.nodeValue || '').length)
+            const sb = sr.getBoundingClientRect()
+            return Math.abs(sb.top - box.top) > 4
+          })
+          if (alone) out.push(`«${(parent.textContent || '').trim().slice(0, 16)}»`)
+          node = walker.nextNode()
+        }
+        return out
       })(),
       /**
        * 选择型控件的选中态要对机器可读,且**每组恰有一个**。
@@ -448,6 +633,11 @@ function problemsOf(info) {
   if (info.dimDisabled.length) problems.push(`禁用态的字读不出来(对比度不足):${info.dimDisabled.join(' | ')}`)
   if (info.badGroups.length) problems.push(`选择组没选中态:${info.badGroups.join(' | ')}`)
   if (info.headerTall?.length) problems.push(`顶栏折行(数字断行看着像乱码):${info.headerTall.join(' | ')}`)
+  if (info.regionCards?.tall.length) problems.push(`地界名被挤成竖排:${info.regionCards.tall.join(' | ')}`)
+  if (info.regionCards?.overlap.length) problems.push(`地界卡文字互相压住:${info.regionCards.overlap.join(' | ')}`)
+  if (info.verticalTexts?.length) problems.push(`文字被挤成竖排:${info.verticalTexts.join(' | ')}`)
+  if (info.unitBreaks?.length) problems.push(`数字与量词被换行拆开:${info.unitBreaks.join(' | ')}`)
+  if (info.orphanPunctuation?.length) problems.push(`标点被折成孤字:${info.orphanPunctuation.join(' | ')}`)
   if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
   if (info.railDrift && (info.railDrift.windowOverflow > 1 || info.railDrift.drift > 1)) {
     problems.push(
@@ -852,7 +1042,41 @@ for (const vp of VIEWPORTS) {
       lifespanBonusYears: 0,
       dead: false,
       reincarnation: { count: 2, daoFruit: 12, talents: [], insight: 400, lives: [], vow: null, trial: null, bonds: [] },
-      linggen: { roots: [{ element: 'fire', aptitude: 88 }, { element: 'water', aptitude: 70 }], gradeName: '双灵根', growthMult: 1.4 },
+      /*
+       * 五系杂灵根:灵根行最挤的一档(名字 + 五个圆环 + ×倍率)。
+       * 空档抽到「双灵根」时不挤,「杂灵根」被压成竖排的事故就靠运气才撞得到 ——
+       * 这里钉死最挤的一份,让那个人物页状态每次都被量。
+       */
+      linggen: {
+        roots: [
+          { element: 'fire', aptitude: 42 },
+          { element: 'water', aptitude: 38 },
+          { element: 'wood', aptitude: 51 },
+          { element: 'metal', aptitude: 33 },
+          { element: 'earth', aptitude: 29 }
+        ],
+        gradeName: '杂灵根',
+        growthMult: 0.85
+      },
+      /*
+       * 镇压三态都要在夹具里出现 —— 此前夹具一个镇压区域都没有,
+       * 于是「自动产出」那条长信息把地界名挤成竖排的事故,这脚本从来没量过(玩家先看到的)。
+       * qingyun 守了 7 小时(稳定)、wanyao 守到 71 小时(倒计时转红)、guzhanchang 守满一日(繁盛)。
+       */
+      suppressedRegions: ['qingyun', 'wanyao', 'guzhanchang'],
+      suppressQualified: ['qingyun', 'wanyao', 'guzhanchang', 'heifeng'],
+      suppressedSince: {
+        qingyun: Date.now() - 7 * 3600000,
+        wanyao: Date.now() - 71 * 3600000,
+        guzhanchang: Date.now() - 30 * 3600000
+      },
+      regionStats: {
+        qingyun: { totalFights: 40, avgRounds: 2.1, avgDamageTakenPct: 0.05, consecutiveWins: 9, lastUpdateAt: Date.now() - 3600000 },
+        wanyao: { totalFights: 60, avgRounds: 2.4, avgDamageTakenPct: 0.06, consecutiveWins: 4, lastUpdateAt: Date.now() - 3600000 },
+        guzhanchang: { totalFights: 55, avgRounds: 2.8, avgDamageTakenPct: 0.09, consecutiveWins: 3, lastUpdateAt: Date.now() - 3600000 },
+        // 黑风林:已取得镇压资格但当前仍在历练态(「转为镇压收益」那条要画出来)
+        heifeng: { totalFights: 14, avgRounds: 3.9, avgDamageTakenPct: 0.18, consecutiveWins: 2, lastUpdateAt: Date.now() - 600000 }
+      },
       // 在途秘境:归来卷轴要说「原样留着」,历练页也要画出「在境中」那一版
       secretRealm: { realmId: 'sr_kurong', enteredAt: Date.now() - 600000, layer: 2, wins: 1, losses: 0, spoils: ['灵石少许'], rules: ['治疗减半'], carriedHpPct: 0.7, finished: false }
     },
@@ -885,6 +1109,23 @@ for (const vp of VIEWPORTS) {
         winStacks: 1
       }
     },
+    // 地界表:解锁到黑风林一带,好让「镇压中 / 已取得资格」两种卡片都渲染出来
+    adventure: {
+      unlocked: ['qingyun', 'luoxia', 'heifeng', 'wanyao', 'cangwu', 'guzhanchang'],
+      cleared: ['qingyun', 'luoxia', 'heifeng', 'wanyao'],
+      mortalCleared: [],
+      session: null,
+      pendingEventId: null,
+      pendingEventSince: 0,
+      seenOnceEvents: [],
+      lastBattle: null,
+      eventMemories: {}
+    },
+    /*
+     * 洞府等级:升级按钮上的代价是「数 + 量词」(2,798 石 · 50 铁),
+     * 空档只有「200 石 20 铁」这种短数字,量不出「数字与量词被换行拆开」那条判据。
+     */
+    dongfu: { levels: { mansion: 4, field: 5, alchemy: 5, forge: 4, library: 4 }, offlineCapHours: 24 },
     settings: {
       privacyAccepted: true,
       sfxOn: false,
@@ -1847,7 +2088,8 @@ for (const vp of VIEWPORTS) {
   const oreBefore = await readOre()
   await page.goto(INDEX + '#' + '/dongfu', { waitUntil: 'load' })
   await page.waitForTimeout(900)
-  const buildBtn = page.locator('main button', { hasText: /建\s*造 · |升\s*级 · / }).first()
+  // 正则留出空白余量:卡片上的代价换行(数 + 量词 nowrap)会在「·」后断行
+  const buildBtn = page.locator('main button', { hasText: /建\s*造\s*·|升\s*级\s*·/ }).first()
   if ((await buildBtn.count()) === 0) {
     failures.push('[390] 营造场景:洞府页没有可动工的建筑(判据没跑到东西)')
   } else {
@@ -2161,7 +2403,9 @@ for (const vp of VIEWPORTS) {
   let summary = ''
   let logLines = 0
   let lastTail = ''
-  for (let i = 0; i < 60 && !summary; i += 1) {
+  // 停下来的条件要带上「战报有行」:回放是逐行画出来的,结语先出现、行随后才铺满 ——
+  // 只看结语就收工,会偶发地在那一瞬数出 0 行(实测撞到过一次),把好代码判成坏代码
+  for (let i = 0; i < 60 && !(summary && logLines > 0); i += 1) {
     await page.waitForTimeout(1000)
     /*
      * 历练的第一步未必是战斗:引擎每个战斗槽位都会先掷一次「际遇」,中了就弹事件窗,
@@ -2195,6 +2439,11 @@ for (const vp of VIEWPORTS) {
     summary = info.summary
     lastTail = info.tail
     if (i === 0 && !info.running) failures.push('[390] 战斗场景:点了「出发」并择了模式,历练却没跑起来')
+  }
+  // 兜底再等一拍:真的没有战报行时,这里仍然是 0,断言照旧会红
+  if (summary && logLines === 0) {
+    await page.waitForTimeout(1500)
+    logLines = await page.evaluate(() => document.querySelectorAll('[data-battle-log]').length)
   }
   // 首战间隔 12 秒 ÷ 历练速度;45 秒还没等到,就把当前页面写进报告(「搜寻猎物中」还是「胜 N 场」一看便知)
   if (!summary) failures.push(`[390] 战斗场景:等了 60 秒也没等到一场的结语(战报回放没走完?) 当前页面:${lastTail}`)

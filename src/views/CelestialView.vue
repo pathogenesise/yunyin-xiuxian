@@ -730,10 +730,9 @@
         </p>
         <p class="mt-2 text-[11px] text-ink-faint">
           一句话:
-          <span class="text-cinnabar">道源是此世拿来折腾的</span>
-          ,
-          <span class="text-violet-ink">道果是几世以后仍受益的财富</span>
-          。
+          <!-- 标点跟着前一句走:单独成行会在窄屏上被折成孤零零一个句号 -->
+          <span class="text-cinnabar">道源是此世拿来折腾的,</span>
+          <span class="text-violet-ink">道果是几世以后仍受益的财富。</span>
         </p>
       </div>
       <template #footer>

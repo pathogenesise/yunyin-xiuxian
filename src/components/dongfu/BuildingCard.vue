@@ -10,7 +10,22 @@
       {{ level > 0 ? props.def.effectText(level) : props.def.desc }}
     </p>
     <button class="btn-ghost mt-2 w-full !py-1.5 !text-[12px]" :disabled="!info.canUpgrade" @click="upgradeBuilding(props.def.id)">
-      <template v-if="info.canUpgrade">{{ level > 0 ? '升级' : '建造' }} · {{ formatGN(info.stone) }}石 {{ info.ore }}铁</template>
+      <!--
+        数与量词必须黏在一起:窄屏(320)上卡片只有 ~140px,浏览器会在数字与「石」之间断行,
+        于是按钮读成「升级 · 2,798 / 石 50铁」—— 单价被拆成两半。
+        每个「数 + 量词」各自 nowrap,换行只发生在分隔符处。
+
+        外面这层 span 也是必须的:btn-ghost 是 flex 容器,散落的文本节点会各自成为
+        flex item 并**竖着堆**(实测直接把「升 / 级 / · / 317 石」排成一列)。
+        收进一个 inline 文本块里,它们才按普通行内规则折行。
+      -->
+      <template v-if="info.canUpgrade">
+        <span class="leading-tight">
+          <span class="whitespace-nowrap">{{ level > 0 ? '升级' : '建造' }} ·</span>
+          <span class="whitespace-nowrap">{{ formatGN(info.stone) }} 石</span>
+          <span v-if="info.ore > 0" class="whitespace-nowrap">· {{ info.ore }} 铁</span>
+        </span>
+      </template>
       <template v-else>{{ info.reason }}</template>
     </button>
   </div>

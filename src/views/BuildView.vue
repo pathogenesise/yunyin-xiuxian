@@ -84,9 +84,18 @@
         </div>
         <!-- 构筑韧性:主派被封后还剩什么 -->
         <div v-if="resilience" class="mt-2.5 rounded-md bg-ink/4 px-3 py-2">
-          <p class="flex items-center justify-between text-[11px]">
-            <span class="font-kai text-ink-soft">构筑韧性(主派核心封印之下)</span>
-            <span class="tabular" :class="resilience.retention >= 0.45 ? 'text-jade' : 'text-cinnabar'">
+          <!--
+            标签与取值各成一格并允许换行:窄屏上「构筑韧性(主派核心封印之下)」会把
+            右边那串胜率挤成两行(「胜率 100% →」/「100%」)。副题拆成独立一格,
+            换行时整串胜率一起落到下一行(nowrap 保证它自己不裂)。
+          -->
+          <p class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[11px]">
+            <span class="font-kai whitespace-nowrap text-ink-soft">构筑韧性</span>
+            <span class="text-[10px] text-ink-ghost">(主派核心封印之下)</span>
+            <span
+              class="ml-auto shrink-0 whitespace-nowrap tabular"
+              :class="resilience.retention >= 0.45 ? 'text-jade' : 'text-cinnabar'"
+            >
               胜率 {{ Math.round(resilience.normal * 100) }}% → {{ Math.round(resilience.sealed * 100) }}%
             </span>
           </p>

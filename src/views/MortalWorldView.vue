@@ -70,8 +70,8 @@
         <p class="font-kai text-[13px] tracking-widest text-ink-soft">此界从何而来</p>
         <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
           你睁眼时,天地已成此形。所历地界、途中缓急、镇守之物皆随此世而定,
-          <span class="text-ink-soft">这一世之内不会再变</span>
-          。
+          <!-- 标点跟着前一句走:单独成行会在窄屏上被折成孤零零一个句号 -->
+          <span class="text-ink-soft">这一世之内不会再变。</span>
         </p>
         <p class="mt-1 text-[11px] leading-relaxed text-ink-faint">
           唯有
