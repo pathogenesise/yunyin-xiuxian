@@ -70,6 +70,10 @@ jobs:
           npx playwright install --with-deps chromium
       - name: 排版与交互自检
         run: node scripts/layout-check.mjs
+      # Service Worker 只认安全上下文,故离线自检另起一个本地静态服务量同一份产物:
+      # 断网可重开、旧缓存会被清、发版能接管(见 scripts/offline-check.mjs)。
+      - name: 离线/发版接管自检
+        run: node scripts/offline-check.mjs
 
   # 1. 构建 Electron 客户端
   build-electron:

@@ -41,6 +41,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: 浏览器自检(排版与交互)
         run: node scripts/layout-check.mjs
+      - name: 离线/发版接管自检
+        run: node scripts/offline-check.mjs
       # 前置条件:仓库需在 Settings → Pages → Build and deployment 里把 Source 选成
       # GitHub Actions。configure-pages 拿不到站点就会直接失败(Not Found)。
       # 不要改用 enablement: true 绕过:该参数要求非 GITHUB_TOKEN 的凭据
