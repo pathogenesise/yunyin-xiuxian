@@ -215,7 +215,7 @@ src/
 
 - **配色**：水墨色系。`style.css` 存裸 RGB 通道变量（`--color-x-rgb`），`tailwind.config.js` 用 `rgb(var(...) / <alpha-value>)` 合成语义色 —— 斜杠透明度与 `color-mix` 两条路径共用一份变量，夜间主题只覆盖通道值一处即可同时换肤
 - **版式**：竖版文字风格，移动端优先
-- **字体**：正文走系统字体栈；标题、境界名、名号走 `font-kai`（楷体）。iOS 有 Kaiti SC、Windows 有 KaiTi，**安卓一个楷体都没有** —— 故随包带一份霞鹜文楷子集（`src/assets/fonts/`，1.5MB）：字体栈里 `LXGW WenKai` 那一档正是它，iOS/Windows 在前几档就命中系统楷体，一个字都不下载。重做子集（加了新内容、字表不够用时）：`uv run scripts/fonts/build-kai-font.py`
+- **字体**：正文走系统字体栈；标题、境界名、名号走 `font-kai`（楷体），**三端统一用随包内置的那份霞鹜文楷子集**（`src/assets/fonts/`，1.5MB）—— iOS 的华文楷体、Windows 的楷体（还属「中文补充字体」，没装的机器本就没有）各是各的字形，同一款游戏摆在一起是三种气质；系统楷体退到字体栈第二位，只替子集盖不住的生僻字兜底。重做子集（加了新内容、字表不够用时）：`uv run scripts/fonts/build-kai-font.py`
 - **动效**：`rise-in` / `shimmer` / `pulse-ring` / `bar-grow` 等关键帧，`.stagger-in` 入场序列
 - **无障碍**：`prefers-reduced-motion` 全局禁用动画
 

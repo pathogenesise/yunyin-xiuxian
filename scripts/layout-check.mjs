@@ -55,6 +55,8 @@
  *   三十 顶栏不许折行:数字断行看着像乱码,顶栏还会从 46px 涨到 58px(320 宽复发过)。
  *   三十一 iOS 存档风险提示:该出现的平台出现(且关掉就真不再出现),不该出现的平台
  *      一个字都不说 —— 桌面/安卓用应用自己的存储,在那儿喊「iOS 会清掉存档」是胡说。
+ *   三十二 楷体统一:构建产物里内置字体必须排在字体栈第一位(系统楷体留作兜底),
+ *      并且真渲染时楷体文字确实由它画出来(字体文件坏了、404 了都在这儿现形)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -2178,7 +2180,13 @@ for (const vp of VIEWPORTS) {
       const text = document.querySelector('main')?.innerText || ''
       return {
         running: /余 \d+分\d+秒/.test(text),
-        lines: (text.match(/击中|施展|避开|打断|气血逆涌/g) || []).length,
+        /*
+         * 战报行直接数回放框里的 <p>,不再拿关键词去猜文本。
+         * 原来数的是 击中|施展|避开|打断|气血逆涌 五个词 —— 而暴击那行写的是
+         * 「会心一击!…受创甚重」,五个词一个不沾;一击暴击定胜负的战斗(实测碰到过,
+         * 战后气血 100%)于是被误判成「回放没出内容」,红得毫无道理。
+         */
+        lines: document.querySelectorAll('[data-battle-log]').length,
         summary: (text.match(/此战 \d+ 回合[^\r\n]*/) || [''])[0],
         tail: text.replace(/\s+/g, ' ').slice(-80)
       }
@@ -2461,6 +2469,31 @@ for (const vp of VIEWPORTS) {
     const { ctx, page } = await openWith(UA_IOS)
     await page.goto(INDEX, { waitUntil: 'load' })
     await page.waitForTimeout(1500)
+
+    /*
+     * 同一条已开局的页面,顺手把「楷体由谁画」也量了(再开一套存档不值当)。
+     * 查的是运行时那一半:产物里的次序对,不代表字体真加载成功 —— 文件坏了、因 base
+     * 变形而 404,都会安静地回退到系统字体,界面看着只是「有点不一样」,没人报错。
+     */
+    checked += 1
+    const kaiFonts = await (async () => {
+      const cdp = await ctx.newCDPSession(page)
+      await cdp.send('DOM.enable')
+      await cdp.send('CSS.enable')
+      const { root } = await cdp.send('DOM.getDocument')
+      const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: 'header .font-kai' })
+      if (!nodeId) return null
+      const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+      await cdp.detach()
+      return fonts.map(f => f.familyName)
+    })()
+    if (!kaiFonts) failures.push('[楷体] 顶栏里找不到 font-kai 的元素,判据没量到东西')
+    else if (!kaiFonts.includes('LXGW WenKai')) {
+      failures.push(`[楷体] 楷体文字不是内置字体画的(实际 ${kaiFonts.join(' + ')})—— 字体没加载成功?`)
+    } else {
+      console.log(`\n楷体统一:顶栏名字由 ${kaiFonts.join(' + ')} 渲染`)
+    }
+
     checked += 1
     const onHome = await cardCount(page)
     if (onHome === 0) failures.push('[iOS] 未安装时主页没有出现「添加到主屏幕」提示 —— 七天不打开就会被清档,而玩家不会知道')
@@ -2535,6 +2568,21 @@ await browser.close()
   if (!css.includes('100dvh')) {
     failures.push('外壳高度没走 dvh(手机浏览器地址栏挂在外面时,底栏会被压住)')
   }
+  /*
+   * 楷体栈:内置那份必须**排第一**。
+   *
+   * 这条只能查产物,查运行时没有意义:无头容器里没有系统楷体,排在第四位也一样会被
+   * 选中 —— 绿得毫无信息。而真机上的差别恰恰全在次序里(iOS 会命中华文楷体、Windows
+   * 会命中楷体,三端于是三种字形)。谁要是「顺手优化」把次序换回系统优先,只有这条拦得住。
+   */
+  const kaiRule = /--font-kai:([^;}]*)/.exec(css)
+  if (!kaiRule) {
+    failures.push('构建产物里找不到 --font-kai(字体栈的唯一事实源在 src/style.css)')
+  } else if (!/^\s*"?LXGW WenKai"?/.test(kaiRule[1])) {
+    failures.push(`楷体栈第一位不是内置字体(现在是${kaiRule[1].slice(0, 40)}…)—— 三端会各用各的系统楷体`)
+  } else if (!/Kaiti SC|KaiTi/.test(kaiRule[1])) {
+    failures.push('楷体栈里没了系统楷体兜底 —— 子集外的生僻字会直接掉到衬线')
+  }
 }
 
 console.log(`\n排版自检:${checked} 个页面 × 视口组合`)
@@ -2544,6 +2592,7 @@ if (failures.length === 0) {
   console.log('✓ 五处页签栏吸顶(背包四册 / 图鉴 / 名号 / 界域志 / 天界),且铺满内容区宽度')
   console.log('✓ 顶栏一格一行(320 窄屏与横屏、桌面都不折行)')
   console.log('✓ iOS 存档风险提示只在该出现的平台出现,关一次就不再唠叨')
+  console.log('✓ 楷体三端统一(内置排栈首,系统楷体留作兜底),且真由内置字体渲染')
   console.log('✓ 提示条点得掉、弹窗焦点与外壳偏移正常、引擎事件弹窗也过同一套尺子')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {

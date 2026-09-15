@@ -47,7 +47,19 @@
   --color-violet-ink: rgb(var(--color-violet-ink-rgb));
   --color-amber-ink: rgb(var(--color-amber-ink-rgb));
 
-  --font-kai: 'Kaiti SC', 'STKaiti', KaiTi, 'LXGW WenKai', 'Noto Serif SC', serif;
+  /*
+   * 楷体栈 —— **这里是唯一事实源**(tailwind.config 里的 kai/song 只是把它接成 utility)
+   *
+   * 内置那份排第一:先前是系统优先,于是同一个游戏在三端长成三种字形 —— iOS 华文楷体、
+   * Windows 楷体(它还属「中文补充字体」,Win10/11 里按需安装,没装的机器直接落到内置)、
+   * 安卓内置霞鹜文楷。三端截图摆在一起,差异比「多下一次字体」更伤。
+   *
+   * 系统楷体留在第二位兜底:子集只收游戏用字 + GB2312(6957 字),名字里的生僻字
+   * (玥 玦 燊 龑 这类 GBK 扩展字)任何合理体积的子集都盖不住 —— iOS 上由华文楷体接住
+   * (还是楷体),安卓上落到系统衬线。这条退路删不得。
+   */
+  --font-kai: 'LXGW WenKai', 'Kaiti SC', 'STKaiti', KaiTi, 'Noto Serif SC', serif;
+  --font-song: 'Noto Serif SC', 'Source Han Serif SC', STSong, SimSun, 'Kaiti SC', serif;
 
   /* 明暗通用阴影色(暗色主题下重定义) */
   --shadow-ink: rgb(41 39 34);
@@ -422,15 +434,19 @@ html[data-theme='dark'] {
  * 为什么需要它:iOS 有 Kaiti SC、Windows 有 KaiTi,**安卓一个楷体都没有**。而这套
  * 水墨味的标题、境界名、名号全压在 font-kai 上 —— APK 是主力渠道,不能在那儿落成衬线。
  *
- * 为什么这样挂:字体栈(kai)是 Kaiti SC → STKaiti → KaiTi → LXGW WenKai → 衬线,
- * 而这里的 family 名正叫 LXGW WenKai。于是 iOS / Windows 在前三档就命中系统楷体,
- * **一个字都不下载**;安卓一路落空,才来取这份子集。装了霞鹜文楷的人由 local() 命中,
- * 同样不下载。子集外的生僻字按字符回退到栈里后面的字体,不会变成豆腐块。
+ * 为什么这样挂:字体栈(kai)把 LXGW WenKai 排在第一位 —— **三端统一用这份内置字体**,
+ * 系统的华文楷体 / 楷体退到第二位只作兜底。此前是系统优先,于是同一个游戏在 iOS、
+ * Windows、安卓长成三种字形(而 Windows 的楷体还属「中文补充字体」,没装的机器本来
+ * 就落到这里),三端截图摆在一起就是三种气质。装了霞鹜文楷的人由 local() 命中,不下载。
+ * 子集外的生僻字(GBK 扩展区,如 玥 玦 燊 龑)按字符回退到系统楷体或系统衬线,不会
+ * 变成豆腐块 —— 名字里这类字任何合理体积的子集都盖不住。
  *
  * 1.5MB 的来历与重做方式见 scripts/fonts/build-kai-font.py(24.4MB 的母体不入库,
  * 只入库子集);协议全文在 public/fonts/OFL.txt —— OFL 要求再分发时带着它,别删。
  *
  * font-display: swap —— 先用回退字体把字显示出来,楷体到了再换,不白屏。
+ * 没有加 preload:这份字体是首屏 JS+CSS 的二十倍,提前抢带宽反而可能拖慢可玩时间,
+ * 而 swap 已经保证文字立刻可读(要不要上 preload 得拿真机实测那一下切换再说)。
  */
 @font-face {
   font-family: 'LXGW WenKai';

@@ -71,7 +71,19 @@
           跳过播放 »
         </button>
         <div ref="logBox" class="h-48 space-y-1 overflow-y-auto rounded-md bg-ink/4 px-3 py-2">
-          <p v-for="(entry, i) in displayed" :key="i" class="text-[12px] leading-relaxed" :class="KIND_COLOR[entry.t]">
+          <!--
+            data-battle-log 挂在**行**上(不是外面那层框):自检要数「这场到底出了几行」,
+            而框里还有一行占位文案「山风掠过,四下无声……」—— 挂在框上会把它一起数进去。
+            为什么要数行而不是数关键词:暴击那行只写「会心一击」,一击定胜负的战斗
+            五个关键词一个不沾,曾被误判成「回放没出内容」。
+          -->
+          <p
+            v-for="(entry, i) in displayed"
+            :key="i"
+            data-battle-log
+            class="text-[12px] leading-relaxed"
+            :class="KIND_COLOR[entry.t]"
+          >
             {{ entry.text }}
             <span v-if="entry.dmg" class="tabular" :class="entry.t === 'crit' ? 'text-cinnabar' : ''">{{ entry.dmg }}</span>
           </p>

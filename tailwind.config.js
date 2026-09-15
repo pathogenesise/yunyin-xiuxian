@@ -46,8 +46,16 @@ export default {
         'amber-ink': withAlpha('--color-amber-ink-rgb')
       },
       fontFamily: {
-        kai: ['Kaiti SC', 'STKaiti', 'KaiTi', 'LXGW WenKai', 'Noto Serif SC', 'serif'],
-        song: ['Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', 'Kaiti SC', 'serif']
+        /*
+         * 只做「utility 名 → 变量」这一步;字体栈本体在 style.css 的 --font-kai / --font-song。
+         *
+         * 原来这里另抄了一份完整字体栈,而 style.css 里 `.font-kai{font-family:var(--font-kai)}`
+         * 在产物中排在它后面、把它整个盖掉 —— 于是改这里不生效(改字号字体时真被坑过一次:
+         * 配置改了、产物里纹丝不动)。同一样东西两处维护迟早对不上,故只留这一层转发,
+         * 事实源归 style.css 一处。
+         */
+        kai: ['var(--font-kai)'],
+        song: ['var(--font-song)']
       },
       /* v4 的 @theme 按需生成任意数值,v3 只有固定 scale,缺的须显式补齐。
          v4 的 spacing 公式是 calc(0.25rem * N),下面的值据此换算。
