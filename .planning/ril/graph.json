@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 178,
+  "round": 179,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T05:37:04+00:00",
+  "updated_at": "2026-09-15T06:02:26+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 178,
+      "touched_round": 179,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -8772,7 +8772,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 168,
+      "touched_round": 179,
       "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
     },
     "EV-142": {
@@ -10219,6 +10219,98 @@
       "confidence": 0.9,
       "effort": 2,
       "summary": "speed 词条的口径与承诺不符:文案「出手速度提升 N%」读作连续收益,机制上却是阈值开关(先手判定取 1+speed mod >= 敌人速度,见 core/combat.ts:440)—— 低阶「迅捷 +3~6%」几乎不翻盘(实测 132 只敌人:无加成 40/132,+3% 仍是 40,+6% 才 49),跨过某个敌人的速度档才有意义。要么把文案改成「抢先手」这类阈值说法,要么给低阶档更细的粒度"
+    },
+    "ISS-174": {
+      "id": "ISS-174",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T06:01:15+00:00",
+      "updated_at": "2026-09-15T06:02:26+00:00",
+      "touched_round": 179,
+      "severity": 0.3,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "发版流水线挂在 main 的每次 push 上:提交一次就跑一遍两平台构建,并把同一版本的 Release 资产「先删后传」—— 于是每个提交都留下一个 release,发布页看不出哪次才是真正的发版"
+    },
+    "ISS-175": {
+      "id": "ISS-175",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T06:01:15+00:00",
+      "updated_at": "2026-09-15T06:02:26+00:00",
+      "touched_round": 179,
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "安卓(主力分发渠道)不带楷体:iOS 有 Kaiti SC、Windows 有 KaiTi,安卓一路落空 —— 标题、境界名、名号全压在 font-kai 上,在 APK 里落成系统衬线/黑体,水墨味的骨架子在主要渠道上是缺的"
+    },
+    "TASK-160": {
+      "id": "TASK-160",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T06:01:15+00:00",
+      "updated_at": "2026-09-15T06:02:26+00:00",
+      "touched_round": 179,
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "发版流水线改 tag 触发,并加一道「tag 与 package.json 版本一致」的闸门"
+    },
+    "TASK-161": {
+      "id": "TASK-161",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T06:01:15+00:00",
+      "updated_at": "2026-09-15T06:02:26+00:00",
+      "touched_round": 179,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "随包内置楷体子集(霞鹜文楷,1.5MB):字体栈 LXGW WenKai 那一档挂 @font-face,iOS/Windows 仍命中系统楷体不下载"
+    },
+    "DEC-034": {
+      "id": "DEC-034",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:01:15+00:00",
+      "updated_at": "2026-09-15T06:01:15+00:00",
+      "touched_round": 179,
+      "summary": "楷体子集入库随包分发,不做构建时下载",
+      "rationale": "产物(APK/Electron)本来就要带这份字体,构建时下载只让仓库小 1.5MB、产物一点没变,却把发版挂到外网上 —— 实测从 GitHub 拉 24.4MB 母体要五分钟以上、连续两次超时。子集仅 1.5MB(仓库现有 images/app/*.png 就占 23MB);母体不入库,重做走 scripts/fonts/build-kai-font.py",
+      "alternatives_rejected": [
+        "构建时下载母体再子集化:发版依赖外网,且 Docker 镜像里得再塞一套 Python 工具链",
+        "运行时从 CDN 取字体:离线不可用、国内可达性差,SW 又不缓存跨域资源",
+        "引入 npm 预切子集包 lxgw-wenkai-webfont:582 个文件 27.9MB,APK 与仓库都吃不消"
+      ]
+    },
+    "CHG-210": {
+      "id": "CHG-210",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:02:25+00:00",
+      "updated_at": "2026-09-15T06:02:25+00:00",
+      "touched_round": 179,
+      "commit": "be8e584c503e",
+      "summary": "发版流水线改 tag 触发 + 版本闸门 guard job:tag 与 package.json 不一致时一次构建都不跑"
+    },
+    "CHG-211": {
+      "id": "CHG-211",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:02:25+00:00",
+      "updated_at": "2026-09-15T06:02:25+00:00",
+      "touched_round": 179,
+      "commit": "210d1faf8820",
+      "summary": "随包内置霞鹜文楷子集(1.5MB):@font-face family 复用字体栈里的 LXGW WenKai,iOS/Windows 命中系统楷体不下载;附生成脚本与覆盖判据"
     }
   },
   "edges": [
@@ -15076,6 +15168,60 @@
       "to": "COMP-013",
       "type": "located_in",
       "created_at": "2026-09-15T05:37:04+00:00"
+    },
+    {
+      "from": "ISS-174",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-15T06:01:19+00:00"
+    },
+    {
+      "from": "ISS-175",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-15T06:01:19+00:00"
+    },
+    {
+      "from": "TASK-160",
+      "to": "ISS-174",
+      "type": "addresses",
+      "created_at": "2026-09-15T06:01:19+00:00"
+    },
+    {
+      "from": "TASK-161",
+      "to": "ISS-175",
+      "type": "addresses",
+      "created_at": "2026-09-15T06:01:19+00:00"
+    },
+    {
+      "from": "DEC-034",
+      "to": "TASK-161",
+      "type": "governs",
+      "created_at": "2026-09-15T06:01:19+00:00"
+    },
+    {
+      "from": "CHG-210",
+      "to": "TASK-160",
+      "type": "implements",
+      "created_at": "2026-09-15T06:02:25+00:00"
+    },
+    {
+      "from": "CHG-210",
+      "to": "ISS-174",
+      "type": "resolves",
+      "created_at": "2026-09-15T06:02:25+00:00"
+    },
+    {
+      "from": "CHG-211",
+      "to": "TASK-161",
+      "type": "implements",
+      "created_at": "2026-09-15T06:02:26+00:00"
+    },
+    {
+      "from": "CHG-211",
+      "to": "ISS-175",
+      "type": "resolves",
+      "created_at": "2026-09-15T06:02:26+00:00"
     }
   ]
 }
