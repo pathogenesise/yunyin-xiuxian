@@ -177,11 +177,15 @@ export interface RealmLeapRow {
   detach: number
 }
 
-export function realmLeapAudit(profile: GearProfile): RealmLeapRow[] {
+/**
+ * @param seed 装备掷点种子。默认那一个沿用至今,便于与新读数对照;
+ *   判据若要用「多样本的均值」说话,就把种子换几个再取平均(见 inflationAudit.spec)。
+ */
+export function realmLeapAudit(profile: GearProfile, seed = 20260904): RealmLeapRow[] {
   const rows: RealmLeapRow[] = []
   for (let m = 0; m < MAX_MAJOR; m += 1) {
-    const before = toNum(modelPlayer(m, 9, profile).stats.power)
-    const after = toNum(modelPlayer(m + 1, 0, profile).stats.power)
+    const before = toNum(modelPlayer(m, 9, profile, seed).stats.power)
+    const after = toNum(modelPlayer(m + 1, 0, profile, seed).stats.power)
     const contentBefore = enemyPowerAt(maxTierForMajor(m))
     const contentAfter = enemyPowerAt(maxTierForMajor(m + 1))
     const leapMult = before > 0 ? after / before : 0
@@ -221,11 +225,11 @@ export interface CoverageRow {
  */
 export const CRUSH_RATIO = 3.0
 
-export function contentCoverageAudit(profile: GearProfile): CoverageRow[] {
+export function contentCoverageAudit(profile: GearProfile, seed = 20260904): CoverageRow[] {
   const rows: CoverageRow[] = []
   for (let m = 0; m <= MAX_MAJOR; m += 1) {
     // 站在该境界圆满口径:玩家在此境界停留的终局战力
-    const power = toNum(modelPlayer(m, 9, profile).stats.power)
+    const power = toNum(modelPlayer(m, 9, profile, seed).stats.power)
     const tiers = reachableTiers(m)
     let crushed = 0
     let topPowerRatio = 0
@@ -276,8 +280,8 @@ export interface SourceRow {
  * 做法是逐个来源置零重算,取跌幅后归一化——乘区之间存在交叉项,
  * 故这是近似归因(Shapley 的一阶简化),用于找「谁一家独大」而非精确分账
  */
-export function powerSourceAudit(major: number, profile: GearProfile): SourceRow[] {
-  const full = modelPlayer(major, 9, profile)
+export function powerSourceAudit(major: number, profile: GearProfile, seed = 20260904): SourceRow[] {
+  const full = modelPlayer(major, 9, profile, seed)
   const fullPower = toNum(full.stats.power)
 
   const withParts = (opts: { equipFlat?: boolean; equipMod?: boolean; gongfa?: boolean; other?: boolean; realm?: boolean }): number => {

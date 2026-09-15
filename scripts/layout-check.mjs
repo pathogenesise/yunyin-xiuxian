@@ -1091,9 +1091,9 @@ for (const vp of VIEWPORTS) {
     inventory: {
       items: [
         { uid: 'late_w', templateId: 'w_zidian', quality: 'heaven', tier: 20, level: 0, affixes: [{ id: 'bs3', roll: 1 }] },
-        { uid: 'late_a', templateId: 'a_hufu', quality: 'heaven', tier: 20, level: 0, affixes: [{ id: 'low2', roll: 1 }] }
+        { uid: 'late_a', templateId: 'b_xingluo', quality: 'heaven', tier: 20, level: 0, affixes: [{ id: 'low2', roll: 1 }] }
       ],
-      equipped: { weapon: 'late_w', armor: 'late_a' },
+      equipped: { weapon: 'late_w', body: 'late_a' },
       pills: { p_jvqidan: 5, p_huichun: 3 },
       artifacts: [{ defId: 'af_qinglian', level: 3 }, { defId: 'af_wuxiangzhu', level: 2 }],
       equippedArtifacts: ['af_qinglian', 'af_wuxiangzhu']
@@ -2564,7 +2564,16 @@ for (const vp of VIEWPORTS) {
   const pageErrors = []
   watchPageErrors(page, pageErrors)
   await page.goto(INDEX + '#/adventure', { waitUntil: 'load' })
-  await page.waitForTimeout(2200)
+  /**
+   * 等敌人卡出现,而不是固定等 2200ms 再读一次。
+   *
+   * 装备表涨到 288 件之后,冷启动到首帧的时间开始浮动 —— 单次定时读会偶发读空,
+   * 于是这条判据报的是「夹具没读出来」,而真相只是「还没画到」。判据本身不变:
+   * 卡必须出现,名字必须单行,标签必须够四枚。只是把「读一次」改成「等到出现为止」。
+   */
+  await page
+    .waitForSelector('[data-foe-name]', { timeout: 8000 })
+    .catch(() => undefined)
   await page.evaluate(() => {
     Math.random = () => 1
   })
@@ -2771,8 +2780,14 @@ for (const vp of VIEWPORTS) {
   watchPageErrors(page, pageErrors)
   await page.goto(INDEX, { waitUntil: 'load' })
   checked += 1
-  // 启动提示只活两秒多,这里趁它在的时候读
-  await page.waitForTimeout(1200)
+  /**
+   * 启动提示只活两秒多,而冷启动到首帧的耗时是浮动的 —— 固定读一次会偶发读空
+   * (实测同一份产物两次跑,一次读到、一次读到空串)。故轮询到它出现为止:
+   * 判据不变(提示文本必须含「损坏/异常/隔离」),只是不再拿运气当判据。
+   */
+  await page
+    .waitForFunction(() => /损坏|异常|隔离/.test(document.body.innerText), { timeout: 8000 })
+    .catch(() => undefined)
   const boot = await page.evaluate(() => ({
     alive: !!document.querySelector('#app')?.firstElementChild,
     hash: location.hash,

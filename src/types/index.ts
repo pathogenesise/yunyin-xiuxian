@@ -202,8 +202,14 @@ export interface EquipmentTemplate {
   base: Partial<Record<'attack' | 'defense' | 'maxHp', number>>
   /** 模板固有百分比属性 */
   fixedMods?: StatMods
-  /** 出现的最低掉落层级 */
-  minTier: number
+  /**
+   * 本件所属的层级 —— **一阶一名**:名字负责区分,数字只让人看得更快。
+   *
+   * 掉落池按它取(见 core/equipGen.templatesAtTier):13 阶的地界只出 13 阶之物,
+   * 所以「星辰冠」永远只可能是 8 阶,看到名字就知道是哪一阶的东西。
+   * (法宝的 minTier 是另一回事:那一头仍是「从这一阶起可现世」。)
+   */
+  tier: number
   /** Phase 31.0 S5:装备套装/共鸣组(同组多件触发机制效果,非数值堆叠) */
   set?: string
 }

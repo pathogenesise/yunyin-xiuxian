@@ -49,9 +49,9 @@ export function equipFuncText(t: EquipmentTemplate): string {
   return parts.join('\n')
 }
 
-/** 装备的出处一行:部位 · 界域 · 从哪一阶起现世 */
+/** 装备的出处一行:部位 · 界域 · 哪一阶(一阶一名) */
 export function equipMetaText(t: EquipmentTemplate): string {
-  return `${EQUIP_SLOT_NAMES[t.slot]} · ${worldNameOfTier(t.minTier)} · ${t.minTier} 阶起现世`
+  return `${EQUIP_SLOT_NAMES[t.slot]} · ${worldNameOfTier(t.tier)} · ${t.tier} 阶`
 }
 
 // ============ 法宝 ============

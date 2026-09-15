@@ -38,9 +38,9 @@ const GEAR = {
   满: {
     items: [
       { uid: 'a', templateId: 'w_zidian', quality: 'heaven', tier: 14, level: 5, affixes: [{ id: 'atk4', roll: 1 }, { id: 'crit4', roll: 1 }, { id: 'dmg3', roll: 1 }, { id: 'cdmg4', roll: 1 }] },
-      { uid: 'b', templateId: 'a_hufu', quality: 'heaven', tier: 14, level: 5, affixes: [{ id: 'def4', roll: 1 }, { id: 'hp4', roll: 1 }, { id: 'red3', roll: 1 }] }
+      { uid: 'b', templateId: 'b_xingluo', quality: 'heaven', tier: 14, level: 5, affixes: [{ id: 'def4', roll: 1 }, { id: 'hp4', roll: 1 }, { id: 'red3', roll: 1 }] }
     ],
-    equipped: { weapon: 'a', armor: 'b' }
+    equipped: { weapon: 'a', body: 'b' }
   }
 } as const
 

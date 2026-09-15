@@ -18,9 +18,6 @@ export interface GenOptions {
   luck?: number
 }
 
-/** 单个槽位的候选窗:该槽位里最近的 K 件 —— 旧模不该在终局满地掉 */
-const NEAR_TEMPLATE_WINDOW = 6
-
 /** 九个可掉落槽位(法宝是另一套池子,见 artifacts) */
 const DROP_SLOTS: EquipSlot[] = [
   'weapon',
@@ -34,27 +31,45 @@ const DROP_SLOTS: EquipSlot[] = [
   'talisman'
 ]
 
-/** 某槽位在某层级下够得着的模板:minTier ≤ 层级,按由近及远取前 K 件 */
-function nearTemplates(tier: number, slot: EquipSlot) {
-  const eligible = EQUIPMENT_TEMPLATES.filter(t => t.minTier <= tier && t.slot === slot)
-  return [...eligible].sort((a, b) => b.minTier - a.minTier).slice(0, Math.min(NEAR_TEMPLATE_WINDOW, eligible.length))
+/**
+ * 某槽位在某层级下的模板 —— **按阶取,不累积**。
+ *
+ * 从前这里是「minTier ≤ 层级」的累积池再取最近的几件,于是 13 阶的地界照样掉得出
+ * 8 阶的星辰冠:同一个名字顶着不同的数字出现,名字就失去了分辨力(见 data/equipment 头注)。
+ * 现在一件只属于一阶 —— 与「一阶一名」配套,看到名字就知道是哪一阶的东西。
+ */
+function templatesAtTier(tier: number, slot: EquipSlot) {
+  return EQUIPMENT_TEMPLATES.filter(t => t.tier === tier && t.slot === slot)
+}
+
+/**
+ * 取某阶某槽的模板;该阶若一件都没有,退到最近的一阶(先往下找,再往上)。
+ *
+ * 这道兜底**不该被走到**:realmNaming.spec 钉着「每阶每部位都有本阶名目」。
+ * 留着它是为了让「哪天有人挪掉一阶的内容」表现为一次退档掉落,而不是在
+ * rng.weighted(空池) 上抛错——掉错一件东西,总好过整局卡死在结算里。
+ */
+function templatesForDrop(tier: number, slot: EquipSlot) {
+  const here = templatesAtTier(tier, slot)
+  if (here.length > 0) return here
+  const tiers = [...new Set(EQUIPMENT_TEMPLATES.filter(t => t.slot === slot).map(t => t.tier))].sort((a, b) => b - a)
+  const fallback = tiers.find(t => t < tier) ?? tiers[tiers.length - 1]
+  return fallback === undefined ? [] : templatesAtTier(fallback, slot)
 }
 
 /**
  * 某层级(可选槽位)下真正进池的装备模板。
  *
  * 抽出来独立成函数不是为了好看 —— 判据要能**直接问池子**:
- * 「这 120 件里,有没有哪件在任何层级都进不了池?」池子藏在生成器内部时,
+ * 「这 288 件里,有没有哪件在任何层级都进不了池?」池子藏在生成器内部时,
  * 这种问题只能靠反复抽样去猜,而抽样永远证明不了「掉不出来」。
  *
- * **不指定槽位时先按槽位分组**,是这里唯一一条不能省的结构:
- * 从前不分槽位、全表取「最近的 6 件」,而仙界/神界/混沌海各自恰有 9 件、
- * 表序固定 —— 于是排在中间与后面的三个槽位(项链/戒指/灵符)永远挤不进窗口,
- * 打多少场都掉不出来,图鉴里那九格谁也点不亮。(ISS-196)
+ * 不指定槽位时按槽位分组(九个槽位一视同仁),而不是把整阶的九件混作一堆 ——
+ * 混作一堆时,表里哪个槽位多写了一件,那一件就会挤掉别的槽位的出场机会。
  */
 export function equipTemplatePool(tier: number, slot?: EquipSlot) {
-  if (slot !== undefined) return nearTemplates(tier, slot)
-  return DROP_SLOTS.flatMap(s => nearTemplates(tier, s))
+  if (slot !== undefined) return templatesForDrop(tier, slot)
+  return DROP_SLOTS.flatMap(s => templatesForDrop(tier, s))
 }
 
 /** 品质随机:层级越高、气运越高,高品质权重越大 */
@@ -73,11 +88,11 @@ export function rollQuality(tier: number, rng: RandomService, opts: GenOptions =
 /** 生成一件装备实例 */
 export function generateEquipment(tier: number, rng: RandomService, opts: GenOptions = {}): EquipmentInstance {
   // 未指定槽位:九个槽位一视同仁(掉了什么槽位,不该由表的行序决定),
-  // 槽位之内再按「最近的优先」挑具体模板。
+  // 槽位之内若还有多件(同阶同槽的备用名目),按各自权重挑。
   const slot = opts.slot ?? DROP_SLOTS[Math.min(DROP_SLOTS.length - 1, rng.int(0, DROP_SLOTS.length - 1))]!
   const eligible = equipTemplatePool(tier, slot)
-  // 优先掉落接近当前层级的模板
-  const template = rng.weighted(eligible, t => 1 + t.minTier)
+  // 同阶同槽通常只有一件;万一有多件,按旗鼓相当的权重挑
+  const template = rng.weighted(eligible, () => 1)
 
   const quality = rollQuality(tier, rng, opts)
   const [minA, maxA] = quality.affixes

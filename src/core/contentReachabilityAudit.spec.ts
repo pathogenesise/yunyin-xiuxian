@@ -192,7 +192,7 @@ describe('内容可达性 · 法宝与装备模板', () => {
 
   it('每一件装备模板都有可达的掉落层级', () => {
     for (const t of EQUIPMENT_TEMPLATES) {
-      expect(t.minTier, `装备「${t.name}」minTier=${t.minTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
+      expect(t.tier, `装备「${t.name}」tier=${t.tier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
         MAX_REGION_TIER
       )
     }

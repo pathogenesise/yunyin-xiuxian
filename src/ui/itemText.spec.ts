@@ -41,8 +41,8 @@ describe('用具 · 装备/法宝/功法三类的功用行', () => {
       expect(func, `${t.name} 的功用行是空的`).not.toBe('')
       expect(func).toContain('所主:')
       const meta = equipMetaText(t)
-      expect(meta).toContain(worldNameOfTier(t.minTier))
-      expect(meta).toContain(`${t.minTier} 阶`)
+      expect(meta).toContain(worldNameOfTier(t.tier))
+      expect(meta).toContain(`${t.tier} 阶`)
       if (t.set) expect(func, `${t.name} 属于共鸣,功用行里却没写`).toContain('共鸣')
       if (t.fixedMods && Object.keys(t.fixedMods).length) {
         expect(func, `${t.name} 的固有机制没写进功用行`).toContain('固有:')
