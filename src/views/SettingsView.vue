@@ -11,7 +11,7 @@
         </label>
         <div v-if="settings.musicOn" class="mt-2 flex items-center gap-2">
           <span class="text-[10px] text-ink-ghost">轻</span>
-          <input v-model.number="settings.musicVol" type="range" min="0" max="100" class="grow accent-cinnabar" />
+          <input v-model.number="settings.musicVol" type="range" min="0" max="100" aria-label="背景音乐音量" class="grow accent-cinnabar" />
           <span class="w-7 text-right text-[10px] tabular text-ink-faint">{{ settings.musicVol }}</span>
         </div>
       </div>
@@ -22,7 +22,7 @@
         </label>
         <div v-if="settings.sfxOn" class="mt-2 flex items-center gap-2">
           <span class="text-[10px] text-ink-ghost">轻</span>
-          <input v-model.number="settings.sfxVol" type="range" min="0" max="100" class="grow accent-cinnabar" />
+          <input v-model.number="settings.sfxVol" type="range" min="0" max="100" aria-label="音效音量" class="grow accent-cinnabar" />
           <span class="w-7 text-right text-[10px] tabular text-ink-faint">{{ settings.sfxVol }}</span>
         </div>
       </div>
@@ -32,7 +32,7 @@
       </label>
       <div class="flex items-center justify-between py-3">
         <span class="text-[13px] text-ink-soft">夜间模式</span>
-        <div class="flex gap-1">
+        <div role="group" aria-label="夜间模式" class="flex gap-1">
           <button
             v-for="o in THEME_OPTIONS"
             :key="o.id"
@@ -47,7 +47,7 @@
       </div>
       <div class="flex items-center justify-between py-3">
         <span class="text-[13px] text-ink-soft">战报速度</span>
-        <div class="flex gap-1">
+        <div role="group" aria-label="战报速度" class="flex gap-1">
           <button
             v-for="s in [1, 2, 4] as const"
             :key="s"
