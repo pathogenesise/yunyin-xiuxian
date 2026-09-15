@@ -1,0 +1,11 @@
+{
+  "source": "霞鹜文楷 LXGW WenKai",
+  "version": "v1.522",
+  "url": "https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Regular.ttf",
+  "master_sha256": "39ad71264b588165b469e35e6afb162a378dacd1f95348160240ba9038ac3009",
+  "license": "SIL OFL 1.1 —— 全文见 public/fonts/OFL.txt",
+  "subset_chars": 6957,
+  "subset_sha256": "befb739725b57ad5ffd399c8215c9361f58957d0654a7b468e9e4b8b75bf513d",
+  "subset_bytes": 1553652,
+  "generated_by": "scripts/fonts/build-kai-font.py"
+}

@@ -417,6 +417,31 @@ html[data-theme='dark'] {
 }
 
 /*
+ * 楷体 —— 随包分发的一份子集(霞鹜文楷 LXGW WenKai,SIL OFL 1.1)
+ *
+ * 为什么需要它:iOS 有 Kaiti SC、Windows 有 KaiTi,**安卓一个楷体都没有**。而这套
+ * 水墨味的标题、境界名、名号全压在 font-kai 上 —— APK 是主力渠道,不能在那儿落成衬线。
+ *
+ * 为什么这样挂:字体栈(kai)是 Kaiti SC → STKaiti → KaiTi → LXGW WenKai → 衬线,
+ * 而这里的 family 名正叫 LXGW WenKai。于是 iOS / Windows 在前三档就命中系统楷体,
+ * **一个字都不下载**;安卓一路落空,才来取这份子集。装了霞鹜文楷的人由 local() 命中,
+ * 同样不下载。子集外的生僻字按字符回退到栈里后面的字体,不会变成豆腐块。
+ *
+ * 1.5MB 的来历与重做方式见 scripts/fonts/build-kai-font.py(24.4MB 的母体不入库,
+ * 只入库子集);协议全文在 public/fonts/OFL.txt —— OFL 要求再分发时带着它,别删。
+ *
+ * font-display: swap —— 先用回退字体把字显示出来,楷体到了再换,不白屏。
+ */
+@font-face {
+  font-family: 'LXGW WenKai';
+  src:
+    local('LXGW WenKai'),
+    local('LXGW WenKai Regular'),
+    url('./assets/fonts/lxgw-wenkai-subset.woff2') format('woff2');
+  font-display: swap;
+}
+
+/*
  * 大屏:把窄栏收成一「册」
  *
  * 桌面与平板上,430px 的栏直接顶到屏幕上下边缘、两侧不描线,看着像一条没做完的
