@@ -53,6 +53,8 @@
  *   二十九 不是手机竖屏的两档:横屏 844×390 与桌面 1280×800 也各巡一遍全量路由 ——
  *      自适应断点(高度 short:、大屏的册页留白)就在这两档上现形。
  *   三十 顶栏不许折行:数字断行看着像乱码,顶栏还会从 46px 涨到 58px(320 宽复发过)。
+ *   三十一 iOS 存档风险提示:该出现的平台出现(且关掉就真不再出现),不该出现的平台
+ *      一个字都不说 —— 桌面/安卓用应用自己的存储,在那儿喊「iOS 会清掉存档」是胡说。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -2411,6 +2413,103 @@ for (const vp of VIEWPORTS) {
   await ctx.close()
 }
 
+// ---- 第三十一件事:iOS 的存档风险提示,该说的说、不该说的一个字不说 ----
+/*
+ * 由来:WebKit 会把**七天没被打开过**的站点的脚本可写存储整个清掉 —— localStorage 里
+ * 那份存档与 Service Worker 缓存一起没。而这是个放置游戏,「隔几天回来」正是常态。
+ * 唯一真管用的办法是让游戏成为已安装的 Web App(添加到主屏幕),故 iOS 未安装时提示一次。
+ *
+ * 判据两头都要钉,因为**说错话的代价**比不说更大:
+ *   一 iOS 未安装:主页要出现,且「知道了」之后重载不再出现(写盘真落了),设置页常驻一份可回查
+ *   二 iOS 已装到主屏幕:不再劝(它已经不吃那条规则了)
+ *   三 桌面/安卓:一个字都不许说 —— 它们用应用自己的存储,在那儿喊「iOS 会清存档」是胡说
+ */
+{
+  const UA_IOS =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+  const UA_DESKTOP =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const save = Object.fromEntries(
+    Object.entries({
+      game: { started: true, saveVersion: 2, createdAt: Date.now() - 40 * 86400000, lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+      player: { name: 'iOS 自检', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+      resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 10, herb: 5, ore: 5, page: 2, dust: 2 },
+      inventory: { items: [], equipped: {}, pills: {}, artifacts: [], equippedArtifacts: [] },
+      endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+      settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+    }).map(([k, v]) => [`yunyin.${k}`, enc(v)])
+  )
+  const openWith = async (userAgent, standalone = false) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent })
+    await ctx.addInitScript(([data, sa]) => {
+      if (!localStorage.getItem('__layoutSeeded')) {
+        for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+        localStorage.setItem('__layoutSeeded', '1')
+      }
+      if (sa) Object.defineProperty(navigator, 'standalone', { get: () => true })
+    }, [save, standalone])
+    const page = await ctx.newPage()
+    return { ctx, page }
+  }
+  /** 提示卡的标题就是它唯一的文案锚点 */
+  const cardCount = page => page.locator('text=把游戏「添加到主屏幕」').count()
+
+  {
+    const { ctx, page } = await openWith(UA_IOS)
+    await page.goto(INDEX, { waitUntil: 'load' })
+    await page.waitForTimeout(1500)
+    checked += 1
+    const onHome = await cardCount(page)
+    if (onHome === 0) failures.push('[iOS] 未安装时主页没有出现「添加到主屏幕」提示 —— 七天不打开就会被清档,而玩家不会知道')
+    const dismiss = page.locator('button', { hasText: '知道了' }).first()
+    if ((await dismiss.count()) === 0) failures.push('[iOS] 提示卡没有「知道了」—— 劝一次就得能关掉,不能变成常驻横幅')
+    else {
+      await dismiss.click()
+      await page.waitForTimeout(200)
+    }
+    if ((await cardCount(page)) !== 0) failures.push('[iOS] 点了「知道了」之后提示还在')
+    await page.reload({ waitUntil: 'load' })
+    await page.waitForTimeout(1500)
+    if ((await cardCount(page)) !== 0) failures.push('[iOS] 关掉之后重载又冒出来了(关掉这个动作没落盘)')
+    await page.goto(INDEX + '#/settings', { waitUntil: 'load' })
+    await page.waitForTimeout(700)
+    if ((await cardCount(page)) !== 1) failures.push('[iOS] 设置页没有常驻那一份 —— 玩家回头想装时找不到那两步')
+    const backup = await page.evaluate(() => {
+      const el = [...document.querySelectorAll('p')].find(p => (p.textContent || '').includes('上次导出备份'))
+      return (el?.innerText || '').replace(/\s+/g, ' ')
+    })
+    if (!/上次导出备份/.test(backup)) failures.push('[iOS] 设置页没有「上次导出备份」那一行')
+    else if (!/从未导出|天前|今天/.test(backup)) failures.push(`[iOS] 备份那一行读不出时间:「${backup}」`)
+    console.log(`\niOS 存档提示:主页出现一次并可关闭、关掉后重载不再出现、设置页常驻 · 备份行「${backup.slice(0, 28)}…」`)
+    await ctx.close()
+  }
+  {
+    const { ctx, page } = await openWith(UA_IOS, true)
+    await page.goto(INDEX, { waitUntil: 'load' })
+    await page.waitForTimeout(1500)
+    checked += 1
+    if ((await cardCount(page)) !== 0) failures.push('[iOS] 已经是主屏幕应用了还在劝安装 —— 它早就不吃那条清存储规则')
+    await ctx.close()
+  }
+  {
+    const { ctx, page } = await openWith(UA_DESKTOP)
+    await page.goto(INDEX, { waitUntil: 'load' })
+    await page.waitForTimeout(1500)
+    const onHome = await cardCount(page)
+    await page.goto(INDEX + '#/settings', { waitUntil: 'load' })
+    await page.waitForTimeout(700)
+    const onSettings = await cardCount(page)
+    checked += 1
+    if (onHome + onSettings !== 0) {
+      failures.push('[桌面] 非 iOS 上出现了「iOS 会清掉存档」的提示 —— 那是胡说,玩家会当成游戏出错')
+    }
+    await ctx.close()
+  }
+}
+
 await browser.close()
 
 // ---- 第二十七件事:外壳高度认 dvh,不认 vh ----
@@ -2444,6 +2543,7 @@ if (failures.length === 0) {
   console.log('✓ 顶栏底栏钉死(文档层没有可滚余量,滚窗两栏不动),外壳高度认 dvh')
   console.log('✓ 五处页签栏吸顶(背包四册 / 图鉴 / 名号 / 界域志 / 天界),且铺满内容区宽度')
   console.log('✓ 顶栏一格一行(320 窄屏与横屏、桌面都不折行)')
+  console.log('✓ iOS 存档风险提示只在该出现的平台出现,关一次就不再唠叨')
   console.log('✓ 提示条点得掉、弹窗焦点与外壳偏移正常、引擎事件弹窗也过同一套尺子')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {

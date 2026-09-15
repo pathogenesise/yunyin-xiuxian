@@ -1,5 +1,11 @@
 <template>
   <div class="stagger-in space-y-4 px-4 pb-6 pt-4">
+    <!--
+      iOS 上「加进主屏幕」这件事得主动说一次:不说,玩家不会知道七天不打开就会丢档。
+      只在 iOS 且未安装时出现,「知道了」之后永不再露(设置页里还留着一份常驻的,随时可查)。
+    -->
+    <InstallToHomeNotice />
+
     <!-- 人物水墨主视觉 -->
     <div class="card-ink relative overflow-hidden px-4 pb-4 pt-5">
       <!-- 远山 -->
@@ -138,6 +144,7 @@
   import VeinInvestCard from '@/components/dongfu/VeinInvestCard.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import CultivationOrb from '@/components/common/CultivationOrb.vue'
+  import InstallToHomeNotice from '@/components/common/InstallToHomeNotice.vue'
 
   const player = usePlayerStore()
   /** 灵脉投资弹窗 —— 卡片自洞府页移来,紧随洞府营造 */

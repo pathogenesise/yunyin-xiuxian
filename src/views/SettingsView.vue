@@ -66,6 +66,16 @@
     <SectionTitle title="存档" />
     <div class="card-ink space-y-2 px-4 py-3">
       <p class="text-[11px] text-ink-faint tabular">存档版本 v{{ SAVE_VERSION }} · 修行时长 {{ formatDuration(game.totalPlaySec) }}</p>
+      <!--
+        备份这件事没人提醒就不会做,而它恰恰是丢档前唯一的保险 —— 故常驻一行;
+        备份旧了、这一档又确实攒了东西时,才把那句「建议导出一份」说出来(见 core/saveBackup.ts)。
+      -->
+      <p class="text-[11px] tabular" :class="backupPrompt ? 'text-amber-ink' : 'text-ink-faint'">
+        上次导出备份:{{ lastExportText }}
+        <span v-if="backupPrompt" class="leading-relaxed">
+          · 建议导出一份 —— 安卓清应用数据、iOS 七天不打开都会把进度带走
+        </span>
+      </p>
       <!-- 写盘失败时这里必须说话:玩家可能正玩得兴起,却不知道进度没进档 -->
       <p v-if="saveFailed" class="rounded-md border border-cinnabar/40 bg-cinnabar/8 px-2 py-1.5 text-[11px] leading-relaxed text-cinnabar">
         上次写入存档失败 —— 浏览器存储可能已满。请先「导出存档」留一份,再清理浏览器数据或换设备导入。
@@ -94,6 +104,9 @@
         散尽修为,重入轮回(清空存档)
       </button>
     </div>
+
+    <!-- iOS 专属:装到主屏幕才躲得过系统清存储(非 iOS 不显示,见组件注释) -->
+    <InstallToHomeNotice permanent />
 
     <!-- 关于 -->
     <SectionTitle title="关于" />
@@ -146,6 +159,7 @@
   import { engine } from '@/core/engine'
   import { importSaveText, resetGame, reloadGame, sealStorageWrites } from '@/core/save'
   import { exportSaveToDevice } from '@/core/savePlatform'
+  import { formatLastExport, shouldPromptBackup } from '@/core/saveBackup'
   import { formatDuration } from '@/utils/format'
   import { SAVE_VERSION, STORE_NAMES, saveWriteFailure, storageKey, subscribeSaveWriteFailure } from '@/utils/storage'
   import SectionTitle from '@/components/common/SectionTitle.vue'
@@ -153,6 +167,7 @@
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
   import AboutDialog from '@/components/common/AboutDialog.vue'
   import ProgressionDialog from '@/components/common/ProgressionDialog.vue'
+  import InstallToHomeNotice from '@/components/common/InstallToHomeNotice.vue'
 
   const settings = useSettingsStore()
   const game = useGameStore()
@@ -168,6 +183,15 @@
     saveFailed.value = failure !== null
   })
 
+  /**
+   * 备份那一行用的「现在」。进页面取一次即可 —— 这一页不是秒表,而每渲染一次就算一次
+   * Date.now() 反而会让 computed 不稳定。跨天挂着不动属于可接受的误差(重进页面即刷新)。
+   */
+  const now = ref(Date.now())
+  const lastExportText = computed(() => formatLastExport(settings.lastExportAt, now.value))
+  /** 该不该说出「建议导出一份」(备份旧了 + 这一档攒够了天数,见 core/saveBackup.ts) */
+  const backupPrompt = computed(() => shouldPromptBackup(settings.lastExportAt, game.createdAt, now.value))
+
   const THEME_OPTIONS = [
     { id: 'auto', label: '跟随系统' },
     { id: 'light', label: '日间' },
@@ -182,8 +206,14 @@
 
   /** 导出存档:Web/Electron 走浏览器下载,原生端写 Documents(见 savePlatform) */
   function onExport(): void {
-    // 两个平台各自会 toast 结果;这里再兜一层,免得异常冒成未捕获的 Promise
-    void exportSaveToDevice().catch(() => ui.toast('导出没能完成,请稍后再试', 'warn'))
+    // 两个平台各自会 toast 结果;这里再兜一层,免得异常冒成未捕获的 Promise。
+    // 只有真的落盘了才记账(返回 null 即成功)—— 没导出成功却把时间戳往前推,
+    // 等于用一行「今天」把玩家骗过去,那比不提醒更糟。
+    void exportSaveToDevice()
+      .then(err => {
+        if (!err) settings.lastExportAt = Date.now()
+      })
+      .catch(() => ui.toast('导出没能完成,请稍后再试', 'warn'))
   }
 
   // ---- 重置流程:弹窗期间暂停心跳,取消则恢复 ----
