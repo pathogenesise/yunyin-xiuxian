@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 195,
+  "round": 196,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T15:01:20+00:00",
+  "updated_at": "2026-09-15T15:25:04+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 194,
+      "touched_round": 196,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -11457,6 +11457,56 @@
       "touched_round": 195,
       "commit": "51cb15e",
       "summary": "词条展示序改按稀有度+成色并上色写名目(sortAffixLines/AFFIX_RARITY_META);artifactNextLevelGain 给出下一重逐项增益(含封顶标记),背包法宝卡片新增「下一重」一行"
+    },
+    "ISS-199": {
+      "id": "ISS-199",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T15:24:48+00:00",
+      "updated_at": "2026-09-15T15:25:04+00:00",
+      "touched_round": 196,
+      "severity": 0.3,
+      "confidence": 0.9,
+      "summary": "丹药与灵兽的「功用」在界面上缺席:丹药卡片只有风味与数量,服下去会怎样一个字都没说(instant/buff 的数值一直在数据里);炼丹清单只报代价与把握,不报成品;灵兽的性格只有一句定性话(「更容易发现稀有之物」),而 core/petPersonality 里那四个数(历练时长/遇险/掉落气运/战败率)从没露过面 —— 换不换这只伙伴算不出账。图鉴一侧:装备/法宝/丹方三类只有「收没收录」两态,可它们的深度本来就存在别处(装备见过的成色无人记、法宝祭炼重数在背包里、丹方掌握度在 lore 里)"
+    },
+    "TASK-181": {
+      "id": "TASK-181",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T15:24:48+00:00",
+      "updated_at": "2026-09-15T15:25:04+00:00",
+      "touched_round": 196,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 4,
+      "unlock_factor": 1.2,
+      "summary": "①用具文案收成 ui/itemText(装备/法宝/功法/丹药/灵兽的功用与出处),丹药详情+炼丹清单+灵兽栏都读它;②丹药写「服之」逐项(修为/灵气/寿元/悟道点或增益数值与时长)与来路(有方/无方),并显示丹方熟练度;③灵兽性子给出四个数(零值不列);④图鉴用具三类按已有状态分层:装备看 lore.equipLore(见过的最好一件:品质+层级,新记,埋点在 acquireEquipment 唯一漏斗,化尘的也算见过)、法宝看祭炼重数、丹方看 recipeLore;各自给「还差什么」与枚顶标记;⑤codex 收 equipCodex/artifactCodex/pillCodex 三个派生视图,收录时刻口径收成 collectedTimeText"
+    },
+    "EV-175": {
+      "id": "EV-175",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T15:24:58+00:00",
+      "updated_at": "2026-09-15T15:24:58+00:00",
+      "touched_round": 196,
+      "confidence": 0.95,
+      "source": "src/ui/itemText.spec.ts(12 条)+ src/ui/codex.spec.ts(深度梯子 7 条)+ src/core/loot.spec.ts(见闻 3 条)+ src/core/storeResilience.spec.ts(坏条目 1 条)",
+      "summary": "实测口径:丹药 50 味逐条写出「服之」与来路且与 instant/buff 本体一致;灵兽 12 只的性子数与 personalityEffects 对上(零值不列);装备深度按见闻分档(精品/天品各一档),化尘那件也记入见闻(故障注入:把 noteEquipSeen 挪到入包之后,该用例即红);法宝深度按祭炼重数、丹方按 recipeLore,无方之丹停在「已录」并说明缘由"
+    },
+    "CHG-229": {
+      "id": "CHG-229",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T15:24:58+00:00",
+      "updated_at": "2026-09-15T15:24:58+00:00",
+      "touched_round": 196,
+      "commit": "37beebf",
+      "summary": "ui/itemText 收五类用具文案;丹药/炼丹清单/灵兽栏改用之;lore.equipLore + noteEquipSeen(挂 acquireEquipment)+ sanitize;codex 三张深度视图与 collectedTimeText;1631 条测试绿 + 排版自检 162 组合绿"
     }
   },
   "edges": [
@@ -17040,6 +17090,30 @@
       "to": "TASK-180",
       "type": "implements",
       "created_at": "2026-09-15T15:01:20+00:00"
+    },
+    {
+      "from": "TASK-181",
+      "to": "ISS-199",
+      "type": "addresses",
+      "created_at": "2026-09-15T15:24:48+00:00"
+    },
+    {
+      "from": "ISS-199",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-15T15:24:48+00:00"
+    },
+    {
+      "from": "CHG-229",
+      "to": "ISS-199",
+      "type": "resolves",
+      "created_at": "2026-09-15T15:24:58+00:00"
+    },
+    {
+      "from": "CHG-229",
+      "to": "TASK-181",
+      "type": "implements",
+      "created_at": "2026-09-15T15:24:58+00:00"
     }
   ]
 }
