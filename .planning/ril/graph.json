@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 181,
+  "round": 182,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T06:46:09+00:00",
+  "updated_at": "2026-09-15T07:26:15+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 179,
+      "touched_round": 182,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -8772,7 +8772,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 181,
+      "touched_round": 182,
       "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
     },
     "EV-142": {
@@ -10433,6 +10433,73 @@
       "touched_round": 181,
       "commit": "0936f4e64cb2",
       "summary": "楷体三端统一(内置排字体栈首位,系统楷体留作兜底;字体栈事实源收归 style.css 一处)+ 两条判据(产物次序、运行时真由内置字体渲染);顺带修掉战斗回放判据的假红(改数回放行本身)"
+    },
+    "ISS-179": {
+      "id": "ISS-179",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T07:25:36+00:00",
+      "updated_at": "2026-09-15T07:26:15+00:00",
+      "touched_round": 182,
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "楷体用的是日式字形:原版霞鹜文楷源自日本 Klee One,「这 边 过 运 巡 遍 遥 道」的辶旁是日式两点辶,「令 骨 直 真」也不合大陆规范 —— 对简体玩家这是对错而非审美;上游有 GB 版(按 G 源改字形)同版本可用"
+    },
+    "ISS-180": {
+      "id": "ISS-180",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T07:25:36+00:00",
+      "updated_at": "2026-09-15T07:26:15+00:00",
+      "touched_round": 182,
+      "severity": 0.2,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "字体覆盖判据有洞:kai-subset.chars.txt 记的是「要求包含的字」(6957)而不是产物真实 cmap(6951)—— 母体里没有的字符 pyftsubset 直接跳过,字表照抄请求集,于是判据成了空头支票(换母体时差点悄悄丢字:✕ 在老母体里有、新母体没有)"
+    },
+    "TASK-164": {
+      "id": "TASK-164",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T07:25:36+00:00",
+      "updated_at": "2026-09-15T07:26:15+00:00",
+      "touched_round": 182,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "楷体母体换成「霞鹜文楷 GB 屏幕阅读版」:国标字形 + 屏幕阅读优化;覆盖判据改成读产物真实 cmap 并给「交给系统字体」的符号留显式名单;local() 收紧到本支(否则装了原版的人会被换成日式字形)"
+    },
+    "DEC-037": {
+      "id": "DEC-037",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T07:25:36+00:00",
+      "updated_at": "2026-09-15T07:25:36+00:00",
+      "touched_round": 182,
+      "summary": "楷体取「GB 屏幕阅读版」这一支;暂不引入 cn-font-split 分包;local() 只认本支",
+      "rationale": "同一份母体同时解决两件事:GB 按 G 源改字形(日式辶旁对简体玩家是错字感),屏幕阅读版把笔画调实(本项目 UI 大量 10~13px,小字可读性优先)。两处都在同屏对比里量过:游戏用字覆盖不减(仅 5 个装饰符号由系统字体画),体积 1517→1783KB(+266KB,笔画更实、轮廓数据更多)。分包(四个官方 web 仓库的做法)能让浏览器只下当前屏幕要用的块,但 APK 要打包全部 251 块(13.3MB);故只在 web 侧另做,现在不做。local() 收紧:写成 local(LXGW WenKai) 会把装了原版的人悄悄换成日式字形,正好破坏刚统一好的字形",
+      "alternatives_rejected": [
+        "继续用原版霞鹜文楷 Regular:笔画细、小字吃力,且带日式字形",
+        "用 LXGW WenKai Screen(屏幕版但不含国标字形):解决了字重,没解决字形",
+        "现在就上 cn-font-split 分包:web 首屏能省,但 APK 从 1.5MB 涨到 13MB,还要引入原生工具依赖与两套构建"
+      ]
+    },
+    "CHG-214": {
+      "id": "CHG-214",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T07:26:14+00:00",
+      "updated_at": "2026-09-15T07:26:14+00:00",
+      "touched_round": 182,
+      "commit": "cd402a1bd4e3",
+      "summary": "楷体母体换成 LXGWWenKaiGBScreen(国标字形+屏幕阅读优化),体积 1517→1783KB;覆盖判据改成读产物真实 cmap + 交给系统字体的符号名单;扫描跳过 *.spec.ts 里的正则区间端点;local() 收紧到本支"
     }
   },
   "edges": [
@@ -15422,6 +15489,54 @@
       "to": "ISS-178",
       "type": "resolves",
       "created_at": "2026-09-15T06:46:09+00:00"
+    },
+    {
+      "from": "ISS-179",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-15T07:25:37+00:00"
+    },
+    {
+      "from": "ISS-180",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-15T07:25:37+00:00"
+    },
+    {
+      "from": "TASK-164",
+      "to": "ISS-179",
+      "type": "addresses",
+      "created_at": "2026-09-15T07:25:37+00:00"
+    },
+    {
+      "from": "TASK-164",
+      "to": "ISS-180",
+      "type": "addresses",
+      "created_at": "2026-09-15T07:25:37+00:00"
+    },
+    {
+      "from": "DEC-037",
+      "to": "TASK-164",
+      "type": "governs",
+      "created_at": "2026-09-15T07:25:37+00:00"
+    },
+    {
+      "from": "CHG-214",
+      "to": "TASK-164",
+      "type": "implements",
+      "created_at": "2026-09-15T07:26:14+00:00"
+    },
+    {
+      "from": "CHG-214",
+      "to": "ISS-179",
+      "type": "resolves",
+      "created_at": "2026-09-15T07:26:15+00:00"
+    },
+    {
+      "from": "CHG-214",
+      "to": "ISS-180",
+      "type": "resolves",
+      "created_at": "2026-09-15T07:26:15+00:00"
     }
   ]
 }
