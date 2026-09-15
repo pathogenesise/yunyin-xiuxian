@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 177,
+  "round": 178,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T04:25:02+00:00",
+  "updated_at": "2026-09-15T05:37:04+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -431,12 +431,12 @@
     "ISS-016": {
       "id": "ISS-016",
       "type": "issue",
-      "status": "abandoned",
-      "version": 2,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-09T14:59:19+00:00",
-      "updated_at": "2026-09-09T17:53:32+00:00",
-      "touched_round": 7,
-      "summary": "突破准备功能全链路死代码——prepareBreakthrough/getBreakthroughPrepBonus/BREAKTHROUGH_PREP_OPTIONS 全仓库零调用,界面无入口,突破成功率加成永不生效;且免费'静坐'+8% 反高于付费'服丹'+5%",
+      "updated_at": "2026-09-15T05:36:50+00:00",
+      "touched_round": 178,
+      "summary": "突破准备功能全链路死代码(prepareBreakthrough/BREAKTHROUGH_PREP_OPTIONS 零调用、界面无入口、准备加成永不生效)—— 与 ISS-023 是同一个问题,已由 CHG-027(突破准备接线:breakthroughPrepState/consumeBreakthroughPrep 重构、rate 并入就绪加成)修复:现在 CultivationView 有入口,加成在 core/breakthrough.ts 真接进成功率结算",
       "severity": 0.5,
       "confidence": 0.9,
       "effort": 3
@@ -455,11 +455,11 @@
       "id": "ISS-017",
       "type": "issue",
       "status": "abandoned",
-      "version": 2,
+      "version": 3,
       "created_at": "2026-09-09T15:00:00+00:00",
-      "updated_at": "2026-09-09T17:08:25+00:00",
-      "touched_round": 7,
-      "summary": "战斗先手判定单位不匹配:玩家侧 speed 是加成倍率(1+mod,装备仅 +3~6%),敌人侧是裸速度值(0.85~1.25)——先手实际只由敌人速度决定,玩家速度装备几乎无意义",
+      "updated_at": "2026-09-15T05:37:04+00:00",
+      "touched_round": 178,
+      "summary": "先手判定:玩家侧 1+speed 加成 vs 敌人裸速度 —— 「先手实际只由敌人速度决定、玩家速度装备几乎无意义」这一前提已被实测证伪:132 只敌人速度 0.65~1.45,先手覆盖 无加成 40/132、+6% 49、+12% 64、+20% 95,speed 是有效的阈值属性。仍成立的部分(口径与文案不符)另立 ISS-173",
       "severity": 0.55,
       "confidence": 0.7,
       "effort": 3
@@ -1262,7 +1262,7 @@
       "version": 1,
       "created_at": "2026-09-10T15:36:10+00:00",
       "updated_at": "2026-09-10T15:36:10+00:00",
-      "touched_round": 13,
+      "touched_round": 178,
       "commit": "5d23f49",
       "summary": "突破准备接线:breakthroughPrepState/consumeBreakthroughPrep 重构、rate 并入就绪加成、尝试时消费、CultivationView 新增准备UI(仅无劫);硬化 gnum.cmp 未归一化比较"
     },
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 165,
+      "touched_round": 178,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -6476,7 +6476,7 @@
       "version": 2,
       "created_at": "2026-09-12T04:35:19+00:00",
       "updated_at": "2026-09-12T05:26:30+00:00",
-      "touched_round": 154,
+      "touched_round": 178,
       "summary": "界面外壳与底部导航(App.vue 外壳 + TopStatusBar + BottomNavigation + 全局浮层 ToastHost + scripts/layout-check.mjs):承载所有页面的固定骨架,也是「真机排版」的观测面"
     },
     "ISS-099": {
@@ -10168,6 +10168,57 @@
       "touched_round": 176,
       "commit": "fefb54e2b145",
       "summary": "README 多端安装节补 PWA 离线说明:首访后断网可重开,发版即时生效不卡旧版本"
+    },
+    "ISS-172": {
+      "id": "ISS-172",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T05:26:39+00:00",
+      "updated_at": "2026-09-15T05:36:50+00:00",
+      "touched_round": 178,
+      "summary": "统计脚本(51.la SDK)是阻塞式 script:它加载多久,首屏就晚多久(实测脚本卡 1200ms → 界面 1294ms 才出现);且离线/被广告拦截时,紧随其后的内联 LA.init 抛未捕获 ReferenceError(LA is not defined)—— SW 离线缓存落地后,每次离线冷启动都抛一次",
+      "severity": 0.6,
+      "confidence": 1.0,
+      "effort": 1
+    },
+    "TASK-159": {
+      "id": "TASK-159",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T05:26:39+00:00",
+      "updated_at": "2026-09-15T05:36:50+00:00",
+      "touched_round": 178,
+      "category": "stability",
+      "summary": "统计脚本改 defer + LA 空值保护:不再阻塞首屏,离线冷启动不再抛未捕获错误",
+      "severity": 0.6,
+      "confidence": 1.0,
+      "effort": 1
+    },
+    "CHG-209": {
+      "id": "CHG-209",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T05:36:46+00:00",
+      "updated_at": "2026-09-15T05:36:46+00:00",
+      "touched_round": 178,
+      "commit": "09b6faae2688",
+      "summary": "统计脚本改 defer + LA 空值保护:首屏不再被统计脚本阻塞(卡 1200ms 时界面 95ms 出现,改前 1294ms),离线冷启动不再抛未捕获 ReferenceError"
+    },
+    "ISS-173": {
+      "id": "ISS-173",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T05:37:04+00:00",
+      "updated_at": "2026-09-15T05:37:04+00:00",
+      "touched_round": 178,
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "speed 词条的口径与承诺不符:文案「出手速度提升 N%」读作连续收益,机制上却是阈值开关(先手判定取 1+speed mod >= 敌人速度,见 core/combat.ts:440)—— 低阶「迅捷 +3~6%」几乎不翻盘(实测 132 只敌人:无加成 40/132,+3% 仍是 40,+6% 才 49),跨过某个敌人的速度档才有意义。要么把文案改成「抢先手」这类阈值说法,要么给低阶档更细的粒度"
     }
   },
   "edges": [
@@ -14989,6 +15040,42 @@
       "to": "TASK-156",
       "type": "implements",
       "created_at": "2026-09-15T04:25:02+00:00"
+    },
+    {
+      "from": "TASK-159",
+      "to": "ISS-172",
+      "type": "addresses",
+      "created_at": "2026-09-15T05:26:42+00:00"
+    },
+    {
+      "from": "ISS-172",
+      "to": "COMP-015",
+      "type": "located_in",
+      "created_at": "2026-09-15T05:26:42+00:00"
+    },
+    {
+      "from": "CHG-209",
+      "to": "TASK-159",
+      "type": "implements",
+      "created_at": "2026-09-15T05:36:46+00:00"
+    },
+    {
+      "from": "CHG-209",
+      "to": "ISS-172",
+      "type": "resolves",
+      "created_at": "2026-09-15T05:36:46+00:00"
+    },
+    {
+      "from": "CHG-027",
+      "to": "ISS-016",
+      "type": "resolves",
+      "created_at": "2026-09-15T05:36:50+00:00"
+    },
+    {
+      "from": "ISS-173",
+      "to": "COMP-013",
+      "type": "located_in",
+      "created_at": "2026-09-15T05:37:04+00:00"
     }
   ]
 }
