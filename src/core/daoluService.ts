@@ -498,6 +498,15 @@ export function speakIntent(): BondIntent | null {
   const b = player.bond
   const def = currentDaolu()
   if (!b || !def || !b.intent) return null
+  /**
+   * 她已经在等你回应了 —— 不重复开口。
+   *
+   * 少了这一问的后果实测过:willSpeak 只看酝酿度,而 speakIntent 由
+   * maybeEncounter 在**每一场战斗**里调用(历练战斗间隔 12 秒),于是酝酿度一旦过线,
+   * 同一句话会每十几秒 toast 一次、「已开口」次数一路涨到几十 —— 玩家体感是
+   * 「这句话触发概率怎么这么高」,其实是一次都没被回应。
+   */
+  if (b.intentPending) return null
   if (!willSpeak(b.intent, def.temper)) return null
   const next: BondIntent = { ...b.intent, raised: b.intent.raised + 1 }
   player.setBond({ ...b, intent: next, intentPending: true })

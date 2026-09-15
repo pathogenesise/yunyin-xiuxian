@@ -316,6 +316,26 @@ describe('主动意图 · 边界', () => {
     expect(respondIntent('accept')).toBeNull()
   })
 
+  /**
+   * 她还在等你回应时,不重复开口。
+   *
+   * speakIntent 由 maybeEncounter 在**每一场战斗**里调用(历练战斗间隔 12 秒),
+   * 而 willSpeak 只看酝酿度 —— 少了这一问,酝酿度一旦过线,同一句话会每十几秒
+   * 弹一次、「已开口」次数一路涨(实测连调四次:raised 1→4,pending 一直 true)。
+   * 玩家的体感是「这句话触发概率怎么这么高」,其实是一次都没被回应。
+   */
+  it('她还在等回应时,不会重复开口(同一提议只弹一次)', () => {
+    together()
+    expect(sparkUntilSpeaks('omen')).toBeGreaterThan(0)
+    const first = currentBond()!.intent!
+    expect(pendingIntent(), '开口之后应当在等她回应').not.toBeNull()
+
+    // 模拟历练里一场又一场战斗继续问她
+    for (let i = 0; i < 5; i += 1) expect(speakIntent()).toBeNull()
+    expect(currentBond()!.intent!.raised, '重复询问不该再涨「已开口」次数').toBe(first.raised)
+    expect(currentBond()!.intent!.wish).toBe(first.wish)
+  })
+
   it('她离开或陨落后不再有意图', () => {
     together()
     const b = currentBond()!
