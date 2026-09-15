@@ -2661,6 +2661,15 @@ for (const vp of VIEWPORTS) {
     return readFormatted(page, '灵石')
   }
   checked += 1
+  /**
+   * 先把「可能还在排队的写盘」等掉,再投入。
+   *
+   * 存档是节流的(SAVE_FLUSH_MS = 5 秒):只要此前任何一次状态变更还在窗口里,
+   * 这一笔投入就会搭着那次定时器一起落盘 —— 于是下面「此刻磁盘该还是旧值」读到的是
+   * 「已经写了」,判据报「节流没起作用」,而真相只是它撞上了别人的定时器(实测复现过)。
+   * 等满一个窗口再动手,这笔投入就是唯一待写的一笔,读数才由这条判据说了算。
+   */
+  await page.waitForTimeout(5800)
   const start = await readFormatted(page, '灵石')
   const afterInvest = await investOnce()
   const onDiskBefore = await diskStone()
