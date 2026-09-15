@@ -2318,8 +2318,15 @@ for (const vp of VIEWPORTS) {
       const m = /器灵尘\s*(\d+)/.exec(document.querySelector('main')?.innerText || '')
       return m ? Number(m[1]) : null
     })
-  // 打开背包里那件(未装备、未锁定)
-  await page.locator('main button', { hasText: /青云道袍/ }).first().click({ timeout: 3000 }).catch(() => {})
+  /**
+   * 打开背包里那件(未装备、未锁定)——按 **uid** 找,不按名字找。
+   *
+   * 从前这里写死了「青云道袍」:内容一改名(这件后来按地界改成「风林道袍」),
+   * 点击就静默落空,场景报的是「判据没跑到东西」,而真相只是名字变了。
+   * 装备卡带上 data-uid(见 EquipmentCard),这一处从此与命名无关。
+   */
+  const BAG_UID = 'b_1'
+  await page.locator(`main button[data-uid="${BAG_UID}"]`).first().click({ timeout: 3000 })
   await page.waitForTimeout(500)
   const costLine = await page.evaluate(() => {
     const p = document.querySelector('.modal-panel')
@@ -2346,7 +2353,7 @@ for (const vp of VIEWPORTS) {
     )
     const promised = Number((/分解得器灵尘×(\d+)/.exec(toast) || [])[1] ?? NaN)
     const dustAfterSplit = await readDust()
-    const stillInBag = await page.evaluate(() => (document.querySelector('main')?.innerText || '').includes('青云道袍'))
+    const stillInBag = await page.evaluate(uid => !!document.querySelector(`main button[data-uid="${uid}"]`), BAG_UID)
     if (Number.isFinite(promised)) {
       if (dustBeforeSplit === null || dustAfterSplit === null || dustAfterSplit - dustBeforeSplit !== promised) {
         failures.push(`[390] 锻造场景:分解说给 ${promised} 尘,实际 ${dustBeforeSplit} → ${dustAfterSplit}`)

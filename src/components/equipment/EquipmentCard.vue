@@ -2,6 +2,7 @@
   <button
     class="relative aspect-square rounded-md border transition-transform active:scale-95"
     :style="{ borderColor: quality.color + '55', background: quality.color + '0f' }"
+    :data-uid="props.item.uid"
     @click="emit('open', props.item.uid)"
   >
     <!-- 角标:佩戴 / 上锁 -->
