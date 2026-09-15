@@ -3,7 +3,10 @@
     <div v-if="inst && template && resolved">
       <div class="flex items-center gap-2">
         <QualityTag :quality="inst.quality" />
-        <span class="text-[11px] text-ink-faint">{{ EQUIP_SLOT_NAMES[template.slot] }} · {{ inst.tier }} 阶</span>
+        <!-- 界域 + 阶位:同一句「23 阶」在人间界与仙界完全不是一回事,故写清是哪一界 -->
+        <span class="text-[11px] text-ink-faint">
+          {{ EQUIP_SLOT_NAMES[template.slot] }} · {{ worldNameOfTier(inst.tier) }} · {{ inst.tier }} 阶
+        </span>
         <span v-if="inst.level > 0" class="text-[11px] text-gold-ink tabular">+{{ inst.level }}</span>
         <button
           class="-m-1.5 flex min-h-[28px] min-w-[28px] items-center justify-center p-1.5 text-ink-faint active:scale-90"
@@ -14,6 +17,16 @@
         </button>
       </div>
       <p class="mt-2 text-[12px] leading-relaxed text-ink-faint">{{ template.desc }}</p>
+      <!--
+        共鸣是机制而非数值,但装备卡片此前一个字都不提:玩家在「要不要换掉这件」时,
+        看不到它身上拴着一条会断的机制(见 core/equipSet)。
+      -->
+      <p v-if="setInfo" class="mt-1.5 text-[11px] leading-relaxed">
+        <span class="font-kai" :class="setInfo.active ? 'text-jade' : 'text-violet-ink'">
+          共鸣「{{ setInfo.def.name }}」{{ setInfo.count }}/{{ setInfo.def.required }}
+        </span>
+        <span class="ml-1 text-ink-faint">{{ setInfo.def.effectDesc }}</span>
+      </p>
       <div class="ink-divider my-3" />
       <p v-if="compareTarget" class="mb-1.5 text-[10px] text-ink-faint tabular">对比当前佩戴:「{{ compareTarget.name }}」(绿升红降)</p>
       <div class="space-y-1.5">
@@ -164,6 +177,8 @@
   import { useUiStore } from '@/stores/ui'
   import { useInventoryStore } from '@/stores/inventory'
   import { equipmentTemplate, EQUIP_SLOT_NAMES } from '@/data/equipment'
+  import { equipSetDef, setCounts } from '@/core/equipSet'
+  import { worldNameOfTier } from '@/core/formulas'
   import { resolveEquipStats } from '@/core/equipGen'
   import { decomposeEquipment, equipLevelCap, equipUpgradeCost, upgradeEquipment } from '@/core/forge'
   import { salvageOf } from '@/core/salvage'
@@ -192,6 +207,19 @@
   const upCost = computed(() => (inst.value ? equipUpgradeCost(inst.value.uid) : null))
   /** 分解返还:底材 + 强化投入的八成(练过的件拆了不至于血本无归,先把账摆出来) */
   const salvage = computed(() => (inst.value ? salvageOf(inst.value) : null))
+
+  /**
+   * 这件装备所属的共鸣与其当前件数(只数已佩戴的 —— 共鸣看的是挂载,不是行囊)。
+   * 未佩戴时也照实显示「1/2」,让玩家在按下装备之前就看得见差几件。
+   */
+  const setInfo = computed(() => {
+    const setId = template.value?.set
+    if (!setId) return null
+    const def = equipSetDef(setId)
+    if (!def) return null
+    const count = setCounts(inventory.equippedItems).get(setId) ?? 0
+    return { def, count, active: count >= def.required }
+  })
 
   // ---- 重铸与封存 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))

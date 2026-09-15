@@ -1,5 +1,6 @@
 /** 法宝池 —— 45 件,拥有被动属性与自动触发的主动神通 */
 import type { ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
+import { formatPercent } from '@/utils/format'
 
 function f(
   id: string,
@@ -637,6 +638,108 @@ export const ARTIFACT_LEVEL_BONUS = 0.08
 export const ARTIFACT_MAX_LEVEL = 9
 export const ARTIFACT_UP_WUDAO_BASE = 6
 export const ARTIFACT_UP_STONE_TIER = 40
+
+/**
+ * 单项效果的封顶 —— 数值只写在这里,战斗与界面文案都读它。
+ *
+ * 从前这几个上限各写在 combat.ts 的分支里(0.5 / 0.9 / 1),而界面上的神通说明
+ * 是**手写死的 0 级文案**:祭炼到九重时,战斗按 ×1.72 算,卡片上印的还是原来的数
+ * (实测玄虚拂尘:说明「造成 230% 攻击伤害」,真打出去是 395.6%)。
+ * 故把上限收成一份,由同一处给出「某等级下真正生效的数值」(见 artifactEffectValues)。
+ */
+export const ARTIFACT_WEAKEN_CAP = 0.5
+export const ARTIFACT_SUNDER_CAP = 0.5
+export const ARTIFACT_PURGE_CAP = 0.9
+export const ARTIFACT_DRAIN_HEAL_CAP = 1
+
+/** 祭炼等级带来的效果倍率(越界等级钳回 0..上限) */
+export function artifactLevelMult(level: number): number {
+  const lv = Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))
+  return 1 + lv * ARTIFACT_LEVEL_BONUS
+}
+
+/**
+ * 某祭炼等级下的法宝被动(随等级同倍放大)。
+ *
+ * 此前这段乘法在三处各写一遍(属性汇总 store/inventory、背包卡片、图鉴),
+ * 谁改了增幅率都得改三回 —— 漏掉的那一处就会安静地说错话。收成一份。
+ */
+export function artifactPassiveAt(def: ArtifactDef, level = 0): StatMods {
+  const mult = artifactLevelMult(level)
+  const out: StatMods = {}
+  for (const k in def.passive) {
+    const key = k as keyof StatMods
+    out[key] = (def.passive[key] ?? 0) * mult
+  }
+  return out
+}
+
+export interface ArtifactEffectValues {
+  /** 主体数值(伤害倍率 / 生命百分比 / 削弱破甲比例,小数口径) */
+  amount: number
+  /** 吸命的回血比例(只有 drain 有) */
+  heal?: number
+}
+
+/**
+ * 某祭炼等级下神通**真正生效**的数值 —— 与 combat 同一套口径(含封顶)。
+ * 战斗与文案都从这里取值,「显示的数字」与「打出来的数字」不可能再分叉。
+ */
+export function artifactEffectValues(def: ArtifactDef, level = 0): ArtifactEffectValues {
+  const mult = artifactLevelMult(level)
+  const eff = def.active.effect
+  switch (eff.type) {
+    case 'damage':
+      return { amount: eff.mult * mult }
+    case 'drain':
+      return { amount: eff.mult * mult, heal: Math.min(ARTIFACT_DRAIN_HEAL_CAP, eff.healPct * mult) }
+    case 'heal':
+    case 'shield':
+      return { amount: eff.pctMaxHp * mult }
+    case 'weaken':
+      return { amount: Math.min(ARTIFACT_WEAKEN_CAP, eff.pct * mult) }
+    case 'sunder':
+      return { amount: Math.min(ARTIFACT_SUNDER_CAP, eff.pct * mult) }
+    case 'purge':
+      return { amount: Math.min(ARTIFACT_PURGE_CAP, eff.pct * mult) }
+    case 'stun':
+      // 震慑没有数值 —— 它掐掉的是敌手那一手,不是打掉多少血
+      return { amount: 0 }
+  }
+}
+
+/** 中文成数(净念写的是「七成」而不是「70%」,缩放后得换同一个字的说法) */
+const CHENG_WORDS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'] as const
+
+/**
+ * 法宝神通在某祭炼等级下的说明。
+ *
+ * 做法是**把原说明里的数值换掉**,而不是另写一份模板:文案的措辞(「云海四合」
+ * 「扫落敌人气机」)是手写的,只有数字会随祭炼变。0 级时结果与原说明逐字相同 ——
+ * 这条由 artifactEffects.spec 守着(它就是拿 desc 与 effect 对账的)。
+ */
+export function artifactActiveText(def: ArtifactDef, level = 0): string {
+  const values = artifactEffectValues(def, level)
+  const eff = def.active.effect
+  if (eff.type === 'stun') return def.active.desc
+  if (eff.type === 'purge') {
+    const cheng = CHENG_WORDS[Math.max(0, Math.min(CHENG_WORDS.length - 1, Math.round(values.amount * 10) - 1))]!
+    return def.active.desc.replace(/[一二三四五六七八九十]成/, `${cheng}成`)
+  }
+  // 主体数值:吸命有两个百分数(打出的、回补的),其余只有一个
+  const pct = formatPercent(values.amount)
+  let text = def.active.desc.replace(/(\d+(?:\.\d+)?)\s*%/, pct)
+  if (eff.type === 'drain' && values.heal !== undefined) {
+    text = text.replace(/(回复其中\s*)(\d+(?:\.\d+)?)\s*%/, `$1${formatPercent(values.heal)}`)
+  }
+  return text
+}
+
+/** 法宝祭炼等级的说法 —— 「阶」是区域层级与装备层级的词,这里另立一名免得两件事混作一件 */
+export function artifactLevelLabel(level: number): string {
+  const lv = Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))
+  return `祭炼 ${lv}/${ARTIFACT_MAX_LEVEL} 重`
+}
 
 /**
  * 法宝位:开局 1 位,元婴(第 3 大境界)起再开 1 位。

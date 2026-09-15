@@ -76,7 +76,7 @@
   import { useQuestsStore } from '@/stores/quests'
   import type { CollectionCategory } from '@/stores/quests'
   import { ACHIEVEMENTS } from '@/data/achievements'
-  import { EQUIPMENT_TEMPLATES, EQUIP_SLOT_NAMES } from '@/data/equipment'
+  import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
   import { GONGFA } from '@/data/gongfa'
   import { PILLS } from '@/data/pills'
   import { ARTIFACTS } from '@/data/artifacts'
@@ -85,13 +85,27 @@
   import { chainOfEvent } from '@/data/chains'
   import { TALENTS, TALENT_GRADE_COLORS } from '@/data/talents'
   import { qualityDef } from '@/data/qualities'
-  import { CODEX_SOURCES, branchCodex, materialCodex, type CodexCat, type CodexEntry } from '@/ui/codex'
+  import {
+    CODEX_SOURCES,
+    artifactFuncText,
+    artifactMetaText,
+    branchCodex,
+    equipFuncText,
+    equipMetaText,
+    gongfaFuncText,
+    gongfaMetaText,
+    materialCodex,
+    type CodexCat,
+    type CodexEntry
+  } from '@/ui/codex'
+  import { useInventoryStore } from '@/stores/inventory'
   import { achievementDirection } from '@/ui/achievementHint'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
 
   const quests = useQuestsStore()
+  const inventory = useInventoryStore()
 
   type Tab = 'achievement' | 'collection'
   const tab = ref<Tab>('achievement')
@@ -175,15 +189,22 @@
         EQUIPMENT_TEMPLATES.map(t => ({
           id: t.id,
           name: t.name,
-          desc: t.desc,
-          meta: `${EQUIP_SLOT_NAMES[t.slot]} · ${t.minTier} 阶起现世`
+          // 风味 + 功用:图鉴是玩家决定「留不留」的地方,只印风味等于没印
+          desc: [t.desc, equipFuncText(t)].filter(Boolean).join('\n'),
+          meta: equipMetaText(t)
         }))
       ),
       makeCat(
         'gongfa',
         '功法阁',
         c.gongfa,
-        GONGFA.map(g => ({ id: g.id, name: g.name, desc: g.desc, meta: qualityDef(g.quality).name, color: qualityDef(g.quality).color }))
+        GONGFA.map(g => ({
+          id: g.id,
+          name: g.name,
+          desc: [g.desc, gongfaFuncText(g)].filter(Boolean).join('\n'),
+          meta: gongfaMetaText(g),
+          color: qualityDef(g.quality).color
+        }))
       ),
       branchCodex(),
       makeCat(
@@ -197,13 +218,17 @@
         'artifact',
         '法宝谱',
         c.artifact,
-        ARTIFACTS.map(a => ({
-          id: a.id,
-          name: a.name,
-          desc: a.desc,
-          meta: `${qualityDef(a.quality).name} · 神通「${a.active.name}」`,
-          color: qualityDef(a.quality).color
-        }))
+        ARTIFACTS.map(a => {
+          // 图鉴里的数按该玩家自己的祭炼等级给 —— 未拥有的根本点不开(只显示 ???)
+          const owned = inventory.artifacts.find(o => o.defId === a.id)
+          return {
+            id: a.id,
+            name: a.name,
+            desc: [a.desc, artifactFuncText(a, owned?.level ?? 0)].filter(Boolean).join('\n'),
+            meta: artifactMetaText(a),
+            color: qualityDef(a.quality).color
+          }
+        })
       ),
       makeCat(
         'pet',

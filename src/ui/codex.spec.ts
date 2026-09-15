@@ -14,6 +14,21 @@ import { LORE_MAX, LORE_STAGE_NAMES, MATERIALS, materialDef } from '@/data/mater
 import { GONGFA_BRANCHES, gongfaBranchDef } from '@/data/gongfaBranches'
 import { gongfaDef } from '@/data/gongfa'
 import { BRANCH_STAGE_MAX, BRANCH_STAGE_NAMES, branchStage, describeBranch, describeMaterial } from './codex'
+import {
+  artifactFuncText,
+  artifactMetaText,
+  equipFuncText,
+  equipMetaText,
+  gongfaFuncText,
+  gongfaMetaText
+} from './codex'
+import { ARTIFACTS, artifactDef, artifactActiveText } from '@/data/artifacts'
+import { EQUIPMENT_TEMPLATES, equipmentTemplate } from '@/data/equipment'
+import { GONGFA, GONGFA_TYPE_NAMES } from '@/data/gongfa'
+import { gongfaModsAt } from '@/stores/cultivation'
+import { modsText } from './statNames'
+import { worldNameOfTier } from '@/core/formulas'
+import { REALMS } from '@/data/realms'
 
 const qingzhi = materialDef('mat_qingzhi')!
 const chiyan = materialDef('mat_chiyan')!
@@ -135,5 +150,68 @@ describe('悟道录:未见 / 已见 / 已择', () => {
       expect(describeBranch(b, 1).meta, `${b.name} 在悟道录里没有出处`).not.toBe('')
       expect(gongfaBranchDef(b.id), `${b.name} 的 id 查不回自身`).toBeDefined()
     }
+  })
+})
+
+/**
+ * 图鉴里的「用具」三类(装备/法宝/功法)必须讲功用,不能只讲风味。
+ *
+ * 原本点开一件装备只有一句「玄铁铸就,大巧不工」—— 玩家看完仍不知道它加什么、
+ * 属于哪条共鸣。这三条判据钉住功用行的三个来源:表里的数据、界域的出处、
+ * 以及与背包/战斗同源的数值口径(法宝那一头尤其要紧:说明得跟着祭炼走)。
+ */
+describe('图鉴 · 用具三类要讲功用', () => {
+  it('每件装备都写得出所主与出处,共鸣件还带共鸣效果', () => {
+    for (const t of EQUIPMENT_TEMPLATES) {
+      const func = equipFuncText(t)
+      expect(func, `${t.name} 的功用行是空的`).not.toBe('')
+      expect(func).toContain('所主:')
+      const meta = equipMetaText(t)
+      expect(meta).toContain(worldNameOfTier(t.minTier))
+      expect(meta).toContain(`${t.minTier} 阶`)
+      if (t.set) expect(func, `${t.name} 属于共鸣,功用行里却没写`).toContain('共鸣')
+      if (t.fixedMods && Object.keys(t.fixedMods).length) {
+        expect(func, `${t.name} 的固有机制没写进功用行`).toContain('固有:')
+      }
+    }
+  })
+
+  it('每件法宝的功用行都带被动与神通,且数值按传入的祭炼等级走', () => {
+    for (const a of ARTIFACTS) {
+      const base = artifactFuncText(a, 0)
+      expect(base, `${a.name} 的功用行是空的`).not.toBe('')
+      expect(base).toContain('被动:')
+      expect(base).toContain(`神通「${a.active.name}」`)
+      expect(base).toContain(artifactActiveText(a, 0))
+      // 祭炼之后被动与神通都该变 —— 图鉴里显示的就是玩家自己那一份
+      const leveled = artifactFuncText(a, 5)
+      if (Object.keys(a.passive).length > 0) expect(leveled).not.toBe(base)
+      expect(artifactMetaText(a)).toContain(worldNameOfTier(a.minTier))
+    }
+  })
+
+  it('每部功法都写得出圆满账与神通几率', () => {
+    for (const g of GONGFA) {
+      const func = gongfaFuncText(g)
+      expect(func).toContain('圆满')
+      expect(func, `${g.name} 的圆满数值与 gongfaModsAt 不同源`).toContain(modsText(gongfaModsAt(g.id, g.maxLevel)))
+      if (g.skill) {
+        expect(func).toContain('几率')
+        expect(func).toContain(`${Math.round(g.skill.rate * 100)}%`)
+      }
+      const meta = gongfaMetaText(g)
+      expect(meta, `${g.name} 的出处没写门槛境界`).toContain(`${REALMS[g.minRealm]!.name}期可参`)
+      expect(meta).toContain(GONGFA_TYPE_NAMES[g.type])
+      if (g.element) expect(meta).toContain('属性')
+    }
+  })
+
+  it('风化文本仍在,功用行是补上去的而不是顶替', () => {
+    const t = equipmentTemplate('w_xuantie')!
+    expect(equipFuncText(t)).not.toContain(t.desc)
+    const a = artifactDef('af_muyu')!
+    expect(artifactFuncText(a, 0)).not.toContain(a.desc)
+    const g = gongfaDef('m_taixuan')!
+    expect(gongfaFuncText(g)).not.toContain(g.desc)
   })
 })

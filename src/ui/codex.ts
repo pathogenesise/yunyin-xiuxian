@@ -25,8 +25,14 @@ import { LORE_MAX, LORE_STAGE_NAMES, MATERIALS, type MaterialDef } from '@/data/
 import { GONGFA_BRANCHES, canEnlighten, type GongfaBranchDef } from '@/data/gongfaBranches'
 import { GONGFA_TYPE_NAMES, gongfaDef } from '@/data/gongfa'
 import { qualityDef } from '@/data/qualities'
+import { artifactActiveText, artifactPassiveAt } from '@/data/artifacts'
+import { EQUIP_SLOT_NAMES } from '@/data/equipment'
+import { equipSetDef } from '@/core/equipSet'
+import { worldNameOfTier } from '@/core/formulas'
+import { REALMS } from '@/data/realms'
+import type { ArtifactDef, EquipmentTemplate, GongfaDef } from '@/types'
 import { useLoreStore } from '@/stores/lore'
-import { useCultivationStore } from '@/stores/cultivation'
+import { gongfaModsAt, useCultivationStore } from '@/stores/cultivation'
 import type { CollectionCategory } from '@/stores/quests'
 import { modsText } from './statNames'
 
@@ -77,6 +83,73 @@ export const CODEX_SOURCES: Record<CollectionCategory, string> = {
   pet: '来源:历练际遇 —— 结缘而非猎取',
   event: '来源:历练际遇与奇缘 —— 走到哪,遇见什么',
   talent: '来源:转世择姿 —— 每一世选一个'
+}
+
+// ============ 用具三类:图鉴要讲功用,不能只讲风味 ============
+//
+// 装备图鉴与法宝谱原本只印一句风味(「玄铁铸就,大巧不工」),玩家点开看完,
+// 仍然不知道它是干什么的 —— 而图鉴正是他决定「要不要留、要不要炼」的地方。
+// 故这三类各补一条功用行:数值一律从表里现算,与背包、战斗读同一份数据。
+
+/** 平铺三围的中文名(装备的「所主」用) */
+const FLAT_NAMES = { attack: '攻击', defense: '防御', maxHp: '生命' } as const
+
+/**
+ * 装备的功用:所主(它主加哪一维)+ 固有机制 + 所属共鸣。
+ *
+ * 平铺数值随**掉落层级**折算(见 core/equipGen.resolveEquipStats),故这里只报
+ * 「主加哪一维」而不印数字 —— 离开层级印一个数字,反而是另一种撒谎。
+ */
+export function equipFuncText(t: EquipmentTemplate): string {
+  const parts: string[] = []
+  const flats = (['attack', 'defense', 'maxHp'] as const).filter(k => t.base[k]).map(k => FLAT_NAMES[k])
+  if (flats.length) parts.push(`所主:${flats.join('、')}`)
+  if (t.fixedMods && Object.keys(t.fixedMods).length) parts.push(`固有:${modsText(t.fixedMods)}`)
+  const set = t.set ? equipSetDef(t.set) : undefined
+  if (set) parts.push(`共鸣「${set.name}」:${set.effectDesc}(${set.required} 件)`)
+  return parts.join('\n')
+}
+
+/** 装备的出处一行:部位 · 界域 · 从哪一阶起现世 */
+export function equipMetaText(t: EquipmentTemplate): string {
+  return `${EQUIP_SLOT_NAMES[t.slot]} · ${worldNameOfTier(t.minTier)} · ${t.minTier} 阶起现世`
+}
+
+/**
+ * 法宝的功用:被动(按祭炼等级放大 —— 图鉴里那个等级就是该玩家自己的)
+ * + 神通说明(同一套缩放与封顶,见 artifactActiveText)。
+ */
+export function artifactFuncText(a: ArtifactDef, level = 0): string {
+  const passive = modsText(artifactPassiveAt(a, level))
+  const lines: string[] = []
+  if (passive) lines.push(`被动:${passive}`)
+  lines.push(`神通「${a.active.name}」:${artifactActiveText(a, level)}`)
+  return lines.join('\n')
+}
+
+/** 法宝的出处一行:品质 · 界域(神通名与说明已在功用行里,不重复) */
+export function artifactMetaText(a: ArtifactDef): string {
+  return `${qualityDef(a.quality).name} · ${worldNameOfTier(a.minTier)}`
+}
+
+/**
+ * 功法的功用:修至圆满能得什么 + 附带神通的几率与威力。
+ * 功法没有「掉落层级」这回事,满级数值对谁都是同一个 —— 故直接印满级。
+ */
+export function gongfaFuncText(g: GongfaDef): string {
+  const lines = [`圆满(${g.maxLevel} 层)可得:${modsText(gongfaModsAt(g.id, g.maxLevel))}`]
+  if (g.skill) {
+    lines.push(
+      `附带神通「${g.skill.name}」:出手时 ${Math.round(g.skill.rate * 100)}% 几率,${Math.round(g.skill.mult * 100)}% 威力`
+    )
+  }
+  return lines.join('\n')
+}
+
+/** 功法的出处一行:类型 · 品质 · 属性 · 从哪一境起可参 */
+export function gongfaMetaText(g: GongfaDef): string {
+  const element = g.element ? ` · ${ELEMENTS[g.element].name}属性` : ''
+  return `${GONGFA_TYPE_NAMES[g.type]} · ${qualityDef(g.quality).name}${element} · ${REALMS[g.minRealm]?.name ?? ''}期可参`
 }
 
 // ============ 灵材谱 ============

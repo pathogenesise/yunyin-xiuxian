@@ -250,7 +250,15 @@
           </button>
         </div>
 
-        <button class="btn-ghost w-full" @click="comprehendGongfa()">于藏经阁参悟功法(残页×{{ COMPREHEND_PAGE_COST }})</button>
+        <!--
+          参悟池还剩几部也报出来:藏经阁是「花残页赌一部没见过的」,
+          玩家看不到池子还有多大,就无从判断这一注值不值。
+        -->
+        <button class="btn-ghost w-full" @click="comprehendGongfa()">
+          于藏经阁参悟功法(残页×{{ COMPREHEND_PAGE_COST }})
+          <span v-if="comprehendLeft > 0" class="ml-1 text-[10px] text-ink-faint">· 池中尚有 {{ comprehendLeft }} 部未参</span>
+          <span v-else class="ml-1 text-[10px] text-ink-faint">· 此境功法已尽数参悟</span>
+        </button>
       </div>
     </section>
 
@@ -278,7 +286,7 @@
   import { qiRepairView, repairWithQi } from '@/core/qiRepair'
   import { useNow } from '@/composables/useNow'
   import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
-  import { gongfaDef } from '@/data/gongfa'
+  import { GONGFA, gongfaDef } from '@/data/gongfa'
   import { ELEMENTS } from '@/data/linggen'
   import { canEnlighten as canEnlightenGongfa, gongfaBranchDef } from '@/data/gongfaBranches'
   import { buffDef } from '@/data/buffs'
@@ -378,6 +386,11 @@
   )
 
   const mainDef = computed(() => (cultivation.mainGongfa ? gongfaDef(cultivation.mainGongfa) : undefined))
+
+  /** 参悟池里还剩几部 —— 与 comprehendGongfa 的池条件同源(minRealm ≤ 当前 + 1 且未习得) */
+  const comprehendLeft = computed(
+    () => GONGFA.filter(g => g.minRealm <= player.major + 1 && !cultivation.learned[g.id]).length
+  )
 
   /** 修行相关丹药快捷栏:按品质降序,越珍稀的越靠前(原为插入序,先拿到什么显什么) */
   const quickPills = computed(() =>

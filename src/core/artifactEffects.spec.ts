@@ -21,7 +21,17 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { ARTIFACTS, artifactDef } from '@/data/artifacts'
+import {
+  ARTIFACTS,
+  ARTIFACT_DRAIN_HEAL_CAP,
+  ARTIFACT_LEVEL_BONUS,
+  ARTIFACT_PURGE_CAP,
+  ARTIFACT_SUNDER_CAP,
+  ARTIFACT_WEAKEN_CAP,
+  artifactActiveText,
+  artifactDef,
+  artifactLevelLabel
+} from '@/data/artifacts'
 import { RandomService, mulberry32 } from '@/utils/random'
 import { gn, toNum } from '@/utils/gnum'
 import { MITIGATION_K } from '@/data/constants'
@@ -163,6 +173,106 @@ describe('法宝效果 · 词汇表不虚设', () => {
     }
     expect(checkedCount, '一件法宝的数值都没扫到,判据形同虚设').toBeGreaterThan(25)
     expect(bad, `这些法宝的说明与数据对不上:\n${bad.join('\n')}`).toEqual([])
+  })
+})
+
+/**
+ * 祭炼之后,说明得跟着说实话。
+ *
+ * 上一条对账只比「0 级文案」与「0 级数值」—— 而玩家会把法宝炼到九重(×1.72)。
+ * 战斗一直按倍率算,卡片上印的却永远是 0 级那句:实测玄虚拂尘写着「造成 230% 攻击伤害」,
+ * 真打出去是 395.6%;神鞭写着「防御降低 30%」,实际早已顶到 50% 的上限。
+ * 故说明改成由 artifactEffectValues 现算(战斗与文案读同一个函数),这里守住三件事:
+ * 措辞不动、数值随等级、封顶到了要写封顶值。
+ */
+describe('法宝说明 · 数字随祭炼等级走', () => {
+  /** 期望值独立复算:从原始 effect 字段 + 增幅 + 封顶推出来,不复用被测函数 */
+  function expected(def: (typeof ARTIFACTS)[number], level: number): { main: number | null; heal?: number } {
+    const eff = def.active.effect
+    const mult = 1 + level * ARTIFACT_LEVEL_BONUS
+    switch (eff.type) {
+      case 'damage':
+        return { main: eff.mult * mult }
+      case 'drain':
+        return { main: eff.mult * mult, heal: Math.min(ARTIFACT_DRAIN_HEAL_CAP, eff.healPct * mult) }
+      case 'heal':
+      case 'shield':
+        return { main: eff.pctMaxHp * mult }
+      case 'weaken':
+        return { main: Math.min(ARTIFACT_WEAKEN_CAP, eff.pct * mult) }
+      case 'sunder':
+        return { main: Math.min(ARTIFACT_SUNDER_CAP, eff.pct * mult) }
+      case 'purge':
+        return { main: Math.min(ARTIFACT_PURGE_CAP, eff.pct * mult) }
+      case 'stun':
+        return { main: null }
+    }
+  }
+
+  const pcts = (text: string): number[] => [...text.matchAll(/([\d.]+)\s*%/g)].map(m => Number(m[1]))
+  /** 中文成数换算(净念写的是「七成」,不比百分号) */
+  const CHENG = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+  const chengOf = (text: string): number | null => {
+    const m = /([一二三四五六七八九十])成/.exec(text)
+    return m ? CHENG.indexOf(m[1]!) + 1 : null
+  }
+
+  it('0 级时与原说明逐字相同 —— 只换数字,不碰措辞', () => {
+    for (const a of ARTIFACTS) {
+      expect(artifactActiveText(a, 0), `${a.name} 的 0 级说明被改写过了`).toBe(a.active.desc)
+    }
+  })
+
+  it('0 / 3 / 9 级:说明里的数就是这一级真正生效的数(含封顶)', () => {
+    for (const level of [0, 3, 9]) {
+      for (const a of ARTIFACTS) {
+        const want = expected(a, level)
+        const text = artifactActiveText(a, level)
+        if (want.main === null) {
+          expect(pcts(text), `${a.name} 没有数值却出现了百分数`).toEqual([])
+          continue
+        }
+        if (a.active.effect.type === 'purge') {
+          const cheng = chengOf(text)
+          expect(cheng, `${a.name} 该以成数写明挣脱概率:「${text}」`).not.toBeNull()
+          expect(
+            Math.abs(cheng! - want.main * 10),
+            `${a.name} 第 ${level} 级写「${cheng}成」,实际 ${(want.main * 100).toFixed(1)}%`
+          ).toBeLessThan(0.51)
+          continue
+        }
+        const got = pcts(text)
+        // 小数位由 formatPercent 决定,故比对到一位小数
+        expect(got.length, `${a.name} 的说明少了数值:「${text}」`).toBeGreaterThan(0)
+        expect(Math.abs(got[0]! - want.main * 100), `${a.name} 第 ${level} 级说明写 ${got[0]}%,实际 ${want.main * 100}%`).toBeLessThan(0.11)
+        if (want.heal !== undefined) {
+          expect(got.length, `${a.name} 的吸命该有两个百分数:「${text}」`).toBe(2)
+          expect(Math.abs(got[1]! - want.heal * 100), `${a.name} 的回补比例对不上:${text}`).toBeLessThan(0.11)
+        }
+      }
+    }
+  })
+
+  it('顶到封顶就写封顶值 —— 破甲 30% 炼到九重是 50%,净念七成变九成', () => {
+    const shenbian = artifactDef('af_shenbian')!
+    expect(artifactActiveText(shenbian, 0)).toContain('30%')
+    expect(artifactActiveText(shenbian, 9), '破甲上限 50%,说明不能再报 51.6%').toContain('50%')
+    const nianzhu = artifactDef('af_wuxiangzhu')!
+    expect(artifactActiveText(nianzhu, 0)).toContain('七成')
+    expect(artifactActiveText(nianzhu, 9), '净念上限九成').toContain('九成')
+  })
+
+  it('越界等级钳回 0..9,不会算出界面撑不住的数', () => {
+    const a = ARTIFACTS[0]!
+    expect(artifactActiveText(a, -3)).toBe(a.active.desc)
+    expect(artifactActiveText(a, 99)).toBe(artifactActiveText(a, 9))
+  })
+
+  it('祭炼等级不叫「阶」——「阶」是地界与装备层级的词', () => {
+    const label = artifactLevelLabel(3)
+    expect(label).toContain('祭炼')
+    expect(label, `法宝等级不该借用「阶」:${label}`).not.toContain('阶')
+    expect(label).toContain('3')
   })
 })
 

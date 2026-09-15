@@ -46,7 +46,7 @@ import {
   UPGRADE_DUST_GROWTH,
   UPGRADE_STONE_TIER_BASE
 } from '@/data/constants'
-import { WORLD_BREAK_MAJOR } from '@/data/realms'
+import { WORLD_BREAK_MAJOR, worldOf } from '@/data/realms'
 
 /**
  * 区域层级 → 对应大境界(与 regions.ts 设计同步)。
@@ -60,6 +60,14 @@ const TIER_SUB = [1, 4, 1, 4, 7, 2, 6, 1, 4, 8, 2, 7, 2, 7, 2, 7, 2, 7, 2, 7, 4,
 
 export function tierMajor(tier: number): number {
   return TIER_MAJOR[Math.max(0, Math.min(TIER_MAJOR.length - 1, tier - 1))]!
+}
+
+/**
+ * 该区域层级属于哪一界域 —— 「这件东西是哪一界出的」只有这一处口径。
+ * 装备详情与图鉴都用它,不再各自 tierMajor + worldOf 拼一遍。
+ */
+export function worldNameOfTier(tier: number): string {
+  return worldOf(tierMajor(tier)).name
 }
 
 /**

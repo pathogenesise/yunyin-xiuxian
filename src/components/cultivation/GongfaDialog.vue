@@ -22,9 +22,16 @@
           </p>
           <p v-if="def.skill" class="flex justify-between text-[13px]">
             <span class="text-ink-soft">附带神通「{{ def.skill.name }}」</span>
-            <span class="tabular text-cinnabar">{{ Math.round(def.skill.mult * 100) }}% 威力</span>
+            <!-- 威力与几率一起给:只说「150% 威力」看不出它多久出一次,两部功法便没得比 -->
+            <span class="tabular text-cinnabar">
+              出手 {{ Math.round(def.skill.rate * 100) }}% 几率 · {{ Math.round(def.skill.mult * 100) }}% 威力
+            </span>
           </p>
         </div>
+        <!-- 每进一层的增量:进修要花悟道点与残页,值不值当得看得见 -->
+        <p class="mt-2 text-[11px] text-ink-faint">
+          每进一层:<span class="tabular text-azure">{{ modsText(def.perLevelMods) }}</span>
+        </p>
         <p v-if="upCost" class="mt-3 text-right text-[11px] text-ink-faint tabular">
           进修需 悟道点×{{ upCost.wudao }} · 残页×{{ upCost.page }}
         </p>
@@ -71,7 +78,26 @@
         <!-- 满级却无分支:也要交代一句,免得玩家满世界找入口 -->
         <p v-else-if="fullLevel" class="mt-3 text-[11px] text-ink-faint">此功已修至顶层,一以贯之,别无歧路可择。</p>
       </template>
-      <p v-else class="text-[12px] text-ink-faint">尚未习得此功法。</p>
+      <!--
+        未习得也要给得出「学它做什么」:参悟是花残页的抉择,池子里若只写着风味,
+        玩家只能凭名字挑 —— 而名字看不出它是攻是守。故这里给满级账。
+      -->
+      <template v-else>
+        <p class="text-[12px] text-ink-faint">尚未习得此功法。</p>
+        <p class="mt-2 text-[11px] text-ink-soft">修至圆满({{ def.maxLevel }} 层)可得:</p>
+        <div class="mt-1 space-y-1">
+          <p v-for="row in previewRows" :key="row.label" class="flex justify-between text-[13px]">
+            <span class="text-ink-faint">{{ row.label }}</span>
+            <span class="tabular text-azure/80">{{ row.value }}</span>
+          </p>
+          <p v-if="def.skill" class="flex justify-between text-[13px]">
+            <span class="text-ink-faint">附带神通「{{ def.skill.name }}」</span>
+            <span class="tabular text-cinnabar/80">
+              出手 {{ Math.round(def.skill.rate * 100) }}% 几率 · {{ Math.round(def.skill.mult * 100) }}% 威力
+            </span>
+          </p>
+        </div>
+      </template>
     </div>
     <template v-if="learned" #footer>
       <div class="flex gap-2">
@@ -121,6 +147,17 @@
   const modRows = computed(() => {
     if (!def.value || !learned.value) return []
     const mods = gongfaModsAt(def.value.id, level.value)
+    return Object.entries(mods).map(([k, v]) => ({
+      label: STAT_NAMES[k as AnyStatKey] ?? k,
+      value: `+${formatPercent(v as number)}`
+    }))
+  })
+
+  /** 未习得时的满级预览 —— 与习得后同一套算法(满级 = maxLevel 层) */
+  const previewRows = computed(() => {
+    const d = def.value
+    if (!d) return []
+    const mods = gongfaModsAt(d.id, d.maxLevel)
     return Object.entries(mods).map(([k, v]) => ({
       label: STAT_NAMES[k as AnyStatKey] ?? k,
       value: `+${formatPercent(v as number)}`

@@ -19,7 +19,7 @@ import {
   COMBAT_DEF_BASE,
   COMBAT_HP_BASE
 } from '@/data/constants'
-import { ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
+import { artifactEffectValues } from '@/data/artifacts'
 import { modOf } from './statsCalc'
 import { enemyGearFactor, powerScale } from './formulas'
 
@@ -153,18 +153,12 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
    */
   const tryStun = (target: Fighter): boolean => {
     const owned = (target.snap.artifacts ?? []).find(o => o.def.active.effect.type === 'purge')
-    if (owned) {
-      const eff = owned.def.active.effect
-      if (eff.type === 'purge') {
-        // 上限 0.9:留一丝「摄魂也不是吃素的」——满级也不该等于免疫
-        const chance = Math.min(0.9, eff.pct * (1 + owned.level * ARTIFACT_LEVEL_BONUS))
-        if (rng.chance(chance)) {
-          target.stats.artifactProcs += 1
-          const who = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
-          push('proc', target.snap.isPlayer ? 'p' : 'e', `${who}的【${owned.def.name}】灵光一照,摄魂之力散于无形。`)
-          return false
-        }
-      }
+    // 上限 0.9 写在 artifactEffectValues 里:留一丝「摄魂也不是吃素的」——满级也不该等于免疫
+    if (owned && rng.chance(artifactEffectValues(owned.def, owned.level).amount)) {
+      target.stats.artifactProcs += 1
+      const who = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
+      push('proc', target.snap.isPlayer ? 'p' : 'e', `${who}的【${owned.def.name}】灵光一照,摄魂之力散于无形。`)
+      return false
     }
     target.stunned = true
     return true
@@ -370,33 +364,34 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
       if (eff.type === 'purge') continue
       if (round % art.active.interval !== 0) continue
       self.stats.artifactProcs += 1
-      const levelMult = 1 + owned.level * ARTIFACT_LEVEL_BONUS
+      // 数值取自 artifactEffectValues —— 界面上的神通说明读的是同一个函数,不会各说各话
+      const values = artifactEffectValues(art, owned.level)
       if (eff.type === 'damage') {
-        const dmgAmt = mulN(self.snap.attack, eff.mult * levelMult)
+        const dmgAmt = mulN(self.snap.attack, values.amount)
         applyDamage(self, foe, dmgAmt)
         push('proc', side, `${name}的【${art.name}】自行出手——${art.active.name}!`, dmgAmt)
       } else if (eff.type === 'drain') {
         // 吸命:伤害与回复是同一件事的两面 —— 打出多少,按比例补回自身
-        const dmgAmt = mulN(self.snap.attack, eff.mult * levelMult)
+        const dmgAmt = mulN(self.snap.attack, values.amount)
         applyDamage(self, foe, dmgAmt)
-        const returned = mulN(dmgAmt, Math.min(1, eff.healPct * levelMult))
+        const returned = mulN(dmgAmt, values.heal ?? 0)
         healSelf(self, returned)
         push('proc', side, `${name}的【${art.name}】吸取敌手精血——${art.active.name}!`, dmgAmt)
       } else if (eff.type === 'shield') {
-        gainShield(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
+        gainShield(self, mulN(self.snap.maxHp, values.amount))
         push('shield', side, `【${art.name}】灵光大盛,护盾加身。`)
       } else if (eff.type === 'heal') {
-        healSelf(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
+        healSelf(self, mulN(self.snap.maxHp, values.amount))
         push('heal', side, `【${art.name}】洒下灵光,${name}伤势恢复。`)
       } else if (eff.type === 'stun') {
         if (tryStun(foe)) {
           push('proc', side, `【${art.name}】摄住${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的心神,那一手没能出。`)
         }
       } else if (eff.type === 'sunder') {
-        foe.defSunder = Math.min(0.5, Math.max(foe.defSunder, eff.pct * levelMult))
+        foe.defSunder = Math.max(foe.defSunder, values.amount)
         push('proc', side, `【${art.name}】${art.active.name},${foe.snap.isPlayer ? '你的' : `【${foe.snap.name}】的`}护体被撕开一道口子。`)
       } else {
-        foe.weaken = Math.min(0.5, eff.pct * levelMult)
+        foe.weaken = values.amount
         push('proc', side, `【${art.name}】发威,${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的攻势被削弱了。`)
       }
     }

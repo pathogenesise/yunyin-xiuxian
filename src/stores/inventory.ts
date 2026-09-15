@@ -6,7 +6,7 @@ import { add, gnZero } from '@/utils/gnum'
 import { persistConfig } from '@/utils/storage'
 import { resolveEquipStats } from '@/core/equipGen'
 import { mergeMods } from '@/core/statsCalc'
-import { artifactDef, ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
+import { artifactDef, artifactPassiveAt } from '@/data/artifacts'
 import { BAG_CAPACITY } from '@/data/constants'
 import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
 
@@ -55,13 +55,8 @@ export const useInventoryStore = defineStore(
       for (const art of currentArtifacts.value) {
         const def = artifactDef(art.defId)
         if (!def) continue
-        const scaled: StatMods = {}
-        const mult = 1 + art.level * ARTIFACT_LEVEL_BONUS
-        for (const k in def.passive) {
-          const key = k as keyof StatMods
-          scaled[key] = (def.passive[key] ?? 0) * mult
-        }
-        sources.push(scaled)
+        // 被动随祭炼等比放大 —— 与背包卡片、图鉴读同一份(artifactPassiveAt)
+        sources.push(artifactPassiveAt(def, art.level))
       }
       return mergeMods(sources)
     })

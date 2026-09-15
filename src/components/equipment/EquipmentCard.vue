@@ -9,6 +9,14 @@
     <span v-if="props.item.locked" class="absolute right-0.5 top-0.5 leading-none text-ink-faint">
       <GameIcon name="lock" :size="8" />
     </span>
+    <!-- 共鸣件:方格背包里也得看得出这一件拴着一条机制(两件才亮,见 core/equipSet) -->
+    <span
+      v-if="setName"
+      class="absolute bottom-0.5 left-1 font-kai text-[8px] leading-none text-violet-ink/80"
+      :title="`共鸣「${setName}」`"
+    >
+      共
+    </span>
 
     <!-- 主图标 -->
     <span class="flex h-full w-full flex-col items-center justify-center gap-0.5 px-1">
@@ -30,6 +38,7 @@
   import type { EquipmentInstance } from '@/types'
   import { equipmentTemplate } from '@/data/equipment'
   import { qualityDef } from '@/data/qualities'
+  import { equipSetDef } from '@/core/equipSet'
   import GameIcon from '@/components/common/GameIcon.vue'
 
   const props = defineProps<{ item: EquipmentInstance; equipped?: boolean }>()
@@ -37,4 +46,5 @@
 
   const template = computed(() => equipmentTemplate(props.item.templateId))
   const quality = computed(() => qualityDef(props.item.quality))
+  const setName = computed(() => (template.value?.set ? equipSetDef(template.value.set)?.name ?? '' : ''))
 </script>

@@ -435,3 +435,50 @@ describe('术语一致性 · 用户可见文本', () => {
     expect(all, '「先手伤害」这个旧名会让两件事混为一谈').not.toContain('先手伤害')
   })
 })
+
+/**
+ * 界面读同源函数,而不是各写一份。
+ *
+ * 这一条与上面「视图不手抄数字」同源,只是对象换成了**功能**:法宝的神通说明
+ * 会随祭炼等级变(×1.72),装备详情要报共鸣件数,图鉴要讲功用 —— 这些都有
+ * 现成的同源函数(artifactActiveText / setCounts / codex 的几个 FuncText)。
+ * 界面若绕开它们自己拼,今夜是对的,改数值那一夜就开始撒谎。
+ *
+ * 故障注入:把 InventoryView 的神通行换回 `row.def.active.desc`,本文件立刻红。
+ */
+describe('文案数值对账 · 用具三类的界面读同源函数', () => {
+  const src = (from: string): string =>
+    readFileSync(resolve(__dirname, from), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+
+  it('法宝卡片的神通说明随祭炼走,等级也不叫「阶」', () => {
+    const view = src('../views/InventoryView.vue')
+    expect(view, '神通说明应读 artifactActiveText(与战斗同一份数值)').toContain('artifactActiveText(')
+    expect(view, '不许直接印 0 级文案').not.toMatch(/\.active\.desc/)
+    expect(view, '等级说法应读 artifactLevelLabel(「重」,不是「阶」)').toContain('artifactLevelLabel(')
+    // 祭炼给多少、至多重:取自 artifacts 的常数,不在界面里另写一份
+    expect(view, '祭炼每重的增幅应读 ARTIFACT_LEVEL_BONUS').toContain('ARTIFACT_LEVEL_BONUS')
+    expect(view, '祭炼上限应读 ARTIFACT_MAX_LEVEL').toContain('ARTIFACT_MAX_LEVEL')
+  })
+
+  it('装备详情写着共鸣与界域', () => {
+    const view = src('../components/equipment/EquipmentDetailDialog.vue')
+    expect(view, '共鸣状态应读 setCounts').toContain('setCounts(')
+    expect(view, '界域应读 worldNameOfTier').toContain('worldNameOfTier(')
+  })
+
+  it('图鉴的用具三类取自 codex 的功用函数', () => {
+    const view = src('../views/CollectionView.vue')
+    for (const fn of ['equipFuncText', 'equipMetaText', 'artifactFuncText', 'artifactMetaText', 'gongfaFuncText', 'gongfaMetaText']) {
+      expect(view, `图鉴该用 ${fn} 讲功用与出处`).toContain(fn)
+    }
+  })
+
+  it('功法的神通把几率与威力一起写出来', () => {
+    const dlg = src('../components/cultivation/GongfaDialog.vue')
+    expect(dlg, '只说「威力」看不出多久出一次').toContain('skill.rate')
+    expect(dlg, '未习得也要给得出圆满账').toContain('previewRows')
+  })
+})

@@ -122,17 +122,28 @@
         法宝位 {{ inventory.equippedArtifacts.length }}/{{ artifactSlots }}
         <template v-if="artifactSlots < ARTIFACT_MAX_SLOTS">· {{ artifactUnlockRealm }}境开启第{{ cnNumber(ARTIFACT_MAX_SLOTS) }}法宝位</template>
       </p>
+      <!-- 祭炼到底给什么:数值都从上界常数来,不在界面里再写一份 -->
+      <p class="mt-1 px-1 text-[10px] text-ink-ghost">
+        祭炼一重,被动与神通各强 {{ formatPercent(ARTIFACT_LEVEL_BONUS) }},至多 {{ cnNumber(ARTIFACT_MAX_LEVEL) }} 重
+      </p>
       <div v-if="artifactRows.length" class="mt-2 space-y-2.5">
         <div v-for="row in artifactRows" :key="row.def.id" class="card-ink px-4 py-3">
           <div class="flex items-center gap-2">
             <GameIcon :name="row.def.icon" :size="18" :style="{ color: qualityDef(row.def.quality).color }" />
             <span class="font-kai text-[14px]" :style="{ color: qualityDef(row.def.quality).color }">{{ row.def.name }}</span>
             <QualityTag :quality="row.def.quality" />
-            <span class="ml-auto tabular text-[11px] text-gold-ink">{{ row.owned.level }} 阶</span>
+            <!-- 「重」而不是「阶」:阶是地界与装备层级的词,法宝这一头说的是祭炼了几重 -->
+            <span class="ml-auto tabular text-[11px] text-gold-ink">{{ artifactLevelLabel(row.owned.level) }}</span>
           </div>
           <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{{ row.def.desc }}</p>
           <p class="mt-1 text-[11px] text-azure">{{ passiveLines(row.def.id, row.owned.level).join(' · ') }}</p>
-          <p class="mt-1 text-[11px] text-violet-ink">神通「{{ row.def.active.name }}」:{{ row.def.active.desc }}</p>
+          <!--
+            神通说明按祭炼等级现算:效果随等级 ×(1+0.08×重数),文案不能停在 0 级那一句
+            (见 data/artifacts.artifactActiveText —— 战斗与这句话读的是同一个函数)
+          -->
+          <p class="mt-1 text-[11px] text-violet-ink">
+            神通「{{ row.def.active.name }}」:{{ artifactActiveText(row.def, row.owned.level) }}
+          </p>
           <div class="mt-2.5 flex gap-2">
             <button
               class="btn-seal flex-1 !py-1.5 !text-[12px]"
@@ -380,7 +391,17 @@
   import { useSettingsStore } from '@/stores/settings'
   import { qualityDef, QUALITIES } from '@/data/qualities'
   import { pillDef } from '@/data/pills'
-  import { artifactDef, ARTIFACT_LEVEL_BONUS, ARTIFACT_MAX_SLOTS, ARTIFACT_SLOT_UNLOCK_MAJOR, artifactSlotsFor } from '@/data/artifacts'
+  import {
+    artifactActiveText,
+    artifactDef,
+    artifactLevelLabel,
+    artifactPassiveAt,
+    ARTIFACT_LEVEL_BONUS,
+    ARTIFACT_MAX_LEVEL,
+    ARTIFACT_MAX_SLOTS,
+    ARTIFACT_SLOT_UNLOCK_MAJOR,
+    artifactSlotsFor
+  } from '@/data/artifacts'
   import { REALMS } from '@/data/realms'
   import { EQUIP_SLOT_NAMES, equipmentTemplate } from '@/data/equipment'
   import { BAG_CAPACITY } from '@/data/constants'
@@ -576,12 +597,20 @@
   const artifactUnlockRealm = computed(() => REALMS[ARTIFACT_SLOT_UNLOCK_MAJOR]?.name ?? '')
 
   const artifactRows = computed(() =>
-    inventory.artifacts.map(a => ({
-      owned: a,
-      def: artifactDef(a.defId)!,
-      upCost: artifactUpCost(a.defId),
-      equipped: inventory.equippedArtifacts.includes(a.defId)
-    }))
+    inventory.artifacts
+      .map(a => ({
+        owned: a,
+        def: artifactDef(a.defId)!,
+        upCost: artifactUpCost(a.defId),
+        equipped: inventory.equippedArtifacts.includes(a.defId)
+      }))
+      // 与行囊同一套排法:品质降序 → 祭炼高的在前(此前按入手先后排,越捡越乱)
+      .sort(
+        (a, b) =>
+          qualityDef(b.def.quality).rank - qualityDef(a.def.quality).rank ||
+          b.owned.level - a.owned.level ||
+          a.def.name.localeCompare(b.def.name)
+      )
   )
 
   function toggleArtifact(defId: string): void {
@@ -651,7 +680,9 @@
   function passiveLines(defId: string, level: number): string[] {
     const def = artifactDef(defId)
     if (!def) return []
-    const mult = 1 + level * ARTIFACT_LEVEL_BONUS
-    return Object.entries(def.passive).map(([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent((v as number) * mult)}`)
+    // 与属性汇总(store/inventory)同源:卡片上写多少,身上加的就是多少
+    return Object.entries(artifactPassiveAt(def, level)).map(
+      ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`
+    )
   }
 </script>
