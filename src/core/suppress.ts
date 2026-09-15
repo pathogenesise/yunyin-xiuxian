@@ -12,7 +12,7 @@ import { regionDef } from '@/data/regions'
 import { stoneByTier } from '@/core/formulas'
 import { generateEquipment } from '@/core/equipGen'
 import { acquireEquipment } from '@/core/loot'
-import { rng } from '@/utils/random'
+import { rng, type RandomService } from '@/utils/random'
 import { gnZero, add } from '@/utils/gnum'
 import type { GNum, QualityId } from '@/types'
 import { equipmentTemplate } from '@/data/equipment'
@@ -27,8 +27,8 @@ export interface RegionStats {
   lastUpdateAt: number
 }
 
-/** 镇压判定阈值 */
-const SUPPRESS_THRESHOLDS = {
+/** 镇压判定阈值(界面也用它写规则说明,避免两处各写一套数字) */
+export const SUPPRESS_THRESHOLDS = {
   minFights: 20,              // 最少战斗次数
   maxAvgRounds: 3,            // 平均回合数上限
   maxAvgDamageTaken: 0.10,    // 平均受伤百分比上限 10%
@@ -93,13 +93,77 @@ export function suppressYield(regionId: string): { id: SuppressResource; name: s
 export function checkSuppression(player: ReturnType<typeof usePlayerStore>, regionId: string): boolean {
   if (player.suppressedRegions.includes(regionId)) return false
 
-  const stats = player.regionStats[regionId]
-  if (!stats || stats.totalFights < SUPPRESS_THRESHOLDS.minFights) return false
+  const p = suppressionProgress(player.regionStats[regionId])
+  return p.fightsOk && p.roundsOk && p.damageOk
+}
 
-  return (
-    stats.avgRounds <= SUPPRESS_THRESHOLDS.maxAvgRounds &&
-    stats.avgDamageTakenPct <= SUPPRESS_THRESHOLDS.maxAvgDamageTaken
-  )
+/**
+ * 镇压资格进度 —— 三条判据各差多少,给界面直接把未达标项指出来。
+ *
+ * 从前三条阈值(20 战 / 均≤3 回合 / 均受伤≤10%)只活在 checkSuppression 里,
+ * 玩家只看到「能不能镇压」这个结果,看不到自己卡在哪一项上 —— 打够了场数却总压不住时,
+ * 唯一的解释渠道是去读源码。纯函数:吃 stats,不碰 store,便于断言。
+ */
+export interface SuppressionProgress {
+  fights: number
+  needFights: number
+  /** 指数移动平均回合数;无战绩时为 Infinity(界面据此不显示假平均值) */
+  avgRounds: number
+  maxAvgRounds: number
+  /** 指数移动平均受伤百分比(0~1,界面乘 100 显示);无战绩时为 1 */
+  avgDamagePct: number
+  maxAvgDamagePct: number
+  fightsOk: boolean
+  roundsOk: boolean
+  damageOk: boolean
+  /** 是否已有战绩可谈平均值 */
+  hasStats: boolean
+  /** 三条判据是否全部满足(不含「是否已镇压」) */
+  qualified: boolean
+}
+
+export function suppressionProgress(stats: RegionStats | undefined): SuppressionProgress {
+  const fights = Math.max(0, stats?.totalFights ?? 0)
+  const hasStats = fights > 0
+  const avgRounds = stats ? stats.avgRounds : Number.POSITIVE_INFINITY
+  const avgDamagePct = stats ? stats.avgDamageTakenPct : 1
+  const fightsOk = fights >= SUPPRESS_THRESHOLDS.minFights
+  const roundsOk = avgRounds <= SUPPRESS_THRESHOLDS.maxAvgRounds
+  const damageOk = avgDamagePct <= SUPPRESS_THRESHOLDS.maxAvgDamageTaken
+  return {
+    fights,
+    needFights: SUPPRESS_THRESHOLDS.minFights,
+    avgRounds,
+    maxAvgRounds: SUPPRESS_THRESHOLDS.maxAvgRounds,
+    avgDamagePct,
+    maxAvgDamagePct: SUPPRESS_THRESHOLDS.maxAvgDamageTaken,
+    fightsOk,
+    roundsOk,
+    damageOk,
+    hasStats,
+    qualified: fightsOk && roundsOk && damageOk
+  }
+}
+
+/** 某地界镇压产出的每小时速率(灵石 + 物产)—— 界面与结算共用这一份口径 */
+export interface SuppressRate {
+  stonePerHour: GNum
+  resource: { id: SuppressResource; name: string; perHour: number } | null
+}
+
+/**
+ * 某地界**基础**镇压速率(未乘兴衰系数;繁荣度加成由界面另行叠加展示)。
+ *
+ * 从前历练页自己写了一份 stoneByTier(tier, 150) 并注释「= SUPPRESS_YIELD_PER_HOUR.stoneMultiplier」,
+ * 调常数的那一刻界面就开始撒谎。速率只留这一份实现。
+ */
+export function suppressRateFor(regionId: string): SuppressRate | null {
+  const region = regionDef(regionId)
+  if (!region) return null
+  return {
+    stonePerHour: stoneByTier(region.tier, SUPPRESS_YIELD_PER_HOUR.stoneMultiplier),
+    resource: suppressYield(regionId)
+  }
 }
 
 /**
@@ -116,7 +180,7 @@ export interface SuppressedYield {
   resources: { id: SuppressResource; name: string; amount: number }[]
 }
 
-export function settleSuppressedRegions(dt: number): SuppressedYield | null {
+export function settleSuppressedRegions(dt: number, service: RandomService = rng): SuppressedYield | null {
   const player = usePlayerStore()
   const resources = useResourcesStore()
 
@@ -175,9 +239,11 @@ export function settleSuppressedRegions(dt: number): SuppressedYield | null {
     // hours>2.5 时概率>1 恒真,离线一晚上每区只掉 1 件,与在线 0.4/h 的线性产出
     // 差出好几倍。拆成「整数件 + 零头概率」:hours<1 时与原概率判定等价,长时离线才对齐
     const equipChance = SUPPRESS_YIELD_PER_HOUR.equipmentChance * hours
-    const equipCount = Math.floor(equipChance) + (Math.random() < equipChance - Math.floor(equipChance) ? 1 : 0)
+    // 零头与装备生成走同一个可注入随机源:从前这里裸调 Math.random(生成装备却用 rng),
+    // 测试只能去 mock 全局 Math.random,而 rng 在构造时就把原函数抓走了 —— 注入才是可测的那条路
+    const equipCount = Math.floor(equipChance) + (service.chance(equipChance - Math.floor(equipChance)) ? 1 : 0)
     for (let i = 0; i < equipCount; i += 1) {
-      const equip = generateEquipment(region.tier, rng, { luck: 0, minQualityRank: 0 })
+      const equip = generateEquipment(region.tier, service, { luck: 0, minQualityRank: 0 })
       const res = acquireEquipment(equip, { quiet: true }) // quiet=true 避免镇压收益刷屏
       // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收
       total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality, recycled: !res.bagged })

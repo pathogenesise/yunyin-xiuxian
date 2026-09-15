@@ -1,12 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { DECOMPOSE_DUST } from '@/data/constants'
 import { qualityDef } from '@/data/qualities'
-import { toNum } from '@/utils/gnum'
-import { checkSuppression, settleSuppressedRegions, suppressYield } from './suppress'
+import { sub, toNum } from '@/utils/gnum'
+import { RandomService } from '@/utils/random'
+import { checkSuppression, settleSuppressedRegions, suppressRateFor, suppressionProgress, suppressYield, type RegionStats } from './suppress'
+import { prosperityYieldMult, regionRecallFor } from './worldMemory'
 
 describe('区域镇压系统', () => {
   beforeEach(() => {
@@ -223,12 +225,11 @@ describe('区域镇压系统', () => {
       const inventory = useInventoryStore()
       const resources = useResourcesStore()
 
-      // 模拟随机数确保掉落(equipChance 0.4 × 1h > 0.1)
-      vi.spyOn(Math, 'random').mockReturnValue(0.1)
-
       const itemsBefore = inventory.items.length
       const dustBefore = resources.dust
-      const total = settleSuppressedRegions(3600) // 1 小时
+      // 注入固定随机源确保掉落(equipChance 0.4 × 1h > 0.1)——
+      // 从前是 mock 全局 Math.random,而 rng 在构造时已抓走原函数,mock 根本管不到
+      const total = settleSuppressedRegions(3600, new RandomService(() => 0.1)) // 1 小时
 
       // 必掉 1 件;处置记账必须自洽:入包则件数+1且不化尘,回收则器灵尘按档位到账且不入包
       expect(total).not.toBeNull()
@@ -245,7 +246,6 @@ describe('区域镇压系统', () => {
         expect(total!.recycledDust).toBe(0)
       }
 
-      vi.restoreAllMocks()
     })
 
     it('长时离线装备按次数期望产出,不再被压成每区仅 1 件', () => {
@@ -254,15 +254,13 @@ describe('区域镇压系统', () => {
       player.suppressedRegions = ['qingyun']
 
       // 24h → equipChance = 0.4×24 = 9.6。旧实现 `random < 9.6` 恒真但只掉 1 件;
-      // 修复后 floor(9.6)=9 + 零头 60% 概率第 10 件。mock 0 → 零头必中,共 10 件
-      vi.spyOn(Math, 'random').mockReturnValue(0)
-      const total = settleSuppressedRegions(24 * 3600)
+      // 修复后 floor(9.6)=9 + 零头 60% 概率第 10 件。注入 0 → 零头必中,共 10 件
+      const total = settleSuppressedRegions(24 * 3600, new RandomService(() => 0))
 
       expect(total).not.toBeNull()
       expect(total!.equipment.length).toBeGreaterThan(1)
       expect(total!.equipment).toHaveLength(10)
 
-      vi.restoreAllMocks()
     })
 
     it('多个镇压区域同时产出', () => {
@@ -278,5 +276,111 @@ describe('区域镇压系统', () => {
       const gain = resources.spiritStone.m - initialStone.m
       expect(gain).toBeGreaterThan(0)
     })
+  })
+})
+
+/**
+ * 镇压资格进度 —— 界面与判定共用一份阈值。
+ *
+ * 三判据(20 战 / 均≤3 回合 / 均受伤≤10%)从前只活在 checkSuppression 内部:
+ * 玩家打够了场数却压不住时,界面给不出「你到底差在哪一项」。
+ */
+describe('镇压资格进度', () => {
+  // 本文件顶层的 beforeEach 只覆盖上面那个 describe;新块必须自己起一份干净的 pinia,
+  // 否则会接着上一个用例的 store 跑(镇压表/战绩都还留着),断言能过也能假过
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  const stats = (over: Partial<RegionStats> = {}): RegionStats => ({
+    totalFights: 0,
+    avgRounds: 0,
+    avgDamageTakenPct: 0,
+    consecutiveWins: 0,
+    lastUpdateAt: 0,
+    ...over
+  })
+
+  it('毫无战绩:三判据全不达标,且不显示假的平均值', () => {
+    const p = suppressionProgress(undefined)
+    expect(p.fights).toBe(0)
+    expect(p.hasStats).toBe(false)
+    expect([p.fightsOk, p.roundsOk, p.damageOk]).toEqual([false, false, false])
+    expect(p.qualified).toBe(false)
+  })
+
+  it('场数够但打得久:只有回合项不合格,玩家能看出卡在哪', () => {
+    const p = suppressionProgress(stats({ totalFights: 25, avgRounds: 4, avgDamageTakenPct: 0.05 }))
+    expect(p.fightsOk).toBe(true)
+    expect(p.roundsOk).toBe(false)
+    expect(p.damageOk).toBe(true)
+    expect(p.qualified).toBe(false)
+    expect(p.maxAvgRounds).toBe(3)
+    expect(p.maxAvgDamagePct).toBe(0.1)
+  })
+
+  it('场数够但挨打多:只有受伤项不合格', () => {
+    const p = suppressionProgress(stats({ totalFights: 40, avgRounds: 2, avgDamageTakenPct: 0.3 }))
+    expect(p.fightsOk).toBe(true)
+    expect(p.roundsOk).toBe(true)
+    expect(p.damageOk).toBe(false)
+    expect(p.qualified).toBe(false)
+  })
+
+  it('三判据全达标(阈值取闭区间):qualified 与 checkSuppression 同判', () => {
+    const boundary = stats({ totalFights: 20, avgRounds: 3, avgDamageTakenPct: 0.1 })
+    expect(suppressionProgress(boundary).qualified).toBe(true)
+
+    const player = usePlayerStore()
+    player.regionStats.qingyun = { ...boundary }
+    expect(checkSuppression(player, 'qingyun')).toBe(true)
+  })
+})
+
+/**
+ * 镇压速率单一真相源 —— 界面显示的数就是真正入账的数。
+ *
+ * 历练页从前自己写死 stoneByTier(tier, 150) 并注释「= SUPPRESS_YIELD_PER_HOUR.stoneMultiplier」:
+ * 只改 suppress.ts 的倍率时界面照旧显示旧值。此处锁死「界面速率 × 兴衰系数 = 一小时真实入账」。
+ */
+describe('镇压速率:显示与结算同源', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  /** 照 AdventureView.rateText 的算法算出界面上的每小时灵石 */
+  function uiStonePerHour(regionId: string): number {
+    const rate = suppressRateFor(regionId)!
+    return toNum(rate.stonePerHour) * prosperityYieldMult(regionRecallFor(regionId).prosperity)
+  }
+
+  it('刚镇压(混乱 ×1.0):界面速率 = 一小时入账', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    player.suppressedRegions = ['qingyun']
+    player.suppressedSince = { qingyun: Date.now() }
+
+    const before = { ...resources.spiritStone }
+    settleSuppressedRegions(3600, new RandomService(() => 0.99)) // 固定随机源:这一小时不掉装,只比灵石
+    const gained = toNum(sub(resources.spiritStone, before))
+
+    expect(gained).toBeGreaterThan(0)
+    expect(gained).toBeCloseTo(uiStonePerHour('qingyun'), 6)
+  })
+
+  it('守满 6 小时(稳定 ×1.05):界面速率随兴衰上浮,与实际入账一致', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    const now = Date.now()
+    player.suppressedRegions = ['qingyun']
+    player.suppressedSince = { qingyun: now - 7 * 3600_000 } // 已守 7 小时 → 稳定
+
+    expect(regionRecallFor('qingyun').prosperity).toBe('stable')
+    const before = { ...resources.spiritStone }
+    settleSuppressedRegions(3600, new RandomService(() => 0.99))
+    const gained = toNum(sub(resources.spiritStone, before))
+
+    expect(gained).toBeCloseTo(uiStonePerHour('qingyun'), 6)
+    expect(uiStonePerHour('qingyun')).toBeGreaterThan(toNum(suppressRateFor('qingyun')!.stonePerHour))
   })
 })

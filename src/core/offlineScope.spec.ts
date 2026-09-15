@@ -25,6 +25,7 @@ import { useAdventureStore } from '@/stores/adventure'
 import { useResourcesStore } from '@/stores/resources'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useDongfuStore } from '@/stores/dongfu'
+import { gnZero, sub, toNum } from '@/utils/gnum'
 
 const HOUR = 3600 * 1000
 const GAP_HOURS = 60
@@ -99,8 +100,8 @@ function setupInFlightSave(): void {
     losses: 0,
     events: 0,
     stoneGain: { m: 0, e: 0 },
-    equipmentFound: 0,
-    materials: {}
+    expGain: { m: 0, e: 0 },
+    itemGain: 0
   } as unknown as typeof adventure.session
   cultivation.addBuff('bless_daoyun', Date.now() - 10 * HOUR) // 早就该过期
 }
@@ -115,6 +116,55 @@ function changedKeys(before: Record<string, unknown>, after: Record<string, unkn
 
 describe('离线的作用域 · 在途的东西一律不动', () => {
   beforeEach(() => setActivePinia(createPinia()))
+
+  /**
+   * 挂机所得的归宿:折进这趟历练的总账。
+   *
+   * 会话里的 stoneGain/expGain 是战斗页「本次所得」的数据源 —— 离线推进了这趟历练,
+   * 却只更新 wins/events 而不记收益的话,玩家挂了一夜回来接着打,面板上的数会比实际少一截。
+   */
+  it('挂机期间这趟历练的所得折进会话总账,与离线报的数同源', () => {
+    const game = useGameStore()
+    const player = usePlayerStore()
+    const adventure = useAdventureStore()
+    const now = Date.now()
+    game.markStarted()
+    player.initCharacter('挂机记账', { roots: [] } as never)
+    game.lastActiveAt = now - 4 * HOUR
+    adventure.session = {
+      regionId: 'qingyun',
+      mode: 'normal',
+      startedAt: now - 4 * HOUR,
+      endsAt: now + 6 * HOUR,
+      nextBattleAt: 0,
+      wins: 0,
+      losses: 0,
+      events: 0,
+      stoneGain: gnZero(),
+      expGain: gnZero(),
+      itemGain: 0
+    }
+    const stoneBefore = { ...adventure.session.stoneGain }
+    const expBefore = { ...adventure.session.expGain }
+
+    const summary = settleOffline(now)
+    expect(summary, '这档应当结算出离线收益').not.toBeNull()
+
+    const s = adventure.session!
+    const stoneGained = toNum(sub(s.stoneGain, stoneBefore))
+    const expGained = toNum(sub(s.expGain, expBefore))
+    expect(s.wins, '历练该推进').toBeGreaterThan(0)
+    expect(stoneGained, '与会话面板同源的这份账必须记上').toBeGreaterThan(0)
+    expect(expGained).toBeGreaterThan(0)
+    /**
+     * 会话记的是**战斗**那一份,离线总结还含自动结算的际遇与闭关修炼 ——
+     * 故这里是包含关系而不是等号:份量要占大头,但不会被别的来源算进来。
+     * 回归红线是上面的 > 0:旧实现压根不往会话里写收益(挂一夜回来面板还停在 0)。
+     */
+    expect(stoneGained, '会话灵石账不该超过离线总账').toBeLessThanOrEqual(toNum(summary!.stone))
+    expect(expGained, '会话修为账不该超过离线总账').toBeLessThan(toNum(summary!.exp))
+    expect(stoneGained, '战斗产出应是离线灵石的大头').toBeGreaterThan(toNum(summary!.stone) * 0.5)
+  })
 
   it('玩家分片只许动 {exp, age, bond};终局分片一个键都不许动', () => {
     setupInFlightSave()

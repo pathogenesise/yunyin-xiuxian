@@ -15,6 +15,12 @@ export interface LastBattleView {
   isBoss: boolean
   result: CombatResult
   at: number
+  /**
+   * 这一场的战利品明细(残页/装备/丹药/法宝;翻倍提示也在内)。
+   * 线上一向只把掉落条数记进会话、把文案丢掉,玩家打完看不到自己得了什么。
+   * 旧存档没有这一栏,消费方按缺省空数组处理。
+   */
+  loot?: string[]
 }
 
 export const useAdventureStore = defineStore(
@@ -85,7 +91,9 @@ export const useAdventureStore = defineStore(
       pendingEventId.value = typeof pendingEventId.value === 'string' ? pendingEventId.value : null
       pendingEventSince.value = asFiniteNumber(pendingEventSince.value, 0, 0)
       seenOnceEvents.value = asStringArray(seenOnceEvents.value)
-      lastBattle.value = asObjectOrNull<LastBattleView>(lastBattle.value)
+      // 战报的 loot 是新增栏:形状不对就清成空表,别让损坏档在战报渲染里炸
+      const lb = asObjectOrNull<LastBattleView>(lastBattle.value)
+      lastBattle.value = lb ? { ...lb, loot: lb.loot === undefined ? undefined : asStringArray(lb.loot) } : null
       eventMemories.value = asRecord(eventMemories.value)
       mortalWorld.value = asObjectOrNull(mortalWorld.value)
     }

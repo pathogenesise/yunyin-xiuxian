@@ -273,6 +273,13 @@ export const BATTLE_EXP_REQ_PCT = 0.012
 
 // ============ 历练 ============
 export const EXPLORE_BATTLE_INTERVAL = 12
+/**
+ * 一场历练里攒够多少胜,才有资格挑战区域之主。
+ *
+ * 在线(runBattle)与离线结算(settleOffline 的自动挑战)必须共用这一个门槛 ——
+ * 从前两边各写一遍字面量 10,改一处就会让离线抢跑解锁下一区。
+ */
+export const EXPLORE_BOSS_AFTER_WINS = 10
 export const EXPLORE_EVENT_CHANCE = 0.16
 /** 事件搁置超过该秒数后自动按默认选项处理 */
 export const EVENT_AUTO_RESOLVE_SECONDS = 120

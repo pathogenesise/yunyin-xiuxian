@@ -3,7 +3,7 @@
  * 与在线 Tick 共用同一套公式,按封顶时长折算收益
  */
 import type { EventDef, OfflineSummary } from '@/types'
-import { gn, isZero, mulN, sub } from '@/utils/gnum'
+import { add, gn, gnZero, isZero, mulN, sub } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { rng } from '@/utils/random'
 import { regionDef } from '@/data/regions'
@@ -13,6 +13,7 @@ import {
   BATTLE_EXP_REQ_PCT,
   EQUIP_DROP_CHANCE,
   EXPLORE_BATTLE_INTERVAL,
+  EXPLORE_BOSS_AFTER_WINS,
   EXPLORE_MODES,
   OFFLINE_BOSS_REWARD_MULT,
   OFFLINE_EFFICIENCY,
@@ -126,6 +127,13 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   let events = 0
   const stoneBefore = { ...resources.spiritStone }
   const session = adventure.session
+  /**
+   * 挂机期间这趟历练的所得(灵石/修为/实物)。
+   *
+   * 折进会话总账 —— 玩家挂了一夜再回来接着打时,战斗页上的「本次所得」不该把离线段漏掉。
+   * 离线本来就按期望值整段结算,这里记的也是同一份数(不是另算一套)。
+   */
+  const trip = { stone: gnZero(), exp: gnZero(), items: 0 }
   if (session) {
     const region = regionDef(session.regionId)
     if (region) {
@@ -170,9 +178,13 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           10 * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'spiritStoneGain')) * doubleMult
         )
         resources.addStone(stoneGain)
-        player.gainExp(
-          mulN(player.expReq, BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')) * doubleMult)
+        const expGain = mulN(
+          player.expReq,
+          BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')) * doubleMult
         )
+        player.gainExp(expGain)
+        trip.stone = add(trip.stone, stoneGain)
+        trip.exp = add(trip.exp, expGain)
         // 材料 —— 离线也会撞见新灵材,只是次数封顶,免得回来一屏 toast
         const herbGain = Math.round(wins * 1.0 * doubleMult)
         const oreGain = Math.round(wins * 0.5 * doubleMult)
@@ -194,6 +206,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           equipmentGained.push({ name: equipmentTemplate(inst.templateId)?.name ?? '未知', quality: inst.quality, recycled: !res.bagged })
           if (!res.bagged) recycledDust += res.dust
         }
+        trip.items += realCount
         if (equipCount > realCount) {
           resources.addSmall('dust', (equipCount - realCount) * 4)
           notes.push(`另有 ${equipCount - realCount} 件寻常之物,已折作器灵尘`)
@@ -228,14 +241,18 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       // 而实际只结算了 40 次——把 count 收敛为真实经历再写进 summary 与 session
       events = evCap
       // 离线自动挑战区域首领(收益折损,胜则连锁解锁;门槛与在线一致,避免离线早一步解锁下一区)
-      if (!adventure.cleared.includes(region.id) && wins >= 10) {
+      // 门槛与在线同源(EXPLORE_BOSS_AFTER_WINS):两处各写一个 10,改一处就抢跑解锁
+      if (!adventure.cleared.includes(region.id) && wins >= EXPLORE_BOSS_AFTER_WINS) {
         const bossDef = enemyDef(placeContent(region.id).boss)
         if (bossDef) {
           const bossDanger = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
           const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, explorationRules())
           if (bossResult.win) {
             // 首领战奖励同样并入事件加丰倍率(在线 boss 也是 mode×regReward,离线再叠收益折损)
-            afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true)
+            const drops = afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true)
+            trip.stone = add(trip.stone, drops.stone)
+            trip.exp = add(trip.exp, drops.exp)
+            trip.items += drops.items
             track('kills')
             track('bossKills')
             clearRegionAndUnlockNext(region.id)
@@ -255,6 +272,10 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           ...session,
           wins: session.wins + wins,
           events: session.events + events,
+          // 挂机所得计入这趟总账(与在线同一份会话字段,回来接着打的数才是整趟的数)
+          stoneGain: add(session.stoneGain, trip.stone),
+          expGain: add(session.expGain, trip.exp),
+          itemGain: session.itemGain + trip.items,
           // 与在线 nextBattleTime 同源:速度加成要除以 speed,否则恢复后首战被拖慢一拍
           nextBattleAt: nowMs + (EXPLORE_BATTLE_INTERVAL * 1000) / speed
         })

@@ -58,8 +58,8 @@ function setupBusySave(): void {
     losses: 0,
     events: 0,
     stoneGain: gn(0),
-    equipmentFound: 0,
-    materials: {}
+    expGain: gn(0),
+    itemGain: 0
   } as unknown as typeof adventure.session
   void EXPLORE_MODES
 }

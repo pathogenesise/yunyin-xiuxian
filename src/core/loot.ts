@@ -30,7 +30,18 @@ import { useInventoryStore } from '@/stores/inventory'
 import { useUiStore } from '@/stores/ui'
 
 export interface DropSummary {
+  /** 战报文案(含「战利品翻倍」这类提示) */
   lines: string[]
+  /**
+   * 本次**真正入账**的灵石 —— 与上面 addStone 的同一份数,不是另一处另算的期望值。
+   * 从前历练会话自己按 stoneByTier(tier, 10×modeMult) 记了一份,漏了福缘、区域事件与
+   * 首领倍率,于是「本次所得」和行囊里实际多出来的灵石对不上。
+   */
+  stone: GNum
+  /** 本次真正入账的修为(与 gainExp 的同一份数) */
+  exp: GNum
+  /** 战报里的实物条数(残页/装备/丹药/法宝);「战利品翻倍」这类提示不算拾获 */
+  items: number
 }
 
 export interface AcquireResult {
@@ -151,6 +162,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   const inventory = useInventoryStore()
   const mods = player.finalStats.mods
   const lines: string[] = []
+  let items = 0
   const tier = region.tier
   const bossMult = isBoss ? 4 : 1
   const doubled = rng.chance(capChance(modOf(mods, 'doubleDropRate'))) ? 2 : 1
@@ -163,7 +175,8 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
 
   // 战斗修为
   const expPct = BATTLE_EXP_REQ_PCT * rewardMult * (isBoss ? 4 : 1) * doubled * (1 + modOf(mods, 'expGain'))
-  player.gainExp(mulN(player.expReq, expPct))
+  const exp = mulN(player.expReq, expPct)
+  player.gainExp(exp)
 
   // 材料 —— 数量进标量库存,同时抽出"你到底捡到了什么"推进认知
   if (rng.chance(0.5)) {
@@ -180,6 +193,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
     const n = rng.int(1, 2) * doubled
     resources.addSmall('page', n)
     lines.push(`功法残页×${n}`)
+    items += 1
   }
 
   // 装备 —— 品质 luck 并入灵兽性格的掉落倾向:
@@ -190,6 +204,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
     if (rng.chance(Math.min(0.9, equipChance)) || (isBoss && i === 0)) {
       const inst = generateEquipment(tier, rng, { luck, minQualityRank: isBoss ? 1 : 0 })
       lines.push(acquireEquipment(inst).line)
+      items += 1
     }
   }
 
@@ -201,14 +216,18 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
       collect('pill', pillId)
       const def = PILLS.find(p => p.id === pillId)
       lines.push(`丹药「${def?.name ?? ''}」`)
+      items += 1
     }
   }
 
   // 法宝(稀有)——(1+luck) 可被叠加的 luck 推高,必须进判定前归一到 [0,1](ISS-030)
   if (rng.chance(capChance(ARTIFACT_DROP_CHANCE * (isBoss ? 6 : 1) * (1 + luck)))) {
     const artId = randomDropArtifact(tier)
-    if (artId) lines.push(acquireArtifact(artId))
+    if (artId) {
+      lines.push(acquireArtifact(artId))
+      items += 1
+    }
   }
 
-  return { lines }
+  return { lines, stone, exp, items }
 }

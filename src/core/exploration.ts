@@ -4,9 +4,16 @@
 import type { AdventureSession, CombatRules, ExploreMode } from '@/types'
 import { rng } from '@/utils/random'
 import { add, gnZero } from '@/utils/gnum'
+import { formatGN } from '@/utils/format'
 import { enemyDef } from '@/data/enemies'
 import { regionDef, REGIONS } from '@/data/regions'
-import { EVENT_AUTO_RESOLVE_SECONDS, EXPLORE_BATTLE_INTERVAL, EXPLORE_EVENT_CHANCE, EXPLORE_MODES } from '@/data/constants'
+import {
+  EVENT_AUTO_RESOLVE_SECONDS,
+  EXPLORE_BATTLE_INTERVAL,
+  EXPLORE_BOSS_AFTER_WINS,
+  EXPLORE_EVENT_CHANCE,
+  EXPLORE_MODES
+} from '@/data/constants'
 import { mansionEventLuck } from './astronomy'
 import type { StatMods } from '@/types'
 import { makeEnemySnap, resolveCombat } from './combat'
@@ -18,9 +25,9 @@ import { afterWin } from './loot'
 import { autoResolveEvent, pickEventFor } from './eventEngine'
 import { modOf } from './statsCalc'
 import { track } from './progress'
-import { stoneByTier } from './formulas'
 import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
+import type { LastBattleView } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useUiStore } from '@/stores/ui'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
@@ -126,12 +133,17 @@ export function stopExploration(reason: 'manual' | 'defeat' | 'complete'): void 
   if (s.wins + s.losses >= 3 || reason === 'complete') {
     track('explores')
   }
+  // 总结带上这一趟的实际所得(会话账目即 afterWin 的真实入账):只说胜场与际遇,
+  // 玩家还得自己去翻行囊才知道赚没赚
+  const haul = `得灵石 ${formatGN(s.stoneGain)}、修为 ${formatGN(s.expGain)}${
+    s.itemGain > 0 ? `、拾获 ${s.itemGain} 件` : ''
+  }`
   if (reason === 'complete') {
-    ui.toast(`此行${region?.name ?? ''}历练圆满,胜 ${s.wins} 场,际遇 ${s.events} 次`, 'success')
+    ui.toast(`此行${region?.name ?? ''}历练圆满,胜 ${s.wins} 场,际遇 ${s.events} 次;${haul}`, 'success')
   } else if (reason === 'defeat') {
-    ui.toast('你身负重伤,不得不中断历练归来疗伤', 'warn')
+    ui.toast(`你身负重伤,不得不中断历练归来疗伤;此行${haul}`, 'warn')
   } else {
-    ui.toast('你收拾行囊,提前结束了这次历练', 'info')
+    ui.toast(`你收拾行囊,提前结束了这次历练;此行${haul}`, 'info')
   }
 }
 
@@ -162,6 +174,19 @@ export function explorationRules(): CombatRules | undefined {
   return mergeRules(currentDaoRules(), lifeTrialRules())
 }
 
+/**
+ * 距挑战区域之主还差几胜 —— 界面提示与 runBattle 的首领判定共用这一个函数。
+ *
+ * 从前门槛 10 只写在 runBattle 里,战斗页因此说不出"还差几胜";
+ * 若界面自己再写一个 10,调门槛的那一刻提示就会开始撒谎。
+ *
+ * @returns null = 此地之主已被击败(不再有首领);0 = 下一战即是首领
+ */
+export function winsUntilRegionBoss(wins: number, cleared: boolean): number | null {
+  if (cleared) return null
+  return Math.max(0, EXPLORE_BOSS_AFTER_WINS - wins)
+}
+
 /** 战斗遭遇(含首领判定) */
 function runBattle(now: number): void {
   const adventure = useAdventureStore()
@@ -174,8 +199,8 @@ function runBattle(now: number): void {
   const modeDef = EXPLORE_MODES[s.mode]
 
   const notCleared = !adventure.cleared.includes(region.id)
-  // 每积累 10 胜,方有资格挑战区域之主(避免开局撞见首领)
-  const bossDue = notCleared && s.wins >= 10
+  // 每积累 EXPLORE_BOSS_AFTER_WINS 胜,方有资格挑战区域之主(避免开局撞见首领)
+  const bossDue = winsUntilRegionBoss(s.wins, !notCleared) === 0
   // 敌群与首领取自**本世路线节点**,不是 REGIONS ——
   // 同一处地界放进不同世界,遇到的就该是不同的东西
   const content = placeContent(region.id)
@@ -212,14 +237,15 @@ function runBattle(now: number): void {
   } else {
     offerBondEvent('nearDeath')
   }
-  adventure.recordBattle({
+  const view: LastBattleView = {
     enemyName: ghost ? ghostTitle(ghost) : eDef.name,
     enemyIcon: eDef.icon,
     enemyId: eDef.id,
     isBoss: Boolean(eDef.isBoss),
     result,
     at: now
-  })
+  }
+  adventure.recordBattle(view)
   track('battles')
   // Phase 32.5:交过手才谈得上认识它 —— 这份认知随神魂转世不灭
   noteEnemy(eDef.id, result.win)
@@ -231,11 +257,16 @@ function runBattle(now: number): void {
     // Phase 31 A2:区域事件掉落修正(妖潮/古墓/商队更丰)
     const regReward = regEv ? (regionEventDef(regEv.eventId)?.rewardMult ?? 1) : 1
     const drops = afterWin(region, modeDef.rewardMult * regReward, Boolean(eDef.isBoss))
+    // 战报带上这一场的掉落明细:线上一向只数件数、把 lines 丢掉,玩家看不到自己得了什么
+    adventure.recordBattle({ ...view, loot: drops.lines })
+    // 会话账目直接取 afterWin 的**真实入账**(灵石/修为/实物件数),
+    // 不再自己按 stoneByTier 另算一份 —— 那份漏了福缘、区域事件与首领倍率,与行囊对不上
     adventure.setSession({
       ...s,
       wins: s.wins + 1,
-      stoneGain: add(s.stoneGain, stoneByTier(region.tier, 10 * modeDef.rewardMult)),
-      itemGain: s.itemGain + drops.lines.length,
+      stoneGain: add(s.stoneGain, drops.stone),
+      expGain: add(s.expGain, drops.exp),
+      itemGain: s.itemGain + drops.items,
       nextBattleAt: nextBattleTime(now)
     })
     if (eDef.isBoss) {
@@ -244,8 +275,7 @@ function runBattle(now: number): void {
     }
 
     // Phase 30: 更新区域统计并判定镇压
-    const damageTakenPct = result.win ? 1 - result.playerHpPct : 1.0
-    const player = usePlayerStore()
+    const damageTakenPct = 1 - result.playerHpPct
     const ui = useUiStore()
     player.updateRegionStats(region.id, result.win, result.rounds, damageTakenPct)
     player.recordRegionWin(region.id)
