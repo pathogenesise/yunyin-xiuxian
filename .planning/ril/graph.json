@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T04:18:03+00:00",
+  "updated_at": "2026-09-15T04:24:38+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10157,6 +10157,17 @@
       "source": "commit 6335909dc2bc: node --check public/sw.js 语法通过;build 产物 dist/sw.js 正确;vue-tsc -b 绿",
       "summary": "SW 静态层验证:语法/产物落盘/类型全过;浏览器级离线与安装行为未验证,故 hypothesis 置信度维持 0.6",
       "confidence": 1.0
+    },
+    "CHG-208": {
+      "id": "CHG-208",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T04:24:38+00:00",
+      "updated_at": "2026-09-15T04:24:38+00:00",
+      "touched_round": 176,
+      "commit": "c96eb3229a05",
+      "summary": "README 多端安装节补 PWA 离线说明:首访后断网可重开,发版即时生效不卡旧版本"
     }
   },
   "edges": [

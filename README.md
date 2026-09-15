@@ -94,7 +94,7 @@ bun run build:apk
 
 ### 多端安装
 
-- **Web / PWA**：直接部署 `dist/`（或走下方 Docker 镜像），移动浏览器打开即玩，可「添加到主屏幕」。
+- **Web / PWA**：直接部署 `dist/`（或走下方 Docker 镜像），移动浏览器打开即玩，可「添加到主屏幕」；Service Worker 会缓存静态资源，**首次在线打开后，断网重开也能进游戏**（发版更新仍即时生效，不卡旧版本）。
 - **Android**：CI 会把签好的 APK 作为 `android-apk` 产物上传；本地出包在 `android/app/build/outputs/apk/release/yunyin-<版本号>.apk`。把 APK 传到手机后点击安装（系统会提示允许安装未知来源应用，放行即可；覆盖安装需签名一致——自己构建的包与官方签名不同，需先卸载旧版）。
 - **Windows 桌面（Electron）**：`pkg/yunyin-<版本号>-win.zip`，解压后运行其中的 `云隐修仙录.exe`；杀毒软件若误报，是未签名 exe 的通病，可加入白名单。
 
