@@ -26,7 +26,7 @@ import { useEndgameStore } from '@/stores/endgame'
 import { celestialDepthScale, celestialFoeCaliber, worldFoeSnap } from './gauntlet'
 import { stackedMods } from './daoDepth'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
-import { toNum } from '@/utils/gnum'
+import { gn, toNum } from '@/utils/gnum'
 import type { StatMods } from '@/types'
 
 const GEAR = {
@@ -114,8 +114,9 @@ describe('天界口径 · 倒挂红线', () => {
     expect(thick, '越过基准深度就该加厚').toBeGreaterThan(1)
 
     const modded = { ...shape, mods: { dodgeRate: 0.2, damageReduction: 0.2 } }
-    const withDepth = worldFoeSnap(modded, { attack: 100, defense: 55, maxHp: 1400 }, 1, thick)
-    const noDepth = worldFoeSnap(modded, { attack: 100, defense: 55, maxHp: 1400 }, 1, 1)
+    const ref = { attack: gn(100), defense: gn(55), maxHp: gn(1400) }
+    const withDepth = worldFoeSnap(modded, ref, 1, thick)
+    const noDepth = worldFoeSnap(modded, ref, 1, 1)
     expect(withDepth.mods!.dodgeRate!).toBeCloseTo(0.2 * thick, 10)
     expect(withDepth.mods!.damageReduction!).toBeCloseTo(0.2 * thick, 10)
     expect(noDepth.mods!.dodgeRate, '不加厚的旧口径就是原样').toBeCloseTo(0.2, 10)
