@@ -39,7 +39,7 @@ if (corrupted.length > 0) {
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL ?? './'}sw.js`)
+      .register(`${import.meta.env.BASE_URL}sw.js`)
       .catch(() => {
         /* 注册失败不打扰玩家:功能可降级,见 public/sw.js 注释 */
       })
