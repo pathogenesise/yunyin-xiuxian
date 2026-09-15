@@ -66,7 +66,7 @@ Compose v1 的旧 CLI 把命令换成 `docker-compose` 即可（`docker-compose.
 
 镜像构建本身无需改任何配置：`vite.config.ts` 把 `base` 固定为 `'./'`，资源按相对路径解析，音频走 `import.meta.env.BASE_URL`，所以部署到 `/` 或 `/xiuxian/` 这类子路径都能直接工作。
 
-`.env.production` 里的 `VITE_APP_TITLE` / `VITE_BASE_URL` / `VITE_ENABLE_PWA` 目前只是占位（没有代码消费，页面标题写在 `index.html`），改了不生效，别把它们当成部署开关。
+`.env.production` 里的 `VITE_APP_TITLE` / `VITE_BASE_URL` / `VITE_ENABLE_PWA` 目前只是占位（没有代码消费，页面标题写在 `index.html`），改了不生效，别把它们当成部署开关。注意 **PWA「添加到主屏幕」与这些 env 无关**：manifest（`public/manifest.webmanifest`）与图标（`public/icon*.svg` 光栅化的 `icons/` 各尺寸 PNG + `apple-touch-icon.png`）由 `index.html` 无条件引用、`public/` 原样进构建，随镜像一起开箱即用；改动图标的正确姿势是改 `public/icon.svg` 后跑 `scripts/gen-pwa-icons.mjs` 重新生成。
 
 ### 2. Nginx 配置
 
