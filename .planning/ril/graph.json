@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 185,
+  "round": 186,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T10:31:07+00:00",
+  "updated_at": "2026-09-15T10:55:27+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -484,7 +484,7 @@
       "version": 1,
       "created_at": "2026-09-09T15:01:47+00:00",
       "updated_at": "2026-09-09T15:01:47+00:00",
-      "touched_round": 5,
+      "touched_round": 186,
       "summary": "区域镇压系统(suppress.ts)"
     },
     "EV-001": {
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 172,
+      "touched_round": 186,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -3597,12 +3597,12 @@
     "HYP-015": {
       "id": "HYP-015",
       "type": "hypothesis",
-      "status": "stale",
-      "version": 2,
+      "status": "active",
+      "version": 3,
       "created_at": "2026-09-11T17:31:16+00:00",
-      "updated_at": "2026-09-11T20:21:14+00:00",
-      "touched_round": 76,
-      "confidence": 0.85,
+      "updated_at": "2026-09-15T10:55:24+00:00",
+      "touched_round": 186,
+      "confidence": 0.95,
       "summary": "凡是同一件事有两处算法(在线/离线、预估/实战、展示/结算),新机制接进来时必漏一处 —— 判据:抽成一个函数,并让「另一处不得再出现原常数」成为红线"
     },
     "CHG-092": {
@@ -10607,6 +10607,145 @@
       "rationale": "用户口径:状态的时间可以叠加。旧实现取较大值,续服同一味丹药时剩余时长清零重算,与「药力化开」的承诺不符;叠加是玩家直觉上唯一说得通的语义。边界处理:同一状态仍只保留一条实例(状态条/属性汇总消费方式不变),已过期实例以 now 为基准,避免把历史负剩余时间叠进来",
       "alternatives_rejected": "①为每味状态加叠加上限(如 2× 基础时长)—— 反复施加的来源都带代价或闸门(丹药耗资源,重伤来自突破失败与历练败北),当前无跑飞路径,加封顶等于替产品改数值;②只让增益叠加、负面状态保留刷新 —— 同一机制两套语义,玩家看不懂为何重伤例外;③把叠加做成「层数×时长」的层模型 —— 现有 UI/属性汇总只认 endsAt 单值,改层模型是另一个量级的重构",
       "summary": "状态叠加语义定案:同一 buff 重复施加 = 剩余时长 + 新时长(同一实例,endsAt 累加);过期实例以 now 为基准;负面状态同规则,不设人为上限"
+    },
+    "TASK-166": {
+      "id": "TASK-166",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T10:37:46+00:00",
+      "updated_at": "2026-09-15T10:55:27+00:00",
+      "touched_round": 186,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.9,
+      "effort": 3,
+      "unlock_factor": 1.0,
+      "summary": "历练/镇压收益存在第二套算式与恒零死字段:①exploration 会话的 stoneGain 另按 stoneByTier(tier,10×modeMult) 自算,不含福缘/区域事件/首领倍率,与 afterWin 真实入账不一致;②会话 expGain 从创建起恒为 0(死字段);③itemGain 数的是掉落文案行数(「战利品翻倍!」也算一件);④AdventureView.rateText 手抄 150=SUPPRESS_YIELD_PER_HOUR.stoneMultiplier;⑤suppress.ts 装备件数用裸 Math.random 而非 rng;⑥首领门槛 10 胜在 exploration.ts 与 offline.ts 各写一遍。收口为单源:afterWin 报告实际入账(灵石/修为/真实件数),镇压速率由 suppress.ts 导出唯一函数,门槛抽常数,概率走 rng"
+    },
+    "TASK-167": {
+      "id": "TASK-167",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T10:37:46+00:00",
+      "updated_at": "2026-09-15T10:55:27+00:00",
+      "touched_round": 186,
+      "category": "core-feature",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "summary": "镇压信息不可见:资格三判据(20 战 / 均≤3 回合 / 均受伤≤10%)全藏在常量里,玩家只看到「能不能镇压」,看不到差在哪一项;72 小时妖气复聚的期限也没有任何预告,镇压会突然消失。补 suppressionProgress(未达标项直接指名)与 hoursUntilRevive 倒计时,接到历练页地界行"
+    },
+    "TASK-168": {
+      "id": "TASK-168",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T10:37:46+00:00",
+      "updated_at": "2026-09-15T10:55:27+00:00",
+      "touched_round": 186,
+      "category": "core-feature",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "summary": "历练中信息不足:战斗中只看得到胜场/际遇/拾获,看不到本次已得灵石与修为;未靖的地界何时遇首领(10 胜门槛)也从不提示;结束总结只说「胜 N 场,际遇 M 次」,不说这一趟拿到了什么。补战中所得行 + 距首领胜场提示 + 结束总结带收益"
+    },
+    "ISS-182": {
+      "id": "ISS-182",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T10:37:51+00:00",
+      "updated_at": "2026-09-15T10:55:27+00:00",
+      "touched_round": 186,
+      "severity": 0.45,
+      "confidence": 0.9,
+      "summary": "镇压资格与期限不对玩家交代:三判据藏在常量、72 小时复苏无预告,玩家只能看到结果(能/不能镇压、突然消失),看不到距离与原因"
+    },
+    "ISS-183": {
+      "id": "ISS-183",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T10:37:51+00:00",
+      "updated_at": "2026-09-15T10:55:27+00:00",
+      "touched_round": 186,
+      "severity": 0.45,
+      "confidence": 0.9,
+      "summary": "历练过程与结算的信息缺口:战中看不到本次所得(灵石/修为),未靖地界看不到距首领还差几胜,结束总结不含收益 —— 玩家摸不清这一趟到底赚了什么、离目标还有多远"
+    },
+    "ISS-184": {
+      "id": "ISS-184",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T10:37:51+00:00",
+      "updated_at": "2026-09-15T10:55:27+00:00",
+      "touched_round": 186,
+      "severity": 0.6,
+      "confidence": 0.9,
+      "summary": "同一笔收益两处算法:会话 stoneGain 自算一套(与 afterWin 实盘不一致)、expGain 恒为 0 的死字段、itemGain 把文案行当件数、UI 镇压速率手抄常量、镇压掉装用裸 Math.random、首领 10 胜门槛在线离线各写一遍"
+    },
+    "EV-163": {
+      "id": "EV-163",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:55:21+00:00",
+      "updated_at": "2026-09-15T10:55:21+00:00",
+      "touched_round": 186,
+      "source": "src/core/singleSourceAudit.spec.ts(源码级同源审计)+ 本轮三处故障注入(会话不记灵石 / 界面改回 stoneByTier / 离线写死 10)",
+      "confidence": 0.95,
+      "summary": "同一件事有两处算法这个假设在本轮又一次成立且被当场抓到三例:①exploration 会话自算 stoneGain(漏福缘/区域事件/首领倍率)②历练页手抄镇压速率常数 150 ③首领 10 胜门槛在线离线各写一遍。抽成单源实现 + 源码级审计后,三处注入均当场转红;审计断言「有没有再算一遍」而非「有没有提到这个词」(注释里解释这件事本身是好事)"
+    },
+    "EV-164": {
+      "id": "EV-164",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:55:21+00:00",
+      "updated_at": "2026-09-15T10:55:21+00:00",
+      "touched_round": 186,
+      "source": "本轮全量验证:vitest 160 文件 1532 用例、vue-tsc、ESLint、vite build 全绿;node scripts/layout-check.mjs 161 个页面×视口组合全绿",
+      "confidence": 1.0,
+      "summary": "界面新增的进度行/倒计时/本战所得行没有破坏排版:无横向溢出、控件不小于 28px、页签吸顶与外壳高度判据照旧;历练与镇压的账目断言改为与行囊/修为真实增量对齐"
+    },
+    "CHG-216": {
+      "id": "CHG-216",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:55:21+00:00",
+      "updated_at": "2026-09-15T10:55:21+00:00",
+      "touched_round": 186,
+      "commit": "d748e0d",
+      "summary": "收益账目单源化:afterWin 报告真实入账(stone/exp/items),会话照抄;镇压速率收进 suppressRateFor;首领门槛抽 EXPLORE_BOSS_AFTER_WINS;镇压掉装改走可注入 RandomService;离线把挂机所得折进会话总账"
+    },
+    "CHG-217": {
+      "id": "CHG-217",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:55:21+00:00",
+      "updated_at": "2026-09-15T10:55:21+00:00",
+      "touched_round": 186,
+      "commit": "0f59477",
+      "summary": "历练/镇压信息可见:地界行显示镇压资格三判据当前值与阈值(未达标标红)+ 妖气复聚倒计时;战斗页显示本次所得与距区域之主胜场;战报渲染本战掉落明细;结束总结带收益;新增源码级同源审计"
+    },
+    "DEC-039": {
+      "id": "DEC-039",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:55:21+00:00",
+      "updated_at": "2026-09-15T10:55:21+00:00",
+      "touched_round": 186,
+      "rationale": "用户口径:历练/镇压的逻辑优化 + 相关信息更清晰。两者在同一条链路上(收益账目、门槛、期限),拆开做会让其中一半暂时显示错数(例如先做界面后做账目,界面显示的就是旧的自算账),故一轮内按「先账目单源、再信息可见」的顺序打包。信息展示的取向:凡玩家要反复试错才能猜到的规则(镇压三判据、首领门槛、复聚期限),一律把当前值与阈值并排写出,而不是留给玩家去读源码;凡后端算过又被丢掉的信息(掉落明细),一律送到玩家眼前",
+      "alternatives_rejected": "①保留「神秘感」,只给能/不能两项 —— 镇压是反复尝试型机制,不给进度等于逼玩家刷场数试错,与「成长改变世界」的取向相反;②把 72 小时复聚改成永不失效或隐藏期限 —— 复聚本身是设计(区域活性),藏起来只会让玩家把「突然没了」当成 bug;③界面继续自己算速率(只为省一次函数调用)—— 正是本轮抓到的第二份真相源;④只修账目不改界面 —— 数字对了但玩家看不到,等于没解决「信息更清晰」",
+      "summary": "历练/镇压一轮打包的取舍与信息展示取向:门槛与期限一律并列写出、后端算过的明细一律送到眼前;账目先单源再上界面"
     }
   },
   "edges": [
@@ -15686,6 +15825,114 @@
       "to": "COMP-018",
       "type": "governs",
       "created_at": "2026-09-15T10:31:03+00:00"
+    },
+    {
+      "from": "ISS-182",
+      "to": "COMP-005",
+      "type": "located_in",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "TASK-167",
+      "to": "ISS-182",
+      "type": "addresses",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "ISS-183",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "TASK-168",
+      "to": "ISS-183",
+      "type": "addresses",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "ISS-184",
+      "to": "COMP-005",
+      "type": "located_in",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "ISS-184",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "TASK-166",
+      "to": "ISS-184",
+      "type": "addresses",
+      "created_at": "2026-09-15T10:37:53+00:00"
+    },
+    {
+      "from": "TASK-168",
+      "to": "TASK-166",
+      "type": "depends_on",
+      "created_at": "2026-09-15T10:37:54+00:00"
+    },
+    {
+      "from": "EV-163",
+      "to": "HYP-015",
+      "type": "validates",
+      "created_at": "2026-09-15T10:55:23+00:00"
+    },
+    {
+      "from": "EV-164",
+      "to": "HYP-015",
+      "type": "validates",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "CHG-216",
+      "to": "TASK-166",
+      "type": "implements",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "CHG-216",
+      "to": "ISS-184",
+      "type": "resolves",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "CHG-217",
+      "to": "TASK-167",
+      "type": "implements",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "CHG-217",
+      "to": "TASK-168",
+      "type": "implements",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "CHG-217",
+      "to": "ISS-182",
+      "type": "resolves",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "CHG-217",
+      "to": "ISS-183",
+      "type": "resolves",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "DEC-039",
+      "to": "COMP-005",
+      "type": "governs",
+      "created_at": "2026-09-15T10:55:24+00:00"
+    },
+    {
+      "from": "DEC-039",
+      "to": "COMP-006",
+      "type": "governs",
+      "created_at": "2026-09-15T10:55:24+00:00"
     }
   ]
 }
