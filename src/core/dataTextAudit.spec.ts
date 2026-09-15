@@ -469,10 +469,16 @@ describe('文案数值对账 · 用具三类的界面读同源函数', () => {
     expect(view, '界域应读 worldNameOfTier').toContain('worldNameOfTier(')
   })
 
-  it('图鉴的用具三类取自 codex 的功用函数', () => {
+  it('图鉴的用具三类取自 itemText 的功用函数', () => {
+    // 装备/法宝/丹药三类已收进 codex 的派生视图,功用行在那里拼;
+    // 功法阁仍是两态列表,由视图直接拼 —— 两边都得取同一份文案函数
+    const codexSrc = src('../ui/codex.ts')
+    for (const fn of ['equipFuncText', 'equipMetaText', 'artifactFuncText', 'artifactMetaText', 'pillFuncText', 'pillMetaText']) {
+      expect(codexSrc, `图鉴该用 ${fn} 讲功用与出处`).toContain(fn)
+    }
     const view = src('../views/CollectionView.vue')
-    for (const fn of ['equipFuncText', 'equipMetaText', 'artifactFuncText', 'artifactMetaText', 'gongfaFuncText', 'gongfaMetaText']) {
-      expect(view, `图鉴该用 ${fn} 讲功用与出处`).toContain(fn)
+    for (const fn of ['gongfaFuncText', 'gongfaMetaText']) {
+      expect(view, `功法阁该用 ${fn}`).toContain(fn)
     }
   })
 
@@ -480,5 +486,28 @@ describe('文案数值对账 · 用具三类的界面读同源函数', () => {
     const dlg = src('../components/cultivation/GongfaDialog.vue')
     expect(dlg, '只说「威力」看不出多久出一次').toContain('skill.rate')
     expect(dlg, '未习得也要给得出圆满账').toContain('previewRows')
+  })
+
+  it('丹药详情与丹方清单说得出「服下去会怎样」', () => {
+    const view = src('../views/InventoryView.vue')
+    // 两处都要读同一份:丹药详情弹窗 + 开炉炼丹的方子清单
+    const uses = view.match(/pillFuncText\(/g)?.length ?? 0
+    expect(uses, '丹药详情与方子清单都该写清效果(同一份 pillFuncText)').toBeGreaterThanOrEqual(2)
+    expect(view, '丹方读到几分熟取自 lore.recipeMastery').toContain('recipeMastery(')
+  })
+
+  it('灵兽的性子带数,出处与结算同源', () => {
+    const view = src('../views/TitlesView.vue')
+    expect(view, '性子该读 petTraitText(与 core/petPersonality 同源)').toContain('petTraitText(')
+    expect(view, '出战加成仍走同一份 modsText').toContain('modsText(')
+  })
+
+  it('图鉴的用具三类走带深度的派生视图,而不是就地拼两态', () => {
+    const view = src('../views/CollectionView.vue')
+    for (const fn of ['equipCodex()', 'artifactCodex()', 'pillCodex()']) {
+      expect(view, `图鉴该用 ${fn}(含收录深度)`).toContain(fn)
+    }
+    expect(view, '收录时刻的口径收在 codex,界面不再自己写一份').toContain('collectedTimeText(')
+    expect(view, '界面里不该再出现日期格式化的第二份').not.toContain('toLocaleString(')
   })
 })

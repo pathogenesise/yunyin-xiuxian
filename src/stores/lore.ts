@@ -47,6 +47,14 @@ export const useLoreStore = defineStore(
     const studyFrac = ref(0)
     /** 入门丹方是否已播种(旧存档首次进入本体系时补发,幂等) */
     const seeded = ref(false)
+    /**
+     * 装备见闻:模板 id → 生平见过的最好一件(最高品质 rank 与最高层级)。
+     *
+     * 图鉴此前只有「收没收录」两态,而装备的深度本来就存在别处 —— 只是没人记。
+     * 记的是**见过的最好一件**,不是当前行囊:化尘了、分解了、被挤掉了,
+     * 见过就是见过(与灵材的「照面次数」同一性质,故也放在这个 store 里)。
+     */
+    const equipLore = ref<Record<string, { q: number; t: number }>>({})
 
     /** 已辨识(认知层 ≥1)的灵材数 */
     const knownMaterialCount = computed(() => Object.values(materialLore.value).filter(v => v >= 1).length)
@@ -61,6 +69,28 @@ export const useLoreStore = defineStore(
 
     function loreOf(id: string): number {
       return materialLore.value[id] ?? 0
+    }
+
+    /** 该模板见过的最高成色(没见过返回 undefined) */
+    function equipSeen(id: string): { q: number; t: number } | undefined {
+      return equipLore.value[id]
+    }
+
+    /**
+     * 记下一件装备的成色:品质取其高,层级取其高,各记各的。
+     *
+     * 不分先后地一起比(「这一件整体更好」)是没有定义的 —— 15 阶天品与 20 阶良品
+     * 谁更「好」要看用途。故两个维度各自刷新,谁也不冒充谁。
+     */
+    function noteEquipSeen(templateId: string, qualityRank: number, tier: number): void {
+      const cur = equipLore.value[templateId]
+      const q = Math.max(0, Math.min(8, Math.floor(qualityRank || 0)))
+      const t = Math.max(0, Math.floor(tier || 0))
+      if (cur && cur.q >= q && cur.t >= t) return
+      equipLore.value = {
+        ...equipLore.value,
+        [templateId]: { q: Math.max(cur?.q ?? 0, q), t: Math.max(cur?.t ?? 0, t) }
+      }
     }
 
     function seenOf(id: string): number {
@@ -168,6 +198,16 @@ export const useLoreStore = defineStore(
       // 旧存档没有这两张表,?? {} 保证补齐而非留 undefined
       enemyLore.value = clampMap(enemyLore.value ?? {}, 0, ENEMY_LORE_MAX)
       enemySeen.value = clampMap(enemySeen.value ?? {}, 0, Number.MAX_SAFE_INTEGER)
+      // 装备见闻:每个条目是 { q, t } 两个数,形状烂掉就整条丢掉
+      const seenFixed: Record<string, { q: number; t: number }> = {}
+      for (const [id, v] of Object.entries(equipLore.value ?? {})) {
+        const q = (v as { q?: unknown })?.q
+        const t = (v as { t?: unknown })?.t
+        // 只认真正的数字:Number(null) 是 0、"9" 会悄悄转成 9 —— 那会让坏条目冒充「见过一件凡品·0 阶」
+        if (typeof q !== 'number' || typeof t !== 'number' || !Number.isFinite(q) || !Number.isFinite(t)) continue
+        seenFixed[id] = { q: Math.max(0, Math.min(8, Math.floor(q))), t: Math.max(0, Math.floor(t)) }
+      }
+      equipLore.value = seenFixed
       if (!Number.isFinite(studyFrac.value)) studyFrac.value = 0
     }
 
@@ -179,6 +219,7 @@ export const useLoreStore = defineStore(
       skillExp,
       enemyLore,
       enemySeen,
+      equipLore,
       studyFrac,
       seeded,
       knownMaterialCount,
@@ -201,6 +242,8 @@ export const useLoreStore = defineStore(
       enemySeenOf,
       markEnemySeen,
       advanceEnemyLore,
+      equipSeen,
+      noteEquipSeen,
       sanitize
     }
   },

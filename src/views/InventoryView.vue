@@ -195,6 +195,11 @@
           </div>
         </div>
         <p class="mt-3 text-[12px] leading-relaxed text-ink-soft">{{ currentPill.def.desc }}</p>
+        <!-- 效果与来路:丹药卡片此前只有风味与数量,服下去会怎样一个字都没说 -->
+        <p class="mt-2 whitespace-pre-line text-[12px] leading-relaxed text-azure">{{ pillFuncText(currentPill.def) }}</p>
+        <p v-if="pillMasteryText(currentPill.def.id)" class="mt-1 text-[11px] text-ink-faint">
+          {{ pillMasteryText(currentPill.def.id) }}
+        </p>
       </template>
       <template #footer>
         <button class="btn-seal w-full" @click="onUsePill()">服 用</button>
@@ -246,6 +251,8 @@
                 <span v-if="r.able.overReach > 0" class="text-[10px] text-cinnabar">越阶 {{ r.able.overReach }}</span>
               </p>
               <p class="text-[11px] text-ink-faint tabular">灵草×{{ r.cost.herb }} · 灵石 {{ formatGN(r.cost.stone) }}</p>
+              <!-- 炼出来是什么:方子清单此前只报代价与把握,不报成品 -->
+              <p class="text-[10px] leading-relaxed text-azure/80">{{ pillFuncText(r.def) }}</p>
             </div>
             <div class="shrink-0 text-right">
               <p class="tabular text-[13px]" :class="rateClass(r.able.successRate)">{{ formatPercent(r.able.successRate) }}</p>
@@ -398,6 +405,7 @@
   import { useSettingsStore } from '@/stores/settings'
   import { qualityDef, QUALITIES } from '@/data/qualities'
   import { pillDef } from '@/data/pills'
+  import { pillFuncText } from '@/ui/itemText'
   import {
     artifactActiveText,
     artifactDef,
@@ -726,5 +734,18 @@
       parts.push(`回补 ${formatPercent(gain.heal.from)} → ${formatPercent(gain.heal.to)}${gain.heal.capped ? '(已至上限)' : ''}`)
     }
     return parts.join(' · ')
+  }
+
+  /**
+   * 丹方读到几分熟 —— 与图鉴的「已得方/通晓」同一份状态(lore.recipeLore)。
+   * 无方之丹没有这一行:它本就炼不出来(见 ui/itemText.pillSourceText)。
+   */
+  function pillMasteryText(id: string): string {
+    const def = pillDef(id)
+    if (!def?.recipe) return ''
+    const m = lore.recipeMastery(id)
+    if (m <= 0) return '此方尚未到手 —— 去藏经阁翻书,或向师长讨教'
+    if (m >= 1) return '此方已通晓:火候节点烂熟于心'
+    return `此方已得,熟练 ${Math.round(m * 100)}% —— 多炼几炉便到通晓`
   }
 </script>

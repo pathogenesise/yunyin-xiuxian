@@ -45,6 +45,8 @@
             <p class="text-[10px] text-violet-ink">
               {{ row.personalityName }} · <span class="text-ink-faint">{{ row.personalityDesc }}</span>
             </p>
+            <!-- 定性的话之外还要给数:换不换这只伙伴,靠「更容易」三个字算不出来 -->
+            <p v-if="row.traitText" class="text-[10px] text-azure/80 tabular">{{ row.traitText }}</p>
           </div>
           <button class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="togglePet(row.def.id)">
             {{ row.active ? '暂别' : '唤来' }}
@@ -67,6 +69,7 @@
   import { TITLES } from '@/data/titles'
   import { petDef, PETS } from '@/data/pets'
   import { PERSONALITY_NAMES, personalityDesc } from '@/core/petPersonality'
+  import { petTraitText } from '@/ui/itemText'
   import { qualityDef } from '@/data/qualities'
   import { formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
@@ -119,7 +122,8 @@
         active: player.petId === def!.id,
         modText: modsText(def!.mods),
         personalityName: PERSONALITY_NAMES[def!.personality],
-        personalityDesc: personalityDesc(def!.personality)
+        personalityDesc: personalityDesc(def!.personality),
+        traitText: petTraitText(def!)
       }))
       .sort((a, b) => Number(b.active) - Number(a.active))
   )

@@ -17,6 +17,7 @@ import { useResourcesStore } from '@/stores/resources'
 import { useSettingsStore } from '@/stores/settings'
 import { qualityDef } from '@/data/qualities'
 import { DECOMPOSE_DUST } from '@/data/constants'
+import { useLoreStore } from '@/stores/lore'
 import type { EquipmentInstance, QualityId } from '@/types'
 
 describe('自动回收 · 装备入包前的第一道闸', () => {
@@ -166,5 +167,46 @@ describe('法宝掉落 · 高界的池子该像高界', () => {
     }
     // 实测约 0.63(改动前约 0.40)—— 阈值留足余量,免得这条统计判据自己变得时红时绿
     expect(high / n, `${n} 次里只有 ${high} 次抽到仙界以上的法宝`).toBeGreaterThan(0.55)
+  })
+})
+
+/**
+ * 装备见闻 —— 图鉴的收录深度就靠这一笔。
+ *
+ * 装备图鉴此前只有「见没见过」两态;深度取自 lore.equipLore,而写它的地方
+ * 只有一处:acquireEquipment(装备入账的唯一漏斗)。这里守三件事:
+ * 拾得即记、只记更好的一件、以及**被化尘的那件也算见过**(图鉴记的是见闻,不是家当)。
+ */
+describe('装备见闻 · 入账那一刻就记下成色', () => {
+  function mkItem(uid: string, quality: QualityId, tier: number, templateId = 'w_xuantie'): EquipmentInstance {
+    return { uid, templateId, quality, tier, level: 0, affixes: [] }
+  }
+
+  it('拾得一件就记下它的品质与层级', () => {
+    acquireEquipment(mkItem('a', 'heaven', 15), { quiet: true, forceKeep: true })
+    expect(useLoreStore().equipSeen('w_xuantie')).toEqual({ q: qualityDef('heaven').rank, t: 15 })
+  })
+
+  it('后来更差的一件不拉低记录,更好的一件才刷新', () => {
+    acquireEquipment(mkItem('a', 'fine', 4), { quiet: true, forceKeep: true })
+    acquireEquipment(mkItem('b', 'heaven', 15), { quiet: true, forceKeep: true })
+    acquireEquipment(mkItem('c', 'mortal', 2), { quiet: true, forceKeep: true })
+    expect(useLoreStore().equipSeen('w_xuantie'), '差的一件把好记录顶掉了').toEqual({
+      q: qualityDef('heaven').rank,
+      t: 15
+    })
+    acquireEquipment(mkItem('d', 'divine', 20), { quiet: true, forceKeep: true })
+    expect(useLoreStore().equipSeen('w_xuantie')).toEqual({ q: qualityDef('divine').rank, t: 20 })
+  })
+
+  it('被自动回收(化尘)的那件也算见过 —— 图鉴记的是见闻,不是家当', () => {
+    useSettingsStore().smartKeep.enabled = true
+    // 换个模板:lore 分片在测试之间会随 localStorage 留着,别让前两条的账串味
+    const res = acquireEquipment(mkItem('a', 'mortal', 7, 'w_qingshuang'), { quiet: true })
+    expect(res.bagged, '这一件本该被回收').toBe(false)
+    expect(useLoreStore().equipSeen('w_qingshuang'), '化成尘的那件也该记在见闻里').toEqual({
+      q: qualityDef('mortal').rank,
+      t: 7
+    })
   })
 })

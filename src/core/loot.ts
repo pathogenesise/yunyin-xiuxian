@@ -27,6 +27,7 @@ import { harvestMaterials } from './loreService'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
+import { useLoreStore } from '@/stores/lore'
 import { useUiStore } from '@/stores/ui'
 
 export interface DropSummary {
@@ -70,6 +71,12 @@ export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolea
   const q = qualityDef(inst.quality)
   const t = equipmentTemplate(inst.templateId)
   const label = `${q.name}·${t?.name ?? '不明之物'}`
+  /**
+   * 先记见闻,再谈留不留:化尘的那件也是「见过」。
+   * 这里是装备入账的唯一漏斗(历练/离线/际遇/秘境/镇压/开局馈赠都走它),
+   * 故图鉴的收录深度不必另设埋点 —— 埋点一多,总有几处会漏。
+   */
+  useLoreStore().noteEquipSeen(inst.templateId, q.rank, inst.tier)
   track('equipsGained')
   collect('equip', inst.templateId)
   checkQualityAchievement(q.rank)

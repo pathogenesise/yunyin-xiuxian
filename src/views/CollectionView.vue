@@ -76,10 +76,7 @@
   import { useQuestsStore } from '@/stores/quests'
   import type { CollectionCategory } from '@/stores/quests'
   import { ACHIEVEMENTS } from '@/data/achievements'
-  import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
   import { GONGFA } from '@/data/gongfa'
-  import { PILLS } from '@/data/pills'
-  import { ARTIFACTS } from '@/data/artifacts'
   import { PETS } from '@/data/pets'
   import { EVENTS } from '@/data/events'
   import { chainOfEvent } from '@/data/chains'
@@ -87,25 +84,22 @@
   import { qualityDef } from '@/data/qualities'
   import {
     CODEX_SOURCES,
-    artifactFuncText,
-    artifactMetaText,
+    artifactCodex,
     branchCodex,
-    equipFuncText,
-    equipMetaText,
-    gongfaFuncText,
-    gongfaMetaText,
+    collectedTimeText,
+    equipCodex,
     materialCodex,
+    pillCodex,
     type CodexCat,
     type CodexEntry
   } from '@/ui/codex'
-  import { useInventoryStore } from '@/stores/inventory'
+  import { gongfaFuncText, gongfaMetaText } from '@/ui/itemText'
   import { achievementDirection } from '@/ui/achievementHint'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
 
   const quests = useQuestsStore()
-  const inventory = useInventoryStore()
 
   type Tab = 'achievement' | 'collection'
   const tab = ref<Tab>('achievement')
@@ -156,21 +150,10 @@
         stageName: '',
         badge: '',
         hint: '',
-        foot: { label: '收录时间', value: collectedTime(quests.collectedAt[`${key}:${d.id}`]) }
+        foot: { label: '收录时间', value: collectedTimeText(quests.collectedAt[`${key}:${d.id}`]) }
       }))
       .sort((a, b) => b.stage - a.stage)
     return { key, name, hint: `${ownedIds.length}/${defs.length}`, source: CODEX_SOURCES[key], entries }
-  }
-
-  function collectedTime(ts: number | undefined): string {
-    if (ts === undefined) return '早年收录,未记时日'
-    return new Date(ts).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
   }
 
   /**
@@ -182,18 +165,9 @@
   const collectionCats = computed<CodexCat[]>(() => {
     const c = quests.collections
     return [
-      makeCat(
-        'equip',
-        '装备图鉴',
-        c.equip,
-        EQUIPMENT_TEMPLATES.map(t => ({
-          id: t.id,
-          name: t.name,
-          // 风味 + 功用:图鉴是玩家决定「留不留」的地方,只印风味等于没印
-          desc: [t.desc, equipFuncText(t)].filter(Boolean).join('\n'),
-          meta: equipMetaText(t)
-        }))
-      ),
+      // 装备/法宝/丹药三类走带深浅的派生视图(见 ui/codex:收录深度一节),
+      // 其余四类仍是「收没收录」两态,故共用 makeCat
+      equipCodex(),
       makeCat(
         'gongfa',
         '功法阁',
@@ -207,29 +181,9 @@
         }))
       ),
       branchCodex(),
-      makeCat(
-        'pill',
-        '丹方录',
-        c.pill,
-        PILLS.map(p => ({ id: p.id, name: p.name, desc: p.desc, meta: qualityDef(p.quality).name, color: qualityDef(p.quality).color }))
-      ),
+      pillCodex(),
       materialCodex(),
-      makeCat(
-        'artifact',
-        '法宝谱',
-        c.artifact,
-        ARTIFACTS.map(a => {
-          // 图鉴里的数按该玩家自己的祭炼等级给 —— 未拥有的根本点不开(只显示 ???)
-          const owned = inventory.artifacts.find(o => o.defId === a.id)
-          return {
-            id: a.id,
-            name: a.name,
-            desc: [a.desc, artifactFuncText(a, owned?.level ?? 0)].filter(Boolean).join('\n'),
-            meta: artifactMetaText(a),
-            color: qualityDef(a.quality).color
-          }
-        })
-      ),
+      artifactCodex(),
       makeCat(
         'pet',
         '灵兽册',

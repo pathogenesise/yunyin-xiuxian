@@ -18,6 +18,7 @@ import type { BondState } from '@/core/daoluService'
 import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import { usePacingTelemetry } from '@/stores/pacingTelemetry'
+import { useLoreStore } from '@/stores/lore'
 
 /**
  * store 清单**从源码倒推**,不再手写。
@@ -119,6 +120,17 @@ describe('坏档韧性 · 清单从源码倒推', () => {
     expect(t.enabled).toBe(true)
     t.record('enlightenment', 'modal', '顿悟')
     expect(t.events.length, '修形之后仍要能继续记录').toBe(2)
+  })
+
+  it('装备见闻:条目形状烂掉就整条丢掉,不冒充「见过一件凡品 · 0 阶」', () => {
+    setActivePinia(createPinia())
+    const lore = useLoreStore()
+    lore.$patch({
+      equipLore: { good: { q: 3, t: 9 }, nullq: { q: null, t: 2 }, text: 'nope', half: { q: 1 } } as never
+    })
+    lore.sanitize()
+    expect(Object.keys(lore.equipLore), '只该留下形状完整的条目').toEqual(['good'])
+    expect(lore.equipSeen('good')).toEqual({ q: 3, t: 9 })
   })
 })
 
