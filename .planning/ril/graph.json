@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T04:06:09+00:00",
+  "updated_at": "2026-09-15T04:18:03+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10145,6 +10145,18 @@
       "touched_round": 176,
       "confidence": 0.6,
       "summary": "SW 的 browser-级行为(离线重开/安装提示/更新接管)本环境无浏览器可基站内验证,需真机 E2E;若人工验证发现问题,回滚 sw.js 注册一行即可"
+    },
+    "EV-160": {
+      "id": "EV-160",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T04:18:03+00:00",
+      "updated_at": "2026-09-15T04:18:03+00:00",
+      "touched_round": 176,
+      "source": "commit 6335909dc2bc: node --check public/sw.js 语法通过;build 产物 dist/sw.js 正确;vue-tsc -b 绿",
+      "summary": "SW 静态层验证:语法/产物落盘/类型全过;浏览器级离线与安装行为未验证,故 hypothesis 置信度维持 0.6",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -14954,6 +14966,12 @@
       "to": "TASK-157",
       "type": "implements",
       "created_at": "2026-09-15T04:06:09+00:00"
+    },
+    {
+      "from": "EV-160",
+      "to": "HYP-092",
+      "type": "validates",
+      "created_at": "2026-09-15T04:18:03+00:00"
     }
   ]
 }
