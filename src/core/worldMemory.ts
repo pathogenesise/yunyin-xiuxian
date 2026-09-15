@@ -36,6 +36,17 @@ export function isReviving(suppressedAt: number | undefined, now: number): boole
   return (now - suppressedAt) / 3600_000 > REVIVE_AFTER_HOURS
 }
 
+/**
+ * 距妖气复聚(镇压自动解除)还剩多少小时;未镇压或已过期返回 0。
+ *
+ * 复聚是确定的期限,却从不预告:玩家只会看到某天镇压「突然没了」。
+ * 界面据此把期限写成倒计时(与 isReviving 同一个阈值,不另立一份)。
+ */
+export function hoursUntilRevive(suppressedAt: number | undefined, now: number = Date.now()): number {
+  if (suppressedAt === undefined) return 0
+  return Math.max(0, REVIVE_AFTER_HOURS - (now - suppressedAt) / 3600_000)
+}
+
 interface RegionStateInput {
   totalWins: number
   hasSuppressed: boolean

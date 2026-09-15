@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import {
   deriveProsperity,
+  hoursUntilRevive,
   prosperityName,
   recordLoss,
   isNemesis,
@@ -122,6 +123,23 @@ describe('S1 区域兴衰', () => {
     expect(isReviving(t, t + REVIVE_AFTER_HOURS * 3600_000 + 1)).toBe(true)
     expect(isReviving(t, t + REVIVE_AFTER_HOURS * 3600_000 - 1)).toBe(false)
     expect(isReviving(undefined, t)).toBe(false)
+  })
+
+  /**
+   * 复聚倒计时 —— 界面把「还能守多久」写出来,与 isReviving 共用同一个阈值。
+   * 从前 72 小时的期限完全没有预告,玩家的体感是「镇压某天突然没了」。
+   */
+  it('复聚倒计时:与复苏判定同一条线,未镇压为 0', () => {
+    const t = Date.now()
+    expect(hoursUntilRevive(undefined, t)).toBe(0)
+    expect(hoursUntilRevive(t, t)).toBeCloseTo(REVIVE_AFTER_HOURS, 6)
+    expect(hoursUntilRevive(t, t + 12 * 3600_000)).toBeCloseTo(REVIVE_AFTER_HOURS - 12, 6)
+    // 倒计时归零的那一刻,正是复苏判定翻真的位置(两条口径不许分叉)
+    const atRevive = t + REVIVE_AFTER_HOURS * 3600_000
+    expect(hoursUntilRevive(t, atRevive)).toBe(0)
+    expect(isReviving(t, atRevive - 1)).toBe(false)
+    expect(isReviving(t, atRevive + 1)).toBe(true)
+    expect(hoursUntilRevive(t, atRevive + 999 * 3600_000), '过期不出现负数').toBe(0)
   })
 })
 

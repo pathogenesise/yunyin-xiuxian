@@ -12,6 +12,15 @@
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         胜 {{ session?.wins ?? 0 }} 场 · 际遇 {{ session?.events ?? 0 }} 次 · 拾获 {{ session?.itemGain ?? 0 }} 件
       </p>
+      <!-- 本次所得:石头与修为此前只在挂机总结里出现,在线历练中玩家看不到这一趟赚了什么 -->
+      <p v-if="gains" class="mt-0.5 text-[10px] text-ink-faint tabular">
+        本次所得 · 灵石 <span class="text-gold-ink">+{{ gains.stone }}</span> · 修为
+        <span class="text-jade">+{{ gains.exp }}</span>
+      </p>
+      <!-- 目标感:未靖的地界,打完十胜就该遇首领;不给提示的话玩家不知道还要打多久 -->
+      <p v-if="bossHint" class="mt-0.5 text-[10px]" :class="bossSoon ? 'text-cinnabar' : 'text-gold-ink'">
+        {{ bossHint }}
+      </p>
     </div>
 
     <!-- 战斗面板 -->
@@ -121,6 +130,11 @@
           {{ showAnalysis ? '收起分析' : '战斗分析 »' }}
         </button>
       </p>
+      <!-- 本战拾获明细:战报里原本只进件数,「得了什么」全靠猜 -->
+      <p v-if="battleLoot.length" class="mt-1 text-center text-[10px] leading-relaxed text-ink-faint">
+        <span class="text-gold-ink">本战所得</span>
+        {{ battleLoot.join(' · ') }}
+      </p>
       <!-- 此物所知(Phase 32.5:交手越多,战前看得越清楚) -->
       <div v-if="showLore && lore" class="mt-2 rounded-md bg-ink/4 px-3 py-2.5">
         <p class="flex items-center gap-2">
@@ -180,9 +194,9 @@
   import { useAdventureStore } from '@/stores/adventure'
   import { usePlayerStore } from '@/stores/player'
   import { useSettingsStore } from '@/stores/settings'
-  import { stopExploration } from '@/core/exploration'
+  import { stopExploration, winsUntilRegionBoss } from '@/core/exploration'
   import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES } from '@/data/constants'
-  import { formatDuration } from '@/utils/format'
+  import { formatDuration, formatGN } from '@/utils/format'
   import { useNow } from '@/composables/useNow'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, enemyTraits, starsText, TRAIT_NAMES, type RegionEcology } from '@/core/buildAdvisor'
@@ -216,6 +230,30 @@
   const battle = computed(() => adventure.lastBattle)
   const timeLeft = computed(() => (session.value ? Math.max(0, (session.value.endsAt - now.value) / 1000) : 0))
   const modeName = computed(() => (session.value ? EXPLORE_MODES[session.value.mode].name : ''))
+
+  /** 本次历练已得(灵石/修为)—— 取自会话里如实累计的入账数,不是期望值 */
+  const gains = computed(() => {
+    const s = session.value
+    if (!s) return null
+    return { stone: formatGN(s.stoneGain), exp: formatGN(s.expGain) }
+  })
+
+  /** 距区域之主还差几胜(已靖的地界不再提示) */
+  const bossIn = computed(() => {
+    const s = session.value
+    const r = region.value
+    if (!s || !r) return null
+    return winsUntilRegionBoss(s.wins, adventure.cleared.includes(r.id))
+  })
+  const bossSoon = computed(() => bossIn.value !== null && bossIn.value <= 0)
+  const bossHint = computed(() => {
+    const n = bossIn.value
+    if (n === null) return null
+    return n > 0 ? `距此地之主还差 ${n} 胜` : '此地之主将现 —— 下一战即是首领'
+  })
+
+  /** 本战拾获明细(旧存档/旧战报没有这一栏 → 空数组) */
+  const battleLoot = computed(() => battle.value?.loot ?? [])
 
   /** 当前敌人的机制特性标签 */
   const foeTraits = computed(() => {

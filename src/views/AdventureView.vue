@@ -30,6 +30,13 @@
       <p v-if="player.suppressedRegions.length > 0" class="text-[10px] text-gold-ink">
         镇压收益中 {{ player.suppressedRegions.length }} 处 —— 与历练互不冲突,可同时收取;一次只能历练一处。
       </p>
+      <!-- 镇压的门槛与期限一次说清:从前三判据与 72 小时复聚都只活在代码里 -->
+      <p class="text-[10px] leading-relaxed text-ink-faint">
+        镇压:在某地打满 {{ SUPPRESS_THRESHOLDS.minFights }} 战,且平均
+        {{ SUPPRESS_THRESHOLDS.maxAvgRounds }} 回合内取胜、受伤不过
+        {{ Math.round(SUPPRESS_THRESHOLDS.maxAvgDamageTaken * 100) }}%,此地便退出历练、转为自动产出;
+        资格取得即永久,可随时切回历练。持续镇压 {{ REVIVE_AFTER_HOURS }} 小时后妖气复聚,该地重新成为历练之地。
+      </p>
       <div class="space-y-2.5">
         <template v-for="group in groupedRows" :key="group.world.id">
           <div class="flex items-center gap-2 pt-1">
@@ -86,16 +93,20 @@
                 转为镇压收益
               </button>
               <span v-if="row.qualified" class="text-center text-[9px] leading-tight text-gold-ink">
-                {{ rateText(row.def) }}
+                {{ rateText(row.def, row.recall) }}
               </span>
             </div>
             <div v-else-if="row.suppressed" class="shrink-0 text-right">
               <span class="block text-[11px] text-gold-ink">
-                自动产出中 · {{ rateText(row.def) }}
+                自动产出中 · {{ rateText(row.def, row.recall) }}
               </span>
               <!-- 守土之年:守得越久,兴衰越盛,产出随之上浮 -->
               <span class="block text-[10px] text-ink-faint">
                 已守 {{ heldText(row.def.id) }} · {{ prosperityName(row.recall.prosperity) }}
+              </span>
+              <!-- 复聚有确定期限,就该有倒计时:否则玩家只会看到镇压某天突然消失 -->
+              <span class="block text-[10px]" :class="row.reviveInHours <= 12 ? 'text-cinnabar' : 'text-ink-faint'">
+                妖气 {{ reviveText(row.reviveInHours) }}后复聚
               </span>
               <button
                 class="-ml-1.5 mt-0.5 rounded-md px-1.5 py-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
@@ -108,6 +119,28 @@
           <p class="mt-2 text-[11px] leading-relaxed text-ink-faint">
             <template v-if="row.canEnter">{{ row.def.desc }}</template>
             <template v-else>需先击败{{ prevRegionName(row.def) }}之主,方可踏足此地。</template>
+          </p>
+          <!--
+            镇压资格进度:只显示「能不能镇压」时,玩家打够了场数却压不住,
+            只能猜自己差在哪 —— 这里把三条判据的当前值与阈值并排摆出来,未达标项标红
+          -->
+          <p
+            v-if="row.canEnter && !row.suppressed && !row.qualified"
+            class="mt-1 text-[10px] leading-relaxed tabular"
+          >
+            <span class="text-ink-soft">镇压资格</span>
+            <span class="ml-1" :class="row.progress.fightsOk ? 'text-jade' : 'text-ink-soft'">
+              {{ row.progress.fights }}/{{ row.progress.needFights }} 战
+            </span>
+            <template v-if="row.progress.hasStats">
+              <span class="ml-1.5" :class="row.progress.roundsOk ? 'text-ink-faint' : 'text-cinnabar'">
+                均 {{ row.progress.avgRounds.toFixed(1) }} 回合(需≤{{ row.progress.maxAvgRounds }})
+              </span>
+              <span class="ml-1.5" :class="row.progress.damageOk ? 'text-ink-faint' : 'text-cinnabar'">
+                均受伤 {{ Math.round(row.progress.avgDamagePct * 100) }}%(需≤{{ Math.round(row.progress.maxAvgDamagePct * 100) }}%)
+              </span>
+            </template>
+            <span v-else class="ml-1.5 text-ink-ghost">尚无战绩</span>
           </p>
           <!-- 进不去时,理由指向眼下就能去的那一段,不让玩家自己排先后 -->
           <p v-if="row.blockReason" class="mt-1 text-[11px] text-cinnabar">{{ row.blockReason }}</p>
@@ -194,7 +227,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import type { ExploreMode, RegionDef } from '@/types'
+  import type { ExploreMode, RegionDef, RegionRecall } from '@/types'
   import { useAdventureStore } from '@/stores/adventure'
   import { usePlayerStore } from '@/stores/player'
   import { useUiStore } from '@/stores/ui'
@@ -209,9 +242,9 @@
   import { REALMS } from '@/data/realms'
   import { EXPLORE_MODES } from '@/data/constants'
   import { startExploration } from '@/core/exploration'
-  import { stoneByTier } from '@/core/formulas'
-  import { suppressYield } from '@/core/suppress'
-  import { regionRecallFor, prosperityName, isReviving } from '@/core/worldMemory'
+  import { SUPPRESS_THRESHOLDS, suppressRateFor, suppressionProgress } from '@/core/suppress'
+  import { REVIVE_AFTER_HOURS, hoursUntilRevive, regionRecallFor, prosperityName, isReviving, prosperityYieldMult } from '@/core/worldMemory'
+  import { mulN } from '@/utils/gnum'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, ecologyChips, ECO_LEVEL_NAMES, recommendForRegion, regionEcology, starsText } from '@/core/buildAdvisor'
   import { formatDuration, formatGN } from '@/utils/format'
@@ -284,6 +317,10 @@
         /** 是否取得过镇压资格(取得即永久,此后可自由在历练/收益之间切换) */
         qualified: player.suppressQualified.includes(r.id),
         recall,
+        /** 镇压资格进度(三条判据的当前值/阈值) */
+        progress: suppressionProgress(player.regionStats[r.id]),
+        /** 距妖气复聚还剩几小时(未镇压为 0) */
+        reviveInHours: suppressed ? hoursUntilRevive(player.suppressedSince[r.id]) : 0,
         tooHard: r.minRealm > player.major,
         // 第一层信息:只保留最强的两个生态标签
         chips: ecologyChips(eco).slice(0, 2),
@@ -364,12 +401,26 @@
     ui.toast(`你重掌${r?.name ?? '此地'}——镇压依旧,收益自取`, 'success')
   }
 
-  /** 镇压区域每小时产出(灵石 + 该地界物产,展示给玩家做取舍) */
-  function rateText(r: RegionDef): string {
-    const yieldPerHour = stoneByTier(r.tier, 150) // SUPPRESS_YIELD_PER_HOUR.stoneMultiplier
-    const extra = suppressYield(r.id)
-    const stone = `${formatGN(yieldPerHour)}灵石/时`
-    return extra ? `${stone} · ${extra.name}${extra.perHour}/时` : stone
+  /**
+   * 镇压区域每小时产出(灵石 + 该地界物产)。
+   *
+   * 速率取自 suppress.ts 的唯一实现(从前这里手抄 150 并注释「= stoneMultiplier」,
+   * 常量一改界面就开始撒谎),并乘上当前兴衰系数 —— 显示的数与真正入账的数同源。
+   */
+  function rateText(r: RegionDef, recall: RegionRecall): string {
+    const rate = suppressRateFor(r.id)
+    if (!rate) return '—'
+    const mult = prosperityYieldMult(recall.prosperity)
+    const stone = `${formatGN(mulN(rate.stonePerHour, mult))}灵石/时`
+    if (!rate.resource) return stone
+    const perHour = Math.max(1, Math.round(rate.resource.perHour * mult))
+    return `${stone} · ${rate.resource.name}${perHour}/时`
+  }
+
+  /** 复聚倒计时文案:一天以上说日,一天以内说时 */
+  function reviveText(hours: number): string {
+    if (hours >= 24) return `${Math.floor(hours / 24)} 日`
+    return `${Math.max(0, Math.floor(hours))} 时`
   }
 
   /** 已守时长(自镇压起算)—— 守得越久,兴衰越盛 */
