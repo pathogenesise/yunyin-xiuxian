@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 180,
+  "round": 181,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T06:17:34+00:00",
+  "updated_at": "2026-09-15T06:46:09+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -8772,7 +8772,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 179,
+      "touched_round": 181,
       "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
     },
     "EV-142": {
@@ -10365,6 +10365,74 @@
       "touched_round": 180,
       "commit": "a4eb0c623a01",
       "summary": "iOS 存档风险提示(主页一次 + 设置页常驻)与「上次导出备份」记账提醒;platform/saveBackup 两个纯模块带判据,自检加三档 UA 端到端"
+    },
+    "ISS-177": {
+      "id": "ISS-177",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T06:45:51+00:00",
+      "updated_at": "2026-09-15T06:46:09+00:00",
+      "touched_round": 181,
+      "severity": 0.3,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "字体栈有两处定义且分叉:tailwind.config 的 fontFamily.kai 与 style.css 的 --font-kai 各写一份,而 .font-kai{font-family:var(--font-kai)} 在产物里排在前面那份之后把它整个盖掉 —— 改配置不生效(做「三端统一楷体」时真踩到:先改配置,产物纹丝不动)"
+    },
+    "ISS-178": {
+      "id": "ISS-178",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T06:45:51+00:00",
+      "updated_at": "2026-09-15T06:46:09+00:00",
+      "touched_round": 181,
+      "severity": 0.2,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "排版自检的战斗回放判据会假红:它靠 击中|施展|避开|打断|气血逆涌 五个关键词数战报行,而暴击那句写的是「会心一击!…受创甚重」—— 一击暴击定胜负的战斗(战后气血 100%)五个词一个不沾,被误判成「回放没出内容」"
+    },
+    "TASK-163": {
+      "id": "TASK-163",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T06:45:51+00:00",
+      "updated_at": "2026-09-15T06:46:09+00:00",
+      "touched_round": 181,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "三端统一楷体:内置霞鹜文楷排字体栈首位、系统楷体退第二位兜底;理顺字体栈事实源(只留 style.css 一处);加「栈次序」与「真由内置字体渲染」两条判据"
+    },
+    "DEC-036": {
+      "id": "DEC-036",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:45:51+00:00",
+      "updated_at": "2026-09-15T06:45:51+00:00",
+      "touched_round": 181,
+      "summary": "楷体三端统一用内置那份;子集保持「游戏用字 + GB2312 全字集」(1517KB);不加 preload",
+      "rationale": "系统优先时三端各是一种字形(iOS 华文楷体、Windows 楷体且它属按需安装的中文补充字体、安卓内置),同一款游戏摆在一起是三种气质;统一之后还有个副作用是好的 —— 无头自检用的正是这份字体,读数第一次等于所有端。子集不砍:实测 30 个起名常用字里,砍掉 GB2312 只少 5 个,而省下的 931KB 是省给网页玩家的、损失却集中在安卓(iOS 有华文楷体接住,安卓直接落宋体),名字在顶栏每一屏都挂着。不加 preload:这份字体是首屏 JS+CSS(75KB)的二十倍,提前抢带宽可能拖慢可玩时间,而 swap 已保证文字立刻可读",
+      "alternatives_rejected": [
+        "系统优先、内置兜底(原状):三端三种字形,且 Windows 是否命中系统楷体取决于有没有装中文补充字体",
+        "只让 Apple 用系统楷体、其余用内置:能保住 iOS 的书法味,但一致性只做到一半,且要维护一条按平台分叉的栈",
+        "把子集砍到 586KB(只留游戏用字):省 931KB,代价是安卓上「宸 淼 峥 晗」这类名字用字会掉到宋体",
+        "加 font preload:把最大的资源提到高优先级,与让游戏能跑起来的那 75KB 抢带宽"
+      ]
+    },
+    "CHG-213": {
+      "id": "CHG-213",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:46:09+00:00",
+      "updated_at": "2026-09-15T06:46:09+00:00",
+      "touched_round": 181,
+      "commit": "0936f4e64cb2",
+      "summary": "楷体三端统一(内置排字体栈首位,系统楷体留作兜底;字体栈事实源收归 style.css 一处)+ 两条判据(产物次序、运行时真由内置字体渲染);顺带修掉战斗回放判据的假红(改数回放行本身)"
     }
   },
   "edges": [
@@ -15306,6 +15374,54 @@
       "to": "ISS-176",
       "type": "resolves",
       "created_at": "2026-09-15T06:17:33+00:00"
+    },
+    {
+      "from": "ISS-177",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-15T06:45:51+00:00"
+    },
+    {
+      "from": "ISS-178",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-15T06:45:51+00:00"
+    },
+    {
+      "from": "TASK-163",
+      "to": "ISS-177",
+      "type": "addresses",
+      "created_at": "2026-09-15T06:45:51+00:00"
+    },
+    {
+      "from": "TASK-163",
+      "to": "ISS-178",
+      "type": "addresses",
+      "created_at": "2026-09-15T06:45:51+00:00"
+    },
+    {
+      "from": "DEC-036",
+      "to": "TASK-163",
+      "type": "governs",
+      "created_at": "2026-09-15T06:45:51+00:00"
+    },
+    {
+      "from": "CHG-213",
+      "to": "TASK-163",
+      "type": "implements",
+      "created_at": "2026-09-15T06:46:09+00:00"
+    },
+    {
+      "from": "CHG-213",
+      "to": "ISS-177",
+      "type": "resolves",
+      "created_at": "2026-09-15T06:46:09+00:00"
+    },
+    {
+      "from": "CHG-213",
+      "to": "ISS-178",
+      "type": "resolves",
+      "created_at": "2026-09-15T06:46:09+00:00"
     }
   ]
 }
