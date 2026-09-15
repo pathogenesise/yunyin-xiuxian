@@ -27,35 +27,52 @@
     <div class="card-ink relative overflow-hidden px-4 py-4">
       <!-- 敌方 -->
       <div class="relative" :class="[shakeCls.e, defeated === 'e' ? 'foe-defeated' : '']">
-        <div class="flex items-center gap-2">
+        <!-- 图标与首行文字顶部对齐:名字+标签换行时,图标不该跟着往下沉 -->
+        <div class="flex items-start gap-2">
           <span
-            class="grid h-10 w-10 place-items-center rounded-full border"
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-full border"
             :class="battle?.isBoss ? 'border-cinnabar/70 text-cinnabar bg-cinnabar/5' : 'border-ink/25 text-ink-soft bg-ink/4'"
           >
             <GameIcon :name="battle?.enemyIcon ?? 'paw'" :size="18" />
           </span>
-          <div class="grow">
-            <p class="flex items-center gap-1.5 font-kai text-[14px] text-ink">
-              <template v-if="battle">{{ battle.enemyName }}</template>
+          <div class="min-w-0 grow">
+            <!--
+              名字 + 适配星级一行,**标签另起一行**。
+
+              从前名字、首领/宿敌、特性、星级全挤在同一行 nowrap 的 flex 里:
+              名字最长 9 字(「残魂·堕落冰魄仙子」)、特性最多 3 个,窄屏上名字被挤成两行、
+              标签压在一起。标签数量不定,让它跟名字抢宽度就永远会有下一档挤法 ——
+              干脆分层:第一行只答「这是谁、我打它多合适」,第二行只答「它有什么路数」。
+            -->
+            <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-kai text-[14px] text-ink">
+              <template v-if="battle">
+                <span data-foe-name class="whitespace-nowrap">{{ battle.enemyName }}</span>
+              </template>
               <template v-else>
-                搜寻猎物中
+                <span class="whitespace-nowrap">搜寻猎物中</span>
                 <span class="ink-dots text-ink-faint">
                   <span />
                   <span />
                   <span />
                 </span>
               </template>
-              <span v-if="battle?.isBoss" class="chip-ink border-cinnabar/60 text-[9px] text-cinnabar">首领</span>
-              <span v-if="isNemesisFoe" class="chip-ink border-cinnabar/80 bg-cinnabar/10 text-[9px] text-cinnabar">宿敌</span>
-              <span v-for="t in shownTraits" :key="t" class="chip-ink border-violet-ink/50 text-[9px] text-violet-ink">
-                {{ TRAIT_NAMES[t] }}
-              </span>
               <span
                 v-if="foeAdaptation"
-                class="ml-auto text-[10px] font-normal text-gold-ink tabular"
+                class="ml-auto shrink-0 text-[10px] font-normal text-gold-ink tabular"
                 :title="foeAdaptation.reasons.join(';')"
               >
                 {{ starsText(foeAdaptation.stars) }}
+              </span>
+            </p>
+            <!-- 标签行:首领 / 宿敌 / 敌人路数(特性)—— 有几个就排几个,放不下就在这一行里换行 -->
+            <p
+              v-if="battle && (battle.isBoss || isNemesisFoe || shownTraits.length)"
+              class="mt-1 flex flex-wrap items-center gap-1.5"
+            >
+              <span v-if="battle.isBoss" class="chip-ink border-cinnabar/60 text-[9px] text-cinnabar">首领</span>
+              <span v-if="isNemesisFoe" class="chip-ink border-cinnabar/80 bg-cinnabar/10 text-[9px] text-cinnabar">宿敌</span>
+              <span v-for="t in shownTraits" :key="t" class="chip-ink border-violet-ink/50 text-[9px] text-violet-ink">
+                {{ TRAIT_NAMES[t] }}
               </span>
             </p>
             <ProgressBar :value="ehp" color="var(--color-cinnabar)" :height="6" class="mt-1" />
@@ -123,10 +140,23 @@
       <!-- 战斗后统计 + 分析入口 -->
       <p v-if="battleSummary" class="mt-2 flex items-center justify-center gap-2 text-center text-[10px] text-ink-faint tabular">
         {{ battleSummary }}
-        <button v-if="lore" class="text-violet-ink active:opacity-60" @click="showLore = !showLore">
+        <!--
+          行内文字的按钮也得有 28px 触达区(见 layout-check 的判据):
+          它们此前只有一个字高(实测 15px),拇指点不着 —— 用 min-h 撑起来,
+          再用负外边距把这多出来的高度抵掉,视觉密度不变。
+        -->
+        <button
+          v-if="lore"
+          class="-my-2 inline-flex min-h-[28px] items-center px-1 text-violet-ink active:opacity-60"
+          @click="showLore = !showLore"
+        >
           {{ showLore ? '收起所知' : '此物所知 »' }}
         </button>
-        <button v-if="analysis" class="text-azure active:opacity-60" @click="showAnalysis = !showAnalysis">
+        <button
+          v-if="analysis"
+          class="-my-2 inline-flex min-h-[28px] items-center px-1 text-azure active:opacity-60"
+          @click="showAnalysis = !showAnalysis"
+        >
           {{ showAnalysis ? '收起分析' : '战斗分析 »' }}
         </button>
       </p>

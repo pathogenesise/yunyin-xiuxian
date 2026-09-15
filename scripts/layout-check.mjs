@@ -2,10 +2,15 @@
 /**
  * 排版自检 —— 手机尺寸下逐页量一遍「有没有横向溢出」
  *
- * 用法(需要 playwright,不写进依赖,免得 CI 背一个浏览器):
+ * 用法:
  *   bun run build
  *   npm i --no-save playwright        # 或全局装;浏览器缓存在 ~/.cache/ms-playwright
  *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
+ *
+ * 它同时在 CI 里跑(见 .github/workflows/deploy.yml 与 build.yml 的 ui-check job):
+ * 每个 main 提交与每个发版 tag 都过这一关 —— 判据红则不发布。
+ * playwright 仍**不进 package.json**(只有这一关需要它,装进 devDependencies
+ * 会让每次本机 bun install 都背一份),CI 用 `npm install --no-save` 按版本号装。
  *
  * 它做这些事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;
@@ -65,6 +70,8 @@
  *      「卡片没溢出、只是挤」这一类,横向溢出永远查不出来。
  *   三十五 标点不许被折成孤字:模板里把标点另起一行写(HTML 会把换行折成空格),
  *      窄屏上句号就会独自占一行 —— 量的是渲染结果,比在源码里认标点准。
+ *   三十六 敌人卡最挤的一档:名字最长 9 字 + 满标签(首领/宿敌/3 特性)+ 星级。
+ *      巡页用的档里敌人名字都短、认知层为 0(特性根本不显示),这一档从前没被量过。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -2465,6 +2472,126 @@ for (const vp of VIEWPORTS) {
     failures.push('[390] 战斗场景:战报里漏出占位符')
   }
   if (pageErrors.length) failures.push(`[390] 战斗场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第三十六件事:敌人卡的最挤一档(长名字 + 满标签) ----
+/*
+ * 敌人名字最长 9 字(残魂·堕落冰魄仙子),标签最多 5 枚(首领 / 宿敌 + 3 个路数特性),
+ * 再叠上适配星级。从前这些全挤在一行 nowrap 的 flex 里,320 宽下名字被折成两行、
+ * 标签压在一起 —— 而巡页用的档里敌人名字都短、认知层也是 0(特性根本不显示),
+ * 这一档从来没有被量过:夹具缺什么,判据就瞎什么。
+ *
+ * 夹具直接摆出这一档:认知层 2(知其路数 → 特性显示)、宿敌记录(→ 宿敌标签)、
+ * 首领身份(→ 首领标签)、真仙境的敌人(→ 名字最长的那个)。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const now = Date.now()
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: now - 86400000, lastActiveAt: now, totalPlaySec: 600, createRerolls: 8, createProfile: null },
+    player: {
+      name: '战斗卡自检',
+      major: 12,
+      sub: 3,
+      exp: gn(1, 3),
+      age: 300,
+      dead: false,
+      nemeses: [{ enemyId: 'e_icefairy', enemyName: '堕落冰魄仙子', regionId: 'leichi', lossCount: 3, lastLossAt: now }],
+      reincarnation: { count: 1, daoFruit: 3, talents: [], insight: 50, lives: [], vow: null, trial: null, bonds: [] },
+      linggen: { roots: [{ element: 'ice', aptitude: 90 }], gradeName: '单灵根', growthMult: 1.2 }
+    },
+    resources: { spiritStone: gn(8, 7), qi: 5000, wudao: 200, herb: 100, ore: 100, page: 20, dust: 40 },
+    inventory: {
+      items: [{ uid: 'w1', templateId: 'w_zidian', quality: 'heaven', tier: 12, level: 2, affixes: [{ id: 'bs3', roll: 1 }, { id: 'low2', roll: 1 }] }],
+      equipped: { weapon: 'w1' },
+      pills: {},
+      artifacts: [],
+      equippedArtifacts: []
+    },
+    cultivation: { learned: { g_qingyun: 6 }, mainGongfa: 'g_qingyun', subGongfa: [], buffs: [], gongfaBranch: {} },
+    lore: {
+      materialLore: {},
+      materialSeen: {},
+      recipeLore: {},
+      blueprintLore: {},
+      skillExp: {},
+      enemyLore: { e_icefairy: 2 }, // 知其路数 → 特性标签会显示
+      enemySeen: { e_icefairy: 6 },
+      studyFrac: 0,
+      seeded: true
+    },
+    adventure: {
+      unlocked: ['qingyun', 'luoxia', 'heifeng', 'leichi'],
+      cleared: ['qingyun', 'luoxia'],
+      mortalCleared: [],
+      session: { regionId: 'leichi', mode: 'risky', startedAt: now - 60000, endsAt: now + 3600000, nextBattleAt: now + 12000, wins: 4, losses: 0, events: 1, stoneGain: gn(1.2, 6), expGain: gn(3.4, 6), itemGain: 3 },
+      pendingEventId: null,
+      pendingEventSince: 0,
+      seenOnceEvents: [],
+      lastBattle: {
+        enemyName: '残魂·堕落冰魄仙子',
+        enemyIcon: 'snowflake',
+        enemyId: 'e_icefairy',
+        isBoss: true,
+        result: {
+          win: true,
+          rounds: 7,
+          playerHpPct: 0.62,
+          log: [
+            { t: 'atk', text: '你挥剑直取,', php: 1, ehp: 0.8 },
+            { t: 'crit', text: '会心一击!', dmg: '12', php: 1, ehp: 0.4 },
+            { t: 'win', text: '你胜了。', php: 0.62, ehp: 0 }
+          ]
+        },
+        at: now - 3000,
+        loot: ['功法残页×2', '玄冰剑']
+      },
+      eventMemories: {}
+    },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'dark' }
+  }
+  await ctx.addInitScript(
+    data => {
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#/adventure', { waitUntil: 'load' })
+  await page.waitForTimeout(2200)
+  await page.evaluate(() => {
+    Math.random = () => 1
+  })
+  const foe = await page.evaluate(() => {
+    const name = document.querySelector('[data-foe-name]')
+    if (!name) return { found: false }
+    const r = name.getBoundingClientRect()
+    const chips = [...document.querySelectorAll('.chip-ink')].filter(el => (el.textContent || '').trim())
+    return {
+      found: true,
+      label: (name.textContent || '').trim(),
+      height: Math.round(r.height),
+      lineHeight: parseFloat(getComputedStyle(name).lineHeight) || 16,
+      chips: chips.length
+    }
+  })
+  checked += 1
+  if (!foe.found) {
+    failures.push('[320-battle] 敌人卡场景:战斗面板没渲染出来(夹具没被读出来?)')
+  } else {
+    const lines = Math.round(foe.height / foe.lineHeight)
+    if (lines > 1) failures.push(`[320-battle] 敌人名字被折成 ${lines} 行:«${foe.label}»(${foe.height}px)`)
+    if (foe.chips < 4) failures.push(`[320-battle] 敌人卡场景:标签只有 ${foe.chips} 枚(夹具该摆出首领+宿敌+3 特性)`)
+    const info = await measurePage(page)
+    for (const p of problemsOf(info)) failures.push(`[320-battle] /adventure → ${p}`)
+  }
+  if (pageErrors.length) failures.push(`[320-battle] 敌人卡场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   await ctx.close()
 }
 
