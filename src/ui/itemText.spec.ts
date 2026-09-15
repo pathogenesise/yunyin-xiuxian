@@ -59,7 +59,7 @@ describe('用具 · 装备/法宝/功法三类的功用行', () => {
       expect(base).toContain(artifactActiveText(a, 0))
       const leveled = artifactFuncText(a, 5)
       if (Object.keys(a.passive).length > 0) expect(leveled, `${a.name} 祭炼之后说明没变`).not.toBe(base)
-      expect(artifactMetaText(a)).toContain(worldNameOfTier(a.minTier))
+      expect(artifactMetaText(a)).toContain(worldNameOfTier(a.fromTier))
     }
   })
 

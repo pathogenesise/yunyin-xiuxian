@@ -77,8 +77,8 @@ describe('法宝效果 · 词汇表不虚设', () => {
   })
 
   it('高界法宝里不止是数值放大:至少有一件用的是别的手艺', () => {
-    // 「高界法宝」泛指 minTier ≥ 21 的那批(仙界/神界/混沌海)
-    const high = ARTIFACTS.filter(a => a.minTier >= 21)
+    // 「高界法宝」泛指 fromTier ≥ 21 的那批(仙界/神界/混沌海)
+    const high = ARTIFACTS.filter(a => a.fromTier >= 21)
     expect(high.length, '高界法宝一件都没有,判据失去对象').toBeGreaterThan(4)
     // 基础四效 = 打/回/盾/削:高界若全在这四样里按倍率放大,那就是纯数值阶梯
     const BASIC = ['damage', 'heal', 'shield', 'weaken']

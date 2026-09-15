@@ -145,7 +145,7 @@ export function artifactUpCost(defId: string): { wudao: number; stone: GNum } | 
   if (!owned || !def || owned.level >= ARTIFACT_MAX_LEVEL) return null
   return {
     wudao: Math.ceil(ARTIFACT_UP_WUDAO_BASE * Math.pow(1.6, owned.level) * (1 + qualityDef(def.quality).rank * 0.3)),
-    stone: stoneByTier(def.minTier, ARTIFACT_UP_STONE_TIER * (1 + owned.level))
+    stone: stoneByTier(def.fromTier, ARTIFACT_UP_STONE_TIER * (1 + owned.level))
   }
 }
 

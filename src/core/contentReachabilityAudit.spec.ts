@@ -179,12 +179,12 @@ describe('内容可达性 · 事件点名发放的灵兽', () => {
 })
 
 describe('内容可达性 · 法宝与装备模板', () => {
-  /** 掉落池按「minTier ≤ 当前层级」过滤,故 minTier 一旦高于最高区域层级,该件永不掉落 */
+  /** 掉落池按「fromTier ≤ 当前层级」过滤,故 fromTier 一旦高于最高区域层级,该件永不掉落 */
   const MAX_REGION_TIER = Math.max(...REGIONS.map(r => r.tier))
 
   it('每一件法宝都有可达的掉落层级', () => {
     for (const a of ARTIFACTS) {
-      expect(a.minTier, `法宝「${a.name}」minTier=${a.minTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
+      expect(a.fromTier, `法宝「${a.name}」fromTier=${a.fromTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
         MAX_REGION_TIER
       )
     }

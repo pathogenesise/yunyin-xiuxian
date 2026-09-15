@@ -249,7 +249,15 @@ export const usePlayerStore = defineStore(
           '命格',
           ...reincarnation.value.talents.map(id => `天赋·${talentDef(id)?.name ?? id}`)
         ],
-        equipFlats: inventory.equipFlats,
+        /**
+         * 天界不认凡器的**平铺三维**。
+         *
+         * 上面那一路 mods 已经换成器魂(或凡器化尘后的「形意」),但平铺的攻防血
+         * 从前照样带上来 —— 实测满装时玩家天界攻击比裸装高 0.07%,也就是
+         * 「凡器在天界被抹平」这句承诺上的最后一道缝(ISS-194)。
+         * 器魂给的是路数与百分比,三维本就该归零:天界的战力只能来自器魂与自身构筑。
+         */
+        equipFlats: { attack: gnZero(), defense: gnZero(), maxHp: gnZero() },
         daoFruit: reincarnation.value.daoFruit,
         qiRich: qiRich.value
       })

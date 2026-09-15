@@ -153,7 +153,7 @@ describe('内容密度 · 每一境都得有新东西', () => {
       return {
         world: w.name,
         装备模板: inWorld(EQUIPMENT_TEMPLATES, t => t.tier),
-        法宝: inWorld(ARTIFACTS, a => a.minTier),
+        法宝: inWorld(ARTIFACTS, a => a.fromTier),
         // 奇缘按**起点**所属界域记:高界有没有自己的缘,看这一列
        秘境: SECRET_REALMS.filter(s => (s.gate === 'celestial' ? 'immortal' : 'mortal') === w.id).length
       }
@@ -174,7 +174,7 @@ describe('内容密度 · 每一境都得有新东西', () => {
     const tierWorld = new Map<number, string>()
     for (const r of REGIONS) tierWorld.set(r.tier, worldOf(r.minRealm).id)
     for (const w of WORLDS) {
-      const n = ARTIFACTS.filter(a => tierWorld.get(a.minTier) === w.id).length
+      const n = ARTIFACTS.filter(a => tierWorld.get(a.fromTier) === w.id).length
       expect(n, `${w.name} 有 ${n} 件法宝、${ARTIFACT_MAX_SLOTS} 个法宝位 —— 带满即最优,没有取舍`).toBeGreaterThan(
         ARTIFACT_MAX_SLOTS
       )

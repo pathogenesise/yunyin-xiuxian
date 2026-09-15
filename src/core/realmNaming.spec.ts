@@ -9,7 +9,7 @@
  * 真灵无极开天道)。
  *
  * 另外两条守着**规模**与**可达**:
- *   · 一件东西的 minTier 必须落在真实存在的区域层级上 —— 否则它归属哪一界都说不清;
+ *   · 一件东西的层级门槛必须落在真实存在的区域层级上 —— 否则它归属哪一界都说不清;
  *   · 每一件模板都真的进得了掉落池 —— 从前的「取最高 6 件」硬截断让仙界/神界/混沌海
  *     各有三件(项链/戒指/灵符)永远掉不出来,图鉴里那九格谁也不点不亮(已修)。
  */
@@ -60,10 +60,10 @@ describe('名与境界同形 · 高界内容的名字带本界印记', () => {
   it('每件高界法宝的名字里都看得出是哪一界的东西', () => {
     const bad: string[] = []
     for (const w of ['immortal', 'god', 'chaos'] as const) {
-      const rows = ARTIFACTS.filter(a => TIER_WORLD.get(a.minTier) === w)
+      const rows = ARTIFACTS.filter(a => TIER_WORLD.get(a.fromTier) === w)
       expect(rows.length).toBeGreaterThan(0)
       for (const a of rows) {
-        if (!hasMark(a.name, w)) bad.push(`${WORLDS.find(x => x.id === w)!.name} ${a.name}(${a.minTier} 阶)`)
+        if (!hasMark(a.name, w)) bad.push(`${WORLDS.find(x => x.id === w)!.name} ${a.name}(${a.fromTier} 阶)`)
       }
     }
     expect(bad, `这些高界法宝的名字里没有本界印记:\n${bad.join('\n')}`).toEqual([])
@@ -110,13 +110,13 @@ describe('名与境界同形 · 一件东西只有一个名字', () => {
 })
 
 describe('名与境界同形 · 写了就得掉得出来', () => {
-  it('装备的 tier 与法宝的 minTier 都落在真实存在的区域层级上', () => {
+  it('装备的 tier 与法宝的 fromTier 都落在真实存在的区域层级上', () => {
     const tiers = new Set(ALL_TIERS)
     for (const t of EQUIPMENT_TEMPLATES) {
       expect(tiers.has(t.tier), `装备「${t.name}」的 tier=${t.tier} 不是一个真实区域层级`).toBe(true)
     }
     for (const a of ARTIFACTS) {
-      expect(tiers.has(a.minTier), `法宝「${a.name}」的 minTier=${a.minTier} 不是一个真实区域层级`).toBe(true)
+      expect(tiers.has(a.fromTier), `法宝「${a.name}」的 fromTier=${a.fromTier} 不是一个真实区域层级`).toBe(true)
     }
   })
 
@@ -160,7 +160,7 @@ describe('名与境界同形 · 写了就得掉得出来', () => {
 
   it('装备模板的最高层级不超过最高区域层级(否则那件永不掉落)', () => {
     const top = Math.max(...EQUIPMENT_TEMPLATES.map(t => t.tier))
-    const topArtifact = Math.max(...ARTIFACTS.map(a => a.minTier))
+    const topArtifact = Math.max(...ARTIFACTS.map(a => a.fromTier))
     expect(top).toBeLessThanOrEqual(MAX_TIER)
     expect(topArtifact).toBeLessThanOrEqual(MAX_TIER)
   })

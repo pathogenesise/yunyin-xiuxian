@@ -207,7 +207,7 @@ export interface EquipmentTemplate {
    *
    * 掉落池按它取(见 core/equipGen.templatesAtTier):13 阶的地界只出 13 阶之物,
    * 所以「星辰冠」永远只可能是 8 阶,看到名字就知道是哪一阶的东西。
-   * (法宝的 minTier 是另一回事:那一头仍是「从这一阶起可现世」。)
+   * (法宝的 fromTier 是另一回事:那一头仍是「从这一阶起可现世」的累积池。)
    */
   tier: number
   /** Phase 31.0 S5:装备套装/共鸣组(同组多件触发机制效果,非数值堆叠) */
@@ -302,7 +302,8 @@ export interface ArtifactDef {
   desc: string
   icon: string
   quality: QualityId
-  minTier: number
+  /** 从这一阶起可现世(累积池:更高阶的地界也掉得出它) */
+  fromTier: number
   passive: StatMods
   active: {
     name: string

@@ -89,17 +89,16 @@ describe('天界口径 · 倒挂红线', () => {
       console.log(`${r.gear.padEnd(8)}    ${r.playerAtk.toExponential(3)}   ${r.foeAtk.toExponential(3)}   ${r.foeHp.toExponential(3)}`)
     }
     /**
-     * 判据用比率而不是"完全相等":玩家侧还有一处**已知残差** —— celestialStats 仍带
-     * inventory.equipFlats(装备的平铺三维,词条才被器魂替换),实测满装 +0.07%。
-     * 要彻底抹平得改 celestialStats 本身(动的是玩家在天界的战力),另立案。
-     * 这里钉的是量级:凡界装备不许再把天界敌人推高哪怕一个百分点。
+     * ISS-194 已收口:celestialStats 现在把凡器的**平铺三维**也归零(器魂给的是路数,
+     * 三维本就该抹平)。从前那 0.07% 的残差来自「平铺攻防血照样带上天」,故这条判据
+     * 随之收紧 —— 凡界装备在天界不该再有任何可测的影响,一个万分点都不该有。
      */
     const spread = (xs: number[]): number => Math.max(...xs) / Math.min(...xs) - 1
     const playerSpread = spread(rows.map(r => r.playerAtk))
     const foeSpread = spread(rows.map(r => r.foeAtk))
-    expect(playerSpread, `玩家天界攻击随凡界装备变了 ${(playerSpread * 100).toFixed(2)}%`).toBeLessThan(0.005)
-    expect(foeSpread, `敌人跟着凡界装备变强了 ${(foeSpread * 100).toFixed(2)}%(倒挂:修复前是 29%)`).toBeLessThan(0.005)
-    expect(spread(rows.map(r => r.foeHp))).toBeLessThan(0.005)
+    expect(playerSpread, `玩家天界攻击随凡界装备变了 ${(playerSpread * 100).toFixed(4)}%(残差已收口,该是 0)`).toBeLessThan(0.0005)
+    expect(foeSpread, `敌人跟着凡界装备变强了 ${(foeSpread * 100).toFixed(4)}%(倒挂:修复前是 29%)`).toBeLessThan(0.0005)
+    expect(spread(rows.map(r => r.foeHp))).toBeLessThan(0.0005)
   })
 
   it('堆厚度不再占便宜:超过基准深度的构筑,敌人词条按 celestialDepthScale 加厚', () => {

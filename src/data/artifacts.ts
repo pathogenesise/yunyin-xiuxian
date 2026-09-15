@@ -6,7 +6,7 @@ function f(
   id: string,
   name: string,
   quality: QualityId,
-  minTier: number,
+  fromTier: number,
   desc: string,
   passive: StatMods,
   activeName: string,
@@ -15,7 +15,7 @@ function f(
   effect: ArtifactEffect,
   icon = 'sparkles'
 ): ArtifactDef {
-  return { id, name, desc, icon, quality, minTier, passive, active: { name: activeName, desc: activeDesc, interval, effect } }
+  return { id, name, desc, icon, quality, fromTier, passive, active: { name: activeName, desc: activeDesc, interval, effect } }
 }
 
 export const ARTIFACTS: ArtifactDef[] = [

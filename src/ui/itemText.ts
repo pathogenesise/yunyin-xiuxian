@@ -68,9 +68,14 @@ export function artifactFuncText(a: ArtifactDef, level = 0): string {
   return lines.join('\n')
 }
 
-/** 法宝的出处一行:品质 · 界域(神通名与说明已在功用行里,不重复) */
+/**
+ * 法宝的出处一行:品质 · 界域 · 从哪一阶起可现世。
+ *
+ * 与装备那一条刻意不同:装备是「一阶一名」(名字就是它的阶),法宝是**收藏品** ——
+ * 看品质与界域,升阶靠祭炼;一个「N 阶起」说清它会在哪些地界掉出来。
+ */
 export function artifactMetaText(a: ArtifactDef): string {
-  return `${qualityDef(a.quality).name} · ${worldNameOfTier(a.minTier)}`
+  return `${qualityDef(a.quality).name} · ${worldNameOfTier(a.fromTier)} · ${a.fromTier} 阶起可现世`
 }
 
 // ============ 功法 ============
