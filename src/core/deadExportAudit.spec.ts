@@ -35,9 +35,6 @@ const SRC = resolve(__dirname, '..')
  * 写不出这两句的,就是一具应该删掉的尸体。
  */
 const ALLOWLIST: Record<string, string> = {
-  // 决策留档:接口先立、遥测后接(图谱里决策节点写的是"留",不是"删")
-  analyzeChoices: '选择分析遥测:接口与判据先固化,等有真实遥测数据源再消费',
-  valueGap: '与 analyzeChoices 同模块,同一决策下保留',
   // 已被别的审计钉住的两端
   studyBlueprint: '炼器图纸骨架:contentReachabilityAudit 已钉"读与给必须一起接",此处不重复扣押'
 }

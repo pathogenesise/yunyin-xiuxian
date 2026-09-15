@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 174,
+  "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T01:09:21+00:00",
+  "updated_at": "2026-09-15T03:16:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9982,27 +9982,97 @@
     "ISS-170": {
       "id": "ISS-170",
       "type": "issue",
-      "status": "active",
-      "version": 2,
+      "status": "resolved",
+      "version": 3,
       "created_at": "2026-09-14T19:08:25+00:00",
-      "updated_at": "2026-09-14T19:19:32+00:00",
-      "touched_round": 173,
+      "updated_at": "2026-09-15T03:14:56+00:00",
+      "touched_round": 176,
       "summary": "core/choiceAnalysis.ts 是孤文件:0 处引用、0 个 spec,同类分析模块(compoundingAudit/celestialSim/economySim/impactSurface)皆有 spec,唯它从 Phase 29 引入起就死在这里",
       "severity": 0.3
     },
     "TASK-155": {
       "id": "TASK-155",
       "type": "task",
-      "status": "active",
-      "version": 4,
+      "status": "resolved",
+      "version": 5,
       "created_at": "2026-09-14T19:10:11+00:00",
-      "updated_at": "2026-09-14T19:20:28+00:00",
-      "touched_round": 173,
+      "updated_at": "2026-09-15T03:14:55+00:00",
+      "touched_round": 176,
       "category": "maintainability",
       "severity": 0.3,
       "confidence": 0.97,
       "effort": 1,
       "summary": "删除孤文件 core/choiceAnalysis.ts —— 0 引用 0 spec,同类分析模块以 spec 为锚,它无锚可留"
+    },
+    "ISS-171": {
+      "id": "ISS-171",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T01:19:14+00:00",
+      "updated_at": "2026-09-15T03:14:56+00:00",
+      "touched_round": 176,
+      "summary": "README 宣称『Web / PWA · 可添加到主屏幕』,但 index.html 无 Web App Manifest 也无 apple-touch-icon —— 现代 Chrome/Android 已忽略 legacy mobile-web-app-capable meta,『添加主屏』退化成普通书签,无独立图标/全屏/启动画面",
+      "severity": 0.5
+    },
+    "TASK-156": {
+      "id": "TASK-156",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T03:13:21+00:00",
+      "updated_at": "2026-09-15T03:14:56+00:00",
+      "touched_round": 176,
+      "category": "docs",
+      "severity": 0.5,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "落地 Web App Manifest + 应用图标:README 宣称「添加到主屏幕」但 index.html 无 manifest/图标(ISS-171),补齐后移动端独立图标/全屏/启动画面"
+    },
+    "CHG-203": {
+      "id": "CHG-203",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T03:13:40+00:00",
+      "updated_at": "2026-09-15T03:13:40+00:00",
+      "touched_round": 176,
+      "commit": "UNCOMMITTED",
+      "summary": "PWA 落地:manifest.webmanifest + 矢量图标(public/icon*.svg) + sharp 生成 PNG(gen-pwa-icons.mjs)+ index.html 补 manifest/apple-touch-icon 链接并清重复 theme-color"
+    },
+    "CHG-204": {
+      "id": "CHG-204",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T03:13:52+00:00",
+      "updated_at": "2026-09-15T03:13:52+00:00",
+      "touched_round": 176,
+      "commit": "UNCOMMITTED",
+      "summary": "删除孤文件 core/choiceAnalysis.ts(TASK-155/ISS-170,0 引用 0 spec)并同步注销 deadExportAudit ALLOWLIST 条目 analyzeChoices/valueGap"
+    },
+    "DEC-033": {
+      "id": "DEC-033",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T03:15:42+00:00",
+      "updated_at": "2026-09-15T03:15:42+00:00",
+      "touched_round": 176,
+      "rationale": "ISS-171 本轮只落地 manifest+图标:这已使「添加到主屏幕」安装性成立(移动端)。离线缓存/Service Worker 涉及 hash 路由、legacy polyfill、外部 51.la 统计脚本的缓存策略,需独立设计验证,不与安装性修复混在同一次改动",
+      "alternatives_rejected": "vite-plugin-pwa 自动注入 SW(引入新依赖、侵入构建链路、缓存失效策略不可控);不落地任何 PWA 资产(README 声称与实际不符,ISS-171 原状)"
+    },
+    "EV-159": {
+      "id": "EV-159",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T03:16:22+00:00",
+      "updated_at": "2026-09-15T03:16:22+00:00",
+      "touched_round": 176,
+      "source": "bun run test:155 files/1488 tests pass;bun run build ok;bun run lint ok",
+      "summary": "PWA 落地 + 孤文件删除后全量验证:155 测试文件 1488 用例全过、vue-tsc+vite 构建绿、eslint 无告警;dist 含 manifest/icon-192/512/maskable/apple-touch-icon 且 index.html 正确引用",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -14752,6 +14822,42 @@
       "to": "ISS-170",
       "type": "addresses",
       "created_at": "2026-09-14T19:10:11+00:00"
+    },
+    {
+      "from": "CHG-203",
+      "to": "TASK-156",
+      "type": "implements",
+      "created_at": "2026-09-15T03:14:36+00:00"
+    },
+    {
+      "from": "CHG-203",
+      "to": "ISS-171",
+      "type": "resolves",
+      "created_at": "2026-09-15T03:14:36+00:00"
+    },
+    {
+      "from": "CHG-204",
+      "to": "TASK-155",
+      "type": "implements",
+      "created_at": "2026-09-15T03:14:36+00:00"
+    },
+    {
+      "from": "CHG-204",
+      "to": "ISS-170",
+      "type": "resolves",
+      "created_at": "2026-09-15T03:14:36+00:00"
+    },
+    {
+      "from": "TASK-156",
+      "to": "ISS-171",
+      "type": "addresses",
+      "created_at": "2026-09-15T03:14:36+00:00"
+    },
+    {
+      "from": "DEC-033",
+      "to": "TASK-156",
+      "type": "governs",
+      "created_at": "2026-09-15T03:16:22+00:00"
     }
   ]
 }
