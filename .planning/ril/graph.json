@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T03:16:22+00:00",
+  "updated_at": "2026-09-15T03:20:06+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10033,22 +10033,22 @@
       "id": "CHG-203",
       "type": "change",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-15T03:13:40+00:00",
-      "updated_at": "2026-09-15T03:13:40+00:00",
+      "updated_at": "2026-09-15T03:20:06+00:00",
       "touched_round": 176,
-      "commit": "UNCOMMITTED",
+      "commit": "046137be42ea",
       "summary": "PWA 落地:manifest.webmanifest + 矢量图标(public/icon*.svg) + sharp 生成 PNG(gen-pwa-icons.mjs)+ index.html 补 manifest/apple-touch-icon 链接并清重复 theme-color"
     },
     "CHG-204": {
       "id": "CHG-204",
       "type": "change",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-15T03:13:52+00:00",
-      "updated_at": "2026-09-15T03:13:52+00:00",
+      "updated_at": "2026-09-15T03:20:06+00:00",
       "touched_round": 176,
-      "commit": "UNCOMMITTED",
+      "commit": "046137be42ea",
       "summary": "删除孤文件 core/choiceAnalysis.ts(TASK-155/ISS-170,0 引用 0 spec)并同步注销 deadExportAudit ALLOWLIST 条目 analyzeChoices/valueGap"
     },
     "DEC-033": {
