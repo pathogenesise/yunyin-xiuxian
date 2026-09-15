@@ -1,7 +1,7 @@
 <template>
   <!-- 桌面端外框:居中手机区域 -->
   <div
-    class="mx-auto flex h-screen max-w-107.5 flex-col overflow-hidden bg-paper shadow-[0_0_60px_rgba(0,0,0,0.45)] relative paper-grain"
+    class="app-shell mx-auto flex max-w-107.5 flex-col overflow-hidden bg-paper shadow-[0_0_60px_rgba(0,0,0,0.45)] relative paper-grain"
     :class="{ 'reduce-motion': settings.reduceMotion }"
   >
     <!--
@@ -81,7 +81,7 @@
    * 切页时把内容区滚动位置归零。
    * main 是常驻元素,路由切换只替换它的子组件,它自身从不重建,scrollTop 会被
    * 下一个页面原样继承。router 的 scrollBehavior 在这里不顶用——那个 API 操作
-   * 的是 window,而外层 h-dvh + overflow-hidden 让 window 根本不产生滚动。
+   * 的是 window,而外层 .app-shell + overflow-hidden 让 window 根本不产生滚动。
    * 挂在 before-enter 而非 watch(route):out-in 模式下这一刻旧页面已完全离场,
    * 归零不会让正在播离场动画的旧页面突然跳回顶部。
    */

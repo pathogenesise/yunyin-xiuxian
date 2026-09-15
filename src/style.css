@@ -332,9 +332,35 @@
 }
 
 /* ================= 基础 ================= */
+/*
+ * 外壳高度 —— 顶栏与底栏能不能钉住,全看这一个值。
+ *
+ * 手机浏览器里的 100vh 是**大视口**:地址栏收起时的高度。地址栏还挂着的时候,
+ * 外壳比看得见的区域高一截 —— 底栏被浏览器工具栏压在下面(要往下拖才露出来),
+ * 文档层同时攒出一段可滚余量,拖一下两栏就跟着内容走,看着就是「没固定」。
+ * 装成 PWA 或跑在安卓壳里时 100vh 恰是全屏,所以这个毛病只在手机浏览器里现形,
+ * 桌面与无头浏览器都复现不出来(实测:见 scripts/layout-check.mjs「两栏钉死」一节)。
+ *
+ * dvh 跟着可见高度走,故外壳认 dvh;不认 dvh 的老浏览器退回 vh ——
+ * 行为与修复前一致,不会更糟。
+ */
+:root {
+  --app-shell-height: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --app-shell-height: 100dvh;
+  }
+}
+
+/*
+ * html、body、#app、外壳四层用同一个高度,文档层就**没有**可滚余量:
+ * 内容区在外壳里自己滚(main 是唯一的滚动宿主),window 从头到尾不动,
+ * 两栏也就无从被拖走。四层但凡有一层还用 vh,那点差值就会变成可滚区间。
+ */
 html,
 body {
-  height: 100%;
+  height: var(--app-shell-height);
   overscroll-behavior: none;
 }
 
@@ -375,7 +401,38 @@ html[data-theme='dark'] {
 }
 
 #app {
-  height: 100vh;
+  height: var(--app-shell-height);
+  /*
+   * flow-root 只为防**外边距塌出**:大屏上外壳有 1rem 上下留白,而 #app 没有
+   * 边框也没有内边距,子元素的上外边距会穿过它塌到 body 上 —— 文档层于是凭空多出
+   * 16px 可滚余量(自检「两栏钉死」那条当场报红)。flow-root 建一层 BFC,把外边距
+   * 关在里面,不裁切、不影响布局。
+   */
+  display: flow-root;
+}
+
+/* 外壳:与 #app 同高(模板里的 h-screen 已被它取代) */
+.app-shell {
+  height: var(--app-shell-height);
+}
+
+/*
+ * 大屏:把窄栏收成一「册」
+ *
+ * 桌面与平板上,430px 的栏直接顶到屏幕上下边缘、两侧不描线,看着像一条没做完的
+ * 窄带;上下各留一指、加圆角与一道细边之后,同一栏宽才像一册摊开的书页。
+ *
+ * 留白要从高度里扣:1rem + (100dvh - 2rem) + 1rem 恰好一屏,文档层依旧没有可滚
+ * 余量,顶栏底栏照旧钉死(判据见 scripts/layout-check.mjs 第二十七件事)。
+ */
+/* 矮屏(横屏手机)例外:那里高度比气度要紧,1rem 的上下留白正是内容区缺的 32px */
+@media (min-width: 768px) and (min-height: 561px) {
+  .app-shell {
+    height: calc(var(--app-shell-height) - 2rem);
+    margin-block: 1rem;
+    border: 1px solid rgb(var(--color-ink-rgb) / 0.22);
+    border-radius: 16px;
+  }
 }
 
 /* 宣纸颗粒 */
@@ -482,6 +539,41 @@ html[data-theme='dark'] {
   border: 1px solid currentColor;
   line-height: 1.5;
   white-space: nowrap;
+}
+
+/*
+ * 吸顶页签栏(InkTabs 的外壳:背包的四册、图鉴、名号、界域志、天界)
+ *
+ * 这几册都是越往下越长的列表 —— 页签若跟着滚走,想换一册就得先滚回顶上。
+ * 故把它钉在内容区顶部,内容从底下穿过。三处细节都不是随手写的:
+ *
+ * 一 只动横向边距(-mx-4 + px-4):页面根节点的内边距是 px-4 pt-4,吸顶盒
+ *    要铺满内容区宽度,否则内容会从两侧那 16px 的空隙里明晃晃地穿过去。
+ *    **纵向一分不碰** —— space-y-4 的间距写在父级上(如天界页,页签前面还有
+ *    一张道源卡),负的上边距会被父级的间距规则盖掉,只有第一个孩子才吃得到,
+ *    同一套样式在五页里会长得不一样。
+ * 二 自己铺一层纸色 + 毛玻璃:穿过去的东西必须被挡住,与顶栏、底栏同一种做法。
+ *    颜色走 --color-paper-rgb,夜间主题自动跟随。
+ * 三 ::after 是往下 12px 的渐隐遮罩。卡片是圆角的,圆角底下那两块三角缺口
+ *    挡不住,内容会从角上冒出来。它只画不占位,页面上原有的行距一点没变。
+ */
+.tab-rail {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  background: rgb(var(--color-paper-rgb) / 0.94);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.tab-rail::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto;
+  height: 0.75rem;
+  background: linear-gradient(to bottom, rgb(var(--color-paper-rgb) / 0.94), transparent);
+  pointer-events: none;
 }
 
 .ink-divider {

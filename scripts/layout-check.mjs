@@ -45,6 +45,14 @@
  *   二十四 法宝炼化的两笔账:按钮上两种代价都得写全,且两种都按所写扣。
  *   二十五 一键分解要「先勾后点」:勾品质只是标记,行囊里的东西须点「分 解」才化尘。
  *   二十六 智能收纳不替玩家扔「有投入的件」:练过/成套/近满的三件必须留下。
+ *   二十七 顶栏底栏钉死:滚一遍窗口,两栏一步都不许动,文档层不许有纵向可滚余量。
+ *      外加一条构建产物判据:外壳高度得认 dvh —— 无头浏览器的 100vh 恰好等于可视
+ *      高度,把外壳换回 vh 它照样全绿,只有查产物这一条拦得住。
+ *   二十八 页签栏吸顶:背包四册、图鉴、名号、界域志、天界的页签栏,滚过之后要贴在
+ *      内容区顶、且铺满内容区宽度(空档滚不动,判据自己往容器里垫占位造余量)。
+ *   二十九 不是手机竖屏的两档:横屏 844×390 与桌面 1280×800 也各巡一遍全量路由 ——
+ *      自适应断点(高度 short:、大屏的册页留白)就在这两档上现形。
+ *   三十 顶栏不许折行:数字断行看着像乱码,顶栏还会从 46px 涨到 58px(320 宽复发过)。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -52,7 +60,7 @@
  */
 import { chromium } from 'playwright'
 import CryptoJS from 'crypto-js'
-import { mkdirSync, rmSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -68,7 +76,13 @@ const VIEWPORTS = [
   // 但 --shots 存下来的图因此更接近真机看到的密度,便于人眼复核。
   { width: 390, height: 844, tag: '390', dpr: 3 },
   { width: 375, height: 812, tag: '375', dpr: 3 },
-  { width: 320, height: 568, tag: '320', dpr: 2 }
+  { width: 320, height: 568, tag: '320', dpr: 2 },
+  // 两档「不是手机竖屏」的设备。它们各自暴露过一类毛病,故各占一档:
+  //   横屏 844×390 —— 上下两栏吃掉 22% 的高度(改前 26%),而宽度只用掉一半;
+  //   桌面 1280×800 —— 窄栏顶天立地;不在大屏上收成一册,它就只是一条带子。
+  // 安卓壳与桌面客户端都能转到这两档;PWA manifest 锁了竖屏,浏览器里随意缩窗。
+  { width: 844, height: 390, tag: '844x390', dpr: 2 },
+  { width: 1280, height: 800, tag: '1280x800', dpr: 1 }
 ]
 /**
  * 全量路由 —— 从前只巡八页,于是设置页与收藏页的排版与选中态从未被量过。
@@ -283,6 +297,20 @@ async function measurePage(page) {
         .slice(0, 3)
         .map(x => `${x.ratio}:1 «${x.text}»`),
       /**
+       * 顶栏里的字都只能占一行。
+       *
+       * 320 宽时曾把「3000/1000 亿载」「9 兆」「25.33 亿」折成两行 —— 数字一断行
+       * 看着就像乱码,顶栏还从 46px 涨到 58px。故逐格量高:超过一行(≈24px)就是又折了。
+       */
+      headerTall: (() => {
+        const header = document.querySelector('header')
+        if (!header) return []
+        return [...header.querySelectorAll('span, p')]
+          .filter(el => el.getBoundingClientRect().height > 24)
+          .slice(0, 3)
+          .map(el => `${Math.round(el.getBoundingClientRect().height)}px «${(el.textContent || '').trim().slice(0, 10)}»`)
+      })(),
+      /**
        * 选择型控件的选中态要对机器可读,且**每组恰有一个**。
        *
        * 此前主题/战报速度/页签的选中全靠边色,读屏用户与自动化都看不出选了哪个
@@ -321,9 +349,86 @@ async function measurePage(page) {
           if (pressed < 6) out.push(`设置页的选择控件只有 ${pressed} 个带 aria-pressed(主题 3 + 速度 3)`)
         }
         return out.slice(0, 3)
+      })(),
+      /**
+       * 顶栏与底栏必须钉死 —— 滚一遍,两栏一步都不许动。
+       *
+       * 结构上两栏是滚动宿主的**兄弟**(内容在 main 里滚),按理动不了。可一旦
+       * **外壳比可视区高**,文档层就攒出纵向可滚余量,玩家一拖窗口两栏就跟着走,
+       * 看着就是「没固定」。手机浏览器的 100vh 正是大视口(地址栏收起时的高度),
+       * 所以这条 bug 只在手机浏览器里现形 —— 桌面与无头浏览器量不出差值,
+       * 只能量它的**机制**:文档层有可滚余量,且滚窗口时两栏真的位移了。
+       */
+      railDrift: (() => {
+        const main = document.querySelector('main')
+        const header = document.querySelector('header')
+        const nav = document.querySelector('nav')
+        if (!main || !header || !nav) return null
+        const doc = document.documentElement
+        const windowOverflow = Math.round(doc.scrollHeight - doc.clientHeight)
+        const at = () => ({
+          top: Math.round(header.getBoundingClientRect().top),
+          bottom: Math.round(nav.getBoundingClientRect().bottom)
+        })
+        const before = at()
+        const back = window.scrollY
+        window.scrollTo(0, windowOverflow + 4000)
+        const after = at()
+        const moved = Math.round(window.scrollY - back)
+        window.scrollTo(0, back)
+        return {
+          windowOverflow,
+          moved,
+          drift: Math.max(Math.abs(before.top - after.top), Math.abs(before.bottom - after.bottom))
+        }
       })()
     }
   })
+}
+
+/**
+ * 页签栏(InkTabs 的外壳 .tab-rail)要吸顶 —— 内容滚下去,它钉在内容区顶上。
+ *
+ * 这几册(背包四册、图鉴、名号、界域志、天界)都是越往下越长的列表,页签跟着滚走
+ * 就得先滚回顶才能换一册。判据两条:滚过之后它还贴在内容区顶;盒子铺满内容区宽度
+ * (两侧留缝的话,内容会从缝里明晃晃地穿过去)。
+ *
+ * 造余量那一段是有讲究的:空档的背包只有几件东西,页面根本滚不动,吸顶无从量起。
+ * 于是往**视图根节点里**垫一块 1200px 的占位 —— 必须垫在容器里面:吸顶盒的活动
+ * 范围是它的容器,容器到底了它就该跟着走;垫在容器外面等于没垫(第一版探针就是
+ * 这么把背包页报成假红的)。
+ */
+async function measureTabRail(page) {
+  return page.evaluate(() => {
+    const main = document.querySelector('main')
+    const rail = document.querySelector('.tab-rail')
+    const root = main?.querySelector('.stagger-in') ?? main?.firstElementChild
+    if (!main || !rail || !root) return null
+    const spacer = document.createElement('div')
+    spacer.style.height = '1200px'
+    root.appendChild(spacer)
+    const mainBox = main.getBoundingClientRect()
+    main.scrollTop = 600
+    const box = rail.getBoundingClientRect()
+    const out = {
+      scrolled: Math.round(main.scrollTop),
+      drift: Math.round(box.top - main.getBoundingClientRect().top),
+      bleed: Math.round(box.left - mainBox.left) + Math.round(mainBox.right - box.right)
+    }
+    main.scrollTop = 0
+    spacer.remove()
+    return out
+  })
+}
+
+/** 页签吸顶读数 → 失败清单(null = 这一页没有页签栏,不判) */
+function railProblems(rail) {
+  const out = []
+  if (!rail) return out
+  if (rail.scrolled < 500) out.push(`页签吸顶没量到:内容只滚了 ${rail.scrolled}px(占位没垫进容器?)`)
+  if (rail.drift !== 0) out.push(`页签栏没吸顶:滚 ${rail.scrolled}px 后偏离内容区顶 ${rail.drift}px`)
+  if (rail.bleed > 0) out.push(`页签栏没铺满内容区宽度,两侧共留 ${rail.bleed}px 缝(内容会从缝里穿过去)`)
+  return out
 }
 
 /** 一页量出来的读数 → 失败清单(两遍巡页共用同一套判据) */
@@ -338,7 +443,13 @@ function problemsOf(info) {
   if (info.smallTargets.length) problems.push(`可点元素过小:${info.smallTargets.join(' | ')}`)
   if (info.dimDisabled.length) problems.push(`禁用态的字读不出来(对比度不足):${info.dimDisabled.join(' | ')}`)
   if (info.badGroups.length) problems.push(`选择组没选中态:${info.badGroups.join(' | ')}`)
+  if (info.headerTall?.length) problems.push(`顶栏折行(数字断行看着像乱码):${info.headerTall.join(' | ')}`)
   if (info.navItems !== 5) problems.push(`底部导航 ${info.navItems} 项(应为 5)`)
+  if (info.railDrift && (info.railDrift.windowOverflow > 1 || info.railDrift.drift > 1)) {
+    problems.push(
+      `文档层可滚 ${info.railDrift.windowOverflow}px、滚窗后两栏位移 ${info.railDrift.drift}px(顶栏底栏没钉住)`
+    )
+  }
   return problems
 }
 
@@ -373,6 +484,10 @@ for (const vp of VIEWPORTS) {
     checked += 1
     const problems = problemsOf(info)
     if (problems.length) failures.push(`[${vp.tag}] ${route} → ${problems.join(' / ')}`)
+    const rail = await measureTabRail(page)
+    const railFails = railProblems(rail)
+    if (rail) checked += 1
+    if (railFails.length) failures.push(`[${vp.tag}] ${route} → ${railFails.join(' / ')}`)
     if (SHOTS) {
       mkdirSync(SHOTS_DIR, { recursive: true })
       await page.screenshot({ path: join(SHOTS_DIR, `${vp.tag}${route.replace(/\//g, '_')}.png`), fullPage: true })
@@ -833,6 +948,10 @@ for (const vp of VIEWPORTS) {
     checked += 1
     const problems = problemsOf(info)
     if (problems.length) failures.push(`[390-late] ${route} → ${problems.join(' / ')}`)
+    const rail = await measureTabRail(page)
+    const railFails = railProblems(rail)
+    if (rail) checked += 1
+    if (railFails.length) failures.push(`[390-late] ${route} → ${railFails.join(' / ')}`)
   }
 
   /*
@@ -2293,9 +2412,38 @@ for (const vp of VIEWPORTS) {
 }
 
 await browser.close()
+
+// ---- 第二十七件事:外壳高度认 dvh,不认 vh ----
+/*
+ * 上面「两栏钉死」那条量的是**机制**,可无头浏览器的 100vh 恰好等于可视高度 ——
+ * 把外壳换回 vh,它照样全绿。差别只在手机浏览器里出现:地址栏挂着时 vh 是大视口,
+ * 底栏被压在工具栏底下。所以这条退一步查**构建产物**:外壳高度得写成 dvh。
+ */
+{
+  checked += 1
+  const dir = join(ROOT, 'dist/assets')
+  const css = readdirSync(dir)
+    .filter(f => f.endsWith('.css'))
+    .map(f => readFileSync(join(dir, f), 'utf8'))
+    .join('\n')
+  // 认这个高度的选择器要凑齐四层 —— 少一层,那点差值就成了文档层的可滚余量
+  // (压缩器会把连着的选择器并进一条规则,所以这里是按选择器查,不是按声明数数)
+  const covered = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, , body]) => body.includes('height:var(--app-shell-height)'))
+    .flatMap(([, sel]) => sel.split(',').map(s => s.trim()))
+  const missing = ['html', 'body', '#app', '.app-shell'].filter(s => !covered.includes(s))
+  if (missing.length) failures.push(`外壳高度没铺满四层,缺 ${missing.join(' / ')}(少一层就攒出可滚余量)`)
+  if (!css.includes('100dvh')) {
+    failures.push('外壳高度没走 dvh(手机浏览器地址栏挂在外面时,底栏会被压住)')
+  }
+}
+
 console.log(`\n排版自检:${checked} 个页面 × 视口组合`)
 if (failures.length === 0) {
   console.log('✓ 无横向溢出、无越界元素、底部导航五项齐全、控件有名且不小于 28px、选择项有选中态')
+  console.log('✓ 顶栏底栏钉死(文档层没有可滚余量,滚窗两栏不动),外壳高度认 dvh')
+  console.log('✓ 五处页签栏吸顶(背包四册 / 图鉴 / 名号 / 界域志 / 天界),且铺满内容区宽度')
+  console.log('✓ 顶栏一格一行(320 窄屏与横屏、桌面都不折行)')
   console.log('✓ 提示条点得掉、弹窗焦点与外壳偏移正常、引擎事件弹窗也过同一套尺子')
   if (SHOTS) console.log(`  截图已存 ${SHOTS_DIR}`)
 } else {

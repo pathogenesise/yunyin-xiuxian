@@ -95,5 +95,19 @@ export default {
       }
     }
   },
-  plugins: []
+  /*
+   * short: —— 高度断点(横屏手机、桌面矮窗)
+   *
+   * Tailwind 只有宽度断点,而「上下两栏把屏幕吃掉四分之一」这个毛病是按**高度**
+   * 现形的:844×390 横屏下内容区只剩 289px,占屏 26%,两栏吃掉 102px。
+   *
+   * 这里没有走 theme.screens 的 { raw: … } 写法 —— 那条路 Tailwind 会当场警告
+   * 「min-* / max-* 变体不可用」,等于为了一个高度断点把任意宽度断点(min-[340px]:)
+   * 全废掉;addVariant 只加一个变体,两边都不耽误。
+   */
+  plugins: [
+    ({ addVariant }) => {
+      addVariant('short', '@media (max-height: 560px)')
+    }
+  ]
 }

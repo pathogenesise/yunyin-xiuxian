@@ -9,13 +9,13 @@
         v-for="tab in TABS"
         :key="tab.name"
         :to="tab.to"
-        class="relative flex flex-col items-center gap-0.5 py-2 transition-colors"
+        class="relative flex flex-col items-center gap-0.5 py-2 transition-colors short:gap-0 short:py-1"
         :class="route.name === tab.name ? 'text-cinnabar' : 'text-ink-faint active:text-ink-soft'"
       >
         <span class="transition-transform duration-200" :class="route.name === tab.name ? '-translate-y-0.5 scale-110' : ''">
           <GameIcon :name="tab.icon" :size="20" />
         </span>
-        <span class="font-kai text-[11px] tracking-[0.2em]">{{ tab.label }}</span>
+        <span class="font-kai text-[11px] tracking-[0.2em] short:text-[10px]">{{ tab.label }}</span>
       </RouterLink>
     </div>
   </nav>
