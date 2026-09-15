@@ -105,6 +105,30 @@
       </button>
     </div>
 
+    <!--
+      诊断:异常留档。
+
+      从前全局异常只 toast 一句「出现异常,已记录」—— 手机上根本没有控制台,
+      那句「已记录」无处可查。这里把它坐实:最近 20 条、可复制、也随「导出存档」一起走。
+    -->
+    <SectionTitle title="诊断" />
+    <div class="card-ink space-y-2 px-4 py-3">
+      <p class="text-[11px] leading-relaxed text-ink-faint">
+        <template v-if="diag.errors.length">最近记录了 {{ diag.errors.length }} 条异常(最多留 {{ DIAG_MAX }} 条)</template>
+        <template v-else>未记录到异常。真出问题时这里会自动留一条,可连同「导出存档」一起发给我们。</template>
+      </p>
+      <p v-if="latestError" class="rounded-md bg-ink/4 px-2 py-1.5 text-[10px] leading-relaxed text-ink-soft">
+        <span class="tabular text-ink-faint">{{ formatClock(latestError.at) }}</span>
+        <span v-if="latestError.count > 1" class="ml-1 text-ink-faint">×{{ latestError.count }}</span>
+        <span class="ml-1 break-all">{{ latestError.message }}</span>
+        <span v-if="latestError.route" class="ml-1 text-ink-ghost">{{ latestError.route }}</span>
+      </p>
+      <div v-if="diag.errors.length" class="grid grid-cols-2 gap-2">
+        <button class="btn-ghost !text-[12px]" @click="copyDiag">复制异常记录</button>
+        <button class="btn-ghost !text-[12px]" @click="diag.clear()">清空记录</button>
+      </div>
+    </div>
+
     <!-- iOS 专属:装到主屏幕才躲得过系统清存储(非 iOS 不显示,见组件注释) -->
     <InstallToHomeNotice permanent />
 
@@ -168,10 +192,12 @@
   import AboutDialog from '@/components/common/AboutDialog.vue'
   import ProgressionDialog from '@/components/common/ProgressionDialog.vue'
   import InstallToHomeNotice from '@/components/common/InstallToHomeNotice.vue'
+  import { DIAG_MAX, useDiagStore } from '@/stores/diag'
 
   const settings = useSettingsStore()
   const game = useGameStore()
   const ui = useUiStore()
+  const diag = useDiagStore()
 
   /** 写盘失败状态:进页面先读一次,之后随订阅翻转 */
   const saveFailed = ref(saveWriteFailure() !== null)
@@ -179,6 +205,33 @@
   const corruptedNotice = computed<string[]>(() => ui.corruptedNotice)
   /** 原档留在哪些备份键里 —— 说得出键名,玩家(或帮他的人)才找得回来 */
   const corruptKeys = computed(() => corruptedNotice.value.map(id => `corrupt.${storageKey(id)}`).join('、'))
+
+  /** 最近一条异常(诊断块里只展示这一条,其余随复制/导出带走) */
+  const latestError = computed(() => diag.errors[diag.errors.length - 1] ?? null)
+
+  /** 复制用的全文:一条一行,带时间与路由,便于直接贴进聊天窗 */
+  const diagText = computed(() =>
+    diag.errors
+      .map(e => `${formatClock(e.at)} · ${e.info || '异常'} · ${e.message}${e.count > 1 ? ` ×${e.count}` : ''}${e.route ? ` @${e.route}` : ''}`)
+      .join('\n')
+  )
+
+  /** 月-日 时:分 —— 诊断只需要定位到"哪一次",不需要秒 */
+  function formatClock(at: number): string {
+    const d = new Date(at)
+    const pad = (n: number): string => String(n).padStart(2, '0')
+    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  async function copyDiag(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(diagText.value)
+      ui.toast('异常记录已复制', 'success')
+    } catch {
+      // 剪贴板在非安全上下文(file:// 等)不可用 —— 说清退路,别让人以为记录丢了
+      ui.toast('复制失败 —— 异常记录就在「导出存档」里,可整份发给我们', 'warn')
+    }
+  }
   const unsubscribeSaveFailure = subscribeSaveWriteFailure(failure => {
     saveFailed.value = failure !== null
   })

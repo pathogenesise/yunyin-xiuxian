@@ -5,6 +5,7 @@ import App from './App.vue'
 import { router } from './router'
 import { migrateLocalSchema, preflightScan } from './utils/storage'
 import { useUiStore } from './stores/ui'
+import { summarizeError, useDiagStore } from './stores/diag'
 import './style.css'
 
 // 启动前扫描损坏存档 + 结构升级,避免白屏
@@ -18,14 +19,35 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.use(router)
 
+/**
+ * 异常留档 —— 诊断本身不许再抛,故整段包在 try 里。
+ *
+ * 从前这里只打一行 console.error 再 toast「出现异常,已记录」:手机上根本没有控制台,
+ * 那句「已记录」是空话,玩家报问题时我们手上什么都没有。
+ */
+function noteError(info: string, err: unknown): void {
+  try {
+    useDiagStore().record({ info, message: summarizeError(err), route: location.hash })
+  } catch {
+    /* 连留档都失败时不许再抛:诊断不能变成第二个故障源 */
+  }
+}
+
 app.config.errorHandler = (err, _instance, info) => {
   console.error('[全局异常]', info, err)
+  noteError(String(info), err)
   try {
-    useUiStore().toast('出现异常,已记录。若持续出现请尝试刷新', 'warn')
+    useUiStore().toast('出现异常,已记入留档(设置页可查)', 'warn')
   } catch {
     // UI 尚未就绪时静默
   }
 }
+
+// 未处理的 Promise 拒绝从前完全静默:连 toast 都没有,玩家只会觉得「点了没反应」
+window.addEventListener('unhandledrejection', event => {
+  console.error('[未处理的 Promise]', event.reason)
+  noteError('unhandledrejection', event.reason)
+})
 
 app.mount('#app')
 

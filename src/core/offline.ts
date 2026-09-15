@@ -47,6 +47,7 @@ import { useQuestsStore } from '@/stores/quests'
 import { useEndgameStore } from '@/stores/endgame'
 import { useLoadoutsStore } from '@/stores/loadouts'
 import { useSettingsStore } from '@/stores/settings'
+import { useDiagStore } from '@/stores/diag'
 
 /**
  * 离线事件兜底池:世界标签不命中公共事件池时的默认通用际遇。
@@ -349,4 +350,5 @@ export function sanitizeOfflineInputs(): void {
   useLoadoutsStore().sanitize()
   useSettingsStore().sanitize()
   useGameStore().sanitize()
+  useDiagStore().sanitize()
 }

@@ -30,7 +30,14 @@ export const PERSISTED_STORES = [
    * 导出也不含它。清单是导出/导入/清档/损坏扫描的唯一范围,漏一个就等于
    * 存档少一块(且没有任何提示)。审计 saveRoundTrip 现在从源码倒推这份清单。
    */
-  'pacing'
+  'pacing',
+  /**
+   * 异常留档(store id 是 diag)。
+   *
+   * 单独一片的理由与 pacing 相同:它不是游戏进度,却必须随「导出存档」一起走 ——
+   * 玩家报问题时,那份导出文件是他唯一会交出来的东西。
+   */
+  'diag'
 ] as const
 
 /**
@@ -52,7 +59,8 @@ export const STORE_NAMES: Record<string, string> = {
   loadouts: '构筑',
   endgame: '终局',
   lore: '认知',
-  pacing: '节奏遥测'
+  pacing: '节奏遥测',
+  diag: '异常留档'
 }
 
 export function storageKey(storeId: string): string {
