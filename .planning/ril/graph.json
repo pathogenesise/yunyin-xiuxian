@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 179,
+  "round": 180,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T06:02:26+00:00",
+  "updated_at": "2026-09-15T06:17:34+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -286,7 +286,7 @@
       "version": 1,
       "created_at": "2026-09-09T12:53:18+00:00",
       "updated_at": "2026-09-09T12:53:18+00:00",
-      "touched_round": 158,
+      "touched_round": 180,
       "summary": "SettingsView/存档系统(导出/导入/重置)"
     },
     "ISS-012": {
@@ -10311,6 +10311,60 @@
       "touched_round": 179,
       "commit": "210d1faf8820",
       "summary": "随包内置霞鹜文楷子集(1.5MB):@font-face family 复用字体栈里的 LXGW WenKai,iOS/Windows 命中系统楷体不下载;附生成脚本与覆盖判据"
+    },
+    "ISS-176": {
+      "id": "ISS-176",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T06:17:17+00:00",
+      "updated_at": "2026-09-15T06:17:33+00:00",
+      "touched_round": 180,
+      "severity": 0.7,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "iOS 上存档会无声消失:WebKit 把七天没被打开过的站点的脚本可写存储整个清掉(localStorage 里的存档与 Service Worker 缓存一起没),而这是放置游戏 —— 「隔几天回来」正是常态。iOS 上所有浏览器都是 WebKit 壳(Chrome/Edge/Firefox 一样),故风险与浏览器无关;仓库此前既没有识别已安装状态,也没有任何提示,玩家不会知道有这回事"
+    },
+    "TASK-162": {
+      "id": "TASK-162",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T06:17:17+00:00",
+      "updated_at": "2026-09-15T06:17:34+00:00",
+      "touched_round": 180,
+      "category": "stability",
+      "severity": 0.7,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "iOS 存档风险提示(未安装时主页露一次 + 设置页常驻)+ 设置页「上次导出备份」记账与到点提醒"
+    },
+    "DEC-035": {
+      "id": "DEC-035",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:17:17+00:00",
+      "updated_at": "2026-09-15T06:17:17+00:00",
+      "touched_round": 180,
+      "summary": "iOS 提示只在 iOS 且未安装时出现,劝一次就不再唠叨,设置页留一份常驻可查",
+      "rationale": "风险来自 WebKit 的存储策略,与用哪个浏览器无关(iOS 上都是壳),故不按浏览器区分、不做「仅 Safari」判断 —— 只判断「是不是 iOS」与「是不是已安装」。提醒的形态同理:一次性可说清的事不该用弹窗打断(本项目对打断式提示一向谨慎),但只露一次又会让回头想装的玩家找不到步骤,故设置页留一份常驻。「知道了」写进存档、重载不再出现;已在主屏幕上的应用不吃那条规则,一律不劝",
+      "alternatives_rejected": [
+        "只在 Safari 提示:Chrome/Edge 的 iOS 版共用 WebKit 存储策略,风险相同,漏掉它们等于把玩家留在雷区里",
+        "每次都提示或用弹窗打断:丢档风险是「可能发生」,而弹窗是「一定打断」,代价不对等",
+        "只在设置页放说明:没人会主动翻开设置页去找一个自己不知道存在的风险"
+      ]
+    },
+    "CHG-212": {
+      "id": "CHG-212",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T06:17:33+00:00",
+      "updated_at": "2026-09-15T06:17:33+00:00",
+      "touched_round": 180,
+      "commit": "a4eb0c623a01",
+      "summary": "iOS 存档风险提示(主页一次 + 设置页常驻)与「上次导出备份」记账提醒;platform/saveBackup 两个纯模块带判据,自检加三档 UA 端到端"
     }
   },
   "edges": [
@@ -15222,6 +15276,36 @@
       "to": "ISS-175",
       "type": "resolves",
       "created_at": "2026-09-15T06:02:26+00:00"
+    },
+    {
+      "from": "ISS-176",
+      "to": "COMP-001",
+      "type": "located_in",
+      "created_at": "2026-09-15T06:17:17+00:00"
+    },
+    {
+      "from": "TASK-162",
+      "to": "ISS-176",
+      "type": "addresses",
+      "created_at": "2026-09-15T06:17:17+00:00"
+    },
+    {
+      "from": "DEC-035",
+      "to": "TASK-162",
+      "type": "governs",
+      "created_at": "2026-09-15T06:17:17+00:00"
+    },
+    {
+      "from": "CHG-212",
+      "to": "TASK-162",
+      "type": "implements",
+      "created_at": "2026-09-15T06:17:33+00:00"
+    },
+    {
+      "from": "CHG-212",
+      "to": "ISS-176",
+      "type": "resolves",
+      "created_at": "2026-09-15T06:17:33+00:00"
     }
   ]
 }
