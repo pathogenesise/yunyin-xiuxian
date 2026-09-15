@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 194,
+  "round": 195,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T14:48:52+00:00",
+  "updated_at": "2026-09-15T15:01:20+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -11419,6 +11419,44 @@
       "touched_round": 194,
       "commit": "5b8939c",
       "summary": "法宝神通说明随祭炼等级现算(artifactEffectValues 为战斗与文案共用);artifactPassiveAt 收拢三处缩放;图鉴用具三类补功用行与界域出处;装备详情补共鸣与界域、背包加「共」角标;法宝等级改「祭炼 N/9 重」并写明 +8%/重;功法弹窗补几率/每层增量/未习得预览,列表报参悟池余量"
+    },
+    "ISS-198": {
+      "id": "ISS-198",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T15:01:11+00:00",
+      "updated_at": "2026-09-15T15:01:20+00:00",
+      "touched_round": 195,
+      "severity": 0.25,
+      "confidence": 0.9,
+      "summary": "词条稀有度只活在数据里:affixes 的 rarity 推导出来后仅被 reforge 用来加权抽取,界面上从不露面;而装备详情的词条又按掷出先后平铺 —— 玩家看到四条词条,分不出哪条是撞上的大运、哪条是搭头,排序也把「哪条要紧」交给了运气。同类:法宝炼化按钮只报代价(悟道×灵石),收益(被动与神通各 +8%/重)留给玩家自己心算,顶到封顶的也不说"
+    },
+    "TASK-180": {
+      "id": "TASK-180",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T15:01:11+00:00",
+      "updated_at": "2026-09-15T15:01:20+00:00",
+      "touched_round": 195,
+      "category": "core-feature",
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.0,
+      "summary": "两处收尾:①装备词条展示序改为「先稀有(传世→常见)、同稀有度先看掷得满的、末以 id 稳定」,稀有度上色并写出名目(常见/稀有/珍稀/传世);②法宝卡片加「下一重」一行:被动逐项 / 神通主体 / 吸命回补的现值 → 下一重值,顶到封顶的标「已至上限」,满重则不显示"
+    },
+    "CHG-228": {
+      "id": "CHG-228",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T15:01:20+00:00",
+      "updated_at": "2026-09-15T15:01:20+00:00",
+      "touched_round": 195,
+      "commit": "51cb15e",
+      "summary": "词条展示序改按稀有度+成色并上色写名目(sortAffixLines/AFFIX_RARITY_META);artifactNextLevelGain 给出下一重逐项增益(含封顶标记),背包法宝卡片新增「下一重」一行"
     }
   },
   "edges": [
@@ -16984,6 +17022,24 @@
       "to": "TASK-179",
       "type": "implements",
       "created_at": "2026-09-15T14:48:52+00:00"
+    },
+    {
+      "from": "TASK-180",
+      "to": "ISS-198",
+      "type": "addresses",
+      "created_at": "2026-09-15T15:01:11+00:00"
+    },
+    {
+      "from": "CHG-228",
+      "to": "ISS-198",
+      "type": "resolves",
+      "created_at": "2026-09-15T15:01:20+00:00"
+    },
+    {
+      "from": "CHG-228",
+      "to": "TASK-180",
+      "type": "implements",
+      "created_at": "2026-09-15T15:01:20+00:00"
     }
   ]
 }
