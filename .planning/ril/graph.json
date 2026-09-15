@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 183,
+  "round": 185,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T07:35:17+00:00",
+  "updated_at": "2026-09-15T10:31:07+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10523,6 +10523,90 @@
       "source": "实测:font-kai 按字号统计 172 处 ≤16px vs 约 13 处 ≥19px;三方同屏对比(GB屏幕版 / GB常规体 / 原版Regular)—— 国标字形前两者都有,差别只在字重:11px 一行「无名散修 3000/1000亿载 · 藏经阁参悟功法(残页×12)」屏阅版明显更清楚,而大字那点飘逸只覆盖 13 处",
       "confidence": 0.9,
       "summary": "字形对错(国标 vs 日式)与字重是两件事:换回常规体只解决字重,却把主战场(10~13px,占 93%)的可读性换掉"
+    },
+    "COMP-018": {
+      "id": "COMP-018",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:28:25+00:00",
+      "updated_at": "2026-09-15T10:28:25+00:00",
+      "touched_round": 185,
+      "summary": "状态(buff/负面状态)系统:data/buffs 定义 + cultivation store buffs 生命周期(施加/叠加/过期修剪) + BuffDialog/状态条展示",
+      "path": "src/stores/cultivation.ts"
+    },
+    "ISS-181": {
+      "id": "ISS-181",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T10:28:25+00:00",
+      "updated_at": "2026-09-15T10:31:06+00:00",
+      "touched_round": 185,
+      "severity": 0.5,
+      "confidence": 0.95,
+      "summary": "同一状态重复施加时 addBuff 取 Math.max(旧 endsAt, now+dur) —— 等价于「刷新」,已有剩余时长被吞掉。玩家在 buff 生效期间再服同一味丹药,剩余的 20 分钟药力直接清零重算,丹方与文案(药力化开)承诺的时长没有足额兑现"
+    },
+    "TASK-165": {
+      "id": "TASK-165",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-15T10:28:25+00:00",
+      "updated_at": "2026-09-15T10:31:07+00:00",
+      "touched_round": 185,
+      "category": "core-feature",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1,
+      "unlock_factor": 1.0,
+      "summary": "状态时长改为可叠加:同一状态重复施加时把新时长加到剩余时长上(base=max(旧 endsAt, now) + dur),过期实例以 now 为基准;补行为断言锁住(首次=now+dur / 续施=累加 / 过期不吞负值 / 不同状态互不影响)"
+    },
+    "HYP-094": {
+      "id": "HYP-094",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:31:00+00:00",
+      "updated_at": "2026-09-15T10:31:00+00:00",
+      "touched_round": 185,
+      "confidence": 0.95,
+      "summary": "旧 addBuff 的 Math.max(旧 endsAt, now+dur) 在语义上等于「刷新」而非「保留」:同一状态生效期间再次施加,已有剩余时长必然被压到 now+完整时长,续服丹药时那部分剩余时长被吞掉"
+    },
+    "EV-162": {
+      "id": "EV-162",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:31:00+00:00",
+      "updated_at": "2026-09-15T10:31:00+00:00",
+      "touched_round": 185,
+      "source": "src/stores/cultivation.spec.ts「尚在生效时重复施加:剩余时长与新时长相加(不是刷新)」(commit fcf0b3a)",
+      "confidence": 1.0,
+      "summary": "8 例行为断言:生效中续施相加(剩余 600 秒 + 1800 = 2400)、连服 3 次=3 倍、过期实例以 now 为基准、不同状态互不干扰、未注册 id 仍静默忽略、重伤叠加;修复前该组用例必红(把 addBuff 改回 Math.max 实测报 600/1800 不符)"
+    },
+    "CHG-215": {
+      "id": "CHG-215",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:31:00+00:00",
+      "updated_at": "2026-09-15T10:31:00+00:00",
+      "touched_round": 185,
+      "commit": "fcf0b3a",
+      "summary": "cultivation.addBuff 改时长叠加:base=max(旧 endsAt, now) + durationSec*1000;新增 src/stores/cultivation.spec.ts(8 例,含 buff id 注册前置断言,防写错 id 时以「buffs 为空」误导性失败)"
+    },
+    "DEC-038": {
+      "id": "DEC-038",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T10:31:00+00:00",
+      "updated_at": "2026-09-15T10:31:00+00:00",
+      "touched_round": 185,
+      "rationale": "用户口径:状态的时间可以叠加。旧实现取较大值,续服同一味丹药时剩余时长清零重算,与「药力化开」的承诺不符;叠加是玩家直觉上唯一说得通的语义。边界处理:同一状态仍只保留一条实例(状态条/属性汇总消费方式不变),已过期实例以 now 为基准,避免把历史负剩余时间叠进来",
+      "alternatives_rejected": "①为每味状态加叠加上限(如 2× 基础时长)—— 反复施加的来源都带代价或闸门(丹药耗资源,重伤来自突破失败与历练败北),当前无跑飞路径,加封顶等于替产品改数值;②只让增益叠加、负面状态保留刷新 —— 同一机制两套语义,玩家看不懂为何重伤例外;③把叠加做成「层数×时长」的层模型 —— 现有 UI/属性汇总只认 endsAt 单值,改层模型是另一个量级的重构",
+      "summary": "状态叠加语义定案:同一 buff 重复施加 = 剩余时长 + 新时长(同一实例,endsAt 累加);过期实例以 now 为基准;负面状态同规则,不设人为上限"
     }
   },
   "edges": [
@@ -15566,6 +15650,42 @@
       "to": "HYP-093",
       "type": "refutes",
       "created_at": "2026-09-15T07:35:17+00:00"
+    },
+    {
+      "from": "ISS-181",
+      "to": "COMP-018",
+      "type": "located_in",
+      "created_at": "2026-09-15T10:28:26+00:00"
+    },
+    {
+      "from": "TASK-165",
+      "to": "ISS-181",
+      "type": "addresses",
+      "created_at": "2026-09-15T10:28:27+00:00"
+    },
+    {
+      "from": "EV-162",
+      "to": "HYP-094",
+      "type": "validates",
+      "created_at": "2026-09-15T10:31:03+00:00"
+    },
+    {
+      "from": "CHG-215",
+      "to": "TASK-165",
+      "type": "implements",
+      "created_at": "2026-09-15T10:31:03+00:00"
+    },
+    {
+      "from": "CHG-215",
+      "to": "ISS-181",
+      "type": "resolves",
+      "created_at": "2026-09-15T10:31:03+00:00"
+    },
+    {
+      "from": "DEC-038",
+      "to": "COMP-018",
+      "type": "governs",
+      "created_at": "2026-09-15T10:31:03+00:00"
     }
   ]
 }
