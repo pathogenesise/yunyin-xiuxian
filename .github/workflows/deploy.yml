@@ -32,6 +32,15 @@ jobs:
           bun run test
       - name: 构建
         run: bun run build
+      # 浏览器自检放在**上传产物之前**:排版/触达区/对比度/焦点/弹窗语义/
+      # 离屏回放那一整套判据,红一条就不发布这一版(与 build.yml 的 ui-check 同一套)。
+      # playwright 不进 package.json —— 只有这一关需要它,版本与本地跑通用那一支。
+      - name: 装浏览器
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: 浏览器自检(排版与交互)
+        run: node scripts/layout-check.mjs
       # 前置条件:仓库需在 Settings → Pages → Build and deployment 里把 Source 选成
       # GitHub Actions。configure-pages 拿不到站点就会直接失败(Not Found)。
       # 不要改用 enablement: true 绕过:该参数要求非 GITHUB_TOKEN 的凭据

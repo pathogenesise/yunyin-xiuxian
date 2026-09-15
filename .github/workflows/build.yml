@@ -43,10 +43,38 @@ jobs:
             exit 1
           fi
 
+  # 浏览器自检 —— 排版/触达区/对比度/焦点/弹窗语义/离屏回放那一整套判据。
+  #
+  # 从前它只活在"谁记得在本地跑一次"里:scripts/ 没有任何工作流引用,
+  # 于是每一个发出去的 APK/安装包都没有 UI 层面的门。
+  # 这里单起一个 job:所有构建都 needs 它 —— 判据红,构建与发布都停在这。
+  ui-check:
+    name: 浏览器自检(排版与交互)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: 安装 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: 安装依赖
+        run: bun install --frozen-lockfile
+      - name: 构建产物(自检量的是 dist)
+        run: bun run build
+      # playwright 不进 package.json:它是"只有这一关才需要"的重量级依赖,
+      # 装进 devDependencies 会让每次本机 bun install 都背一份。版本与本地跑通用的一支。
+      - name: 装浏览器
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: 排版与交互自检
+        run: node scripts/layout-check.mjs
+
   # 1. 构建 Electron 客户端
   build-electron:
     name: 构建 Electron (${{ matrix.os }})
-    needs: guard
+    needs: [guard, ui-check]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -94,7 +122,7 @@ jobs:
   # 2. 构建 Android APK
   build-android:
     name: 构建 Android APK
-    needs: guard
+    needs: [guard, ui-check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
