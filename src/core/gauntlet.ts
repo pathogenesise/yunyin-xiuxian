@@ -90,6 +90,30 @@ export function celestialDepthScale(playerMods: StatMods): number {
 }
 
 /**
+ * 天界敌人的**唯一参照口径** —— 远征 / 挑战 / 试炼 / 重写一律走它。
+ *
+ * 为什么必须收成一处:玩家在天界是按 `celestialStats` 打的(凡器数值已被器魂抹平,
+ * 见 playerSnap 的 celestial=true),敌人若按 `finalStats`(含凡界装备)生成,
+ * 就会出现「凡界装备越好,天界敌人越强,而玩家一点没变强」的倒挂 ——
+ * 实测(真仙 · 赤炎天 · 同一敌人形状):
+ *   凡界装备 无 → 中 → 满:玩家天界三维恒为 7.53e7,
+ *   而敌人攻击按凡界口径从 5.57e7 涨到 7.17e7(+29%);
+ *   同时敌人词条也没乘 `celestialDepthScale`,堆厚度的构筑在两套内容里待遇不同。
+ *
+ * 传 `celestialStats` 进来(不是 finalStats):参照与玩家实际出手的那一份同源,
+ * 加厚系数也一并算好,调用方不必各自记得传 depth。
+ */
+export function celestialFoeCaliber(stats: { attack: GNum; defense: GNum; maxHp: GNum; mods: StatMods }): {
+  ref: ReferenceStats
+  depth: number
+} {
+  return {
+    ref: { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp },
+    depth: celestialDepthScale(stats.mods)
+  }
+}
+
+/**
  * 按参照属性生成天界敌人 —— 数值成长在天界互相抵消,只有构筑形状决定胜负。
  * depthScale 让词条与三维一样参与抵消(见 celestialDepthScale)
  */

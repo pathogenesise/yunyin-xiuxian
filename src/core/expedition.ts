@@ -11,7 +11,7 @@ import { MUTATORS } from '@/data/mutators'
 import { EXPEDITION_GUARDIAN_LAYER, EXPEDITION_ROUTE_LAYERS, MUTATION_FOES } from '@/data/endgame'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
-import { mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import { celestialFoeCaliber, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
 import { resolveCombat, sampleWinRate } from './combat'
 import { modOf } from './statsCalc'
 import { SLAUGHTER_PER_WIN, SWORD_PER_WIN, slaughterSpeedBonus, stackedMods } from './daoDepth'
@@ -149,9 +149,9 @@ function settle(run: WorldRunState, world: CelestialWorldDef, cleared: boolean, 
 function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: WorldFoeShape, node?: WorldRouteNode): StepOutcome {
   const endgame = useEndgameStore()
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const foe = worldFoeSnap(foeShape, ref)
+  // 参照与加厚口径由 gauntlet 统一给出:玩家按 celestialStats 出手,敌人就必须按同一份生成
+  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
+  const foe = worldFoeSnap(foeShape, ref, 1, depth)
   const baseRules = expeditionRules(world, run, node)
   const startCap = baseRules?.playerStartHpPct ?? 1
   const fightRules = withCarriedHp(baseRules, run)
@@ -313,9 +313,8 @@ export function previewFight(
   const run = endgame.worldRun
   const world = run ? resolveWorld(run.worldId) : prep ? resolveWorld(prep.worldId) : undefined
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const foe = worldFoeSnap(foeShape, ref)
+  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
+  const foe = worldFoeSnap(foeShape, ref, 1, depth)
   const skillLines = foeShape.skills.map(sk => {
     const tag = sk.effect ? (EFFECT_WORDS[sk.effect] ?? sk.effect) : '重击'
     return `【${sk.name}】${tag} · ${RATE_WORDS(sk.rate)} · 威力 ${sk.mult.toFixed(1)} 倍`
@@ -382,11 +381,10 @@ export function challengeMutation(mutatorIds: string[]): MutationResult | null {
   const muts = mutatorIds.map(id => MUTATORS.find(m => m.id === id)).filter(m => m !== undefined)
   const rules = chainRules(currentDaoRules(), ...muts.map(m => m!.rules))
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
+  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
   const foes = []
   for (let i = 0; i < MUTATION_FIGHTS; i += 1) {
-    foes.push(worldFoeSnap(MUTATION_FOES[i % MUTATION_FOES.length]!, ref, Math.pow(MUTATION_ESCALATION, i)))
+    foes.push(worldFoeSnap(MUTATION_FOES[i % MUTATION_FOES.length]!, ref, Math.pow(MUTATION_ESCALATION, i), depth))
   }
   const report = runGauntlet(buildPlayerSnap(true), foes, rules, 0.4, rng, { perWinPlayerMods: perWinMods() })
   let reward = 0
@@ -470,8 +468,8 @@ export function forecastExpedition(worldId: string, pactId: string | null, gateI
 
   // 玩家构筑:含孤剑/逆命的快照修饰,敌人按玩家等比生成
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const pRef = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
+  // 预估与实战同源:同一份参照、同一个加厚系数(见 celestialFoeCaliber 的注释)
+  const { ref: pRef, depth: pDepth } = celestialFoeCaliber(player.celestialStats)
   let snap = buildPlayerSnap(true)
   if (pact?.special === 'soloArtifact') snap = { ...snap, artifacts: (snap.artifacts ?? []).slice(0, 1) }
   if (pact?.special === 'sealCore') {
@@ -479,8 +477,8 @@ export function forecastExpedition(worldId: string, pactId: string | null, gateI
     if (sealed) snap = { ...snap, mods: stackedMods(snap.mods, sealed, 1) }
   }
   const playerFoes: CombatantSnap[] = []
-  for (let i = 0; i < world.fights - 1; i += 1) playerFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, pRef))
-  playerFoes.push(worldFoeSnap(world.guardian, pRef))
+  for (let i = 0; i < world.fights - 1; i += 1) playerFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, pRef, 1, pDepth))
+  playerFoes.push(worldFoeSnap(world.guardian, pRef, 1, pDepth))
   let clears = 0
   for (let i = 0; i < 8; i += 1) {
     if (runGauntlet(snap, playerFoes, rules, world.healBetweenPct, seededRng, opts).cleared) clears += 1

@@ -11,7 +11,7 @@ import { mutatorDef } from '@/data/mutators'
 import { pactDef } from '@/data/pacts'
 import { BUILD_PROFILES, buildSnap } from './buildSim'
 import { SIM_REFERENCE } from './celestialSim'
-import { mergeRules, runGauntlet, worldFoeSnap } from './gauntlet'
+import { celestialFoeCaliber, mergeRules, runGauntlet, worldFoeSnap } from './gauntlet'
 import { buildPlayerSnap } from './playerSnap'
 import { currentDaoRules, endgameUnlocked, recordMark, type ExpeditionResult } from './endgameService'
 import { recordMilestone } from './identity'
@@ -52,13 +52,14 @@ function draftRules(draft: ChallengeDraft): CombatRules | undefined {
 
 function draftFoes(
   worldId: string,
-  ref: { attack: CombatantSnap['attack']; defense: CombatantSnap['defense']; maxHp: CombatantSnap['maxHp'] }
+  ref: { attack: CombatantSnap['attack']; defense: CombatantSnap['defense']; maxHp: CombatantSnap['maxHp'] },
+  depth = 1
 ): CombatantSnap[] {
   const world = celestialWorldDef(worldId)
   if (!world) return []
   const foes: CombatantSnap[] = []
-  for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref))
-  foes.push(worldFoeSnap(world.guardian, ref))
+  for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, depth))
+  foes.push(worldFoeSnap(world.guardian, ref, 1, depth))
   return foes
 }
 
@@ -104,8 +105,8 @@ export function undertakeChallenge(draft: ChallengeDraft, verdict: ChallengeVerd
     return null
   }
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
+  // 与远征/试炼同源:玩家按天界口径出手,敌人就按天界口径生成(见 celestialFoeCaliber)
+  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
   const world = celestialWorldDef(draft.worldId)!
   const rules = mergeRules(currentDaoRules(), draftRules(draft))
   const pact = draft.pactId ? pactDef(draft.pactId) : undefined
@@ -114,7 +115,7 @@ export function undertakeChallenge(draft: ChallengeDraft, verdict: ChallengeVerd
     perWinPlayerMods: endgame.daoPath === 'sword' ? SWORD_PER_WIN : endgame.daoPath === 'slaughter' ? SLAUGHTER_PER_WIN : undefined
   }
   const name = draft.name.trim() || '无名之约'
-  const report = runGauntlet(buildPlayerSnap(true), draftFoes(draft.worldId, ref), rules, world.healBetweenPct, rng, opts)
+  const report = runGauntlet(buildPlayerSnap(true), draftFoes(draft.worldId, ref, depth), rules, world.healBetweenPct, rng, opts)
   let reward = 0
   if (report.cleared) {
     reward = verdict.reward
