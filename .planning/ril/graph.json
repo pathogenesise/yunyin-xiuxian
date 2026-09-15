@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T03:45:28+00:00",
+  "updated_at": "2026-09-15T03:46:19+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10117,11 +10117,11 @@
       "id": "CHG-206",
       "type": "change",
       "status": "active",
-      "version": 1,
+      "version": 2,
       "created_at": "2026-09-15T03:45:28+00:00",
-      "updated_at": "2026-09-15T03:45:28+00:00",
+      "updated_at": "2026-09-15T03:46:19+00:00",
       "touched_round": 176,
-      "commit": "1a30b78f8be60cc2dd674e99999994b244b3df26",
+      "commit": "57f3696d108a",
       "summary": "README.Docker.md 澄清 PWA 说明:PWA「添加到主屏幕」为真实功能(manifest/图标随镜像开箱即用,与 VITE_ENABLE_PWA 等占位 env 无关),并写明改图标的正确姿势(改 icon.svg 后跑 gen-pwa-icons.mjs)"
     }
   },
