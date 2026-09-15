@@ -33,3 +33,15 @@ if (corrupted.length > 0) {
   useUiStore().corruptedNotice = corrupted
   useUiStore().toast('检测到部分存档数据异常,已为你隔离修复', 'warn')
 }
+
+// PWA 离线缓存:只在生产构建注册(dev 下 SW 会缓存 HMR 产物、干扰热重载)。
+// 注册失败静默 —— 有 SW 是增强(断网可重开),没有也不影响在线游玩。
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL ?? './'}sw.js`)
+      .catch(() => {
+        /* 注册失败不打扰玩家:功能可降级,见 public/sw.js 注释 */
+      })
+  })
+}
