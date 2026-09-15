@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 176,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T03:46:19+00:00",
+  "updated_at": "2026-09-15T04:06:09+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10077,10 +10077,10 @@
     "TASK-157": {
       "id": "TASK-157",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-15T03:30:49+00:00",
-      "updated_at": "2026-09-15T03:30:49+00:00",
+      "updated_at": "2026-09-15T04:06:09+00:00",
       "touched_round": 176,
       "category": "core-feature",
       "severity": 0.4,
@@ -10123,6 +10123,28 @@
       "touched_round": 176,
       "commit": "57f3696d108a",
       "summary": "README.Docker.md 澄清 PWA 说明:PWA「添加到主屏幕」为真实功能(manifest/图标随镜像开箱即用,与 VITE_ENABLE_PWA 等占位 env 无关),并写明改图标的正确姿势(改 icon.svg 后跑 gen-pwa-icons.mjs)"
+    },
+    "CHG-207": {
+      "id": "CHG-207",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T04:06:09+00:00",
+      "updated_at": "2026-09-15T04:06:09+00:00",
+      "touched_round": 176,
+      "commit": "1fbecd141379",
+      "summary": "Service Worker 离线缓存落地:导航 network-first + hash 资产 cache-first + 外部统计豁免,激活时清旧缓存;生产注册,失败静默;CACHE_VERSION 硬编码并文档化 bump 义务"
+    },
+    "HYP-092": {
+      "id": "HYP-092",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T04:06:09+00:00",
+      "updated_at": "2026-09-15T04:06:09+00:00",
+      "touched_round": 176,
+      "confidence": 0.6,
+      "summary": "SW 的 browser-级行为(离线重开/安装提示/更新接管)本环境无浏览器可基站内验证,需真机 E2E;若人工验证发现问题,回滚 sw.js 注册一行即可"
     }
   },
   "edges": [
@@ -14926,6 +14948,12 @@
       "to": "TASK-156",
       "type": "implements",
       "created_at": "2026-09-15T03:45:28+00:00"
+    },
+    {
+      "from": "CHG-207",
+      "to": "TASK-157",
+      "type": "implements",
+      "created_at": "2026-09-15T04:06:09+00:00"
     }
   ]
 }
