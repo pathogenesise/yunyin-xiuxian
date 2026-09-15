@@ -1,4 +1,4 @@
-/** 随机事件库 —— 79 个随机事件(含 21 个奇缘阶段) + 11 条机缘,数据驱动,按区域标签匹配 */
+/** 随机事件库 —— 81 个随机事件(含 21 个奇缘阶段) + 11 条机缘,数据驱动,按区域标签匹配 */
 import type { EventChoice, EventDef, EventEffect, EventOutcome } from '@/types'
 import { CHAIN_EVENTS } from './chains'
 
@@ -901,6 +901,30 @@ export const EVENTS: EventDef[] = [
     ],
     { minRealm: 9 }
   ),
+  /**
+   * 仙界 / 神界各补一只灵兽。
+   *
+   * 灵兽位只有一个 —— 一个界域只给一只,「带哪只」这个选择就根本不存在,
+   * 与法宝那条「件数要多于槽位数」是同一条理由(contentDensity 的判据已改为每界 ≥2)。
+   */
+  ev(
+    'ev_qingluan_yun',
+    '云海青鸾',
+    '云海之上,一只青鸾绕着仙门的断柱盘旋,羽色如洗。它落在你肩头,像是认了你。',
+    ['general', 'sky', 'immortal'],
+    [
+      c(
+        '与之结缘',
+        [
+          o(60, '青鸾自此随行,云海之上再无迷途。', { type: 'pet', id: 'pet_qingluan' }),
+          o(40, '青鸾啄了啄你的衣袖便飞远了,只留下一句清越的鸣声在耳。', { type: 'exp', reqPct: 0.05 })
+        ],
+        { isDefault: true }
+      ),
+      c('不惊仙禽', [o(1, '你远远绕开,不愿扰它清净。', { type: 'material', id: 'wudao', amount: 12 })])
+    ],
+    { minRealm: 10 }
+  ),
   ev(
     'ev_yaochi_xianpai',
     '瑶池仙桃',
@@ -940,6 +964,24 @@ export const EVENTS: EventDef[] = [
       c('收归宗门', [o(1, '你以重器封存碎片,带回宗门换得灵石。', { type: 'stone', tierAmount: 220 })])
     ],
     { minRealm: 14 }
+  ),
+  ev(
+    'ev_baize_duanbei',
+    '断碑白泽',
+    '神迹荒原的断碑旁卧着一头白泽。它睁眼看你,碑上残字竟自行浮起,一笔一笔拼出你的名字。',
+    ['general', 'god'],
+    [
+      c(
+        '听其言',
+        [
+          o(55, '白泽把碑上残篇念了一遍,你于道途上少走了十年弯路。', { type: 'pet', id: 'pet_baize' }),
+          o(45, '残篇太长,你只听懂三成,神思却已清明许多。', { type: 'material', id: 'wudao', amount: 45 })
+        ],
+        { isDefault: true }
+      ),
+      c('躬身不问', [o(1, '你拱手一礼,不去惊扰它读碑。', { type: 'exp', reqPct: 0.06 })])
+    ],
+    { minRealm: 15 }
   ),
   ev(
     'ev_shenbing_canfeng',

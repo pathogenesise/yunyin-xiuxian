@@ -15,6 +15,7 @@ import { track } from './progress'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
+import { useLoreStore } from '@/stores/lore'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useUiStore } from '@/stores/ui'
 
@@ -56,6 +57,8 @@ export function upgradeEquipment(uid: string): boolean {
   })
   track('upgrades')
   const t = equipmentTemplate(inst.templateId)
+  // 强化过也算「亲手用过」——图鉴那一档由玩家自己推进,不看运气
+  useLoreStore().noteEquipUsed(inst.templateId)
   ui.toast(`「${t?.name}」强化至 +${inst.level + 1}`, 'success')
   return true
 }

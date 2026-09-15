@@ -79,9 +79,9 @@ export const AFFIXES: AffixDef[] = [
   // ---- 身法 ----
   // 「出手速度提升 N%」读起来像连续收益,机制上却是一条阈值(1+修正 ≥ 对手速度即抢先)——
   // 差一点就是完全没抢先,故照实写成「先手判定」。战后分析会把两个数与差额一并摆出来
-  a('spd1', '迅捷', 'speed', 3, 6, '先手判定 +{v}%', 80, { slots: ['boots', 'wrist', ...W] }),
-  a('spd2', '流光', 'speed', 6, 12, '先手判定 +{v}%', 40, { slots: ['boots', 'wrist', ...W], minRank: 3 }),
-  a('spd3', '瞬影', 'speed', 12, 20, '先手判定 +{v}%', 12, { slots: ['boots', ...W], minRank: 6 }),
+  a('spd1', '迅捷', 'speed', 5, 10, '先手判定 +{v}%', 80, { slots: ['boots', 'wrist', ...W] }),
+  a('spd2', '流光', 'speed', 10, 15, '先手判定 +{v}%', 40, { slots: ['boots', 'wrist', ...W], minRank: 3 }),
+  a('spd3', '瞬影', 'speed', 15, 25, '先手判定 +{v}%', 12, { slots: ['boots', ...W], minRank: 6 }),
   // ---- 战斗修为 ----
   a('gain1', '参悟', 'expGain', 4, 8, '战斗所得修为提升 {v}%', 80),
   a('gain2', '明心', 'expGain', 8, 16, '战斗所得修为提升 {v}%', 40, { minRank: 3 }),

@@ -238,34 +238,41 @@ export function branchCodex(): CodexCat {
 // 三处深度取自:装备见闻(lore.equipLore)、法宝祭炼重数(inventory.artifacts)、
 // 丹方掌握度(lore.recipeLore)。
 
-/** 装备收录深度:0 未录 / 1 已入目 / 2 见过精品 / 3 见过天品 */
-export const EQUIP_STAGE_NAMES = ['未录', '已入目', '见过精品', '见过天品'] as const
+/**
+ * 装备收录深度:0 未录 / 1 已入目 / 2 曾上手 / 3 见过天品
+ *
+ * 「曾上手」这一档是拿**玩家自己能决定的事**换来的(强化一件、或把它装上身),
+ * 而第三档仍是运气(撞见天品以上的成色)。原先的第二档是「见过精品」——
+ * 对低阶模板要等运气,玩家在图鉴里干看着,推不动它。
+ */
+export const EQUIP_STAGE_NAMES = ['未录', '已入目', '曾上手', '见过天品'] as const
 export const EQUIP_STAGE_MAX = 3
 
 /** 分档的品质由此而来 —— 不写魔数,改品质表时这里跟着走 */
-const EQUIP_STAGE2_RANK = qualityDef('excellent').rank
 const EQUIP_STAGE3_RANK = qualityDef('heaven').rank
 
 const EQUIP_HINTS = [
   '尚未见过此物 —— 多在地界里走动。',
-  '见过形制,成色尚未记下 —— 再得一件便有了底。',
-  '见过精品 —— 天品还没入过眼。',
+  '见过形制了 —— 强化一件、或把它装上身,才算上手。',
+  '用过了 —— 再往上就看运气:见一件天品以上的成色。',
   ''
 ] as const
 
-/** 见闻记录:该模板见过的最高品质档与最高层级 */
+/** 见闻记录:该模板见过的最高品质档、最高层级,以及是否亲手用过(u) */
 export interface EquipSeen {
   /** 最高品质 rank */
   q: number
   /** 最高层级 */
   t: number
+  /** 是否亲手用过(强化过或装备过):1 = 用过 */
+  u?: number
 }
 
 /** 某件装备在「见过什么成色」上走到哪一层 */
 export function equipStage(seen: EquipSeen | undefined, collected: boolean): number {
   if (!seen) return collected ? 1 : 0
   if (seen.q >= EQUIP_STAGE3_RANK) return 3
-  if (seen.q >= EQUIP_STAGE2_RANK) return 2
+  if (seen.u) return 2
   return 1
 }
 

@@ -126,11 +126,12 @@ describe('坏档韧性 · 清单从源码倒推', () => {
     setActivePinia(createPinia())
     const lore = useLoreStore()
     lore.$patch({
-      equipLore: { good: { q: 3, t: 9 }, nullq: { q: null, t: 2 }, text: 'nope', half: { q: 1 } } as never
+      equipLore: { good: { q: 3, t: 9, u: 1 }, nullq: { q: null, t: 2 }, text: 'nope', half: { q: 1 }, badu: { q: 1, t: 2, u: 9 } } as never
     })
     lore.sanitize()
-    expect(Object.keys(lore.equipLore), '只该留下形状完整的条目').toEqual(['good'])
-    expect(lore.equipSeen('good')).toEqual({ q: 3, t: 9 })
+    expect(Object.keys(lore.equipLore).sort(), '只该留下形状完整的条目').toEqual(['badu', 'good'])
+    expect(lore.equipSeen('good')).toEqual({ q: 3, t: 9, u: 1 })
+    expect(lore.equipSeen('badu')!.u, 'u 只认 1,别的值一律归零').toBe(0)
   })
 })
 

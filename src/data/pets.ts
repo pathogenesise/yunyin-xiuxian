@@ -28,7 +28,7 @@ export const PETS: PetDef[] = [
     desc: '羽翼含火,性子急躁',
     icon: 'bird',
     quality: 'excellent',
-    mods: { attackPct: 0.08, speed: 0.04 },
+    mods: { attackPct: 0.08, speed: 0.05 },
     personality: 'fierce'
   },
   {
@@ -112,6 +112,25 @@ export const PETS: PetDef[] = [
     quality: 'divine',
     mods: { cultivationSpeed: 0.15, breakthroughRate: 0.05, lifesteal: 0.04 },
     personality: 'fierce'
+  },
+  // ---- 补足:每个界域至少两只(灵兽位只有一个,一界只有一只 = 没有选择) ----
+  {
+    id: 'pet_qingluan',
+    name: '青鸾',
+    desc: '羽色如洗,鸣声清越,云海之上的传信神禽',
+    icon: 'bird',
+    quality: 'immortal',
+    mods: { cultivationSpeed: 0.12, qiRegen: 0.12, explorationSpeed: 0.15 },
+    personality: 'cautious'
+  },
+  {
+    id: 'pet_baize',
+    name: '白泽',
+    desc: '知万物之名,能言人语,卧于神迹荒原的断碑之侧',
+    icon: 'book',
+    quality: 'divine',
+    mods: { expGain: 0.18, breakthroughRate: 0.04, eventLuck: 0.15 },
+    personality: 'greedy'
   }
 ]
 

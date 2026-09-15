@@ -113,7 +113,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
     attackPct: 0.09,
     defensePct: 0.09,
     maxHpPct: 0.09,
-    speed: 0.045
+    speed: 0.05
   }),
   b('m_hundun', 'b_hundun_gui', '归元', '万法归元,道基自厚', {
     cultivationSpeed: 0.15,

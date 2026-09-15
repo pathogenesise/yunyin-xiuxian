@@ -31,6 +31,7 @@ import { ARTIFACTS, ARTIFACT_MAX_SLOTS } from '@/data/artifacts'
 import { SECRET_REALMS } from '@/data/secretRealms'
 import { CHAINS } from '@/data/chains'
 import { EVENTS, eventDef } from '@/data/events'
+import { PETS } from '@/data/pets'
 import { WORLD_WEATHERS } from '@/core/weather'
 
 /** 某境界的地界所占的层级 */
@@ -185,23 +186,48 @@ describe('内容密度 · 每一境都得有新东西', () => {
    * (事件的 minRealm,或它带的界域标签)。故这里从事件反推「哪一界域能拿到灵兽」,
    * 而不是给灵兽表补一个没人读的字段 —— 有门槛的地方才是真相。
    *
-   * 现状:人间界有随机认主(妖兽认主),仙界应龙、神界麒麟、混沌海鲲鹏与饕餮,
-   * 四界都能结缘。故障注入:把某一界的灵兽奖励改成别的奖励,对应界域立刻红。
+   * 现状:人间界靠不定名的随机池(妖兽认主/幼兽),仙界应龙与青鸾、神界麒麟与白泽、
+   * 混沌海鲲鹏与饕餮。故障注入:把某一界的灵兽奖励改成别的奖励,对应界域立刻红。
+   *
+   * 数的是**种数**而不是事件条数:不定名的发放(妖兽认主)抽的是「所有还没结缘的灵兽」,
+   * 它一只就能覆盖人间界那一池子;而高界的灵兽是各界的名目,必须点名给出。
    */
-  it('每个界域都结得到灵兽 —— 门槛写在发放事件里', () => {
+  it('每个界域都结得到灵兽,且不止一只 —— 门槛写在发放事件里', () => {
     const WORLD_TAGS: Record<string, string> = { immortal: 'immortal', sky: 'immortal', god: 'god', chaos: 'chaos' }
-    const petsByWorld = new Map<string, number>(WORLDS.map(w => [w.id, 0]))
+    /** 界域 → 该界**点名**发放的灵兽 id */
+    const namedByWorld = new Map<string, Set<string>>(WORLDS.map(w => [w.id, new Set<string>()]))
+    const poolWorlds = new Set<string>()
     for (const ev of EVENTS) {
       const grantsPet = ev.choices.some(ch => ch.outcomes.some(o => o.effects.some(e => e.type === 'pet')))
       if (!grantsPet) continue
       const byRealm = ev.minRealm !== undefined ? worldOf(ev.minRealm).id : undefined
       const byTag = ev.tags.map(t => WORLD_TAGS[t]).find(Boolean)
       const world = byRealm ?? byTag ?? 'mortal'
-      petsByWorld.set(world, (petsByWorld.get(world) ?? 0) + 1)
+      for (const ch of ev.choices) {
+        for (const o of ch.outcomes) {
+          for (const e of o.effects) {
+            if (e.type !== 'pet') continue
+            if (e.id) namedByWorld.get(world)!.add(e.id)
+            else poolWorlds.add(world)
+          }
+        }
+      }
     }
-    console.log('界域\t灵兽来源数\n' + WORLDS.map(w => `${w.name}\t${petsByWorld.get(w.id)}`).join('\n'))
+    /** 不定名那一池子 = 没被任何事件点过名的灵兽 */
+    const named = new Set([...namedByWorld.values()].flatMap(s => [...s]))
+    const poolSize = PETS.filter(p => !named.has(p.id)).length
+    console.log(
+      '界域\t点名灵兽\t随机池\n' +
+        WORLDS.map(w => `${w.name}\t${namedByWorld.get(w.id)!.size}\t${poolWorlds.has(w.id) ? poolSize : 0}`).join('\n')
+    )
     for (const w of WORLDS) {
-      expect(petsByWorld.get(w.id), `${w.name} 一只灵兽也结不到 —— 那一界的灵兽栏永远空着`).toBeGreaterThan(0)
+      /**
+       * 底线是**两只**:灵兽位只有一个,一个界域只给一只,「带哪只」这个选择就不存在。
+       * 法宝那一头早有同样的判据(件数要多于槽位数);灵兽原先是「≥1 条发放路径」,
+       * 于是仙界只有应龙、神界只有麒麟,那两界的灵兽栏是「唯一解」而不是选择。
+       */
+      const available = namedByWorld.get(w.id)!.size + (poolWorlds.has(w.id) ? poolSize : 0)
+      expect(available, `${w.name} 只有 ${available} 只灵兽可结缘 —— 灵兽位只有一个,一只就是唯一解`).toBeGreaterThan(1)
     }
   })
 })

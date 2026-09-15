@@ -54,7 +54,7 @@ export const useLoreStore = defineStore(
      * 记的是**见过的最好一件**,不是当前行囊:化尘了、分解了、被挤掉了,
      * 见过就是见过(与灵材的「照面次数」同一性质,故也放在这个 store 里)。
      */
-    const equipLore = ref<Record<string, { q: number; t: number }>>({})
+    const equipLore = ref<Record<string, { q: number; t: number; u: number }>>({})
 
     /** 已辨识(认知层 ≥1)的灵材数 */
     const knownMaterialCount = computed(() => Object.values(materialLore.value).filter(v => v >= 1).length)
@@ -71,9 +71,24 @@ export const useLoreStore = defineStore(
       return materialLore.value[id] ?? 0
     }
 
-    /** 该模板见过的最高成色(没见过返回 undefined) */
-    function equipSeen(id: string): { q: number; t: number } | undefined {
+    /** 该模板见过的最高成色(没见过返回 undefined);u = 是否亲手用过(强化或装备过) */
+    function equipSeen(id: string): { q: number; t: number; u: number } | undefined {
       return equipLore.value[id]
+    }
+
+    /**
+     * 记下「亲手用过这一件」——强化过或装备过都算。
+     *
+     * 与「见过什么成色」分开记:成色靠运气(要撞上天品),而用不用它由玩家自己决定。
+     * 图鉴的收录深度因此多了一档**可推进**的台阶(见 ui/codex 的装备梯子)。
+     */
+    function noteEquipUsed(templateId: string): void {
+      const cur = equipLore.value[templateId]
+      if (cur?.u) return
+      equipLore.value = {
+        ...equipLore.value,
+        [templateId]: { q: cur?.q ?? 0, t: cur?.t ?? 0, u: 1 }
+      }
     }
 
     /**
@@ -89,7 +104,7 @@ export const useLoreStore = defineStore(
       if (cur && cur.q >= q && cur.t >= t) return
       equipLore.value = {
         ...equipLore.value,
-        [templateId]: { q: Math.max(cur?.q ?? 0, q), t: Math.max(cur?.t ?? 0, t) }
+        [templateId]: { q: Math.max(cur?.q ?? 0, q), t: Math.max(cur?.t ?? 0, t), u: cur?.u ?? 0 }
       }
     }
 
@@ -199,13 +214,18 @@ export const useLoreStore = defineStore(
       enemyLore.value = clampMap(enemyLore.value ?? {}, 0, ENEMY_LORE_MAX)
       enemySeen.value = clampMap(enemySeen.value ?? {}, 0, Number.MAX_SAFE_INTEGER)
       // 装备见闻:每个条目是 { q, t } 两个数,形状烂掉就整条丢掉
-      const seenFixed: Record<string, { q: number; t: number }> = {}
+      const seenFixed: Record<string, { q: number; t: number; u: number }> = {}
       for (const [id, v] of Object.entries(equipLore.value ?? {})) {
         const q = (v as { q?: unknown })?.q
         const t = (v as { t?: unknown })?.t
         // 只认真正的数字:Number(null) 是 0、"9" 会悄悄转成 9 —— 那会让坏条目冒充「见过一件凡品·0 阶」
         if (typeof q !== 'number' || typeof t !== 'number' || !Number.isFinite(q) || !Number.isFinite(t)) continue
-        seenFixed[id] = { q: Math.max(0, Math.min(8, Math.floor(q))), t: Math.max(0, Math.floor(t)) }
+        const u = (v as { u?: unknown })?.u
+        seenFixed[id] = {
+          q: Math.max(0, Math.min(8, Math.floor(q))),
+          t: Math.max(0, Math.floor(t)),
+          u: u === 1 ? 1 : 0
+        }
       }
       equipLore.value = seenFixed
       if (!Number.isFinite(studyFrac.value)) studyFrac.value = 0
@@ -244,6 +264,7 @@ export const useLoreStore = defineStore(
       advanceEnemyLore,
       equipSeen,
       noteEquipSeen,
+      noteEquipUsed,
       sanitize
     }
   },

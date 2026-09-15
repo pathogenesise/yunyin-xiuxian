@@ -30,6 +30,7 @@ import {
   describeEquipment,
   describeMaterial,
   describePill,
+  type EquipSeen,
   equipStage,
   pillStage
 } from './codex'
@@ -171,14 +172,16 @@ describe('悟道录:未见 / 已见 / 已择', () => {
  * 到顶则闭嘴;而无方之丹要明说自己没有方子 —— 那是玩家一辈子也推不动的那一档。
  */
 describe('图鉴 · 用具三类的收录深度', () => {
-  it('装备:没见过就没收录;见过一件即入门;精品、天品各上一档', () => {
+  it('装备:没见过就没收录;见过一件即入门;上手一档由玩家推进;天品看运气', () => {
     const t = equipmentTemplate('w_xuantie')!
     expect(equipStage(undefined, false)).toBe(0)
     // 旧档:收录过但没有成色记录 —— 仍算入目,只是记不下最好的一件
     expect(equipStage(undefined, true)).toBe(1)
-    const seen = (quality: QualityId, tier: number) => ({ q: qualityDef(quality).rank, t: tier })
+    const seen = (quality: QualityId, tier: number): EquipSeen => ({ q: qualityDef(quality).rank, t: tier })
     expect(equipStage(seen('mortal', 30), true)).toBe(1)
-    expect(equipStage(seen('excellent', 12), true)).toBe(2)
+    // 第二档不看成色,看「你有没有亲手用过它」——强化或装备过即算
+    expect(equipStage({ ...seen('mortal', 30), u: 1 }, true)).toBe(2)
+    expect(equipStage({ ...seen('excellent', 12), u: 1 }, true)).toBe(2)
     expect(equipStage(seen('heaven', 12), true)).toBe(3)
     expect(describeEquipment(t, seen('heaven', 18), true).desc).toContain('见过最好的:天品 · 18 阶')
     expect(describeEquipment(t, undefined, true).badge).toBe('')
@@ -190,10 +193,10 @@ describe('图鉴 · 用具三类的收录深度', () => {
     const top = describeEquipment(t, { q: qualityDef('divine').rank, t: 32 }, true)
     expect(top.badge).toBe('极')
     expect(top.hint, '到顶了还催人上进就是噪音').toBe('')
-    const cases: { stage: number; seen?: { q: number; t: number }; collected: boolean }[] = [
+    const cases: { stage: number; seen?: EquipSeen; collected: boolean }[] = [
       { stage: 0, collected: false },
       { stage: 1, seen: { q: qualityDef('mortal').rank, t: 3 }, collected: true },
-      { stage: 2, seen: { q: qualityDef('excellent').rank, t: 5 }, collected: true }
+      { stage: 2, seen: { q: qualityDef('excellent').rank, t: 5, u: 1 }, collected: true }
     ]
     for (const { stage, seen, collected } of cases) {
       const e = describeEquipment(t, seen, collected)

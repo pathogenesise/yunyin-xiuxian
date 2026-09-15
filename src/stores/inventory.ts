@@ -6,6 +6,7 @@ import { add, gnZero } from '@/utils/gnum'
 import { persistConfig } from '@/utils/storage'
 import { resolveEquipStats } from '@/core/equipGen'
 import { mergeMods } from '@/core/statsCalc'
+import { useLoreStore } from '@/stores/lore'
 import { artifactDef, artifactPassiveAt } from '@/data/artifacts'
 import { BAG_CAPACITY } from '@/data/constants'
 import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
@@ -93,6 +94,9 @@ export const useInventoryStore = defineStore(
 
     function equip(uid: string, slot: EquipSlot): void {
       equipped.value = { ...equipped.value, [slot]: uid }
+      // 「亲手用过」记在图鉴的见闻里:收录深度因此有一档由玩家自己推进(见 ui/codex)
+      const inst = findItem(uid)
+      if (inst) useLoreStore().noteEquipUsed(inst.templateId)
     }
 
     function unequip(slot: EquipSlot): void {

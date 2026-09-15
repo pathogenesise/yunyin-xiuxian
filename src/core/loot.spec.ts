@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { rng } from '@/utils/random'
 import { afterWin, acquireEquipment, artifactDropWeight, randomDropArtifact } from './loot'
+import { upgradeEquipment } from './forge'
 import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import { regionDef } from '@/data/regions'
 import { usePlayerStore } from '@/stores/player'
@@ -18,6 +19,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { qualityDef } from '@/data/qualities'
 import { DECOMPOSE_DUST } from '@/data/constants'
 import { useLoreStore } from '@/stores/lore'
+import { gn } from '@/utils/gnum'
 import type { EquipmentInstance, QualityId } from '@/types'
 
 describe('自动回收 · 装备入包前的第一道闸', () => {
@@ -184,7 +186,7 @@ describe('装备见闻 · 入账那一刻就记下成色', () => {
 
   it('拾得一件就记下它的品质与层级', () => {
     acquireEquipment(mkItem('a', 'heaven', 15), { quiet: true, forceKeep: true })
-    expect(useLoreStore().equipSeen('w_xuantie')).toEqual({ q: qualityDef('heaven').rank, t: 15 })
+    expect(useLoreStore().equipSeen('w_xuantie')).toEqual({ q: qualityDef('heaven').rank, t: 15, u: 0 })
   })
 
   it('后来更差的一件不拉低记录,更好的一件才刷新', () => {
@@ -193,10 +195,11 @@ describe('装备见闻 · 入账那一刻就记下成色', () => {
     acquireEquipment(mkItem('c', 'mortal', 2), { quiet: true, forceKeep: true })
     expect(useLoreStore().equipSeen('w_xuantie'), '差的一件把好记录顶掉了').toEqual({
       q: qualityDef('heaven').rank,
-      t: 15
+      t: 15,
+      u: 0
     })
     acquireEquipment(mkItem('d', 'divine', 20), { quiet: true, forceKeep: true })
-    expect(useLoreStore().equipSeen('w_xuantie')).toEqual({ q: qualityDef('divine').rank, t: 20 })
+    expect(useLoreStore().equipSeen('w_xuantie')).toEqual({ q: qualityDef('divine').rank, t: 20, u: 0 })
   })
 
   it('被自动回收(化尘)的那件也算见过 —— 图鉴记的是见闻,不是家当', () => {
@@ -206,7 +209,33 @@ describe('装备见闻 · 入账那一刻就记下成色', () => {
     expect(res.bagged, '这一件本该被回收').toBe(false)
     expect(useLoreStore().equipSeen('w_qingshuang'), '化成尘的那件也该记在见闻里').toEqual({
       q: qualityDef('mortal').rank,
-      t: 7
+      t: 7,
+      u: 0
     })
   })
+
+  /**
+   * 「亲手用过」与「见过什么成色」分开记:成色靠运气(要撞上天品),
+   * 而用不用它由玩家自己决定 —— 图鉴第二档因此是可推进的(见 ui/codex 的装备梯子)。
+   */
+  it('装备上身即算上手;强化也算;两者都写进见闻的 u', () => {
+    const lore = useLoreStore()
+    const inv = useInventoryStore()
+    const res = useResourcesStore()
+    // 直接摆一件进包:这条判据测的是「上手」怎么记,不想被自动回收与满包规则搅进来
+    const item: EquipmentInstance = { uid: 'used-1', templateId: 'w_hanfeng', quality: 'fine', tier: 3, level: 0, affixes: [] }
+    inv.items = [...inv.items, item]
+    expect(lore.equipSeen('w_hanfeng')?.u ?? 0, '还没上身,不算用过').toBe(0)
+    inv.equip('used-1', 'weapon')
+    expect(lore.equipSeen('w_hanfeng')?.u, '装备上身即上手').toBe(1)
+
+    // 强化也记:这是另一条能推进图鉴那一档的路
+    res.addSmall('dust', 10_000)
+    res.addStone(gn(1e12))
+    const before = lore.equipSeen('w_qingshuang')?.u ?? 0
+    expect(before).toBe(0)
+    inv.items = [...inv.items, { uid: 'used-2', templateId: 'w_qingshuang', quality: 'heaven', tier: 3, level: 0, affixes: [] }]
+    expect(upgradeEquipment('used-2'), '强化应当成功(素材已给足)').toBe(true)
+    expect(lore.equipSeen('w_qingshuang')?.u, '强化过也算上手').toBe(1)
+})
 })
