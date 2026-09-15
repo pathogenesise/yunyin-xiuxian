@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 182,
+  "round": 183,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T07:26:15+00:00",
+  "updated_at": "2026-09-15T07:35:17+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -10500,6 +10500,29 @@
       "touched_round": 182,
       "commit": "cd402a1bd4e3",
       "summary": "楷体母体换成 LXGWWenKaiGBScreen(国标字形+屏幕阅读优化),体积 1517→1783KB;覆盖判据改成读产物真实 cmap + 交给系统字体的符号名单;扫描跳过 *.spec.ts 里的正则区间端点;local() 收紧到本支"
+    },
+    "HYP-093": {
+      "id": "HYP-093",
+      "type": "hypothesis",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-15T07:35:14+00:00",
+      "updated_at": "2026-09-15T07:35:17+00:00",
+      "touched_round": 183,
+      "confidence": 0.4,
+      "summary": "楷体该换回笔画细的「GB 常规体」:屏幕阅读版在大字(30px 境界名)上偏实,丢了水墨的飘逸感"
+    },
+    "EV-161": {
+      "id": "EV-161",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-15T07:35:14+00:00",
+      "updated_at": "2026-09-15T07:35:14+00:00",
+      "touched_round": 183,
+      "source": "实测:font-kai 按字号统计 172 处 ≤16px vs 约 13 处 ≥19px;三方同屏对比(GB屏幕版 / GB常规体 / 原版Regular)—— 国标字形前两者都有,差别只在字重:11px 一行「无名散修 3000/1000亿载 · 藏经阁参悟功法(残页×12)」屏阅版明显更清楚,而大字那点飘逸只覆盖 13 处",
+      "confidence": 0.9,
+      "summary": "字形对错(国标 vs 日式)与字重是两件事:换回常规体只解决字重,却把主战场(10~13px,占 93%)的可读性换掉"
     }
   },
   "edges": [
@@ -15537,6 +15560,12 @@
       "to": "ISS-180",
       "type": "resolves",
       "created_at": "2026-09-15T07:26:15+00:00"
+    },
+    {
+      "from": "EV-161",
+      "to": "HYP-093",
+      "type": "refutes",
+      "created_at": "2026-09-15T07:35:17+00:00"
     }
   ]
 }
