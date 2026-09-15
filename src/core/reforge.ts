@@ -1,9 +1,14 @@
 /**
- * 装备重铸与词条封存 —— Phase 30.1
+ * 装备重铸与词条封存
  *
  * 灵石的长期 sink,直接连接 Build:
- * - 重铸:保留品质与基础数值,重新随机一个未封存词条;成本按次数指数增长,上限 10 次
- * - 封存:付费永久锁定一个词条,重铸不会将其替换;至少留一个可随机位
+ * - **重铸**:把**未封存**的词条推倒重来 —— 条数按品质区间重掷(至少给一条新的),
+ *   数值全部重掷;品质、阶数、强化等级都不动。**不限次数**。
+ * - **封存**:付费永久锁定一个词条,重铸不会碰它;每一件至少留一个可重掷位。
+ *
+ * 成本只与**装备阶数**和**封存数**挂钩(见 data/constants 的注释):
+ * 想保住好词条就得付溢价 —— 「洗得越多越贵」由「你保护了多少」表达,
+ * 而不是由一个与装备无关的次数计数器表达。
  *
  * 原则:不为消耗而消耗——每一笔花销都在改变构筑,而非购买数值。
  */
@@ -14,8 +19,7 @@ import { equipmentTemplate } from '@/data/equipment'
 import { qualityDef } from '@/data/qualities'
 import {
   REFORGE_DUST_BASE,
-  REFORGE_DUST_STEP,
-  REFORGE_MAX_COUNT,
+  REFORGE_SEAL_LOAD,
   REFORGE_STONE_BASE,
   SEAL_STONE_BASE
 } from '@/data/constants'
@@ -31,41 +35,19 @@ export interface ReforgeCost {
 }
 
 /**
- * 重铸成本:灵石递增公式 = 基础 × 品质系数 × 次数指数 × 封存稀有度系数
- * - 品质系数:从 qualityDef 获取 mult 字段(凡1.0 → 神9.5)
- * - 次数指数:1.5^count (第10次=57.67倍)
- * - 封存稀有度系数:[普通1.0, 稀有1.5, 史诗2.0, 传说3.0]
- * 达上限或无可重铸词条返回 null
+ * 重铸成本:灵石 = stoneByTier(阶数) × (1 + 封存数 × REFORGE_SEAL_LOAD);
+ * 器灵尘 = REFORGE_DUST_BASE × (1 + 封存数)。
+ *
+ * 没有次数项,也没有上限:同一件、同一封存数,第一次与第两百次一个价。
+ * 无可重铸余地(全封存)时返回 null —— 这是唯一的"不能再炼"。
  */
 export function reforgeCost(inst: EquipmentInstance): ReforgeCost | null {
-  const count = inst.reforgeCount ?? 0
-  if (count >= REFORGE_MAX_COUNT) return null
   if (reforgeableAffixIds(inst).length === 0) return null
-
-  // 品质系数:使用实际品质定义的 mult
-  const qualityMult = qualityDef(inst.quality).mult
-
-  // 次数指数(1.5^count,避免前期过贵 + 10次后暴涨)
-  const rerollMult = Math.pow(1.5, count)
-
-  // 封存稀有度系数:取所有封存词条中最高稀有度
-  let lockedRarityMult = 1.0
-  if (inst.sealedAffixIds && inst.sealedAffixIds.length > 0) {
-    const rarityWeights = { common: 1.0, rare: 1.5, epic: 2.0, legendary: 3.0 }
-    for (const affixId of inst.sealedAffixIds) {
-      const def = affixDef(affixId)
-      if (def) {
-        const w = rarityWeights[def.rarity] ?? 1.0
-        if (w > lockedRarityMult) lockedRarityMult = w
-      }
-    }
-  }
-
-  const finalMult = qualityMult * rerollMult * lockedRarityMult
-
+  const sealed = (inst.sealedAffixIds ?? []).length
+  const load = 1 + sealed * REFORGE_SEAL_LOAD
   return {
-    stone: stoneByTier(inst.tier, REFORGE_STONE_BASE * finalMult),
-    dust: REFORGE_DUST_BASE + count * REFORGE_DUST_STEP
+    stone: stoneByTier(inst.tier, REFORGE_STONE_BASE * load),
+    dust: Math.round(REFORGE_DUST_BASE * load)
   }
 }
 
@@ -76,8 +58,21 @@ export function reforgeableAffixIds(inst: EquipmentInstance): string[] {
 }
 
 /**
- * 重铸:随机替换一个未封存词条(换成装备上没有的新词条,数值重掷)。
- * 保留品质/层级/强化等级,只动词条。
+ * 一件装备还能封存几个词条 —— 至少要留一个可重掷位。
+ * 判据与界面共用这一处,免得两边各算一遍(封存上限变了,有一边忘了跟)。
+ */
+export function sealCapacity(inst: EquipmentInstance): number {
+  return Math.max(0, inst.affixes.length - 1)
+}
+
+/**
+ * 重铸:把未封存的词条全部推倒重来。
+ *
+ * 「重铸」此前是**换掉一条**词条,条数不动 —— 而一件 3 条的凡品与一件 6 条的神品,
+ * 差的从来不只是数值,是**能凑出几种搭配**。所以重铸要连条数一起重掷:
+ *   新条数 = 品质区间内随机,但不少于「封存数 + 1」(每次重铸都至少给你一条新的);
+ *   封存的原样留着,其余全部换成新词条、新掷点。
+ * 品质、阶数、强化等级一概不动 —— 重铸的是一件的「词条构成」,不是它的出身。
  */
 export function reforgeEquipment(uid: string): boolean {
   const inventory = useInventoryStore()
@@ -97,29 +92,39 @@ export function reforgeEquipment(uid: string): boolean {
 
   const template = equipmentTemplate(inst.templateId)
   const quality = qualityDef(inst.quality)
-  const candidates = reforgeableAffixIds(inst)
-  const targetId = rng.pick(candidates)
-  const existing = new Set(inst.affixes.map(a => a.id))
-  const pool = AFFIXES.filter(
-    a =>
-      !existing.has(a.id) &&
-      (a.minRank === undefined || quality.rank >= a.minRank) &&
-      (a.slots === undefined || template === undefined || a.slots.includes(template.slot))
-  )
-  if (pool.length === 0) {
-    ui.toast('天地词条已尽,无可替换', 'warn')
-    return false
-  }
+  const sealed = new Set(inst.sealedAffixIds ?? [])
+  const kept = inst.affixes.filter(a => sealed.has(a.id))
+  const [minCount, maxCount] = quality.affixes
 
   resources.spendStone(cost.stone)
   resources.spendSmall('dust', cost.dust)
-  const picked = rng.weighted(pool, a => a.weight)
-  const newAffixes = inst.affixes.map(a => (a.id === targetId ? { id: picked.id, roll: rng.next() } : a))
-  inventory.replaceItem({ ...inst, affixes: newAffixes, reforgeCount: (inst.reforgeCount ?? 0) + 1 })
+
+  // 条数:品质区间内重掷,但不低于「封存数 + 1」(总得留一条新的给它重掷)
+  const wantCount = Math.max(kept.length + 1, Math.min(maxCount, rng.int(minCount, maxCount)))
+  const used = new Set([...kept.map(a => a.id)])
+  const fresh: { id: string; roll: number }[] = []
+  let guard = 0
+  while (fresh.length < wantCount - kept.length && guard < 50) {
+    guard += 1
+    const pool = AFFIXES.filter(
+      a =>
+        !used.has(a.id) &&
+        (a.minRank === undefined || quality.rank >= a.minRank) &&
+        (a.slots === undefined || template === undefined || a.slots.includes(template.slot))
+    )
+    if (pool.length === 0) break
+    const picked = rng.weighted(pool, a => a.weight)
+    used.add(picked.id)
+    fresh.push({ id: picked.id, roll: rng.next() })
+  }
+  const affixes = [...kept, ...fresh]
+  const before = inst.affixes.length
+  inventory.replaceItem({ ...inst, affixes, reforgeCount: (inst.reforgeCount ?? 0) + 1 })
   track('upgrades')
 
-  const oldName = affixDef(targetId)?.name ?? '旧词条'
-  ui.toast(`重铸而成:「${oldName}」化作「${picked.name}」`, 'success')
+  const sealedNote = kept.length > 0 ? `(封存 ${kept.length} 条未动)` : ''
+  const countNote = before === affixes.length ? `${affixes.length} 条` : `${before} → ${affixes.length} 条`
+  ui.toast(`重铸而成:词条 ${countNote}${sealedNote}`, 'success')
   return true
 }
 
@@ -127,7 +132,7 @@ export function reforgeEquipment(uid: string): boolean {
 export function sealCost(inst: EquipmentInstance): GNum | null {
   const sealed = inst.sealedAffixIds ?? []
   // 至少留一个可随机位,封满则不可再封
-  if (sealed.length >= Math.max(0, inst.affixes.length - 1)) return null
+  if (sealed.length >= sealCapacity(inst)) return null
   return stoneByTier(inst.tier, SEAL_STONE_BASE * (sealed.length + 1))
 }
 

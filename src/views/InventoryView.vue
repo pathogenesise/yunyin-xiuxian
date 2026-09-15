@@ -289,7 +289,9 @@
               <template v-if="row.item.level > 0">+{{ row.item.level }}</template>
             </span>
             <span class="block text-[10px] text-ink-faint">
-              {{ qualityDef(row.item.quality).name }} · {{ row.item.tier }} 阶 · {{ row.item.affixes.length }} 词条
+              <!-- 条数带分母:这一件还剩多少条可涨,一眼看得出(上限来自品质表) -->
+              {{ qualityDef(row.item.quality).name }} · {{ row.item.tier }} 阶 · 词条
+              {{ row.item.affixes.length }}/{{ qualityDef(row.item.quality).affixes[1] }}
             </span>
           </button>
           <button v-if="row.equipped" class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="unequipSlot()">卸下</button>

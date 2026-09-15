@@ -1,7 +1,7 @@
 /* eslint-disable no-console -- Phase 30.5 灵脉与重铸经济审计 */
 import { describe, expect, it } from 'vitest'
 import {
-  REFORGE_MAX_COUNT,
+  REFORGE_SEAL_LOAD,
   STONE_TIER_GROWTH,
   VEIN_MAIN_CAPACITY,
   VEIN_POINT_STONE,
@@ -9,7 +9,6 @@ import {
   VEIN_TOTAL_CAPACITY
 } from '@/data/constants'
 import { VEINS } from '@/data/veins'
-import { qualityDef } from '@/data/qualities'
 import { reforgeCost } from './reforge'
 import { stoneByTier } from './formulas'
 import type { EquipmentInstance } from '@/types'
@@ -142,25 +141,26 @@ describe('Phase 30.5:装备重铸成本审计(机制已实现,行为验证)', ()
   }
   const stoneOf = (c: { m: number; e: number }): number => c.m * Math.pow(10, c.e)
 
-  it('品质越高,重铸越贵(按品质倍率)', () => {
-    const low = reforgeCost({ ...base, quality: 'mortal' })!
-    const high = reforgeCost({ ...base, quality: 'divine' })!
-    expect(stoneOf(high.stone) / stoneOf(low.stone)).toBeCloseTo(qualityDef('divine').mult / qualityDef('mortal').mult, 6)
+  /**
+   * 重铸成本在 36 轮改过一次口径:旧版是「品质倍率 × 1.5^次数,上限 10 次」,
+   * 现在只与**阶数**与**封存数**挂钩、且不限次数(见 data/constants 的注释)。
+   * 于是这里的判据也跟着换:不再验"越洗越贵",而是验"成本只看那两件事、且洗不封顶"。
+   */
+  it('品质与重铸成本无关:同一件洗到第几次、什么品质,都是同一个价', () => {
+    const c0 = reforgeCost({ ...base, reforgeCount: 0, quality: 'mortal' })!
+    const c99 = reforgeCost({ ...base, reforgeCount: 99, quality: 'divine' })!
+    expect(stoneOf(c99.stone)).toBeCloseTo(stoneOf(c0.stone), 6)
+    expect(c99.dust).toBe(c0.dust)
   })
 
-  it('次数指数递增:每重铸一次灵石 ×1.5,达上限即不可再铸', () => {
-    const c0 = reforgeCost({ ...base, reforgeCount: 0 })!
-    const c1 = reforgeCost({ ...base, reforgeCount: 1 })!
-    const c9 = reforgeCost({ ...base, reforgeCount: 9 })!
-    expect(stoneOf(c1.stone) / stoneOf(c0.stone)).toBeCloseTo(1.5, 6)
-    expect(stoneOf(c9.stone) / stoneOf(c0.stone)).toBeCloseTo(Math.pow(1.5, 9), 4)
-    expect(reforgeCost({ ...base, reforgeCount: REFORGE_MAX_COUNT }), '达上限应不可再重铸').toBeNull()
+  it('不限次数:洗到第两百次仍可重铸(次数只作记录,不进公式)', () => {
+    expect(reforgeCost({ ...base, reforgeCount: 200 }), '不该再有次数上限').not.toBeNull()
   })
 
-  it('封存越稀有的词条,重铸越贵(普通 1.0 / 传说 3.0)', () => {
-    const common = reforgeCost({ ...base, sealedAffixIds: ['atk1'] })! // 普通
-    const legendary = reforgeCost({ ...base, sealedAffixIds: ['cdmg4'] })! // 传说
-    expect(stoneOf(legendary.stone) / stoneOf(common.stone)).toBeCloseTo(3.0, 6)
+  it('成本随封存数线性上浮:每封存一条 +REFORGE_SEAL_LOAD', () => {
+    const one = reforgeCost({ ...base, affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }], sealedAffixIds: ['atk1'] })!
+    const two = reforgeCost({ ...base, affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }], sealedAffixIds: ['atk1', 'def1'] })!
+    expect(stoneOf(two.stone) / stoneOf(one.stone)).toBeCloseTo((1 + 2 * REFORGE_SEAL_LOAD) / (1 + REFORGE_SEAL_LOAD), 6)
   })
 
   it('层阶越高,重铸越贵(与掉落同轴 stoneByTier)', () => {
@@ -169,11 +169,20 @@ describe('Phase 30.5:装备重铸成本审计(机制已实现,行为验证)', ()
     expect(stoneOf(t10.stone) / stoneOf(t3.stone)).toBeCloseTo(Math.pow(STONE_TIER_GROWTH, 7), 4)
   })
 
-  it('足以阻止「暴力洗完美」:第 9 次已是首次的数十倍量级', () => {
-    const c0 = stoneOf(reforgeCost({ ...base, reforgeCount: 0 })!.stone)
-    const c9 = stoneOf(reforgeCost({ ...base, reforgeCount: 9 })!.stone)
-    console.log(`\n  重铸成本第0次 ${c0.toExponential(2)} → 第9次 ${c9.toExponential(2)}(×${(c9 / c0).toFixed(1)})`)
-    expect(c9 / c0).toBeGreaterThan(30)
+  it('「暴力洗完美」的刹车换到了别处:高阶层 + 封存溢价,而不是次数', () => {
+    // 同一件封了三条的 20 阶装备,单次重铸要比 3 阶未封存的贵出几个数量级 ——
+    // 玩家想一直洗下去,付的是"这件有多高阶、我保住了几条"的钱
+    const cheap = stoneOf(reforgeCost({ ...base, tier: 3 })!.stone)
+    const dear = stoneOf(
+      reforgeCost({
+        ...base,
+        tier: 20,
+        affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }, { id: 'crit1', roll: 0.5 }, { id: 'luck1', roll: 0.5 }],
+        sealedAffixIds: ['atk1', 'def1', 'hp1']
+      })!.stone
+    )
+    console.log(`\n  3 阶未封存 ${cheap.toExponential(2)} → 20 阶封存三条 ${dear.toExponential(2)}(×${(dear / cheap).toFixed(0)})`)
+    expect(dear / cheap).toBeGreaterThan(1000)
   })
 })
 
@@ -192,10 +201,10 @@ describe('Phase 30.5:灵石 Sink 渠道', () => {
       ],
       reforgeCount: 9
     }
-    const reforge9 = reforgeCost(eq)!
-    const reforge9Stone = reforge9.stone.m * Math.pow(10, reforge9.stone.e)
-    console.log(`\n  投满主脉(金丹)≈ ${veinFull.toExponential(2)} 灵石;反复重铸第 9 次 ≈ ${reforge9Stone.toExponential(2)} 灵石`)
+    const reforge = reforgeCost(eq)!
+    const reforgeStone = reforge.stone.m * Math.pow(10, reforge.stone.e)
+    console.log(`\n  投满主脉(金丹)≈ ${veinFull.toExponential(2)} 灵石;重铸一次(金丹精品)≈ ${reforgeStone.toExponential(2)} 灵石`)
     expect(veinFull).toBeGreaterThan(0)
-    expect(reforge9Stone).toBeGreaterThan(0)
+    expect(reforgeStone).toBeGreaterThan(0)
   })
 })

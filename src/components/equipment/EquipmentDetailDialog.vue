@@ -44,7 +44,18 @@
       </div>
       <template v-if="resolved.affixLines.length">
         <div class="ink-divider my-3" />
-        <p class="mb-1.5 font-kai text-[12px] tracking-[0.3em] text-ink-faint">词 条</p>
+        <!--
+          条数上限按品质给(凡品 0~1 · 神品 6),这是玩家最该看见的一件事:
+          一件装备的"上限"就在它的品质里,而重铸可以重掷条数 —— 只有把它摊在明面上,
+          「要不要为这件洗下去」才算得清。
+        -->
+        <p class="mb-1.5 flex items-baseline justify-between font-kai text-[12px] tracking-[0.3em] text-ink-faint">
+          <span>词 条</span>
+          <span class="text-[10px] tracking-normal tabular">
+            {{ inst.affixes.length }} / {{ affixCap }} 条
+            <span class="ml-1 text-ink-ghost">({{ qualityName }}上限)</span>
+          </span>
+        </p>
         <div v-for="(line, i) in resolved.affixLines" :key="i" class="mb-1.5 rounded-md bg-violet-ink/7 px-3 py-1.5">
           <div class="flex items-center justify-between">
             <div class="min-w-0">
@@ -138,7 +149,7 @@
         <template v-if="reforgeCostVal || sealCostVal">
           <div class="flex gap-2 text-[11px]">
             <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-1" @click="doReforge">
-              重铸随机词条
+              重铸词条
               <span class="ml-1 tabular text-[10px] text-ink-faint">
                 {{ formatGN(reforgeCostVal.stone) }} · 尘×{{ reforgeCostVal.dust }}
               </span>
@@ -147,8 +158,15 @@
               封存一词 {{ formatGN(sealCostVal) }}
             </div>
           </div>
+          <!--
+            重铸到底做什么,得在按下之前说清:条数与数值一并重掷(封存的不动),
+            不限次数、成本只随「阶数」与「封存数」走 —— 与旧版"越洗越贵、上限十次"不同。
+          -->
+          <p v-if="reforgeCostVal" class="text-center text-[10px] leading-relaxed text-ink-faint">
+            重掷未封存的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,封存的不动 · 不限次数,成本随阶数与封存数走
+          </p>
           <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
-            重铸次数 {{ inst.reforgeCount ?? 0 }}/{{ REFORGE_MAX_COUNT }} · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ Math.max(0, inst.affixes.length - 1) }}
+            已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ sealCapacity(inst) }}
           </p>
         </template>
         <div class="flex gap-2">
@@ -189,8 +207,8 @@
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
-  import { reforgeEquipment, reforgeCost, sealAffix, sealCost } from '@/core/reforge'
-  import { REFORGE_MAX_COUNT } from '@/data/constants'
+  import { reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost } from '@/core/reforge'
+  import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
   import { formatGN, formatPercent } from '@/utils/format'
   import { isZero, sub } from '@/utils/gnum'
@@ -228,6 +246,9 @@
   // ---- 重铸与封存 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))
   const sealCostVal = computed(() => (inst.value ? sealCost(inst.value) : null))
+  /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
+  const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
+  const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))
 
   function isAffixSealed(affixId: string): boolean {
     return (inst.value?.sealedAffixIds ?? []).includes(affixId)
