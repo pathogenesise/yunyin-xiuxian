@@ -40,7 +40,7 @@ export interface ReachPath {
 const DIRECT: readonly ReachPath[] = [
   { key: 'cultivationSpeed', hops: 1, via: '修为累积速度' },
   { key: 'expGain', hops: 1, via: '修为获取量' },
-  { key: 'breakthroughRate', hops: 1, via: '突破成功率 → 失败重试次数' },
+  { key: 'breakthroughRate', hops: 1, via: '进阶成功率 → 失败重试次数' },
   { key: 'qiRegen', hops: 1, via: '灵气回复 → 突破前的等待' },
   { key: 'lifespanPct', hops: 1, via: '寿元 → 一世可用的修行时长' }
 ]

@@ -32,7 +32,18 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   damageReduction: '伤害减免',
   cultivationSpeed: '修炼速度',
   qiRegen: '灵气恢复',
-  breakthroughRate: '突破成功率',
+  /**
+   * 「进阶成功率」——**不是**大关成功率。
+   *
+   * 它只进 `breakthroughInfo` 的那一次掷点:每大境 9 次小进阶(一世约 180 次)。
+   * 大关(筑基起的天劫步)走逐波推演,压根不掷这个骰子(见 core/breakthrough
+   * 的 attemptBreakthrough 与 tribulationDecision);唯一的例外是渡劫→真仙 ——
+   * 真仙 tribulation:false,那一步又回到掷点。
+   *
+   * 从前这里叫「突破成功率」,读起来像"万事皆管":玩家把「天命」「破境」堆满再
+   * 去渡大关,发现一点用没有 —— 那是名字在过度承诺,不是数值失效。
+   */
+  breakthroughRate: '进阶成功率',
   luck: '气运',
   explorationSpeed: '历练速度',
   lifespanPct: '寿元上限',

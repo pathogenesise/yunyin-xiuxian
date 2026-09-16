@@ -85,6 +85,13 @@
           </button>
         </div>
         <p v-if="modRows.length" class="mt-1 text-[9px] text-ink-faint">点一行看它从哪来</p>
+        <!--
+          进阶成功率的名字容易过度承诺:它只进小进阶那一次掷点,大关走天劫推演。
+          有这一项时才提示 —— 没有这项的玩家不需要知道这个边界。
+        -->
+        <p v-if="hasAdvanceRate" class="mt-0.5 text-[9px] leading-relaxed text-ink-ghost">
+          进阶成功率只作用于小进阶;大关须渡天劫,看的是劫型与四维准备度(护持/恢复/抗性/爆发)。
+        </p>
         <div v-if="breakdownRows.length" class="mt-1.5 rounded-md bg-paper-deep/60 px-2.5 py-2">
           <p class="text-[10px] text-ink-soft">{{ STAT_NAMES[breakdownKey!] }} · 来源明细</p>
           <p v-for="c in breakdownRows" :key="c.name" class="mt-0.5 flex justify-between text-[10px]">
@@ -532,6 +539,9 @@
       capped: isSoftCapped(stats.value.mods, k)
     })).filter(x => x.value !== 0)
   )
+
+  /** 面板上是否需要那句「进阶成功率只作用于小进阶」的边界说明 */
+  const hasAdvanceRate = computed(() => modOf(stats.value.mods, 'breakthroughRate') !== 0)
 
   /** 来源明细:点哪一行看哪一行 —— 数据来自 finalStats.breakdown,不在界面里另算 */
   const breakdownKey = ref<AnyStatKey | null>(null)

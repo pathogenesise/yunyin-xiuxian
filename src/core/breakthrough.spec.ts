@@ -11,6 +11,7 @@ import { gn } from '@/utils/gnum'
 import type { StatMods } from '@/types'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
+import { useCultivationStore } from '@/stores/cultivation'
 
 describe('渡劫成功率推演', () => {
   beforeEach(() => {
@@ -124,5 +125,41 @@ describe('渡劫成功率推演', () => {
       expect(previewStrong, `${kind}:预览未反映构筑改善`).toBeGreaterThan(previewWeak)
       expect(actualStrong, `${kind}:预览说变好了,结算却没有——UI 与结算口径分裂`).toBeGreaterThan(actualWeak)
     }
+  })
+
+  /**
+   * 「进阶成功率」的作用域边界(护栏)。
+   *
+   * 它从前的名字叫「突破成功率」,读起来像万事皆管:玩家把「天命」「破境」堆满再
+   * 去渡大关,发现一点用没有。真正的作用域是**小进阶**那一次掷点 —— 每大境 9 次,
+   * 一世约 180 次,不是死数据;大关(筑基起的天劫步)走逐波推演,压根不掷这个骰子。
+   * 这两条一正一反把边界钉住:谁哪天把它接进天劫(或反过来让小进阶不再读它),
+   * 都会在这里红一次。
+   */
+  it('大关天劫不吃进阶成功率:堆到 50% 也改不动渡劫推演', () => {
+    const base: StatMods = { regenPerRound: 0.03, damageReduction: 0.2 }
+    const stacked: StatMods = { ...base, breakthroughRate: 0.5 }
+    for (const kind of ['thunder', 'counterflow', 'soulrend', 'ironbody', 'heavyrush'] as const) {
+      const a = buildTribulationPlan(5, base, kind)
+      const b = buildTribulationPlan(5, stacked, kind)
+      expect(b.expectedRate, `${kind}劫:进阶成功率不该改变渡劫推演`).toBe(a.expectedRate)
+      expect(b.verdict).toBe(a.verdict)
+    }
+    expect(tribulationSuccessRate(5, stacked, 'thunder')).toBe(tribulationSuccessRate(5, base, 'thunder'))
+  })
+
+  it('小进阶才吃它:嗑「破境」丹,进阶成功率必须真的涨', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    const cultivation = useCultivationStore()
+    // major:0 sub:3 —— 非大关,走平概率掷点
+    player.$patch({ major: 0, sub: 3, exp: { m: 1e12, e: 0 } })
+    resources.$patch({ qi: 99999 })
+    const before = breakthroughInfo()
+    expect(before.needTribulation).toBe(false)
+    cultivation.addBuff('buff_pojing', Date.now()) // 进阶成功率 +15%
+    const after = breakthroughInfo()
+    console.log(`破境丹:${before.rateText} → ${after.rateText}`)
+    expect(after.rate).toBeGreaterThan(before.rate)
   })
 })

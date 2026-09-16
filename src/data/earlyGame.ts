@@ -39,7 +39,7 @@ export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
   {
     type: 'breakthrough',
     label: '悟透瓶颈',
-    desc: '下次突破成功率 +8%',
+    desc: '下次进阶成功率 +8%',
     buffId: 'enlighten_bt',
     duration: 1800
   },
@@ -73,14 +73,14 @@ export const BREAKTHROUGH_PREP_OPTIONS: BreakthroughPrepOption[] = [
   {
     id: 'meditate',
     label: '静坐调息',
-    desc: '耗时3分钟,成功率 +8%',
+    desc: '耗时3分钟,进阶成功率 +8%',
     bonusRate: 0.08,
     duration: 180
   },
   {
     id: 'pill',
     label: '服用聚气丹',
-    desc: '消耗80灵石,成功率 +5%',
+    desc: '消耗80灵石,进阶成功率 +5%',
     cost: { stone: 80 },
     bonusRate: 0.05,
     duration: 0

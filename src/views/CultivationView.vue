@@ -83,7 +83,7 @@
       -->
       <div class="mt-2 grid gap-2" :class="btInfo.needTribulation ? 'grid-cols-1' : 'grid-cols-2'">
         <div v-if="!btInfo.needTribulation" class="rounded-md bg-paper-deep/60 px-2.5 py-1.5">
-          <p class="text-[10px] text-ink-faint">突破成功率(进阶)</p>
+          <p class="text-[10px] text-ink-faint">进阶成功率(小进阶)</p>
           <p class="tabular text-[16px] font-kai leading-tight" :class="btInfo.rate >= 0.7 ? 'text-jade' : 'text-cinnabar'">
             {{ btInfo.rateText }}
           </p>
@@ -125,7 +125,7 @@
           {{ formatPercent(tribLedger.statGuard, 0) }})
         </p>
         <p class="mt-0.5 text-[10px] text-ink-ghost">
-          攻伐不进天劫公式;防御与气血按本境裸修为折算成上面的抗性与护持,各有上限 —— 血再厚也只能硬抗一部分,剩下的仍要抗性/减伤/恢复来补。
+          攻伐不进天劫公式;防御与气血按本境裸修为折算成上面的抗性与护持,各有上限 —— 血再厚也只能硬抗一部分,剩下的仍要抗性/减伤/恢复来补。进阶成功率与突破准备也只作用于小进阶,大关不看它们。
         </p>
         <!-- 天威本身的长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
         <p v-if="tribWave" class="mt-0.5 text-[10px] text-ink-faint tabular">

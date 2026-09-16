@@ -64,10 +64,10 @@ export const AFFIXES: AffixDef[] = [
   a('qi1', '聚灵', 'qiRegen', 4, 8, '灵气恢复提升 {v}%', 90, { slots: AJ }),
   a('qi2', '引灵', 'qiRegen', 8, 16, '灵气恢复提升 {v}%', 50, { slots: AJ, minRank: 2 }),
   a('qi3', '吞灵', 'qiRegen', 16, 28, '灵气恢复提升 {v}%', 18, { slots: AJ, minRank: 5 }),
-  // ---- 突破成功率 ----
-  a('bt1', '通明', 'breakthroughRate', 1, 2, '突破成功率提升 {v}%', 70, { slots: J }),
-  a('bt2', '道基', 'breakthroughRate', 2, 4, '突破成功率提升 {v}%', 35, { slots: J, minRank: 3 }),
-  a('bt3', '天命', 'breakthroughRate', 4, 6, '突破成功率提升 {v}%', 12, { slots: J, minRank: 6 }),
+  // ---- 进阶成功率(小进阶;大关天劫不看此数,见 ui/statNames) ----
+  a('bt1', '通明', 'breakthroughRate', 1, 2, '进阶成功率提升 {v}%', 70, { slots: J }),
+  a('bt2', '道基', 'breakthroughRate', 2, 4, '进阶成功率提升 {v}%', 35, { slots: J, minRank: 3 }),
+  a('bt3', '天命', 'breakthroughRate', 4, 6, '进阶成功率提升 {v}%', 12, { slots: J, minRank: 6 }),
   // ---- 气运 ----
   a('luck1', '福缘', 'luck', 2, 5, '气运提升 {v}%', 80, { slots: J }),
   a('luck2', '鸿运', 'luck', 5, 10, '气运提升 {v}%', 40, { slots: J, minRank: 3 }),
