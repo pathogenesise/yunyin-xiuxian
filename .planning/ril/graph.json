@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 199,
+  "round": 200,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-15T23:57:09+00:00",
+  "updated_at": "2026-09-16T00:28:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -9627,7 +9627,7 @@
       "version": 1,
       "created_at": "2026-09-14T12:30:11+00:00",
       "updated_at": "2026-09-14T12:30:11+00:00",
-      "touched_round": 191,
+      "touched_round": 200,
       "summary": "天道终局系统(endgameService + endgame store + CelestialView):道源/道痕/熔炉/远征试炼/转世保留物"
     },
     "CHG-193": {
@@ -11778,6 +11778,67 @@
       "touched_round": 199,
       "commit": "42ba85b",
       "summary": "重铸:不限次数、成本只看阶数与封存数、连条数一起重掷(至少一条新词条);REFORGE_MAX_COUNT 删除,新增 REFORGE_SEAL_LOAD;界面给出条数上限与重铸口径;reforge.spec/veinEconomyAudit 判据换口径"
+    },
+    "ISS-204": {
+      "id": "ISS-204",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-16T00:28:16+00:00",
+      "updated_at": "2026-09-16T00:28:24+00:00",
+      "touched_round": 200,
+      "severity": 0.5,
+      "confidence": 0.95,
+      "summary": "天界把基础属性抹平了:celestialStats 用器魂替换凡器词条、并把凡器平铺归零,敌人又按玩家自己的三维等比定标 —— 两下一夹,玩家在天界的绝对强度成了一个与装备无关的数(实测:一身神品与一身凡品打同一个守关者结果一样)。基础攻防血是全局最核心的属性,其余判定都该建立在它之上,而不是把它取消"
+    },
+    "TASK-187": {
+      "id": "TASK-187",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-16T00:28:16+00:00",
+      "updated_at": "2026-09-16T00:28:24+00:00",
+      "touched_round": 200,
+      "category": "core-feature",
+      "severity": 0.55,
+      "confidence": 0.9,
+      "effort": 5,
+      "unlock_factor": 1.3,
+      "summary": "天界口径反转:①celestialStats 恢复凡界装备(平铺+词条),器魂改叠加;②敌人参照改本界锚点(powerScale(锚点层级)×三围基数),与凡界 enemyPowerAt 同一条纪律;③新增判定层——道之理解(厚度→加厚+增伤+减伤,封顶35%)与境界压制(低于锚点境界→敌人增伤25%);④四重天界/三试炼各带 anchorTier,变数天界锚在 32;⑤五处造敌与派系评估统一走新口径;⑥界面写明「此界宜 X 及以上」;⑦celestialCaliber/soulForge/souls/effectWiring 四份判据随口径重写"
+    },
+    "EV-181": {
+      "id": "EV-181",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T00:28:24+00:00",
+      "updated_at": "2026-09-16T00:28:24+00:00",
+      "touched_round": 200,
+      "confidence": 0.95,
+      "source": "src/core/celestialCaliber.spec.ts(新五条)+ src/core/soulForge.spec.ts + src/core/effectWiring.spec.ts + 实测标定表",
+      "summary": "实测(有经营的修士,天品级凡界装备+器魂+满功法):赤炎天(锚22)在真仙 2.14x、万刃天(锚25)在大罗 2.03x、无生天(锚29)在神帝~混沌真灵 0.64~163x、无相天(锚32)在道祖 2.69x —— 四界各对应一段境界,梯度成立;裸装道祖打无相天路线节点 1.5x(势均),添一件天品兵器即三战两胜。旧口径的反面(凡器越好、敌人越强)由新判据钉死:玩家三维×10,敌人一个数不动"
+    },
+    "DEC-048": {
+      "id": "DEC-048",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T00:28:24+00:00",
+      "updated_at": "2026-09-16T00:28:24+00:00",
+      "touched_round": 200,
+      "rationale": "把天界从「数值抹平」改成「基础属性作数 + 敌人判定」,是一处口径反转,理由三条。①**基础属性是全局最核心的量**:攻防血处处作数,其余所有机制(增伤、减伤、破甲、压制)都是**建立**在它之上的判定 —— 抹平它等于取消玩家在天界的成长实感(一身神品与一身凡品打同一关,结果一样)。②**差别落在敌人一侧**:道之理解(构筑越厚,守关者越有备:三维加厚+增伤+减伤)与境界压制(未及本界锚点境界者,敌人额外增伤)取代了原先「敌人跟着玩家涨」的隐式抵消 —— 判定可见、可解释、可调,而且写在规则文案与战后分析里。③**敌人参照改为绝对锚点**:与凡界 enemyPowerAt(tier) 同一条纪律,敌人按层级曲线定标而不按玩家此刻的三维定标;梯度实测成立(赤炎天≈真仙/万刃天≈大罗/无生天≈神帝/无相天≈道祖,各在对应境界 2~3 倍)。器魂随之从「替换」改为「叠加」:销毁装备换来的是多一条路数,而不是把原有装备作废。",
+      "alternatives_rejected": "①维持抹平、只把数字调小:基础属性在天界依旧无意义,玩家刷装备的动机只剩图鉴。②保留「敌人跟着玩家等比」但把参照换成某一档装备水平:这只是把旧的隐式抵消换成另一个隐式基准,玩家的成长仍然表达不出来。③把器魂做成更强的替换层(不抹平、但顶掉凡器):那等于要求玩家「先装备再毁掉」,与凝炼=销毁原器的设定直接打架。④给天界加一个全局倍率而不做判定层:难度能调,但「为什么要打这一场」解释不出来 —— 判定层的价值正在于它可解释。"
+    },
+    "CHG-236": {
+      "id": "CHG-236",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T00:28:24+00:00",
+      "updated_at": "2026-09-16T00:28:24+00:00",
+      "touched_round": 200,
+      "commit": Infinity,
+      "summary": "celestialStats 恢复凡界装备 + 器魂叠加;敌人参照改本界锚点(powerScale);新增 celestialJudgement(道之理解 + 境界压制);四天/三试炼加 anchorTier,变数天界锚 32;五处造敌统一;界面写明「此界宜 X 及以上」;四份判据重写;README 与器魂文案改口"
     }
   },
   "edges": [
@@ -17529,6 +17590,30 @@
       "to": "COMP-010",
       "type": "governs",
       "created_at": "2026-09-15T23:57:09+00:00"
+    },
+    {
+      "from": "TASK-187",
+      "to": "ISS-204",
+      "type": "addresses",
+      "created_at": "2026-09-16T00:28:16+00:00"
+    },
+    {
+      "from": "ISS-204",
+      "to": "COMP-017",
+      "type": "located_in",
+      "created_at": "2026-09-16T00:28:16+00:00"
+    },
+    {
+      "from": "CHG-236",
+      "to": "TASK-187",
+      "type": "implements",
+      "created_at": "2026-09-16T00:28:24+00:00"
+    },
+    {
+      "from": "DEC-048",
+      "to": "COMP-017",
+      "type": "governs",
+      "created_at": "2026-09-16T00:28:24+00:00"
     }
   ]
 }
