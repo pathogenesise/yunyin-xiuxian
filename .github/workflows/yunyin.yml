@@ -15,6 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      # 镜像名跟随仓库,不写死。此前写死成 yunyin-xiuxian:仓库改名或换 owner 后
+      # (yunyin-xiuxian → xian),这一步仍拿新仓库的 GITHUB_TOKEN 去写旧仓库名下
+      # 的软件包,ghcr 回 permission_denied: write_package —— 前面全绿,卡在最后
+      # 一推。GHCR 路径是 ghcr.io/<owner>/<repo>,Docker Hub 用仓库短名。
+      # (ghcr 只收小写路径;本仓库 owner/name 都是小写,换名时留意别带大写。)
+      GHCR_IMAGE: ghcr.io/${{ github.repository }}
+      IMAGE_NAME: ${{ github.event.repository.name }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v7
@@ -112,12 +119,12 @@ jobs:
           no-cache: false
           pull: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/yunyin-xiuxian:latest
-            ghcr.io/${{ github.repository_owner }}/yunyin-xiuxian:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/yunyin-xiuxian:${{ github.sha }}
-            ${{ env.DOCKERHUB_USERNAME && format('{0}/yunyin-xiuxian:latest', env.DOCKERHUB_USERNAME) || '' }}
-            ${{ env.DOCKERHUB_USERNAME && format('{0}/yunyin-xiuxian:{1}', env.DOCKERHUB_USERNAME, steps.version.outputs.version) || '' }}
-            ${{ env.DOCKERHUB_USERNAME && format('{0}/yunyin-xiuxian:{1}', env.DOCKERHUB_USERNAME, github.sha) || '' }}
+            ${{ env.GHCR_IMAGE }}:latest
+            ${{ env.GHCR_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.GHCR_IMAGE }}:${{ github.sha }}
+            ${{ env.DOCKERHUB_USERNAME && format('{0}/{1}:latest', env.DOCKERHUB_USERNAME, env.IMAGE_NAME) || '' }}
+            ${{ env.DOCKERHUB_USERNAME && format('{0}/{1}:{2}', env.DOCKERHUB_USERNAME, env.IMAGE_NAME, steps.version.outputs.version) || '' }}
+            ${{ env.DOCKERHUB_USERNAME && format('{0}/{1}:{2}', env.DOCKERHUB_USERNAME, env.IMAGE_NAME, github.sha) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
