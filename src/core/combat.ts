@@ -208,7 +208,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
    */
   const tryStun = (target: Fighter): boolean => {
     const owned = (target.snap.artifacts ?? []).find(o => o.def.active.effect.type === 'purge')
-    // 上限 0.9 写在 data/artifacts 里:留一丝「摄魂也不是吃素的」——满级也不该等于免疫
+    // 上限 0.9 写在 data/artifacts 里:留一丝「摄魂也不是吃素的」——再高也不该等于免疫
     if (owned && rng.chance(artifactValue(owned.def, owned.level).active.amount)) {
       target.stats.artifactProcs += 1
       const who = target.snap.isPlayer ? '你' : `【${target.snap.name}】`

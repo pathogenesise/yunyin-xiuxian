@@ -285,6 +285,32 @@ describe('法宝说明 · 数字随品阶与祭炼等级走', () => {
     expect(artifactActiveText(nianzhu, 9)).toContain('九成')
   })
 
+  it('封顶是绝对的:任何品阶 × 任何重数都不越过它 —— 品阶只改变到顶的早晚', () => {
+    const capOf: Partial<Record<string, number>> = {
+      weaken: ARTIFACT_WEAKEN_CAP,
+      sunder: ARTIFACT_SUNDER_CAP,
+      purge: ARTIFACT_PURGE_CAP,
+      drain: ARTIFACT_DRAIN_HEAL_CAP
+    }
+    let saturatedAtZero = 0
+    for (const a of ARTIFACTS) {
+      const cap = capOf[a.active.effect.type]
+      if (cap === undefined) continue
+      /** 受封顶管的那一笔(吸命的伤害那一侧本来就不封顶,封的是回补) */
+      const reach = (lv: number): number => {
+        const v = artifactValue(a, lv).active
+        return a.active.effect.type === 'drain' ? (v.heal ?? 0) : v.amount
+      }
+      expect(reach(9), `${a.name} 九重越过了 ${formatPercent(cap)} 的顶`).toBeLessThanOrEqual(cap + 1e-9)
+      expect(reach(9), `${a.name} 越炼越小`).toBeGreaterThanOrEqual(reach(0))
+      if (reach(0) >= cap - 1e-9) saturatedAtZero += 1
+    }
+    // 高品阶的那几件零重就在顶(神鞭的破甲、神魔镜的回补、无相念珠的净念)——
+    // 这是设计:品阶买的是「更早到顶」,不是「更高的顶」。故障注入:把品阶压回凡品,
+    // 这几件会各自退回「炼到第 N 重才到顶」,本判据随之转红。
+    expect(saturatedAtZero, '一件零重到顶的都没有 —— 这条口径的注脚失去对象').toBeGreaterThan(0)
+  })
+
   it('越界等级钳回 0..9,不会算出界面撑不住的数', () => {
     const a = ARTIFACTS[0]!
     expect(artifactActiveText(a, -3)).toBe(artifactActiveText(a, 0))

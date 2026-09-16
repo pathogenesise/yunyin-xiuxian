@@ -124,7 +124,8 @@
       </p>
       <!-- 祭炼到底给什么:数值都从上界常数来,不在界面里再写一份 -->
       <p class="mt-1 px-1 text-[10px] text-ink-ghost">
-        祭炼一重,被动与神通各强 {{ formatPercent(ARTIFACT_LEVEL_BONUS) }},至多 {{ cnNumber(ARTIFACT_MAX_LEVEL) }} 重
+        祭炼一重,被动与神通各强 {{ formatPercent(ARTIFACT_LEVEL_BONUS) }},至多 {{ cnNumber(ARTIFACT_MAX_LEVEL) }} 重 ——
+        顶到封顶的不再涨,卡片上标着
       </p>
       <div v-if="artifactRows.length" class="mt-2 space-y-2.5">
         <div v-for="row in artifactRows" :key="row.def.id" class="card-ink px-4 py-3">
@@ -729,7 +730,16 @@
     )
     if (gain.active) {
       const noun = ACTIVE_NOUNS[def!.active.effect.type] ?? '效果'
-      parts.push(`神通${noun} ${formatPercent(gain.active.from)} → ${formatPercent(gain.active.to)}${gain.active.capped ? '(已至上限)' : ''}`)
+      /**
+       * 零重就顶到封顶的那几件(神鞭的破甲、神魔镜的回补…)再炼也不会更高,
+       * 写「50% → 50%(已至上限)」等于让人自己看出来 —— 直接说清只涨被动。
+       */
+      const alreadyCapped = gain.active.capped && Math.abs(gain.active.to - gain.active.from) < 1e-9
+      parts.push(
+        alreadyCapped
+          ? `神通${noun}已至上限(${formatPercent(gain.active.to)}),祭炼只涨被动`
+          : `神通${noun} ${formatPercent(gain.active.from)} → ${formatPercent(gain.active.to)}${gain.active.capped ? '(已至上限)' : ''}`
+      )
     } else {
       parts.push('神通不随祭炼变')
     }
