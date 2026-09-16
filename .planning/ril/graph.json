@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 202,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-16T01:28:13+00:00",
+  "updated_at": "2026-09-16T01:33:27+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -11924,6 +11924,42 @@
       "touched_round": 201,
       "commit": "52e5fd8",
       "summary": "敌人加成归因(FoeOrigin):来源由造敌方写明并随战报带到战后分析;凡界摊开层级补偿/危地与四项危地来源,天界摊开道之理解/境界压制/连战加码;出行方式档位补上危险倍率;新增 foeOrigin.spec 18 条"
+    },
+    "TASK-190": {
+      "id": "TASK-190",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T01:33:21+00:00",
+      "updated_at": "2026-09-16T01:33:21+00:00",
+      "touched_round": 202,
+      "category": "test-quality",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "核心功能端到端判据补齐:丹方炼制与服丹(pillService 此前完全无判据)、突破/渡劫(门槛-结算-代价)、存档往返覆盖战报读数(遥测/先手/敌之加成/拾获)"
+    },
+    "ISS-207": {
+      "id": "ISS-207",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T01:33:21+00:00",
+      "updated_at": "2026-09-16T01:33:21+00:00",
+      "touched_round": 202,
+      "severity": 0.45,
+      "confidence": 0.9,
+      "summary": "craftPill/usePill 没有任何判据:材料怎么扣、失手赔多少、丹有没有真的入包、服下后药力有没有落到修为/灵气/状态上,全靠人工核对;突破只有成功率与准备消费被钉住,灵气门槛、失败代价(掉修为+伤势)、跨界寿元变化没有端到端判据;存档往返只对了几项关键状态,战报里的读数(遥测/先手/敌人加成来源)掉了一栏也不会报错"
+    },
+    "COMP-024": {
+      "id": "COMP-024",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T01:33:21+00:00",
+      "updated_at": "2026-09-16T01:33:21+00:00",
+      "touched_round": 202,
+      "summary": "src/core/pillService.ts + src/core/breakthrough.ts + src/core/save.ts(炼丹/突破/存档三条主干)"
     }
   },
   "edges": [
@@ -17735,6 +17771,18 @@
       "to": "ISS-206",
       "type": "resolves",
       "created_at": "2026-09-16T01:28:13+00:00"
+    },
+    {
+      "from": "TASK-190",
+      "to": "ISS-207",
+      "type": "addresses",
+      "created_at": "2026-09-16T01:33:27+00:00"
+    },
+    {
+      "from": "ISS-207",
+      "to": "COMP-024",
+      "type": "located_in",
+      "created_at": "2026-09-16T01:33:27+00:00"
     }
   ]
 }

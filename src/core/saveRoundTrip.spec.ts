@@ -42,6 +42,12 @@ import { useCultivationStore } from '@/stores/cultivation'
 import { useResourcesStore } from '@/stores/resources'
 import { useSettingsStore } from '@/stores/settings'
 import { useGameStore } from '@/stores/game'
+import { useAdventureStore } from '@/stores/adventure'
+import { makeEnemySnap, resolveCombat } from './combat'
+import { RandomService, mulberry32 } from '@/utils/random'
+import { gn } from '@/utils/gnum'
+import { analyzeBattle } from './battleAnalysis'
+import type { EnemyDef } from '@/types'
 
 const STORES_DIR = resolve(__dirname, '../stores')
 
@@ -185,6 +191,78 @@ describe('存档往返 · 导出再导入一模一样', () => {
     expect(player2.reincarnation.daoFruit, '导入后道果没回来').toBe(9)
     expect(inventory2.artifacts.map(a => a.defId), '导入后法宝没回来').toEqual(['af_youming'])
     expect(Object.keys(cultivation2.learned), '导入后功法没回来').toContain('m_taixuan')
+  })
+
+  /**
+   * 战报里那些「读数」也要活着回来。
+   *
+   * 战后分析读的是 lastBattle.result 上的遥测、先手判定与敌人加成来源 ——
+   * 它们若在往返里掉了一栏,玩家下次打开只会看到分析面板空了一角,
+   * 而且悄无声息:字段丢了并不报错,只是解释不见了。
+   */
+  it('战报读数原样回来(遥测 / 先手 / 敌之加成 / 拾获)', async () => {
+    // 导入的门槛是「player 与 game 俱在」(建号那刻起就该有),先备齐
+    const player = usePlayerStore()
+    useGameStore().markStarted()
+    player.major = 3
+    const adventure = useAdventureStore()
+    const def: EnemyDef = {
+      id: 'saved_foe',
+      name: '石傀',
+      icon: 'x',
+      tier: 9,
+      hpMult: 1,
+      atkMult: 1,
+      defMult: 1,
+      speed: 1,
+      skills: []
+    }
+    const foe = makeEnemySnap(def, 9, 2.1)
+    const result = resolveCombat(
+      {
+        name: '你',
+        icon: 'x',
+        isPlayer: true,
+        attack: gn(1e7),
+        defense: gn(1e6),
+        maxHp: gn(1e8),
+        speed: 1.1,
+        mods: {},
+        skills: [{ name: '一记攻势', mult: 1, rate: 1 }]
+      },
+      foe,
+      new RandomService(mulberry32(11))
+    )
+    adventure.recordBattle({
+      enemyName: foe.name,
+      enemyIcon: 'x',
+      enemyId: def.id,
+      isBoss: false,
+      result,
+      at: Date.now(),
+      loot: ['灵石 ×12']
+    })
+    await nextTick()
+    flushSaveWrites()
+
+    const text = exportSaveText()
+    dropPendingWrites()
+    clearAllSave()
+    const err = importSaveText(text)
+    expect(err, `导入失败:${err}`).toBeNull()
+    bootStores()
+
+    const back = useAdventureStore().lastBattle
+    expect(back, '导入后战报整个不见了').not.toBeNull()
+    expect(back!.result.stats, '遥测没了,战斗分析就成了空壳').toBeDefined()
+    expect(back!.result.firstMove, '先手读数没了,战后分析就说不出差多少').toBeDefined()
+    expect(back!.result.foeOrigin, '敌之加成没了,归因又断了').toBeDefined()
+    expect(back!.result.foeOrigin!.ratio, '加成倍率在往返里被改动').toBeCloseTo(foe.origin!.ratio, 9)
+    expect(back!.loot).toEqual(['灵石 ×12'])
+    // 判据落在玩家真正读的那一屏:导入之后,分析面板仍拿得出结论
+    const analysis = analyzeBattle(back!.result, null)
+    expect(analysis, '导入后分析面板说不出话了').not.toBeNull()
+    expect(analysis!.dataRows.length).toBeGreaterThan(5)
   })
 
   it('导入的坏文本不许污染现有存档 —— 失败要原样留着', () => {
