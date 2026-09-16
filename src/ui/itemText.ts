@@ -16,7 +16,7 @@
 import type { ArtifactDef, EquipmentTemplate, GongfaDef, PetDef, PillDef } from '@/types'
 import { qualityDef } from '@/data/qualities'
 import { EQUIP_SLOT_NAMES } from '@/data/equipment'
-import { artifactActiveText, artifactPassiveAt } from '@/data/artifacts'
+import { artifactActiveText, artifactValue } from '@/data/artifacts'
 import { buffDef } from '@/data/buffs'
 import { GONGFA_TYPE_NAMES } from '@/data/gongfa'
 import { ELEMENTS } from '@/data/linggen'
@@ -61,7 +61,7 @@ export function equipMetaText(t: EquipmentTemplate): string {
  * + 神通说明(同一套缩放与封顶,见 artifactActiveText)。
  */
 export function artifactFuncText(a: ArtifactDef, level = 0): string {
-  const passive = modsText(artifactPassiveAt(a, level))
+  const passive = modsText(artifactValue(a, level).passive)
   const lines: string[] = []
   if (passive) lines.push(`被动:${passive}`)
   lines.push(`神通「${a.active.name}」:${artifactActiveText(a, level)}`)

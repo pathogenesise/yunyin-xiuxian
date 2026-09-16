@@ -7,7 +7,7 @@ import { persistConfig } from '@/utils/storage'
 import { resolveEquipStats } from '@/core/equipGen'
 import { mergeMods } from '@/core/statsCalc'
 import { useLoreStore } from '@/stores/lore'
-import { artifactDef, artifactPassiveAt } from '@/data/artifacts'
+import { artifactDef, artifactValue } from '@/data/artifacts'
 import { BAG_CAPACITY } from '@/data/constants'
 import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
 
@@ -56,8 +56,8 @@ export const useInventoryStore = defineStore(
       for (const art of currentArtifacts.value) {
         const def = artifactDef(art.defId)
         if (!def) continue
-        // 被动随祭炼等比放大 —— 与背包卡片、图鉴读同一份(artifactPassiveAt)
-        sources.push(artifactPassiveAt(def, art.level))
+        // 被动按「品阶 × 祭炼」放大 —— 与背包卡片、图鉴、战斗读同一份(artifactValue)
+        sources.push(artifactValue(def, art.level).passive)
       }
       return mergeMods(sources)
     })

@@ -1,6 +1,39 @@
-/** 法宝池 —— 45 件,拥有被动属性与自动触发的主动神通 */
+/**
+ * 法宝池 —— 45 件,拥有被动属性与自动触发的主动神通
+ *
+ * ## 数值写的是「凡品零重基线」,不是玩家会看到的数
+ *
+ * 每件的 passive / active.effect 是算式里的**第一个因子**,品阶与祭炼两条放大
+ * 由 artifactValue 施加(见那里的注释)。所以写着 30% 的那一件,若它是仙品,
+ * 玩家拿到手就是 ×2.61 之后的数 —— desc 与 effect 描述的是基线,不是面板。
+ *
+ * ## 品阶(quality)是稀缺标签,也是强度阶梯
+ *
+ * 品阶同时管两件事:掉落权重(core/loot.artifactDropWeight)与数值倍率
+ * (artifactQualityMult)。故标签按 (fromTier 升,同阶内预算升) 排成一条**不降**的
+ * 阶梯 —— 越深的地界越贵,同一阶之内预算大的更贵:
+ *
+ *   凡 12(t1-12)· 良 6(t13-18)· 精 6(t19-23)· 灵 6(t23-27)
+ *   · 玄 6(t28-29)· 地 5(t30-31)· 天 2(t31)· 仙 1(t32)· 神 1(t32)
+ *
+ * 于是四个界域各有自己的那一段:人间界凡→精、仙界精/灵、神界灵、混沌海玄→神。
+ *
+ * ## 为什么凡品占着头十二阶
+ *
+ * 凡品是**基线档**:表里写的数就是它的零重值 —— 那十二件的力量由基准值自己逐级
+ * 抬升(回血 12% → 削弱 30%),不需要品质再抬一层。从第十三阶起才用品阶表达稀缺。
+ * 另有两条压力把这条曲线钉在这里(loot.spec 的「品阶阶梯」盯着它们):
+ *
+ *   一 神品要稀缺:它在每个界域的掉落池里都只占个位数百分比,否则「神品」二字
+ *      没有信息量,挂在它上面的倍率也就失去了意义;
+ *   二 池子仍要以近阶之物为主:掉落权重是「品质越差越常见」×「越贴近当前层级越重」。
+ *      标签诚实化之后,人间界的旧物大批落在凡品上(权重 100,是神品的十三倍),
+ *      故就近窗口也跟着收紧到「同阶 ×21」(见 loot.ARTIFACT_NEAR_BONUS)——
+ *      两处一起调,「混沌海多半掉混沌海之物」才依旧成立。
+ */
 import type { AnyStatKey, ArtifactDef, ArtifactEffect, QualityId, StatMods } from '@/types'
 import { formatPercent } from '@/utils/format'
+import { qualityDef } from './qualities'
 
 function f(
   id: string,
@@ -22,7 +55,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_muyu',
     '墨玉葫芦',
-    'fine',
+    'mortal',
     1,
     '装过仙酿的葫芦,酒气化作生机',
     { maxHpPct: 0.05 },
@@ -35,7 +68,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_lihuo',
     '离火珠',
-    'fine',
+    'mortal',
     2,
     '内封一点离火之精',
     { attackPct: 0.05 },
@@ -48,7 +81,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xuantian',
     '玄天镜',
-    'excellent',
+    'mortal',
     3,
     '镜光所照,邪魔退避',
     { defensePct: 0.06 },
@@ -61,7 +94,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_fuyao',
     '缚妖索',
-    'excellent',
+    'mortal',
     4,
     '捆过大妖的绳索,妖气犹存',
     { speed: 0.05 },
@@ -74,7 +107,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_leiyin',
     '雷音锤',
-    'excellent',
+    'mortal',
     5,
     '锤落有雷音滚滚',
     { critRate: 0.03 },
@@ -87,7 +120,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_yujing',
     '玉净瓶',
-    'spirit',
+    'mortal',
     6,
     '瓶中甘露,可涤荡伤痕',
     { maxHpPct: 0.08, qiRegen: 0.06, overhealShield: 0.3 },
@@ -100,7 +133,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_bagua',
     '八卦炉',
-    'spirit',
+    'mortal',
     7,
     '炉中真火昼夜不熄',
     { attackPct: 0.08, alchemyYield: 0.1 },
@@ -113,7 +146,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_dinghai',
     '定海珠',
-    'spirit',
+    'mortal',
     8,
     '一珠定四海,风浪不兴',
     { defensePct: 0.08, damageReduction: 0.04 },
@@ -126,7 +159,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_youming',
     '幽冥幡',
-    'spirit',
+    'mortal',
     9,
     '幡动之处,阴风怒号',
     { damageBonus: 0.06, lowHpDamage: 0.1 },
@@ -139,7 +172,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_qianji',
     '千机伞',
-    'profound',
+    'mortal',
     10,
     '伞骨千机,开合皆杀阵',
     { dodgeRate: 0.05, defensePct: 0.06, shieldPower: 0.08 },
@@ -152,7 +185,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_zhenyue',
     '镇岳印',
-    'profound',
+    'mortal',
     11,
     '大印如山,落下时天地都沉了沉',
     { attackPct: 0.1 },
@@ -165,7 +198,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_shehun',
     '摄魂铃',
-    'profound',
+    'mortal',
     12,
     '铃声入耳,神魂欲裂',
     { critDamage: 0.15 },
@@ -178,7 +211,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xingpan',
     '周天星盘',
-    'profound',
+    'fine',
     13,
     '推演周天,窥探命数',
     // 推演得见的,自然打得中 —— 这是本池里唯一带命中的法宝,专治幻影(见 SpecialKey accuracy)
@@ -192,7 +225,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_chixiao',
     '赤霄鼎',
-    'earth',
+    'fine',
     14,
     '鼎中可炼万物,亦可炼敌',
     { attackPct: 0.12, maxHpPct: 0.08 },
@@ -205,7 +238,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_bishui',
     '碧水珠',
-    'earth',
+    'fine',
     15,
     '珠内自有一方碧海',
     { maxHpPct: 0.12, qiRegen: 0.1 },
@@ -218,7 +251,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_shiling',
     '噬灵幡',
-    'earth',
+    'fine',
     16,
     '幡面绣着无数张开的口',
     { damageBonus: 0.1, lifesteal: 0.04 },
@@ -231,7 +264,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_taixu',
     '太虚镜',
-    'heaven',
+    'fine',
     17,
     '照见太虚,万法无所遁形',
     { defensePct: 0.14, damageReduction: 0.06 },
@@ -244,7 +277,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_zhanxian',
     '斩仙飞刀',
-    'heaven',
+    'fine',
     18,
     '刀出请君入瓮,仙人亦难幸免',
     { critRate: 0.06, critDamage: 0.25 },
@@ -257,7 +290,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_hundun',
     '混沌钟',
-    'immortal',
+    'excellent',
     19,
     '钟声荡开,时光都慢了半拍',
     { attackPct: 0.12, defensePct: 0.12, maxHpPct: 0.12 },
@@ -270,7 +303,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_zaohua',
     '造化玉碟',
-    'divine',
+    'excellent',
     20,
     '记载造化至理的残碟',
     { cultivationSpeed: 0.2, breakthroughRate: 0.04, luck: 0.08 },
@@ -285,7 +318,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xianding',
     '仙鼎',
-    'immortal',
+    'excellent',
     23,
     '一鼎仙火不熄,药气缭绕可愈百伤',
     { maxHpPct: 0.06, qiRegen: 0.06 },
@@ -298,7 +331,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xianqin',
     '仙琴',
-    'immortal',
+    'excellent',
     23,
     '琴音出则万籁寂,敌势为之一挫',
     { attackPct: 0.06, luck: 0.04 },
@@ -311,7 +344,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_shenzhong',
     '神钟',
-    'divine',
+    'profound',
     28,
     '钟声一响,神域同震',
     { defensePct: 0.07, damageReduction: 0.04 },
@@ -324,7 +357,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_shenbian',
     '神鞭',
-    'divine',
+    'profound',
     28,
     '一鞭抽落星辰,余响三日不绝',
     { attackPct: 0.07, speed: 0.05 },
@@ -337,7 +370,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_hundunfu',
     '混沌开天斧',
-    'divine',
+    'heaven',
     31,
     '一切尚未开始时,它便在此',
     { attackPct: 0.08, armorPen: 0.06 },
@@ -350,7 +383,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_benyuanzhu',
     '本源珠',
-    'divine',
+    'earth',
     31,
     '珠中一界,自成生灭',
     { cultivationSpeed: 0.08, maxHpPct: 0.06 },
@@ -364,7 +397,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xianjian',
     '青锋仙剑',
-    'immortal',
+    'spirit',
     23,
     '剑光过处,仙庭无声',
     { attackPct: 0.06, critRate: 0.03 },
@@ -377,7 +410,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_yunwen',
     '云纹仙印',
-    'immortal',
+    'spirit',
     23,
     '印上云纹流动,身随云走',
     { speed: 0.05, dodgeRate: 0.04 },
@@ -390,7 +423,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_zhenshen',
     '镇神印',
-    'divine',
+    'profound',
     28,
     '一印落下,神域皆静',
     { damageReduction: 0.05, maxHpPct: 0.07 },
@@ -403,7 +436,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_shenlei',
     '神雷珠',
-    'divine',
+    'profound',
     28,
     '珠内藏一道不散的神雷',
     { attackPct: 0.06, damageBonus: 0.06 },
@@ -416,7 +449,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_qinglian',
     '混沌青莲',
-    'divine',
+    'earth',
     31,
     '莲开于混沌未判之时,不染不灭',
     { cultivationSpeed: 0.08, qiRegen: 0.08 },
@@ -429,7 +462,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xujiesuo',
     '虚界梭',
-    'divine',
+    'earth',
     31,
     '一梭穿虚,来去皆不留痕',
     { luck: 0.06, dropRate: 0.06, explorationSpeed: 0.06 },
@@ -446,7 +479,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_yunhai',
     '云海幡',
-    'immortal',
+    'excellent',
     21,
     '幡一展,周身便是过仙门那一日的云海',
     { dodgeRate: 0.04, speed: 0.05 },
@@ -459,7 +492,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xinggui',
     '星轨盘',
-    'immortal',
+    'excellent',
     22,
     '盘上星轨自行转动,转一圈便是一劫',
     { accuracy: 0.06, critRate: 0.03 },
@@ -472,7 +505,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_xuanxu',
     '玄虚拂尘',
-    'immortal',
+    'spirit',
     24,
     '拂尘一扬,扫落的不只是尘',
     { attackPct: 0.06, damageBonus: 0.05 },
@@ -485,7 +518,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_yujingyin',
     '玉京道印',
-    'immortal',
+    'spirit',
     25,
     '玉京山上的一枚旧印,落印处仙兵皆伏',
     { defensePct: 0.07, shieldPower: 0.08 },
@@ -500,7 +533,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_shenyuling',
     '神域令旗',
-    'divine',
+    'spirit',
     26,
     '旗出则一方神域随旗而动',
     { attackPct: 0.07, speed: 0.05 },
@@ -513,7 +546,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_yunshengu',
     '陨神战鼓',
-    'divine',
+    'spirit',
     27,
     '鼓面蒙的是陨神之皮,一响便摄人心神',
     { damageBonus: 0.06, critDamage: 0.12 },
@@ -526,7 +559,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_wanshendeng',
     '万神灯',
-    'divine',
+    'profound',
     28,
     '灯里燃的是万神殿堂聚了万年的香火',
     { maxHpPct: 0.07, regenPerRound: 0.01 },
@@ -539,7 +572,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_diquefu',
     '帝阙神符',
-    'divine',
+    'profound',
     29,
     '符上只有一个字,却是帝阙之下九千级天阶的凭据',
     { breakthroughRate: 0.03, luck: 0.04 },
@@ -554,7 +587,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_zhenlingfan',
     '真灵幡',
-    'divine',
+    'earth',
     30,
     '幡上真灵浮沉,似是徘徊又似在守着什么',
     { cultivationSpeed: 0.07, qiRegen: 0.08 },
@@ -567,7 +600,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_hongmengchi',
     '鸿蒙尺',
-    'divine',
+    'heaven',
     31,
     '一尺量的是天地未判时的长短',
     { armorPen: 0.06, damageBonus: 0.06 },
@@ -580,7 +613,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_benyuanlian',
     '本源莲台',
-    'divine',
+    'immortal',
     32,
     '莲台托着一点本源,任劫火也烧不动',
     { defensePct: 0.08, damageReduction: 0.05 },
@@ -615,7 +648,7 @@ export const ARTIFACTS: ArtifactDef[] = [
   f(
     'af_wuxiangzhu',
     '无相念珠',
-    'divine',
+    'earth',
     31,
     '一串旧念珠,珠子已被摩得发亮',
     { damageReduction: 0.05, maxHpPct: 0.06 },
@@ -643,14 +676,32 @@ export const ARTIFACT_UP_STONE_TIER = 40
  * 单项效果的封顶 —— 数值只写在这里,战斗与界面文案都读它。
  *
  * 从前这几个上限各写在 combat.ts 的分支里(0.5 / 0.9 / 1),而界面上的神通说明
- * 是**手写死的 0 级文案**:祭炼到九重时,战斗按 ×1.72 算,卡片上印的还是原来的数
+ * 是**手写死的基线文案**:祭炼到九重时,战斗按 ×1.72 算,卡片上印的还是原来的数
  * (实测玄虚拂尘:说明「造成 230% 攻击伤害」,真打出去是 395.6%)。
- * 故把上限收成一份,由同一处给出「某等级下真正生效的数值」(见 artifactEffectValues)。
+ * 故把上限收成一份,由同一处给出「某等级下真正生效的数值」(见 artifactValue)。
+ *
+ * 封顶是**绝对**的,不随品阶水涨船高:一件地品的无相念珠在零重就顶到九成,
+ * 之后祭炼只涨它的被动。这是刻意的 —— 「挣脱概率最高九成」是规则,不是数值。
  */
 export const ARTIFACT_WEAKEN_CAP = 0.5
 export const ARTIFACT_SUNDER_CAP = 0.5
 export const ARTIFACT_PURGE_CAP = 0.9
 export const ARTIFACT_DRAIN_HEAL_CAP = 1
+
+/**
+ * 品阶对法宝数值的放大指数。
+ *
+ * 与装备那条(EQUIP_QUALITY_FLAT_EXP = 1.8)刻意分开:法宝只占两个槽位、是**第二来源**,
+ * 同一条陡梯挂上去,「先看构筑、再攒一件好的」会变成「先看抽到几件神品」。
+ * 0.5 的指数把品质倍率(凡 1.0 → 神 9.5)开方成 1.0 → 3.08:每高一档约 ×1.14,
+ * 同一件法宝,神品约等于凡品的三个 —— 品阶拉开了台阶,却没盖过「越深的地界越强」这条主轴。
+ */
+export const ARTIFACT_QUALITY_EXP = 0.5
+
+/** 品阶倍率(凡品 1.0 → 神品 ≈3.08;品质倍率的开方,见 ARTIFACT_QUALITY_EXP) */
+export function artifactQualityMult(quality: QualityId): number {
+  return Math.pow(qualityDef(quality).mult, ARTIFACT_QUALITY_EXP)
+}
 
 /** 祭炼等级带来的效果倍率(越界等级钳回 0..上限) */
 export function artifactLevelMult(level: number): number {
@@ -658,20 +709,11 @@ export function artifactLevelMult(level: number): number {
   return 1 + lv * ARTIFACT_LEVEL_BONUS
 }
 
-/**
- * 某祭炼等级下的法宝被动(随等级同倍放大)。
- *
- * 此前这段乘法在三处各写一遍(属性汇总 store/inventory、背包卡片、图鉴),
- * 谁改了增幅率都得改三回 —— 漏掉的那一处就会安静地说错话。收成一份。
- */
-export function artifactPassiveAt(def: ArtifactDef, level = 0): StatMods {
-  const mult = artifactLevelMult(level)
-  const out: StatMods = {}
-  for (const k in def.passive) {
-    const key = k as keyof StatMods
-    out[key] = (def.passive[key] ?? 0) * mult
-  }
-  return out
+export interface ArtifactValue {
+  /** 被动(凡品零重基线 × 品阶 × 祭炼) */
+  passive: StatMods
+  /** 神通(同一倍率,并含封顶) */
+  active: ArtifactEffectValues
 }
 
 export interface ArtifactEffectValues {
@@ -682,12 +724,34 @@ export interface ArtifactEffectValues {
 }
 
 /**
- * 某祭炼等级下神通**真正生效**的数值 —— 与 combat 同一套口径(含封顶)。
- * 战斗与文案都从这里取值,「显示的数字」与「打出来的数字」不可能再分叉。
+ * 法宝数值的**唯一出口**:
+ *
+ *   基础值 × 品阶倍率(def.quality) × 祭炼倍率(level)
+ *
+ * 表里的 passive / active.effect 是**凡品零重基线** —— 算式里的第一个因子,
+ * 不是玩家会看到的数(见文件头)。两条放大只在这里做一次:属性汇总、背包卡片、
+ * 图鉴、战斗、构筑模拟读的都是这一份,谁也不会自己再乘一遍。
+ *
+ * 从前这两条乘法散在四处(属性汇总 store/inventory、背包卡片、图鉴、构筑模拟),
+ * 谁改了增幅率都得改四回 —— 漏掉的那一处就会安静地说错话。
  */
-export function artifactEffectValues(def: ArtifactDef, level = 0): ArtifactEffectValues {
-  const mult = artifactLevelMult(level)
-  const eff = def.active.effect
+export function artifactValue(def: ArtifactDef, level = 0): ArtifactValue {
+  const mult = artifactQualityMult(def.quality) * artifactLevelMult(level)
+  const passive: StatMods = {}
+  for (const k in def.passive) {
+    const key = k as keyof StatMods
+    passive[key] = (def.passive[key] ?? 0) * mult
+  }
+  return { passive, active: effectValuesAt(def.active.effect, mult) }
+}
+
+/**
+ * 某倍率下神通**真正生效**的数值(含封顶)。
+ *
+ * 只有 artifactValue 会调它 —— 战斗与文案读同一份结果,「显示的数字」与
+ * 「打出来的数字」不可能再分叉。
+ */
+function effectValuesAt(eff: ArtifactEffect, mult: number): ArtifactEffectValues {
   switch (eff.type) {
     case 'damage':
       return { amount: eff.mult * mult }
@@ -715,11 +779,12 @@ const CHENG_WORDS = ['一', '二', '三', '四', '五', '六', '七', '八', '�
  * 法宝神通在某祭炼等级下的说明。
  *
  * 做法是**把原说明里的数值换掉**,而不是另写一份模板:文案的措辞(「云海四合」
- * 「扫落敌人气机」)是手写的,只有数字会随祭炼变。0 级时结果与原说明逐字相同 ——
- * 这条由 artifactEffects.spec 守着(它就是拿 desc 与 effect 对账的)。
+ * 「扫落敌人气机」)是手写的,只有数字会随品阶与祭炼变。**凡品零重**时结果与原
+ * 说明逐字相同 —— 这条由 artifactEffects.spec 守着(它就是拿 desc 与 effect 对账的);
+ * 品阶高于凡品的那几件,零重就与 desc 不同,那正是这套算法的意思。
  */
 export function artifactActiveText(def: ArtifactDef, level = 0): string {
-  const values = artifactEffectValues(def, level)
+  const values = artifactValue(def, level).active
   const eff = def.active.effect
   if (eff.type === 'stun') return def.active.desc
   if (eff.type === 'purge') {
@@ -741,7 +806,7 @@ export function artifactLevelLabel(level: number): string {
   return `祭炼 ${lv}/${ARTIFACT_MAX_LEVEL} 重`
 }
 
-/** 某类效果的封顶(没有封顶的返回 undefined)—— 与 artifactEffectValues 用的是同一批常数 */
+/** 某类效果的封顶(没有封顶的返回 undefined)—— 与 effectValuesAt 用的是同一批常数 */
 function effectCap(eff: ArtifactEffect): number | undefined {
   switch (eff.type) {
     case 'weaken':
@@ -778,11 +843,13 @@ export function artifactNextLevelGain(def: ArtifactDef, level = 0): ArtifactNext
   const lv = Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))
   if (lv >= ARTIFACT_MAX_LEVEL) return null
   const next = lv + 1
-  const from = artifactEffectValues(def, lv)
-  const to = artifactEffectValues(def, next)
+  const now = artifactValue(def, lv)
+  const later = artifactValue(def, next)
+  const from = now.active
+  const to = later.active
   const passive = Object.keys(def.passive).map(k => {
     const key = k as AnyStatKey
-    return { key, from: artifactPassiveAt(def, lv)[key] ?? 0, to: artifactPassiveAt(def, next)[key] ?? 0 }
+    return { key, from: now.passive[key] ?? 0, to: later.passive[key] ?? 0 }
   })
   const cap = effectCap(def.active.effect)
   return {

@@ -7,9 +7,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { rng } from '@/utils/random'
-import { afterWin, acquireEquipment, artifactDropWeight, randomDropArtifact } from './loot'
+import {
+  afterWin,
+  acquireEquipment,
+  ARTIFACT_NEAR_BONUS,
+  ARTIFACT_NEAR_WINDOW,
+  artifactDropWeight,
+  randomDropArtifact
+} from './loot'
 import { upgradeEquipment } from './forge'
 import { ARTIFACTS, artifactDef } from '@/data/artifacts'
+import type { ArtifactDef } from '@/types'
+import { budgetOfMods } from './ruleBudget'
 import { regionDef } from '@/data/regions'
 import { usePlayerStore } from '@/stores/player'
 import { shouldAutoRecycle } from './smartKeep'
@@ -151,12 +160,22 @@ describe('法宝掉落 · 高界的池子该像高界', () => {
     }
   })
 
-  it('同品质下,同层级的那件明显更重(约六倍)', () => {
-    const near = artifactDef('af_benyuanlian')! // 混沌海 · 32 阶 · 神品
-    const old = artifactDef('af_zaohua')! // 人间界 · 20 阶 · 神品
-    const ratio = artifactDropWeight(near, 32) / artifactDropWeight(old, 32)
-    expect(ratio, `同品质的 32 阶法宝只比 20 阶的重 ${ratio.toFixed(2)} 倍`).toBeGreaterThan(5)
-    expect(ratio).toBeLessThan(7)
+  it('同品质下,同层级的那件明显更重(约二十一倍)', () => {
+    /**
+     * 从表里找一对「同一档品阶、一件刚好在本阶、另一件已出就近窗口」的真实法宝,
+     * 而不是写死两个 id —— 品阶重排之后,这一对会自己换人,判据仍旧成立。
+     */
+    const pair = ARTIFACTS.map(near => ({
+      near,
+      old: ARTIFACTS.find(b => b.quality === near.quality && near.fromTier - b.fromTier >= ARTIFACT_NEAR_WINDOW)
+    })).find((p): p is { near: ArtifactDef; old: ArtifactDef } => p.old !== undefined)
+    expect(pair, '池子里没有一对同品质、相隔 ≥ 就近窗口的法宝 —— 判据失去对象').toBeDefined()
+    const { near, old } = pair!
+    const tier = near.fromTier
+    const ratio = artifactDropWeight(near, tier) / artifactDropWeight(old, tier)
+    // 同阶 ×(1 + 幅度 × 窗口),出了窗口只剩它自己 —— 比例就是窗口那一条的幅度
+    const expected = 1 + ARTIFACT_NEAR_BONUS * ARTIFACT_NEAR_WINDOW
+    expect(ratio, `同品质的「${near.name}」只比 ${ARTIFACT_NEAR_WINDOW} 阶前的「${old.name}」重 ${ratio.toFixed(2)} 倍`).toBeCloseTo(expected, 6)
   })
 
   it('到混沌海走一趟,掉出来的大半是仙/神/混沌之物', () => {
@@ -167,8 +186,60 @@ describe('法宝掉落 · 高界的池子该像高界', () => {
       expect(id, '32 阶抽不出任何法宝').toBeTruthy()
       if (artifactDef(id!)!.fromTier >= 21) high += 1
     }
-    // 实测约 0.63(改动前约 0.40)—— 阈值留足余量,免得这条统计判据自己变得时红时绿
+    // 实测约 0.61(品阶重排前后都是这个量级;没有就近加成时约 0.40)——
+    // 阈值留足余量,免得这条统计判据自己变得时红时绿
     expect(high / n, `${n} 次里只有 ${high} 次抽到仙界以上的法宝`).toBeGreaterThan(0.55)
+  })
+})
+
+/**
+ * 品阶阶梯 —— 神品要稀缺,而池子仍要以近阶之物为主。
+ *
+ * 品阶不是装饰标签:它同时定掉落权重(artifactDropWeight)与数值倍率
+ * (data/artifacts.artifactQualityMult)。若 45 件里有一小半都挂着神品,
+ * 「神品」二字就不携带任何信息,挂在它上面的倍率也就跟着失去意义。
+ *
+ * 于是标签按 (fromTier 升,同阶内预算升) 排成一条不降的阶梯,并钉住两条:
+ *   一 不许倒挂 —— 深地界出的那件,品阶不低于浅地界出的;
+ *   二 每个界域的池子里,神品的权重占比都是个位数百分比 —— 按件数算也一样。
+ *
+ * 故障注入:把这 45 件的品阶退回重排之前那一版(18 件神品),第二条立刻变红。
+ */
+describe('法宝品阶 · 稀缺标签', () => {
+  it('标签跟着 fromTier 走:深地界出的那件,品阶不低于浅地界出的', () => {
+    const ranked = [...ARTIFACTS].sort(
+      (a, b) => a.fromTier - b.fromTier || budgetOfMods(a.passive) - budgetOfMods(b.passive)
+    )
+    const bad: string[] = []
+    for (let i = 1; i < ranked.length; i += 1) {
+      const prev = ranked[i - 1]!
+      const cur = ranked[i]!
+      if (qualityDef(cur.quality).rank < qualityDef(prev.quality).rank) {
+        bad.push(`「${prev.name}」(${prev.fromTier} 阶 · ${qualityDef(prev.quality).name}) → 「${cur.name}」(${cur.fromTier} 阶 · ${qualityDef(cur.quality).name})`)
+      }
+    }
+    expect(bad, `这些法宝的品阶与 fromTier 倒挂了:\n${bad.join('\n')}`).toEqual([])
+    expect(qualityDef(ranked[ranked.length - 1]!.quality).rank, '最深的那件不是最高档,阶梯形同虚设').toBe(8)
+  })
+
+  it('每个界域的池子里,神品都只占个位数百分比(按权重与按件数都算一遍)', () => {
+    let maxShare = 0
+    let maxTier = 0
+    for (let tier = 1; tier <= 32; tier += 1) {
+      const pool = ARTIFACTS.filter(a => a.fromTier <= tier)
+      const total = pool.reduce((sum, a) => sum + artifactDropWeight(a, tier), 0)
+      const divine = pool.filter(a => a.quality === 'divine')
+      const share = divine.reduce((sum, a) => sum + artifactDropWeight(a, tier), 0) / total
+      expect(share, `${tier} 阶的池子里神品占了 ${(share * 100).toFixed(1)}%`).toBeLessThan(0.1)
+      expect(divine.length / pool.length, `${tier} 阶的池子里 ${divine.length}/${pool.length} 是神品`).toBeLessThan(0.1)
+      if (share > maxShare) {
+        maxShare = share
+        maxTier = tier
+      }
+    }
+    // 神品不能稀到不存在:最深的那一阶得至少有一件,否则这条阶梯的上端是空的
+    expect(ARTIFACTS.filter(a => a.quality === 'divine').length, '一件神品都没有 —— 阶梯缺了顶端').toBeGreaterThan(0)
+    expect(maxShare, `神品在 ${maxTier} 阶占比最高,为 ${(maxShare * 100).toFixed(1)}%`).toBeLessThan(0.1)
   })
 })
 

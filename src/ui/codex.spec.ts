@@ -34,7 +34,13 @@ import {
   equipStage,
   pillStage
 } from './codex'
-import { ARTIFACT_LEVEL_BONUS, ARTIFACT_MAX_LEVEL, ARTIFACTS, artifactDef } from '@/data/artifacts'
+import {
+  ARTIFACT_LEVEL_BONUS,
+  ARTIFACT_MAX_LEVEL,
+  ARTIFACTS,
+  artifactDef,
+  artifactQualityMult
+} from '@/data/artifacts'
 import { EQUIPMENT_TEMPLATES, equipmentTemplate } from '@/data/equipment'
 import { PILLS } from '@/data/pills'
 import { qualityDef } from '@/data/qualities'
@@ -213,9 +219,12 @@ describe('图鉴 · 用具三类的收录深度', () => {
     expect(artifactStage(ARTIFACT_MAX_LEVEL, true)).toBe(ARTIFACT_STAGE_MAX)
     const mid = describeArtifact(fuchen, 3, true)
     expect(mid.foot.value).toBe(`3/${ARTIFACT_MAX_LEVEL} 重`)
-    // 吸命伤害 230% 在祭炼三重时是 230×(1+0.08×3)=285.2% —— 图鉴给的必须是这一份
-    const scaled = 2.3 * (1 + 3 * ARTIFACT_LEVEL_BONUS)
-    expect(mid.desc, '图鉴里的数得按玩家自己的祭炼重数算').toContain(formatPercent(scaled))
+    /**
+     * 吸命伤害的基线是 230%,乘上它自己的品阶(玄虚拂尘是灵品),再按祭炼三重
+     * ×(1+0.08×3)—— 图鉴给的必须是这一份,不是表里那行基线数字。
+     */
+    const scaled = 2.3 * artifactQualityMult(fuchen.quality) * (1 + 3 * ARTIFACT_LEVEL_BONUS)
+    expect(mid.desc, '图鉴里的数得按玩家自己的品阶与祭炼重数算').toContain(formatPercent(scaled))
     expect(describeArtifact(fuchen, ARTIFACT_MAX_LEVEL, true).badge).toBe('满')
     expect(describeArtifact(fuchen, ARTIFACT_MAX_LEVEL, true).hint).toBe('')
   })

@@ -30,7 +30,7 @@ import {
   COMBAT_DEF_BASE,
   COMBAT_HP_BASE
 } from '@/data/constants'
-import { artifactEffectValues } from '@/data/artifacts'
+import { artifactValue } from '@/data/artifacts'
 import { modOf } from './statsCalc'
 import { enemyGearFactor, powerScale } from './formulas'
 
@@ -208,8 +208,8 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
    */
   const tryStun = (target: Fighter): boolean => {
     const owned = (target.snap.artifacts ?? []).find(o => o.def.active.effect.type === 'purge')
-    // 上限 0.9 写在 artifactEffectValues 里:留一丝「摄魂也不是吃素的」——满级也不该等于免疫
-    if (owned && rng.chance(artifactEffectValues(owned.def, owned.level).amount)) {
+    // 上限 0.9 写在 data/artifacts 里:留一丝「摄魂也不是吃素的」——满级也不该等于免疫
+    if (owned && rng.chance(artifactValue(owned.def, owned.level).active.amount)) {
       target.stats.artifactProcs += 1
       const who = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
       push('proc', target.snap.isPlayer ? 'p' : 'e', `${who}的【${owned.def.name}】灵光一照,摄魂之力散于无形。`)
@@ -419,8 +419,8 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
       if (eff.type === 'purge') continue
       if (round % art.active.interval !== 0) continue
       self.stats.artifactProcs += 1
-      // 数值取自 artifactEffectValues —— 界面上的神通说明读的是同一个函数,不会各说各话
-      const values = artifactEffectValues(art, owned.level)
+      // 数值取自 artifactValue —— 界面上的神通说明读的是同一个函数,不会各说各话
+      const values = artifactValue(art, owned.level).active
       if (eff.type === 'damage') {
         const dmgAmt = mulN(self.snap.attack, values.amount)
         applyDamage(self, foe, dmgAmt)

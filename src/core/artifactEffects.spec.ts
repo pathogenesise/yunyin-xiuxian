@@ -32,9 +32,11 @@ import {
   artifactDef,
   artifactLevelLabel,
   artifactNextLevelGain,
-  artifactPassiveAt
+  artifactQualityMult,
+  artifactValue
 } from '@/data/artifacts'
 import { RandomService, mulberry32 } from '@/utils/random'
+import { formatPercent } from '@/utils/format'
 import { gn, toNum } from '@/utils/gnum'
 import { MITIGATION_K } from '@/data/constants'
 import { mulN } from '@/utils/gnum'
@@ -179,19 +181,23 @@ describe('法宝效果 · 词汇表不虚设', () => {
 })
 
 /**
- * 祭炼之后,说明得跟着说实话。
+ * 品阶与祭炼之后,说明得跟着说实话。
  *
- * 上一条对账只比「0 级文案」与「0 级数值」—— 而玩家会把法宝炼到九重(×1.72)。
- * 战斗一直按倍率算,卡片上印的却永远是 0 级那句:实测玄虚拂尘写着「造成 230% 攻击伤害」,
- * 真打出去是 395.6%;神鞭写着「防御降低 30%」,实际早已顶到 50% 的上限。
- * 故说明改成由 artifactEffectValues 现算(战斗与文案读同一个函数),这里守住三件事:
- * 措辞不动、数值随等级、封顶到了要写封顶值。
+ * 上一条对账只比「基线文案」与「基线数值」—— 而表里的数写的是**凡品零重基线**:
+ * 玩家手里那件还带着自己的品阶(凡 1.0 → 神 ≈3.08,见 ARTIFACT_QUALITY_EXP),
+ * 再炼到九重(×1.72)。战斗一直按这两条倍率算,卡片上印的却永远是基线那句:
+ * 实测玄虚拂尘写着「造成 230% 攻击伤害」,真打出去是 395.6%;神鞭写着「防御降低 30%」,
+ * 实际早已顶到 50% 的上限。故说明改成由 artifactValue 现算(战斗与文案读同一个函数),
+ * 这里守住三件事:措辞不动、数值随品阶与祭炼走、封顶到了要写封顶值。
  */
-describe('法宝说明 · 数字随祭炼等级走', () => {
-  /** 期望值独立复算:从原始 effect 字段 + 增幅 + 封顶推出来,不复用被测函数 */
+describe('法宝说明 · 数字随品阶与祭炼等级走', () => {
+  /** 把一件法宝压回「凡品」—— desc 说的就是这个基线,不是任意一件的零重 */
+  const asMortal = (a: (typeof ARTIFACTS)[number]) => ({ ...a, quality: 'mortal' as const })
+
+  /** 期望值独立复算:从原始 effect 字段 + 品阶倍率 + 祭炼增幅 + 封顶推出来,不复用被测函数 */
   function expected(def: (typeof ARTIFACTS)[number], level: number): { main: number | null; heal?: number } {
     const eff = def.active.effect
-    const mult = 1 + level * ARTIFACT_LEVEL_BONUS
+    const mult = artifactQualityMult(def.quality) * (1 + level * ARTIFACT_LEVEL_BONUS)
     switch (eff.type) {
       case 'damage':
         return { main: eff.mult * mult }
@@ -219,10 +225,16 @@ describe('法宝说明 · 数字随祭炼等级走', () => {
     return m ? CHENG.indexOf(m[1]!) + 1 : null
   }
 
-  it('0 级时与原说明逐字相同 —— 只换数字,不碰措辞', () => {
+  it('凡品零重时与原说明逐字相同 —— 只换数字,不碰措辞', () => {
     for (const a of ARTIFACTS) {
-      expect(artifactActiveText(a, 0), `${a.name} 的 0 级说明被改写过了`).toBe(a.active.desc)
+      expect(artifactActiveText(asMortal(a), 0), `${a.name} 的凡品零重说明被改写过了`).toBe(a.active.desc)
     }
+  })
+
+  it('品阶高于凡品时,零重的数已经是放大之后的 —— desc 说的是基线,不是面板', () => {
+    const zhanxian = artifactDef('af_zhanxian')! // 良品 · 基线 460%
+    expect(artifactActiveText(zhanxian, 0)).toContain(formatPercent(4.6 * artifactQualityMult('fine')))
+    expect(artifactActiveText(zhanxian, 0)).not.toBe(zhanxian.active.desc)
   })
 
   it('0 / 3 / 9 级:说明里的数就是这一级真正生效的数(含封顶)', () => {
@@ -255,18 +267,27 @@ describe('法宝说明 · 数字随祭炼等级走', () => {
     }
   })
 
-  it('顶到封顶就写封顶值 —— 破甲 30% 炼到九重是 50%,净念七成变九成', () => {
+  it('顶到封顶就写封顶值 —— 摄魂铃零重 30%,九重封在 50%', () => {
+    const shehun = artifactDef('af_shehun')! // 凡品 · 削弱 30% 基线
+    expect(artifactActiveText(shehun, 0)).toContain(formatPercent(0.3 * artifactQualityMult('mortal')))
+    expect(artifactActiveText(shehun, 9), '削弱上限 50%,说明不能再报 51.6%').toContain('50%')
+  })
+
+  it('品阶顶到封顶的那几件,零重就写封顶值(祭炼只涨被动)', () => {
+    // 神鞭的破甲基线是 30%,乘上它的品阶(玄品 ≈1.67)已经越过 50% 的顶
     const shenbian = artifactDef('af_shenbian')!
-    expect(artifactActiveText(shenbian, 0)).toContain('30%')
-    expect(artifactActiveText(shenbian, 9), '破甲上限 50%,说明不能再报 51.6%').toContain('50%')
+    expect(shenbian.quality, '神鞭若不是高品阶,这条判据就失去对象').not.toBe('mortal')
+    expect(artifactActiveText(shenbian, 0), '破甲上限 50%,零重就该报 50%').toContain('50%')
+    expect(artifactActiveText(shenbian, 9)).toContain('50%')
+    // 净念七成的基线乘上品阶也已越顶:上限九成,留一丝「摄魂也不是吃素的」
     const nianzhu = artifactDef('af_wuxiangzhu')!
-    expect(artifactActiveText(nianzhu, 0)).toContain('七成')
-    expect(artifactActiveText(nianzhu, 9), '净念上限九成').toContain('九成')
+    expect(artifactActiveText(nianzhu, 0), '净念上限九成').toContain('九成')
+    expect(artifactActiveText(nianzhu, 9)).toContain('九成')
   })
 
   it('越界等级钳回 0..9,不会算出界面撑不住的数', () => {
     const a = ARTIFACTS[0]!
-    expect(artifactActiveText(a, -3)).toBe(a.active.desc)
+    expect(artifactActiveText(a, -3)).toBe(artifactActiveText(a, 0))
     expect(artifactActiveText(a, 99)).toBe(artifactActiveText(a, 9))
   })
 
@@ -286,10 +307,11 @@ describe('法宝说明 · 数字随祭炼等级走', () => {
  * 判据是**逐项对得上独立复算**,且不会出现「越炼越弱」或「到顶还劝你炼」。
  */
 describe('法宝说明 · 下一重给多少', () => {
-  const sutra = artifactDef('af_shenbian')! // 破甲 30%,有 50% 上限
+  const sutra = artifactDef('af_shenbian')! // 破甲 30%,有 50% 上限(玄品:零重就已经在顶)
+  const ling = artifactDef('af_shehun')! // 削弱 30%,有 50% 上限(凡品:零重 30%,炼得上去)
   const nianzhu = artifactDef('af_wuxiangzhu')! // 净念 70%,有 90% 上限
   const qin = artifactDef('af_xianqin')! // 震慑:没有数值
-  const fuchen = artifactDef('af_xuanxu')! // 吸命:伤害 + 回补,回补有 100% 上限
+  const drum = artifactDef('af_yunshengu')! // 吸命:伤害 + 回补,回补有 100% 上限
 
   it('已至满重就没有「下一重」这一说', () => {
     expect(artifactNextLevelGain(qin, 9)).toBeNull()
@@ -297,11 +319,11 @@ describe('法宝说明 · 下一重给多少', () => {
     expect(artifactNextLevelGain(qin, 8)?.level).toBe(9)
   })
 
-  it('被动逐项与 artifactPassiveAt 的下一重值一致', () => {
+  it('被动逐项与 artifactValue 的下一重值一致', () => {
     for (const level of [0, 4, 8]) {
       const gain = artifactNextLevelGain(sutra, level)!
-      const now = artifactPassiveAt(sutra, level)
-      const next = artifactPassiveAt(sutra, level + 1)
+      const now = artifactValue(sutra, level).passive
+      const next = artifactValue(sutra, level + 1).passive
       expect(gain.passive.length).toBe(Object.keys(sutra.passive).length)
       for (const p of gain.passive) {
         expect(p.from).toBeCloseTo(now[p.key] ?? 0, 10)
@@ -311,12 +333,15 @@ describe('法宝说明 · 下一重给多少', () => {
     }
   })
 
-  it('神通主体按封顶报数:神鞭重 8 → 50%(已至上限),净念重 8 → 九成', () => {
-    const s8 = artifactNextLevelGain(sutra, 8)!
-    expect(s8.active!.to).toBeCloseTo(ARTIFACT_SUNDER_CAP, 10)
-    expect(s8.active!.capped, '已经顶到 50% 了,得说清楚再炼也不会更多').toBe(true)
-    const s7 = artifactNextLevelGain(sutra, 7)!
-    expect(s7.active!.capped).toBe(false)
+  it('神通主体按封顶报数:摄魂铃零重未到顶,神鞭与净念零重就已在顶', () => {
+    const l0 = artifactNextLevelGain(ling, 0)!
+    expect(l0.active!.capped, '零重离 50% 的顶还有余量,不该说已至上限').toBe(false)
+    const l8 = artifactNextLevelGain(ling, 8)!
+    expect(l8.active!.to).toBeCloseTo(ARTIFACT_WEAKEN_CAP, 10)
+    expect(l8.active!.capped, '已经顶到 50% 了,得说清楚再炼也不会更多').toBe(true)
+    const s0 = artifactNextLevelGain(sutra, 0)!
+    expect(s0.active!.to).toBeCloseTo(ARTIFACT_SUNDER_CAP, 10)
+    expect(s0.active!.capped, '破甲零重就在 50% 的顶上了').toBe(true)
     const n8 = artifactNextLevelGain(nianzhu, 8)!
     expect(n8.active!.to).toBeCloseTo(ARTIFACT_PURGE_CAP, 10)
     expect(n8.active!.capped).toBe(true)
@@ -329,14 +354,16 @@ describe('法宝说明 · 下一重给多少', () => {
     expect(gain.passive.length).toBeGreaterThan(0)
   })
 
-  it('吸命的两笔账都在:伤害继续涨,回补到顶后标出来', () => {
-    const low = artifactNextLevelGain(fuchen, 0)!
+  it('吸命的两笔账都在:伤害继续涨,回补到顶后如实标出来', () => {
+    const low = artifactNextLevelGain(drum, 0)!
     expect(low.active!.to).toBeGreaterThan(low.active!.from)
     expect(low.heal).toBeDefined()
-    expect(low.heal!.capped).toBe(false)
-    const high = artifactNextLevelGain(fuchen, 8)!
+    // 灵品 × 1.45 之后是 72%,离十成的顶还有余量
+    expect(low.heal!.capped, '零重还没吃到十成').toBe(false)
+    const high = artifactNextLevelGain(drum, 8)!
     expect(high.heal!.to).toBeCloseTo(ARTIFACT_DRAIN_HEAL_CAP, 10)
     expect(high.heal!.capped, '回补已经吃到十成,再炼也只是伤害在涨').toBe(true)
+    expect(high.active!.to, '回补封顶之后,伤害那一侧仍要继续涨').toBeGreaterThan(high.active!.from)
   })
 })
 

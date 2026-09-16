@@ -308,14 +308,18 @@ export type ArtifactEffect =
 export interface ArtifactDef {
   id: string
   name: string
+  /** 风味一句。与下面的数值一样,写的是「凡品零重基线」的口径(见 data/artifacts.artifactValue) */
   desc: string
   icon: string
+  /** 品阶:既定掉落权重,也定数值倍率 —— 两处的口径都在 data/artifacts */
   quality: QualityId
   /** 从这一阶起可现世(累积池:更高阶的地界也掉得出它) */
   fromTier: number
+  /** 被动。表里写的是**凡品零重基线**,品阶与祭炼两条放大由 artifactValue 施加 */
   passive: StatMods
   active: {
     name: string
+    /** 神通文案(同样是凡品零重基线:玩家看到的是 artifactActiveText 现算的那一份) */
     desc: string
     /** 每隔几回合自动触发 */
     interval: number

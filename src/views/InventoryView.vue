@@ -138,7 +138,8 @@
           <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{{ row.def.desc }}</p>
           <p class="mt-1 text-[11px] text-azure">{{ passiveLines(row.def.id, row.owned.level).join(' · ') }}</p>
           <!--
-            神通说明按祭炼等级现算:效果随等级 ×(1+0.08×重数),文案不能停在 0 级那一句
+            神通说明按品阶与祭炼等级现算:效果随「品阶 × (1+0.08×重数)」走,
+            文案不能停在基线那一句
             (见 data/artifacts.artifactActiveText —— 战斗与这句话读的是同一个函数)
           -->
           <p class="mt-1 text-[11px] text-violet-ink">
@@ -413,7 +414,7 @@
     artifactDef,
     artifactLevelLabel,
     artifactNextLevelGain,
-    artifactPassiveAt,
+    artifactValue,
     ARTIFACT_LEVEL_BONUS,
     ARTIFACT_MAX_LEVEL,
     ARTIFACT_MAX_SLOTS,
@@ -699,7 +700,7 @@
     const def = artifactDef(defId)
     if (!def) return []
     // 与属性汇总(store/inventory)同源:卡片上写多少,身上加的就是多少
-    return Object.entries(artifactPassiveAt(def, level)).map(
+    return Object.entries(artifactValue(def, level).passive).map(
       ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`
     )
   }
