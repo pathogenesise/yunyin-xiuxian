@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 200,
+  "round": 201,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-16T00:28:24+00:00",
+  "updated_at": "2026-09-16T01:09:22+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -11839,6 +11839,44 @@
       "touched_round": 200,
       "commit": Infinity,
       "summary": "celestialStats 恢复凡界装备 + 器魂叠加;敌人参照改本界锚点(powerScale);新增 celestialJudgement(道之理解 + 境界压制);四天/三试炼加 anchorTier,变数天界锚 32;五处造敌统一;界面写明「此界宜 X 及以上」;四份判据重写;README 与器魂文案改口"
+    },
+    "ISS-205": {
+      "id": "ISS-205",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-16T01:09:22+00:00",
+      "updated_at": "2026-09-16T01:09:22+00:00",
+      "touched_round": 201,
+      "severity": 0.35,
+      "confidence": 0.9,
+      "summary": "新判定层刚落地时是**看不见**的:道之理解(加厚+增伤减伤)与境界压制都只落在敌人的 mods 与三维里,战前预估只有一句胜算分档、战报只列逐场胜负 —— 玩家只会觉得「这一界怎么这么难」,既不知道该削哪一项,也不知道该往哪一境走。另:远征是终局核心功能,却没有一份直接判据(只有零散 spec 间接碰过)"
+    },
+    "TASK-188": {
+      "id": "TASK-188",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-16T01:09:22+00:00",
+      "updated_at": "2026-09-16T01:09:22+00:00",
+      "touched_round": 201,
+      "category": "core-feature",
+      "severity": 0.35,
+      "confidence": 0.9,
+      "effort": 2,
+      "unlock_factor": 1.2,
+      "summary": "①celestialJudgementLines:判定成文一处(加厚倍数、增伤减伤、境界压制),并附「怎么办」(换方向而非继续堆 / 再破一境),浅构筑与已达境界时不占字数;②战前:远征准备面板的「天道推演」列出判定;③战后:战报新增「此战之判」;④新增 expedition.spec 端到端判据(账目:入界价与不足时不开船;梯子:真仙能打赤炎天打不动无相天、道祖能打无相天、同境界装备越好越有把握;判定:战前/战后文案与 celestialJudgementLines 同源)"
+    },
+    "CHG-237": {
+      "id": "CHG-237",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T01:09:22+00:00",
+      "updated_at": "2026-09-16T01:09:22+00:00",
+      "touched_round": 201,
+      "commit": "0cfe052",
+      "summary": "判定层可见化(战前天道推演 + 战报「此战之判」,与 celestialJudgementLines 同源);新增 expedition.spec 八条端到端判据(账目/梯子/判定)"
     }
   },
   "edges": [
@@ -17614,6 +17652,18 @@
       "to": "COMP-017",
       "type": "governs",
       "created_at": "2026-09-16T00:28:24+00:00"
+    },
+    {
+      "from": "TASK-188",
+      "to": "ISS-205",
+      "type": "addresses",
+      "created_at": "2026-09-16T01:09:22+00:00"
+    },
+    {
+      "from": "CHG-237",
+      "to": "TASK-188",
+      "type": "implements",
+      "created_at": "2026-09-16T01:09:22+00:00"
     }
   ]
 }
