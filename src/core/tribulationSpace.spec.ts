@@ -87,8 +87,8 @@ describe('天劫解法空间审计', () => {
     const maxed = SHAPES.find(s => s.key === 'maxed')!
     // 取最凶的天时(雷鸣/仙劫日/神威日等,最高 ×1.12)——渡劫难度不能靠"那天恰好清和"成立
     const worstWeather = Math.max(...[...WEATHERS, ...Object.values(WORLD_WEATHERS).flat()].map(w => w.tribulationMult))
+    // 大关皆劫:1..MAX 每一个可作目标的大境界都要过这一关(含真仙/神人/混沌真灵)
     for (let major = 1; major <= MAX_MAJOR; major += 1) {
-      if (!REALMS[major]!.tribulation) continue // 无需渡劫的境界(如真仙)跳过
       for (const t of TRIBULATIONS) {
         const p = buildTribulationPlan(major, maxed.mods, t.id, NO_RELIEF, worstWeather)
         expect(PASS.has(p.verdict), `${REALMS[major]!.name}·${t.name}劫:四维皆优仍不可渡`).toBe(true)
@@ -169,7 +169,6 @@ describe('天劫解法空间审计', () => {
     const nonMaxed = SHAPES.filter(s => !s.maxed)
     const rows: string[] = []
     for (let major = 1; major <= MAX_MAJOR; major += 1) {
-      if (!REALMS[major]!.tribulation) continue // 无需渡劫的境界(如真仙)跳过
       const counts = TRIBULATIONS.map(
         t => nonMaxed.filter(s => PASS.has(planOf(s, t.id, major, worstWeather).verdict)).length
       )

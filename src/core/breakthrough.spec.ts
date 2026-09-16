@@ -12,6 +12,7 @@ import type { StatMods } from '@/types'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useCultivationStore } from '@/stores/cultivation'
+import { REALMS, WORLDS } from '@/data/realms'
 
 describe('渡劫成功率推演', () => {
   beforeEach(() => {
@@ -161,5 +162,28 @@ describe('渡劫成功率推演', () => {
     const after = breakthroughInfo()
     console.log(`破境丹:${before.rateText} → ${after.rateText}`)
     expect(after.rate).toBeGreaterThan(before.rate)
+  })
+
+  /**
+   * 大关皆劫 —— 三个跨界入口(真仙 / 神人 / 混沌真灵)一视同仁。
+   *
+   * 真仙从前是唯一的「无劫门槛」(旧设计当它是飞升之赏),那条例外让
+   * 进阶成功率的作用域、跨界入口的规矩、以及"大关未必渡劫"这条规则全都说不清。
+   * 现在飞升也要渡劫:想要无劫的路,得先有本事免劫。
+   */
+  it('飞升不例外:三个跨界入口都要渡劫', () => {
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    const entries = WORLDS.filter(w => w.start > 0).map(w => w.start)
+    expect(entries.length, '跨界入口数量不对').toBe(WORLDS.length - 1) // 人间界之外的三界
+    for (const entry of entries) {
+      // 站在入口的前一境圆满:下一境就是那一界的门槛
+      player.$patch({ major: entry - 1, sub: 9, exp: { m: 1e30, e: 0 } })
+      resources.$patch({ qi: 1e30 })
+      const info = breakthroughInfo()
+      console.log(`${REALMS[entry - 1]!.name}→${REALMS[entry]!.name}:needTribulation=${info.needTribulation}`)
+      expect(info.needTribulation, `${REALMS[entry]!.name} 是界域入口,却没有劫`).toBe(true)
+      expect(info.isMajor).toBe(true)
+    }
   })
 })

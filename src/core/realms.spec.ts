@@ -74,14 +74,21 @@ describe('境界体系 · 结构', () => {
     expect(REBIRTH_REFERENCE_MAJOR).toBe(WORLD_BREAK_MAJOR) // 轮回经济参照终点同指真仙
   })
 
-  it('飞升无劫、界内有劫:真仙是唯一的「无劫门槛」', () => {
-    // 真仙是飞升之赏(旧设计如此),仍保持不渡劫
-    expect(REALMS[WORLD_BREAK_MAJOR]!.tribulation).toBe(false)
-    // 每个界域都至少有一境要渡劫(含仙界自身)
-    for (const w of WORLDS) {
-      const hasTrib = REALMS.slice(w.start, w.end + 1).some(r => r.tribulation)
-      expect(hasTrib, `${w.name} 没有任何渡劫境界`).toBe(true)
+  it('大关皆劫:三个跨界入口一视同仁,境界表上不再有「无劫开关」', () => {
+    /**
+     * 旧设计里真仙是唯一的「无劫门槛」(飞升之赏)。那条例外让三件事说不清:
+     * 进阶成功率的作用域、三个跨界入口的规矩不一致、"大关未必渡劫"玩家猜不到。
+     * 现在规则只剩一条(小进阶掷点 / 大关渡劫),开关也随之删掉 —— 无劫的大关
+     * 不再是一种**可表示的状态**,而不是"这次恰好没启用"。
+     *
+     * 行为一侧(三个入口真的都要渡劫)由 core/breakthrough.spec 覆盖;
+     * 这里只守数据结构:门槛必须在炼气之上,且那枚开关不许复活。
+     */
+    // 人间界的入口是炼气(0)—— 那是起点,不是要渡的关;其余三界入口都必须可渡劫
+    for (const w of WORLDS.slice(1)) {
+      expect(w.start, `${w.name} 的入口落在炼气 —— 那一境没有可渡的关`).toBeGreaterThan(0)
     }
+    expect('tribulation' in REALMS[WORLD_BREAK_MAJOR]!, '境界表上又长回了无劫开关').toBe(false)
   })
 
   it('回查函数越界即钳制,不返回空', () => {

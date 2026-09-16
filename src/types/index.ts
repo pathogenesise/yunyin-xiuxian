@@ -400,8 +400,6 @@ export interface RealmDef {
   /** 所属界域 */
   world: WorldId
   lifespanYears: number
-  /** 大境界突破是否需渡天劫 */
-  tribulation: boolean
   /** 该境界主题描述 */
   desc: string
   /**

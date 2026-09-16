@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
@@ -7,6 +7,19 @@ import { FURNACE_RATES, DAO_SOURCE_PER_FRUIT } from '@/data/endgame'
 import { chooseDaoPath, condenseDaoFruit, currentDaoRules, endgameUnlocked, furnaceConvert } from './endgameService'
 import { resolveWorld, startWorldExpedition } from './expedition'
 import { attemptBreakthrough } from './breakthrough'
+
+/**
+ * 飞升也要渡天劫(大关皆劫)。
+ *
+ * 这条用例验的是**跨界叙事与跨世节点**,不是渡劫平衡 —— 故把准备度钉到"该有的
+ * 样子"(抗性封顶 + 三维折算满),让十二道雷真的走完。真实玩家达到同一量级靠的是
+ * 功法分支(劫印/渡厄)、天赋雷体、灵兽、护腕、称号与丹药,见 tribulationDecision
+ * 的 statGuardOf 与 tribulationSpace.spec 的逐境普查。
+ */
+vi.mock('@/core/tribulationDecision', async importOriginal => {
+  const real = await importOriginal<typeof import('@/core/tribulationDecision')>()
+  return { ...real, currentStatGuard: () => ({ resist: 0.8, guard: 1 }) }
+})
 
 function ascend(): void {
   const player = usePlayerStore()
@@ -106,8 +119,9 @@ describe('真仙终局服务', () => {
 
   /**
    * 飞升是扩界新增的三次「换一片天」之一(另两次是入神、归返混沌)。
-   * 渡劫→真仙不渡劫(飞升之赏),只按成功率判定;重试到成功为止(单次约 1/3,连败 200 次概率≈0),
-   * 以此验明这条叙事与跨世节点真的落到存档里。
+   * 从前真仙是唯一的「无劫门槛」(旧设计当它是飞升之赏),只按成功率判定;
+   * 现在大关皆劫 —— 飞升同样要渡(见本文件顶部的 mock 说明),
+   * 这条守住跨界叙事与跨世节点真的落到存档里。
    */
   it('飞升真仙:记下跨世节点 first_immortal,并给出界域叙事', () => {
     const player = usePlayerStore()

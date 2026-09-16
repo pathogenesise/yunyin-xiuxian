@@ -95,7 +95,15 @@ export function breakthroughInfo(): BreakthroughInfo {
   const isMajor = player.isMajorStep
   const nextMajor = isMajor ? player.major + 1 : player.major
   const nextSub = isMajor ? 0 : player.sub + 1
-  const needTribulation = isMajor && realmDef(nextMajor).tribulation && player.major < nextMajor
+  /**
+   * 大关皆劫 —— 这张表里不再有"无劫大关"。
+   *
+   * 从前境界数据上挂着一枚 `tribulation` 开关,真仙是唯一的 false(旧设计当它是
+   * 飞升之赏)。那条例外让三件事说不清:进阶成功率的作用域、三个跨界入口
+   * (真仙/神人/混沌真灵)的规矩不一样、"大关未必渡劫"这条规则玩家猜不到。
+   * 现在只剩一条规则:小进阶掷点,大关渡劫 —— 想要无劫的路,得先有本事免劫。
+   */
+  const needTribulation = isMajor
   const qiCost = Math.floor(player.qiCapValue * BT_QI_COST_RATIO)
   const mods = player.finalStats.mods
   // Phase 28 突破准备:就绪的静坐/丹药加成并入展示率(消费在 attemptBreakthrough,一次性)
