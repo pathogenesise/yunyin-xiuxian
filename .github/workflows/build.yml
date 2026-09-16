@@ -128,6 +128,15 @@ jobs:
     name: 构建 Android APK
     needs: [guard, ui-check]
     runs-on: ubuntu-latest
+    # 签名口令走 Secrets 注入(不落在仓库文件里)。
+    #
+    # 为什么先落 env 再判空:step 级 if 里拿不到 secrets 上下文(GitHub 只放
+    # github/needs/strategy/matrix/job/runner/env/vars/steps/inputs),写成
+    # `secrets.X == ''` 会让整份工作流文件判为非法 —— 不是这条判断失效,而是这一份
+    # 从此一次都不跑:每次 push 只留一条 0 秒、零作业的失败记录,连 tag 触发都不认。
+    env:
+      KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+      KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
       - name: 安装 Bun
@@ -161,20 +170,16 @@ jobs:
       - name: 同步 Capacitor
         run: bunx cap sync android
 
-      # 签名口令走 Secrets 注入(不落在仓库文件里)。
       # 没配 secret 时 gradle 会静默产出「未签名 APK」——那种包手机根本装不上。
       # 与其让 CI 绿着吐一个废包,不如红着把话说明白:下面是硬闸门。
       - name: 校验签名 Secret 已配置
-        if: ${{ secrets.KEYSTORE_STORE_PASSWORD == '' || secrets.KEYSTORE_KEY_PASSWORD == '' }}
+        if: env.KEYSTORE_STORE_PASSWORD == '' || env.KEYSTORE_KEY_PASSWORD == ''
         run: |
           echo "::error::未配置 KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD —— 请在仓库 Settings → Secrets and variables → Actions 添加这两个 secret(值 = android/release.keystore 的原口令)"
           exit 1
 
       - name: 构建 APK (Release)
         working-directory: android
-        env:
-          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
-          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease --build-cache
