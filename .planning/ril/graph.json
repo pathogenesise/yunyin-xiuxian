@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 201,
+  "round": 202,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-16T01:28:00+00:00",
+  "updated_at": "2026-09-16T01:28:13+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -11881,10 +11881,10 @@
     "TASK-189": {
       "id": "TASK-189",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-16T01:27:50+00:00",
-      "updated_at": "2026-09-16T01:27:50+00:00",
+      "updated_at": "2026-09-16T01:28:13+00:00",
       "touched_round": 201,
       "category": "core-feature",
       "severity": 0.4,
@@ -11895,10 +11895,10 @@
     "ISS-206": {
       "id": "ISS-206",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-16T01:27:53+00:00",
-      "updated_at": "2026-09-16T01:27:53+00:00",
+      "updated_at": "2026-09-16T01:28:13+00:00",
       "touched_round": 201,
       "severity": 0.4,
       "confidence": 0.95,
@@ -11913,6 +11913,17 @@
       "updated_at": "2026-09-16T01:27:53+00:00",
       "touched_round": 201,
       "summary": "src/core/combat.ts + src/core/gauntlet.ts(造敌与来源说明:FoeOrigin / mortalFoeOrigin / celestialFoeOrigin)"
+    },
+    "CHG-238": {
+      "id": "CHG-238",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-16T01:28:10+00:00",
+      "updated_at": "2026-09-16T01:28:10+00:00",
+      "touched_round": 201,
+      "commit": "52e5fd8",
+      "summary": "敌人加成归因(FoeOrigin):来源由造敌方写明并随战报带到战后分析;凡界摊开层级补偿/危地与四项危地来源,天界摊开道之理解/境界压制/连战加码;出行方式档位补上危险倍率;新增 foeOrigin.spec 18 条"
     }
   },
   "edges": [
@@ -17712,6 +17723,18 @@
       "to": "COMP-023",
       "type": "located_in",
       "created_at": "2026-09-16T01:28:00+00:00"
+    },
+    {
+      "from": "CHG-238",
+      "to": "TASK-189",
+      "type": "implements",
+      "created_at": "2026-09-16T01:28:13+00:00"
+    },
+    {
+      "from": "CHG-238",
+      "to": "ISS-206",
+      "type": "resolves",
+      "created_at": "2026-09-16T01:28:13+00:00"
     }
   ]
 }
