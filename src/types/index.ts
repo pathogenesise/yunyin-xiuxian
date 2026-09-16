@@ -683,10 +683,51 @@ export interface CombatSkill {
   effect?: string
 }
 
+/**
+ * 敌人加成来源里的一项 —— 「哪件事,把它乘大了多少倍」。
+ * 只列真正乘过的项(×1 的不列:没做的事不必占字数)。
+ */
+export interface FoeOriginPart {
+  /** 来源名,如「层级补偿」「危地」「道之理解」 */
+  label: string
+  /** 三维倍率 */
+  ratio: number
+}
+
+/**
+ * 敌人身上的额外加成**从哪来** —— 由生成方写明,战后分析照读。
+ *
+ * 敌人的三维里从来不只是「它自己」:凡界有层级补偿与危地,天界有道之理解与境界压制。
+ * 这些乘区若只在数值里生效、不给出来源,玩家遇到「怎么忽然变强了」就只能猜 ——
+ * 既不知道该削哪一项,也不知道该往哪一境走。故生成方**必须**把它写下来
+ * (makeEnemySnap / worldFoeSnap 各有一份),战斗结果带着它走,分析面板照着讲。
+ */
+export interface FoeOrigin {
+  /** 一句话来源名,如「层级补偿」「道之理解 / 境界压制」 */
+  label: string
+  /** 三维总倍率(≥1;1 表示这只敌人没有额外加成) */
+  ratio: number
+  /** 敌人增伤(0 = 无) */
+  damageBonus: number
+  /** 敌人减伤(0 = 无) */
+  damageReduction: number
+  /** 拆开讲:每一项来源各自的倍率 */
+  parts: FoeOriginPart[]
+  /** 这是什么、该怎么办 —— 界面读它,不再另编一套说法 */
+  note: string
+}
+
 export interface CombatantSnap {
   name: string
   icon: string
   isPlayer: boolean
+  /**
+   * 这只敌人身上的**额外加成来自哪里** —— 由生成方写明,供战后分析归因。
+   *
+   * 敌人的三维里从来不只是「它自己」:凡界有层级补偿与危地,天界有道之理解与境界压制。
+   * 这些乘区若只在数值里生效、不给出来源,玩家遇到「怎么忽然变强了」就只能猜。
+   */
+  origin?: FoeOrigin
   attack: GNum
   defense: GNum
   maxHp: GNum
@@ -743,6 +784,8 @@ export interface CombatResult {
   log: CombatLogEntry[]
   rounds: number
   playerHpPct: number
+  /** 敌人的加成来源(玩家侧没有:它就是玩家自己)—— 战后分析据此把账算清 */
+  foeOrigin?: FoeOrigin
   /**
    * 先手判定 —— 谁先出手,以及那次判定用的两个数。
    *

@@ -1,7 +1,18 @@
 /**
  * 自动战斗解算 —— 预先解算完整战报,UI 负责按节奏播放
  */
-import type { CombatantSnap, CombatLogEntry, CombatResult, CombatRules, CombatSideStats, EnemyDef, GNum, StatMods } from '@/types'
+import type {
+  CombatantSnap,
+  CombatLogEntry,
+  CombatResult,
+  CombatRules,
+  CombatSideStats,
+  EnemyDef,
+  FoeOrigin,
+  FoeOriginPart,
+  GNum,
+  StatMods
+} from '@/types'
 import type { RandomService } from '@/utils/random'
 import { add, gnZero, mulN, ratio, subClamp, gnMin, gnMax, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
@@ -58,14 +69,58 @@ function emptyStats(): CombatSideStats {
   }
 }
 
-/** 依据敌人模板与区域层级构建敌方快照 */
-export function makeEnemySnap(def: EnemyDef, tier: number, dangerMult: number): CombatantSnap {
+/**
+ * 凡界敌人的加成来源 —— 与天界的判定同一条纪律:生成方写明,战后分析照读。
+ *
+ * 两件事相乘:层级补偿(敌人按这一层的装备水平补齐)与危地
+ * (出行方式 × 地界凶险 × 灵兽之性 × 区域事件,由调用方先乘成一个数)。
+ * 知道得更细的调用方(历练)可以传入更细的 origin,把「危地」摊成它的四项来源。
+ */
+export function mortalFoeOrigin(tier: number, dangerMult: number): FoeOrigin {
+  return mortalFoeOriginFromParts(tier, [{ label: '危地', ratio: dangerMult }])
+}
+
+/**
+ * 按**已经摊开**的几件事组装来源:层级补偿排在最前(它不是玩家的选择,却是最大的一项),
+ * 其余各项由调用方按自己知道的粒度给。总倍率一律由各项相乘得出 ——
+ * 手写一个总数再手写一份明细,两者迟早对不上,而这类对不上没人看得出来。
+ */
+export function mortalFoeOriginFromParts(tier: number, situation: readonly FoeOriginPart[]): FoeOrigin {
+  const gear = enemyGearFactor(tier)
+  const parts: FoeOriginPart[] = []
+  if (gear !== 1) parts.push({ label: '层级补偿', ratio: gear })
+  for (const p of situation) if (p.ratio !== 1) parts.push({ ...p })
+  const ratio = parts.reduce((acc, p) => acc * p.ratio, 1)
+  return {
+    label: parts.map(p => p.label).join(' · '),
+    ratio,
+    damageBonus: 0,
+    damageReduction: 0,
+    parts,
+    // 报了病因也要给方向:加成全在敌人那一侧的三维上,解法自然也在自己这一侧。
+    // 反向的账(敌人比这一层该有的还薄)也照实说 —— 占了便宜却不说,玩家会以为自己看错了
+    note:
+      parts.length === 0
+        ? '此敌没有额外加成 —— 你遇到的就是它自己。'
+        : ratio > 1
+          ? '加成的都是敌人的三维:把自己的三围补到这一层该有的样子,或换更浅的出行方式,它自会收窄。'
+          : '此敌比这一层该有的还薄 —— 这一场你占着便宜。'
+  }
+}
+
+/**
+ * 依据敌人模板与区域层级构建敌方快照。
+ * `origin` 是这只敌人加成的**来源说明书**:不传则按实际乘过的两件事自动拆开,
+ * 知道得更细的调用方(历练)传进来的是摊开到四项的那一份。
+ */
+export function makeEnemySnap(def: EnemyDef, tier: number, dangerMult: number, origin?: FoeOrigin): CombatantSnap {
   const scale = powerScale(tier)
   const gear = enemyGearFactor(tier) * dangerMult
   return {
     name: def.name,
     icon: def.icon,
     isPlayer: false,
+    origin: origin ?? mortalFoeOrigin(tier, dangerMult),
     attack: mulN(scale, COMBAT_ATK_BASE * def.atkMult * gear),
     defense: mulN(scale, COMBAT_DEF_BASE * def.defMult * gear),
     maxHp: mulN(scale, COMBAT_HP_BASE * def.hpMult * gear),
@@ -516,6 +571,8 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     log,
     rounds,
     playerHpPct: hpPct(p),
+    // 敌人加成的来源随战报带走 —— 战后分析不必回头去猜这一场是怎么变难的
+    foeOrigin: eSnap.origin,
     // 先手判定如实带出:这是条阈值(见 CombatResult.firstMove 的注释),战后分析据此讲清「差多少」
     firstMove: { playerFirst: pFirst, playerSpeed: pSpeed, enemySpeed: eSpeed },
     stats: { player: p.stats, enemy: e.stats }

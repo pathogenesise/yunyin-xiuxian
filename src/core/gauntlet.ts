@@ -1,7 +1,7 @@
 /**
  * 连战解算(纯函数)—— 特殊世界与天道试炼共用,亦被终局模拟器直接验证
  */
-import type { CombatantSnap, CombatLogEntry, CombatRules, GNum, StatMods, WorldFoeShape } from '@/types'
+import type { CombatantSnap, CombatLogEntry, CombatRules, FoeOrigin, FoeOriginPart, GNum, StatMods, WorldFoeShape } from '@/types'
 import type { RandomService } from '@/utils/random'
 import { mulN } from '@/utils/gnum'
 import { modDepth } from './statsCalc'
@@ -53,9 +53,11 @@ export interface CelestialJudgement {
   damageBonus: number
   /** 守关者减伤 */
   damageReduction: number
+  /** 境界压制是否生效(未及本界锚点境界)—— 报账时要能与「道之理解」分开说 */
+  suppressed: boolean
 }
 
-export const NO_JUDGEMENT: CelestialJudgement = { thicken: 1, damageBonus: 0, damageReduction: 0 }
+export const NO_JUDGEMENT: CelestialJudgement = { thicken: 1, damageBonus: 0, damageReduction: 0, suppressed: false }
 
 /**
  * 天界词条对称基准(Phase 33.2)。
@@ -102,8 +104,34 @@ export function celestialJudgement(playerMods: StatMods, playerMajor: number, an
   const over = thicken - 1
   const judge = Math.min(CELESTIAL_JUDGE_CAP, over * CELESTIAL_JUDGE_RATE)
   // 境界压制:还没走到这一界该有的境界,守关者额外增伤(规则文案里会写明)
-  const suppress = playerMajor < tierMajor(anchorTier) ? CELESTIAL_SUPPRESS_BONUS : 0
-  return { thicken, damageBonus: judge + suppress, damageReduction: judge }
+  const suppressed = playerMajor < tierMajor(anchorTier)
+  const suppress = suppressed ? CELESTIAL_SUPPRESS_BONUS : 0
+  return { thicken, damageBonus: judge + suppress, damageReduction: judge, suppressed }
+}
+
+/** 判定的去向语 —— 战前预估与战后归因读的是同一句(两处各写一句,迟早分叉) */
+export const JUDGEMENT_DIRECTION = '判定随你的厚度与境界而来 —— 换个方向而非继续堆,或再破一境,它自会退回去。'
+
+/**
+ * 天界敌人的加成来源 —— 供战后分析归因(与凡界的 mortalFoeOrigin 同一形状、同一用途)。
+ * 无判定时也如实写明「这一界没有额外判定」,免得玩家把「打不过」全算在判定头上。
+ *
+ * parts 只装**三维倍率**(加厚);增伤减伤各走自己的字段 ——
+ * 两者混进同一个列表,读的人就分不清「×1.4」是加厚还是增伤。
+ */
+export function celestialFoeOrigin(j: CelestialJudgement): FoeOrigin {
+  const parts: FoeOriginPart[] = j.thicken > 1 ? [{ label: '道之理解', ratio: j.thicken }] : []
+  const names: string[] = []
+  if (j.thicken > 1) names.push('道之理解')
+  if (j.suppressed) names.push('境界压制')
+  return {
+    label: names.length === 0 ? '无判定' : names.join(' · '),
+    ratio: j.thicken,
+    damageBonus: j.damageBonus,
+    damageReduction: j.damageReduction,
+    parts,
+    note: names.length === 0 ? '这一界对你没有额外判定 —— 胜败只由三维与构筑形状决定。' : JUDGEMENT_DIRECTION
+  }
 }
 
 /**
@@ -133,7 +161,7 @@ export function celestialJudgementLines(
     lines.push(`境界压制:未及此界该有的境界 —— 守关者额外增伤 +${Math.round(CELESTIAL_SUPPRESS_BONUS * 100)}%`)
   }
   // 报了病因,也要给方向:两条判定各有自己的解法(一个改形状,一个抬境界)
-  if (lines.length > 0) lines.push('判定随你的厚度与境界而来 —— 换个方向而非继续堆,或再破一境,它自会退回去。')
+  if (lines.length > 0) lines.push(JUDGEMENT_DIRECTION)
   return lines
 }
 
@@ -172,10 +200,14 @@ export function worldFoeSnap(
   if (judgement.damageBonus > 0) mods.damageBonus = (mods.damageBonus ?? 0) + judgement.damageBonus
   if (judgement.damageReduction > 0) mods.damageReduction = (mods.damageReduction ?? 0) + judgement.damageReduction
   const thicken = escalation * judgement.thicken
+  // 加成来源随快照带走:expedition 把战果交给战后分析时,不必回头重建这一份判定
+  const origin = celestialFoeOrigin(judgement)
   return {
     name: shape.name,
     icon: shape.icon,
     isPlayer: false,
+    // 连战的逐场加码(escalation)也如实写进来源,不然「第三场怎么突然更凶」又成了谜
+    origin: escalation === 1 ? origin : { ...origin, ratio: origin.ratio * escalation, parts: [...origin.parts, { label: '连战加码', ratio: escalation }] },
     attack: mulN(ref.attack, shape.atkR * thicken),
     defense: mulN(ref.defense, shape.defR * thicken),
     maxHp: mulN(ref.maxHp, shape.hpR * thicken),

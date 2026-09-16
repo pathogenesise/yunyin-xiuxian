@@ -1,7 +1,7 @@
 /**
  * 历练服务 —— 历练会话 / 遭遇循环 / 战斗与事件调度
  */
-import type { AdventureSession, CombatRules, ExploreMode } from '@/types'
+import type { AdventureSession, CombatRules, ExploreMode, FoeOrigin, RegionDef } from '@/types'
 import { rng } from '@/utils/random'
 import { add, gnZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
@@ -16,7 +16,9 @@ import {
 } from '@/data/constants'
 import { mansionEventLuck } from './astronomy'
 import type { StatMods } from '@/types'
-import { makeEnemySnap, resolveCombat } from './combat'
+import { makeEnemySnap, mortalFoeOriginFromParts, resolveCombat } from './combat'
+import { petDef } from '@/data/pets'
+import type { RegionEventId } from './regionEvent'
 import { mergeRules } from './gauntlet'
 import { lifeTrialRules } from './lifeTrialService'
 import { buildPlayerSnap } from './playerSnap'
@@ -165,6 +167,49 @@ export function dangerFactorFor(
 }
 
 /**
+ * 这一场敌人的加成**逐项摊开** —— 与 dangerFactorFor 同一批输入、同一份乘法,
+ * 只是把「危地」这个笼统的数还给它的四项来源:出行方式 / 地界凶险 / 灵兽之性 / 区域事件。
+ *
+ * 总数未必等于玩家在界面上一眼看懂的东西:一个 ×1.45 的「深入探寻」与
+ * 一个 ×1.45 的「妖潮」是两件事,前者能改(换寻常游历),后者只能等。
+ */
+export function explorationFoeDanger(o: {
+  tier: number
+  mode: ExploreMode
+  regionDanger: number
+  petId: string | null
+  eventId: RegionEventId | null
+}): { total: number; origin: FoeOrigin } {
+  const modeMult = EXPLORE_MODES[o.mode].dangerMult
+  const pet = personalityEffects(o.petId)
+  const evDef = o.eventId ? regionEventDef(o.eventId) : undefined
+  const eventMult = evDef?.dangerMult ?? 1
+  const total = dangerFactorFor(modeMult, o.regionDanger, pet.dangerMult, eventMult)
+  const petName = o.petId ? petDef(o.petId)?.name : undefined
+  const origin = mortalFoeOriginFromParts(o.tier, [
+    { label: EXPLORE_MODES[o.mode].name, ratio: modeMult },
+    { label: '地界凶险', ratio: 1 + (o.regionDanger - 1) * 0.05 },
+    { label: petName ? `${petName}之性` : '灵兽之性', ratio: pet.dangerMult },
+    { label: evDef?.name ?? '区域事件', ratio: eventMult }
+  ])
+  return { total, origin }
+}
+
+/**
+ * 选地卡片上的一行敌情 —— 只含**与出行方式无关**的部分:
+ * 层级补偿(这一层该有的装备水平)与地界凶险(含当前的区域事件)。
+ * 出行方式与灵兽之性等到出行那一刻再摊开(那时玩家才做得了选择)。
+ */
+export function regionFoeOrigin(region: RegionDef): FoeOrigin {
+  const ev = currentRegionEvent(region.id)
+  const evDef = ev ? regionEventDef(ev.eventId) : undefined
+  return mortalFoeOriginFromParts(region.tier, [
+    { label: '地界凶险', ratio: 1 + (region.danger - 1) * 0.05 },
+    { label: evDef?.name ?? '区域事件', ratio: evDef?.dangerMult ?? 1 }
+  ])
+}
+
+/**
  * 历练战斗规则 —— 在线/离线唯一实现(与 dangerFactorFor 同一条判据:HYP-015,
  * 同一件事两处算法必漏一处,抽成一个函数)。道途规则 × 本世逆旅契。
  * 从前只有在线合并逆旅契,离线结算(普通战/boss战)只带 currentDaoRules,
@@ -217,13 +262,17 @@ function runBattle(now: number): void {
   }
 
   // Phase 31 S4:灵兽性格修正危险(好战更高,谨慎更低)
-  const petEff = personalityEffects(player.petId)
-  // Phase 31 A2:区域事件修正危险(妖潮更险)
   const regEv = currentRegionEvent(region.id)
-  const regEventDanger = regEv ? (regionEventDef(regEv.eventId)?.dangerMult ?? 1) : 1
-  const dangerFactor = dangerFactorFor(modeDef.dangerMult, region.danger, petEff.dangerMult, regEventDanger)
+  // 危险因子与它的来源说明书一次算出来:两处各乘一遍,迟早有一个悄悄变了
+  const { total: dangerFactor, origin: foeOrigin } = explorationFoeDanger({
+    tier: region.tier,
+    mode: s.mode,
+    regionDanger: region.danger,
+    petId: player.petId,
+    eventId: regEv?.eventId ?? null
+  })
   const pSnap = buildPlayerSnap()
-  const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor)
+  const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor, foeOrigin)
   // 道途在世,一切战斗皆循此规则
   // 逆旅契:本世签下的契对每一场历练战斗生效(道果的非效率出口)
   const result = resolveCombat(pSnap, eSnap, rng, explorationRules())

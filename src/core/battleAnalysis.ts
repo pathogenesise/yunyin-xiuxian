@@ -2,7 +2,7 @@
  * 战斗分析(Phase 18)—— 从战斗遥测推导「为什么输 / 表现如何」
  * 原则:解释原因、给方向,不替玩家做决定
  */
-import type { CombatResult, CombatSideStats, GNum } from '@/types'
+import type { CombatResult, CombatSideStats, FoeOrigin, GNum } from '@/types'
 import { ratio } from '@/utils/gnum'
 import { formatGN, formatPercent } from '@/utils/format'
 import { BUILD_STYLES } from './buildDetect'
@@ -29,6 +29,57 @@ const LONG_FIGHT_ROUNDS = 30
 const LOW_HEAL_SHARE = 0.12
 const STUN_WARN = 3
 
+/** 有没有账可报 —— 也含「比这一层该有的还薄」这种反向的账 */
+function hasAccount(o: FoeOrigin): boolean {
+  return o.parts.some(p => p.ratio !== 1) || o.damageBonus > 0 || o.damageReduction > 0
+}
+
+/** 敌人是不是真的占了便宜(更厚、或增伤减伤不为零)—— 决定要不要在败因里点名 */
+function hasEdge(o: FoeOrigin): boolean {
+  return o.ratio > 1 || o.damageBonus > 0 || o.damageReduction > 0
+}
+
+/** 倍数用两位小数:1.113^20 这种数写成 1.9 与写成 1.87 对玩家是两回事 */
+const ratioText = (n: number): string => `×${(Math.round(n * 100) / 100).toFixed(2)}`
+
+/** 各项来源摊成一行:「层级补偿 ×1.90 · 地界凶险 ×1.15」 */
+export function foeOriginPartsText(origin: FoeOrigin): string {
+  return origin.parts
+    .filter(p => p.ratio !== 1)
+    .map(p => `${p.label} ${ratioText(p.ratio)}`)
+    .join(' · ')
+}
+
+/**
+ * 敌人加成的账目 —— 哪几件事、各乘了多少。
+ *
+ * 与「先手判定」同一条纪律:把式子摊开,而不是给一句「敌人很强」。
+ * 空数组表示这只敌人身上没有额外加成(中性),调用方据此决定要不要占字数。
+ */
+export function foeOriginLines(origin: FoeOrigin | undefined): string[] {
+  if (!origin || !hasAccount(origin)) return []
+  const lines: string[] = []
+  for (const p of origin.parts) {
+    if (p.ratio === 1) continue
+    lines.push(`${p.label} ${ratioText(p.ratio)}`)
+  }
+  if (origin.damageBonus > 0) lines.push(`${origin.label} 增伤 +${Math.round(origin.damageBonus * 100)}%`)
+  if (origin.damageReduction > 0) lines.push(`${origin.label} 减伤 +${Math.round(origin.damageReduction * 100)}%`)
+  if (origin.note) lines.push(origin.note)
+  return lines.length > 0 ? lines : [`${origin.label} ${ratioText(origin.ratio)}`]
+}
+
+/** 一行读数:「三维 ×1.87(层级补偿 ×1.90 · 危地 ×0.98)」 */
+export function foeOriginRow(origin: FoeOrigin): { label: string; value: string } {
+  if (!hasAccount(origin)) return { label: '敌之加成', value: '无' }
+  const detail = foeOriginPartsText(origin)
+  const extras: string[] = []
+  if (origin.damageBonus > 0) extras.push(`增伤 +${Math.round(origin.damageBonus * 100)}%`)
+  if (origin.damageReduction > 0) extras.push(`减伤 +${Math.round(origin.damageReduction * 100)}%`)
+  const head = `三维 ${ratioText(origin.ratio)}${detail ? `(${detail})` : ''}`
+  return { label: '敌之加成', value: [head, ...extras].join(' · ') }
+}
+
 function share(part: GNum, whole: GNum): number {
   if (whole.m === 0) return 0
   return Math.max(0, Math.min(1, ratio(part, whole)))
@@ -43,6 +94,8 @@ export function battleDataRows(result: CombatResult): { label: string; value: st
   const rows: { label: string; value: string }[] = [
     // 先手放第一行:它决定了整场的节奏,而且是一条**阈值**判定 —— 两个数摆出来,玩家才知道自己差在哪
     ...(result.firstMove ? [firstMoveRow(result)] : []),
+    // 敌之加成紧随其后:它解释的是「这一场为什么比上一场难」,与先手同属"战前就定下的数"
+    ...(result.foeOrigin ? [foeOriginRow(result.foeOrigin)] : []),
     { label: '总输出', value: formatGN(p.dealt) },
     { label: '总承伤', value: formatGN(p.taken) },
     { label: '真伤承伤占比', value: formatPercent(share(p.pierceTaken, p.taken)) },
@@ -100,6 +153,21 @@ function firstMoveFinding(result: CombatResult): AnalysisFinding[] {
       styleHints: ['fengmang']
     }
   ]
+}
+
+/**
+ * 敌人加成的归因 —— 败北时把「它凭什么这么难」摊开讲。
+ *
+ * 这解释的是**战前就定下的数**,不是临场失手:故与先手判定同列在最前,
+ * 且**只在真有加成时出现**(中性判定不占字数,更不该替玩家的败因背锅)。
+ */
+function foeOriginFinding(result: CombatResult): AnalysisFinding[] {
+  const o = result.foeOrigin
+  // 只报「敌人占了便宜」的那一半:比该有的还薄是好事,不必占败因的字数
+  if (!o || !hasEdge(o)) return []
+  const lines = foeOriginLines(o)
+  if (lines.length === 0) return []
+  return [{ text: `敌之加成(${o.label}):${lines.join(';')}`, styleHints: [] }]
 }
 
 function defeatFindings(p: CombatSideStats, maxHpProxy: GNum, rounds: number): AnalysisFinding[] {
@@ -160,7 +228,7 @@ export function analyzeBattle(result: CombatResult, currentStyleId: string | nul
   // 用 taken+healed 近似血量池(承伤超过血池才落败)
   const p = s.player
   // 被抢先排在最前:它解释的是「整场节奏为什么在对方手里」,比逐项伤害占比更靠前
-  const findings = [...firstMoveFinding(result), ...defeatFindings(p, p.taken, result.rounds)]
+  const findings = [...foeOriginFinding(result), ...firstMoveFinding(result), ...defeatFindings(p, p.taken, result.rounds)]
   const hintCount = new Map<string, number>()
   for (const f of findings) {
     f.styleHints.forEach((id, idx) => {

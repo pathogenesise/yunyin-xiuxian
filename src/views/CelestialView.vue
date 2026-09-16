@@ -826,6 +826,8 @@
     type StepOutcome
   } from '@/core/expedition'
   import { detectBuild } from '@/core/buildDetect'
+  import { foeOriginLines } from '@/core/battleAnalysis'
+  import type { CombatantSnap } from '@/types'
   import { BUILD_PROFILES } from '@/core/buildSim'
   import { swordPurity } from '@/core/daoDepth'
   import {
@@ -1015,16 +1017,35 @@
     title: string
     cleared: boolean
     markText: string
-    rows: { foeName: string; win: boolean; rounds: number; hpLeftPct: number }[]
+    /** 逐场摘要;`foe` 带着那一场敌人的加成来源(旧记录可能没有) */
+    rows: { foeName: string; win: boolean; rounds: number; hpLeftPct: number; foe?: CombatantSnap }[]
     reward: number
     judgementLines?: string[]
   }
   const expedition = ref<ReportView | null>(null)
 
+  /**
+   * 开战报 —— 判定归因只此一处。
+   *
+   * 远征的文案带玩家自己的构筑厚度(见 core/gauntlet.celestialJudgementLines),
+   * 试炼/变数/忆战/重写/挑战没有那一份,就照敌人快照上的来源说明讲
+   * (worldFoeSnap 一路带下来)。两条路给的都是同一件事:这一战为什么变难。
+   */
+  function openReport(o: {
+    title: string
+    cleared: boolean
+    markText: string
+    rows: ReportView['rows']
+    reward: number
+    judgementLines?: string[]
+  }): void {
+    expedition.value = { ...o, judgementLines: o.judgementLines ?? foeOriginLines(o.rows[0]?.foe?.origin) }
+  }
+
   function handleOutcome(outcome: StepOutcome | null, title: string): void {
     if (!outcome || outcome.type === 'advance') return
     const rows = outcome.finalRows ?? [outcome.row]
-    expedition.value = {
+    openReport({
       title,
       cleared: outcome.type === 'cleared',
       markText:
@@ -1036,7 +1057,7 @@
       rows,
       reward: outcome.rewardDaoSource,
       judgementLines: outcome.judgementLines
-    }
+    })
   }
 
   function depart(): void {
@@ -1081,26 +1102,26 @@
     const result = challengeMutation(mutationDraw.value)
     if (!result) return
     mutationDraw.value = []
-    expedition.value = {
+    openReport({
       title: '天道变数',
       cleared: result.report.cleared,
       markText: result.report.cleared ? `六战全捷,共 ${result.report.totalRounds} 回合` : `止步第 ${result.report.fightsWon + 1} 战`,
       rows: result.report.rows,
       reward: result.rewardDaoSource
-    }
+    })
   }
 
   // ---- 试炼 ----
   function goTrial(id: string): void {
     const result = challengeTrial(id)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: result.rewardDaoSource
-      }
+      })
     }
   }
 
@@ -1108,13 +1129,13 @@
   function goReplay(mark: (typeof endgame.marks)[number]): void {
     const result = replayMark(mark)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: 0
-      }
+      })
     }
   }
 
@@ -1124,13 +1145,13 @@
   function goRewrite(mark: (typeof endgame.marks)[number]): void {
     const result = rewriteMark(mark)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: 0
-      }
+      })
     }
   }
   function doRewrite(mark: (typeof endgame.marks)[number]): void {
@@ -1177,13 +1198,13 @@
     const result = undertakeChallenge(draft.value, challengeVerdict.value)
     challengeVerdict.value = null
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: result.rewardDaoSource
-      }
+      })
     }
   }
 
@@ -1204,13 +1225,13 @@
     if (!daily.value) return
     const result = undertakeDaily(daily.value)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: result.rewardDaoSource
-      }
+      })
     }
   }
 

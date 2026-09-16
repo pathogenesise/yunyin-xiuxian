@@ -88,6 +88,13 @@
                 <span :class="row.def.danger >= 4 ? 'text-cinnabar' : ''">{{ DANGER_NAMES[row.def.danger] }}</span>
                 <span v-if="row.tooHard" class="ml-1 text-cinnabar">· 境界尚浅,恐有性命之忧</span>
               </p>
+              <!--
+                敌人的「层级补偿」此前只落在数值里:玩家看到的只是一只小怪,打起来却像换了一身装备。
+                此处与战后归因同源(regionFoeOrigin)—— 出行方式与灵兽之性那一半在出行弹窗里摊开。
+              -->
+              <p v-if="row.foeOrigin.parts.length" data-region-foe-origin class="mt-0.5 text-[10px] leading-relaxed text-ink-ghost">
+                此地之敌:{{ foeOriginPartsText(row.foeOrigin) }}
+              </p>
             </div>
             <!--
               已通关的地界仍可再历 —— 「已靖」只是标记,不是封路。
@@ -244,10 +251,15 @@
             <span class="font-kai text-[14px] tracking-widest text-ink">{{ EXPLORE_MODES[m.id].name }}</span>
             <span class="ml-2 text-[11px]" :class="m.id === 'risky' ? 'text-cinnabar' : 'text-ink-faint'">{{ m.risk }}</span>
           </span>
+          <!--
+            收益一直是亮着的,危险却是暗的:三档里敌人差了 2.1 倍,玩家却只看得到钱。
+            两个数并排摆出来,「要不要涉险」才是个可算的账。
+          -->
           <span class="text-right text-[11px] text-ink-faint tabular">
             {{ formatDuration(EXPLORE_MODES[m.id].durationSec) }}
             <br />
-            收益 ×{{ EXPLORE_MODES[m.id].rewardMult }}
+            收益 ×{{ EXPLORE_MODES[m.id].rewardMult }} · 遇险
+            <span :class="EXPLORE_MODES[m.id].dangerMult > 1 ? 'text-cinnabar' : ''">×{{ EXPLORE_MODES[m.id].dangerMult }}</span>
           </span>
         </button>
       </div>
@@ -272,7 +284,8 @@
   import { isRetreating } from '@/core/earlyGameService'
   import { REALMS } from '@/data/realms'
   import { EXPLORE_MODES } from '@/data/constants'
-  import { startExploration } from '@/core/exploration'
+  import { regionFoeOrigin, startExploration } from '@/core/exploration'
+  import { foeOriginPartsText } from '@/core/battleAnalysis'
   import { SUPPRESS_THRESHOLDS, suppressRateFor, suppressionProgress } from '@/core/suppress'
   import { REVIVE_AFTER_HOURS, hoursUntilRevive, regionRecallFor, prosperityName, isReviving, prosperityYieldMult } from '@/core/worldMemory'
   import { mulN } from '@/utils/gnum'
@@ -353,6 +366,8 @@
         /** 距妖气复聚还剩几小时(未镇压为 0) */
         reviveInHours: suppressed ? hoursUntilRevive(player.suppressedSince[r.id]) : 0,
         tooHard: r.minRealm > player.major,
+        /** 此地之敌的加成来源(层级补偿 × 地界凶险;出行方式那一档另算) */
+        foeOrigin: regionFoeOrigin(r),
         // 第一层信息:只保留最强的两个生态标签
         chips: ecologyChips(eco).slice(0, 2),
         adaptation: currentBuild.value ? detectionAdaptation(currentBuild.value, eco) : null
