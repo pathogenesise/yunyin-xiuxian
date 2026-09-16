@@ -540,6 +540,13 @@
             </span>
             <span>预计可行流派 {{ prepForecast.viableStyles }}/{{ BUILD_PROFILES.length }}</span>
           </p>
+          <!--
+            敌人一侧的判定(道之理解 / 境界压制):这是"为什么这一界对我更难"的答案。
+            判定的文案与数值同源(core/gauntlet.celestialJudgementLines),界面不再另编一套说法。
+          -->
+          <p v-for="(line, i) in prepForecast.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-cinnabar/80">
+            {{ line }}
+          </p>
         </div>
         <p v-if="prepPreview" class="mt-2 text-[10px] leading-relaxed text-violet-ink">
           天机透视 · 入界之敌:{{ prepPreview.skillLines.join(' / ') }} —— {{ prepPreview.winText }}
@@ -576,6 +583,16 @@
               第{{ i + 1 }}战 · {{ row.foeName }} · {{ row.win ? '胜' : '负' }}
             </span>
             <span class="tabular text-[11px] text-ink-faint">{{ row.rounds }}回合 · 余血{{ Math.round(row.hpLeftPct * 100) }}%</span>
+          </p>
+        </div>
+        <!--
+          输也要输得明白:敌人一侧的判定(道之理解 / 境界压制)与战前预估同源,
+          连同"怎么办"一并写在这里 —— 战报不是判决书,是下一次出发的依据。
+        -->
+        <div v-if="expedition.judgementLines?.length" class="mt-2 rounded-md bg-cinnabar/5 px-3 py-2">
+          <p class="font-kai text-[11px] tracking-widest text-cinnabar/80">此战之判</p>
+          <p v-for="(line, i) in expedition.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">
+            {{ line }}
           </p>
         </div>
         <p v-if="expedition.reward > 0" class="mt-2 text-[12px] text-gold-ink tabular">
@@ -1000,6 +1017,7 @@
     markText: string
     rows: { foeName: string; win: boolean; rounds: number; hpLeftPct: number }[]
     reward: number
+    judgementLines?: string[]
   }
   const expedition = ref<ReportView | null>(null)
 
@@ -1016,7 +1034,8 @@
             ? `契约崩碎于第 ${rows.length} 战`
             : `止步第 ${rows.length} 战`,
       rows,
-      reward: outcome.rewardDaoSource
+      reward: outcome.rewardDaoSource,
+      judgementLines: outcome.judgementLines
     }
   }
 

@@ -11,7 +11,15 @@ import { MUTATORS } from '@/data/mutators'
 import { EXPEDITION_GUARDIAN_LAYER, EXPEDITION_ROUTE_LAYERS, MUTATION_FOES } from '@/data/endgame'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
-import { celestialFoeCaliber, celestialJudgement, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import {
+  celestialFoeCaliber,
+  celestialJudgement,
+  celestialJudgementLines,
+  mergeRules,
+  runGauntlet,
+  worldFoeSnap,
+  type GauntletReport
+} from './gauntlet'
 import { VOID_ANCHOR_TIER } from './worldGen'
 import { MAX_MAJOR } from '@/data/realms'
 import { resolveCombat, sampleWinRate } from './combat'
@@ -34,6 +42,14 @@ export interface StepOutcome {
   rewardDaoSource: number
   /** 远征终局时附全程战报(此刻 store 中的 run 已清空) */
   finalRows?: { foeName: string; win: boolean; rounds: number; hpLeftPct: number }[]
+  /** 敌人一侧的判定(道之理解 / 境界压制):终局时附上,输也要输得明白 */
+  judgementLines?: string[]
+}
+
+/** 本界对**此刻的你**的判定文案(战报与战前预估同源,见 gauntlet.celestialJudgementLines) */
+function judgementLinesOf(world: CelestialWorldDef): string[] {
+  const player = usePlayerStore()
+  return celestialJudgementLines(player.celestialStats.mods, player.major, world.anchorTier)
 }
 
 function chainRules(...list: (CombatRules | undefined)[]): CombatRules | undefined {
@@ -171,12 +187,12 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   if (!result.win) {
     endgame.worldRun = next
     settle(next, world, false, false)
-    return { type: 'lost', row, rewardDaoSource: 0, finalRows: next.rows }
+    return { type: 'lost', row, rewardDaoSource: 0, finalRows: next.rows, judgementLines: judgementLinesOf(world) }
   }
   if (pact?.special === 'endHp80' && result.playerHpPct < 0.8) {
     endgame.worldRun = next
     settle(next, world, false, true)
-    return { type: 'pactBroken', row, rewardDaoSource: 0, finalRows: next.rows }
+    return { type: 'pactBroken', row, rewardDaoSource: 0, finalRows: next.rows, judgementLines: judgementLinesOf(world) }
   }
   next.winStacks += 1
   if (node) next.bonus += node.bonus
@@ -185,7 +201,7 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   if (wasGuardian) {
     endgame.worldRun = next
     const reward = settle(next, world, true, false)
-    return { type: 'cleared', row, rewardDaoSource: reward, finalRows: next.rows }
+    return { type: 'cleared', row, rewardDaoSource: reward, finalRows: next.rows, judgementLines: judgementLinesOf(world) }
   }
   next.layer = node ? run.layer + 1 : 0
   endgame.worldRun = next
@@ -451,6 +467,8 @@ function voidHistory(): HistoryEntry[] {
 export interface ExpeditionForecast {
   /** 玩家当前构筑的整程胜算档 */
   difficulty: string
+  /** 敌人一侧的判定(道之理解 / 境界压制)—— 战前就该看得见,不然玩家只能靠猜 */
+  judgementLines: string[]
   /** 六大标准流派中可行的数目(≥35% 通率) */
   viableStyles: number
   /** 当前构筑相性(1~5 星) */
@@ -514,6 +532,7 @@ export function forecastExpedition(worldId: string, pactId: string | null, gateI
   const starN = pRate >= 0.85 ? 5 : pRate >= 0.6 ? 4 : pRate >= 0.4 ? 3 : pRate >= 0.15 ? 2 : 1
   return {
     difficulty: pRate >= 0.85 ? '胜券在望' : pRate >= 0.6 ? '略占上风' : pRate >= 0.4 ? '胜负各半' : pRate >= 0.15 ? '凶险' : '九死一生',
+    judgementLines: celestialJudgementLines(player.celestialStats.mods, player.major, world.anchorTier),
     viableStyles,
     stars: '★'.repeat(starN) + '☆'.repeat(5 - starN)
   }

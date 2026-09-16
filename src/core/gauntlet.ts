@@ -107,6 +107,37 @@ export function celestialJudgement(playerMods: StatMods, playerMajor: number, an
 }
 
 /**
+ * 把判定讲成人话 —— 战前要看得见,战后要说得清。
+ *
+ * 「敌人为什么比看起来更强」若是只能靠猜,玩家调不动它:他既不知道该削哪个属性,
+ * 也不知道该往哪一境走。故判定只在此处成文,战前预估与战后战报读同一份文案。
+ * 中性的判定(浅构筑且境界已到)返回空数组 —— 没有判定就不该占字数。
+ */
+export function celestialJudgementLines(
+  playerMods: StatMods,
+  playerMajor: number,
+  anchorTier: number
+): string[] {
+  const j = celestialJudgement(playerMods, playerMajor, anchorTier)
+  const lines: string[] = []
+  if (j.thicken > 1) {
+    lines.push(
+      `道之理解:你的构筑厚度 ${(modDepth(playerMods)).toFixed(1)}(基准 ${CELESTIAL_BASE_DEPTH})—— 守关者三维 ×${j.thicken.toFixed(2)}`
+    )
+  }
+  const judgeOnly = Math.min(CELESTIAL_JUDGE_CAP, (j.thicken - 1) * CELESTIAL_JUDGE_RATE)
+  if (judgeOnly > 0) {
+    lines.push(`道之理解:路数被看破 —— 守关者增伤 +${Math.round(judgeOnly * 100)}%、减伤 +${Math.round(judgeOnly * 100)}%`)
+  }
+  if (playerMajor < tierMajor(anchorTier)) {
+    lines.push(`境界压制:未及此界该有的境界 —— 守关者额外增伤 +${Math.round(CELESTIAL_SUPPRESS_BONUS * 100)}%`)
+  }
+  // 报了病因,也要给方向:两条判定各有自己的解法(一个改形状,一个抬境界)
+  if (lines.length > 0) lines.push('判定随你的厚度与境界而来 —— 换个方向而非继续堆,或再破一境,它自会退回去。')
+  return lines
+}
+
+/**
  * 天界敌人的**唯一参照口径** —— 远征 / 挑战 / 试炼 / 重写一律走它。
  *
  * 两件事一起给:敌人按**本界锚点**定标(与玩家此刻有多强无关),
