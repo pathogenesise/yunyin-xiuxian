@@ -6,9 +6,10 @@ import type { CelestialWorldDef, CombatantSnap } from '@/types'
 import { gn } from '@/utils/gnum'
 import { mulberry32, RandomService } from '@/utils/random'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
+import { MAX_MAJOR } from '@/data/realms'
 import { BUILD_PROFILES, buildSnap, type BuildProfile } from './buildSim'
 import { randomBuild } from './buildSearch'
-import { celestialDepthScale, mergeRules, runGauntlet, worldFoeSnap, type ReferenceStats } from './gauntlet'
+import { celestialJudgement, mergeRules, runGauntlet, worldFoeSnap, type ReferenceStats } from './gauntlet'
 
 /** 模拟参照属性(与 buildSim 基准一致) */
 export const SIM_REFERENCE: ReferenceStats = {
@@ -18,13 +19,18 @@ export const SIM_REFERENCE: ReferenceStats = {
 }
 
 function worldFoes(world: CelestialWorldDef, snap: CombatantSnap): CombatantSnap[] {
-  // 词条对称与实战同口径:审计基准若不随被测构筑加厚,厚构筑会被高估
-  const depth = celestialDepthScale(snap.mods)
+  /**
+   * 模拟器比的是**构筑形状**(它在同一份参照三维下横向比较不同流派),
+   * 故参照仍取 SIM_REFERENCE,不走天界锚点;但判定照实战口径算:
+   * 厚构筑会被道之理解加厚,这一点若不体现,厚构筑的胜率会被高估。
+   * 境界压制不适用(模拟里的"人"没有境界),故传 MAX_MAJOR 让它恒不触发。
+   */
+  const judgement = celestialJudgement(snap.mods, MAX_MAJOR, world.anchorTier)
   const foes: CombatantSnap[] = []
   for (let i = 0; i < world.fights - 1; i += 1) {
-    foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, SIM_REFERENCE, 1, depth))
+    foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, SIM_REFERENCE, 1, judgement))
   }
-  foes.push(worldFoeSnap(world.guardian, SIM_REFERENCE, 1, depth))
+  foes.push(worldFoeSnap(world.guardian, SIM_REFERENCE, 1, judgement))
   return foes
 }
 

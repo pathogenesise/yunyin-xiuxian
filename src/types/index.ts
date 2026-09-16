@@ -827,6 +827,11 @@ export interface CelestialWorldDef {
   id: string
   name: string
   seal: string
+  /**
+   * 本界锚点层级 —— 敌人按这条层级曲线的绝对三维定标(见 core/gauntlet.celestialAnchor)。
+   * 它同时是「这一界该有的境界」:未及者受境界压制,已过者自然是压着打。
+   */
+  anchorTier: number
   desc: string
   ruleText: string[]
   rules: CombatRules
@@ -869,6 +874,8 @@ export interface TrialDef {
   id: string
   name: string
   seal: string
+  /** 同 CelestialWorldDef.anchorTier:本试炼的锚点层级 */
+  anchorTier: number
   desc: string
   ruleText: string[]
   rules: CombatRules

@@ -11,7 +11,9 @@ import { MUTATORS } from '@/data/mutators'
 import { EXPEDITION_GUARDIAN_LAYER, EXPEDITION_ROUTE_LAYERS, MUTATION_FOES } from '@/data/endgame'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
-import { celestialFoeCaliber, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import { celestialFoeCaliber, celestialJudgement, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import { VOID_ANCHOR_TIER } from './worldGen'
+import { MAX_MAJOR } from '@/data/realms'
 import { resolveCombat, sampleWinRate } from './combat'
 import { modOf } from './statsCalc'
 import { SLAUGHTER_PER_WIN, SWORD_PER_WIN, slaughterSpeedBonus, stackedMods } from './daoDepth'
@@ -150,8 +152,8 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   const endgame = useEndgameStore()
   const player = usePlayerStore()
   // 参照与加厚口径由 gauntlet 统一给出:玩家按 celestialStats 出手,敌人就必须按同一份生成
-  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
-  const foe = worldFoeSnap(foeShape, ref, 1, depth)
+  const { ref, judgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, world.anchorTier)
+  const foe = worldFoeSnap(foeShape, ref, 1, judgement)
   const baseRules = expeditionRules(world, run, node)
   const startCap = baseRules?.playerStartHpPct ?? 1
   const fightRules = withCarriedHp(baseRules, run)
@@ -312,9 +314,10 @@ export function previewFight(
   if (endgame.daoPath !== 'fate') return null
   const run = endgame.worldRun
   const world = run ? resolveWorld(run.worldId) : prep ? resolveWorld(prep.worldId) : undefined
+  if (!world) return null
   const player = usePlayerStore()
-  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
-  const foe = worldFoeSnap(foeShape, ref, 1, depth)
+  const { ref, judgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, world.anchorTier)
+  const foe = worldFoeSnap(foeShape, ref, 1, judgement)
   const skillLines = foeShape.skills.map(sk => {
     const tag = sk.effect ? (EFFECT_WORDS[sk.effect] ?? sk.effect) : '重击'
     return `【${sk.name}】${tag} · ${RATE_WORDS(sk.rate)} · 威力 ${sk.mult.toFixed(1)} 倍`
@@ -381,10 +384,11 @@ export function challengeMutation(mutatorIds: string[]): MutationResult | null {
   const muts = mutatorIds.map(id => MUTATORS.find(m => m.id === id)).filter(m => m !== undefined)
   const rules = chainRules(currentDaoRules(), ...muts.map(m => m!.rules))
   const player = usePlayerStore()
-  const { ref, depth } = celestialFoeCaliber(player.celestialStats)
+  // 变数连战不属于任何一界:它站在阶梯最深处(与变数天界的锚点同档)
+  const { ref, judgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, VOID_ANCHOR_TIER)
   const foes = []
   for (let i = 0; i < MUTATION_FIGHTS; i += 1) {
-    foes.push(worldFoeSnap(MUTATION_FOES[i % MUTATION_FOES.length]!, ref, Math.pow(MUTATION_ESCALATION, i), depth))
+    foes.push(worldFoeSnap(MUTATION_FOES[i % MUTATION_FOES.length]!, ref, Math.pow(MUTATION_ESCALATION, i), judgement))
   }
   const report = runGauntlet(buildPlayerSnap(true), foes, rules, 0.4, rng, { perWinPlayerMods: perWinMods() })
   let reward = 0
@@ -469,7 +473,7 @@ export function forecastExpedition(worldId: string, pactId: string | null, gateI
   // 玩家构筑:含孤剑/逆命的快照修饰,敌人按玩家等比生成
   const player = usePlayerStore()
   // 预估与实战同源:同一份参照、同一个加厚系数(见 celestialFoeCaliber 的注释)
-  const { ref: pRef, depth: pDepth } = celestialFoeCaliber(player.celestialStats)
+  const { ref: pRef, judgement: pJudgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, world.anchorTier)
   let snap = buildPlayerSnap(true)
   if (pact?.special === 'soloArtifact') snap = { ...snap, artifacts: (snap.artifacts ?? []).slice(0, 1) }
   if (pact?.special === 'sealCore') {
@@ -477,23 +481,32 @@ export function forecastExpedition(worldId: string, pactId: string | null, gateI
     if (sealed) snap = { ...snap, mods: stackedMods(snap.mods, sealed, 1) }
   }
   const playerFoes: CombatantSnap[] = []
-  for (let i = 0; i < world.fights - 1; i += 1) playerFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, pRef, 1, pDepth))
-  playerFoes.push(worldFoeSnap(world.guardian, pRef, 1, pDepth))
+  for (let i = 0; i < world.fights - 1; i += 1) playerFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, pRef, 1, pJudgement))
+  playerFoes.push(worldFoeSnap(world.guardian, pRef, 1, pJudgement))
   let clears = 0
   for (let i = 0; i < 8; i += 1) {
     if (runGauntlet(snap, playerFoes, rules, world.healBetweenPct, seededRng, opts).cleared) clears += 1
   }
   const pRate = clears / 8
 
-  // 六大标准流派的可行数(标准模拟空间)
-  const simFoes: CombatantSnap[] = []
-  for (let i = 0; i < world.fights - 1; i += 1) simFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, SIM_REFERENCE))
-  simFoes.push(worldFoeSnap(world.guardian, SIM_REFERENCE))
+  /**
+   * 六大标准流派的可行数(标准模拟空间)。
+   *
+   * 参照取 SIM_REFERENCE —— 这一项比的是**构筑形状**(同一份三维下,哪些流派打得动),
+   * 不是绝对强度,故不走本界锚点。但判定要照实战口径算:厚构筑会被道之理解加厚,
+   * 少了它,厚流派在这一栏会被高估。
+   */
   let viableStyles = 0
   for (const profile of BUILD_PROFILES) {
+    const styleSnap = buildSnap(profile)
+    const styleJudgement = celestialJudgement(styleSnap.mods, MAX_MAJOR, world.anchorTier)
+    const simFoes: CombatantSnap[] = []
+    for (let i = 0; i < world.fights - 1; i += 1)
+      simFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, SIM_REFERENCE, 1, styleJudgement))
+    simFoes.push(worldFoeSnap(world.guardian, SIM_REFERENCE, 1, styleJudgement))
     let wins = 0
     for (let i = 0; i < 5; i += 1) {
-      if (runGauntlet(buildSnap(profile), simFoes, rules, world.healBetweenPct, seededRng, opts).cleared) wins += 1
+      if (runGauntlet(styleSnap, simFoes, rules, world.healBetweenPct, seededRng, opts).cleared) wins += 1
     }
     if (wins / 5 >= 0.4) viableStyles += 1
   }

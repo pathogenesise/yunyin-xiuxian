@@ -14,7 +14,6 @@ import { mentorDef } from '@/data/mentors'
 import { talentDef } from '@/data/talents'
 import { baseCultPerSec, baseQiRegen, expRequirement, qiCap } from '@/core/formulas'
 import { computeFinalStats, modOf } from '@/core/statsCalc'
-import { forgeSoul } from '@/core/gauntlet'
 import { todayWeather } from '@/core/weather'
 import { readingFromState, readingMods } from '@/core/divination'
 import { asFiniteNumber, asStringArray } from '@/utils/saveShape'
@@ -249,15 +248,8 @@ export const usePlayerStore = defineStore(
           '命格',
           ...reincarnation.value.talents.map(id => `天赋·${talentDef(id)?.name ?? id}`)
         ],
-        /**
-         * 天界不认凡器的**平铺三维**。
-         *
-         * 上面那一路 mods 已经换成器魂(或凡器化尘后的「形意」),但平铺的攻防血
-         * 从前照样带上来 —— 实测满装时玩家天界攻击比裸装高 0.07%,也就是
-         * 「凡器在天界被抹平」这句承诺上的最后一道缝(ISS-194)。
-         * 器魂给的是路数与百分比,三维本就该归零:天界的战力只能来自器魂与自身构筑。
-         */
-        equipFlats: { attack: gnZero(), defense: gnZero(), maxHp: gnZero() },
+        /** 凡界的平铺三维:**装备给的攻防血就是从这里进来的**(见 core/statsCalc) */
+        equipFlats: inventory.equipFlats,
         daoFruit: reincarnation.value.daoFruit,
         qiRich: qiRich.value
       })
@@ -274,13 +266,24 @@ export const usePlayerStore = defineStore(
      */
     const celestialStats = computed<FinalStats>(() => {
       const endgame = useEndgameStore()
-      const equipSide = endgame.activeSouls.length > 0 ? endgame.soulMods : forgeSoul(inventory.equipMods)
       return computeFinalStats({
         major: major.value,
         sub: sub.value,
         linggenMult: linggen.value?.growthMult ?? 1,
         modSources: [
-          equipSide,
+          /**
+           * 天界这一侧:**凡界装备照常作数**(词条与平铺三维都算),器魂是**叠加**上去的。
+           *
+           * 从前这里是二选一:凝了器魂就用器魂替换掉凡器,没凝就把凡器词条压到容量。
+           * 那套做法把玩家在天界的绝对强度抹平了 —— 一身神品与一身凡品打同一个守关者,
+           * 结果一模一样,基础属性在天界等于不存在。
+           *
+           * 现在改回来:攻防血到哪儿都是最核心的属性,一切额外判定都**建立在它之上**
+           * (天界的差别落在敌人一侧:道之理解会看破你的厚度,境界压制会对低境者增伤 ——
+           * 见 core/gauntlet.celestialJudgement)。
+           */
+          inventory.equipMods,
+          endgame.activeSouls.length > 0 ? endgame.soulMods : {},
           cultivation.gongfaMods,
           cultivation.buffMods,
           dongfu.buildingMods,
@@ -294,7 +297,8 @@ export const usePlayerStore = defineStore(
           ...talentMods.value
         ],
         sourceNames: [
-          useEndgameStore().activeSouls.length > 0 ? '器魂' : '凡器形意',
+          '凡界装备',
+          '器魂',
           '功法',
           '丹药与增益',
           '洞府建筑',
@@ -307,6 +311,7 @@ export const usePlayerStore = defineStore(
           '命格',
           ...reincarnation.value.talents.map(id => `天赋·${talentDef(id)?.name ?? id}`)
         ],
+        /** 平铺三维也照常作数:它就是「基础属性」本身 */
         equipFlats: inventory.equipFlats,
         daoFruit: reincarnation.value.daoFruit,
         qiRich: qiRich.value

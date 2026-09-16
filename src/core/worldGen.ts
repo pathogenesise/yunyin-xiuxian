@@ -12,6 +12,9 @@ import { BUILD_PROFILES, buildSnap } from './buildSim'
 import { worldClearRate } from './celestialSim'
 import { budgetOfRules, WORLD_BUDGET_CAP } from './ruleBudget'
 
+/** 变数天界的锚点层级:阶梯最深处(见 types 的 CelestialWorldDef.anchorTier) */
+export const VOID_ANCHOR_TIER = 32
+
 const NAME_HEADS = ['玄冥', '赤霄', '雷狱', '幽荒', '碧落', '鎏金', '皓月', '烬余', '沉星', '孤峰']
 const NAME_TAILS = ['天', '渊', '墟', '穹', '泽', '狱']
 const SEALS = ['虚', '幻', '玄', '冥', '溟', '荒']
@@ -241,6 +244,8 @@ function generateCandidate(seed: number): CelestialWorldDef | null {
     id: 'void',
     name,
     seal: pick(rng, SEALS),
+    // 变数织成的天界站在阶梯最深处:比无相天更深一档(玩家自己改规则,敌人也就照着最深的一界定标)
+    anchorTier: VOID_ANCHOR_TIER,
     desc: `此乃「${identity}」之界,天道以变数织成。`,
     ruleText: picked.map(m => `${m.name}:${m.text}`),
     rules,

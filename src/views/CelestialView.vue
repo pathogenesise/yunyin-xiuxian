@@ -177,6 +177,15 @@
                 </span>
                 <span class="ml-auto tabular text-[11px] text-ink-faint">入界+{{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重+界主</span>
               </p>
+              <!--
+                这一界「该有的境界」:敌人按本界锚点层级定标(见 gauntlet.celestialAnchor),
+                未至此境者会被**境界压制**(守关者额外增伤)。名字从境界表取,不手写 ——
+                哪天梯子挪了,这句自己跟上。
+              -->
+              <p class="mt-0.5 text-[10px]" :class="player.major < anchorMajorOf(world.anchorTier) ? 'text-cinnabar/80' : 'text-ink-ghost'">
+                此界宜 {{ REALMS[anchorMajorOf(world.anchorTier)]?.name ?? '' }} 及以上
+                <template v-if="player.major < anchorMajorOf(world.anchorTier)"> · 你尚在此境之下,受境界压制</template>
+              </p>
               <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{{ world.desc }}</p>
               <p class="mt-1 flex flex-wrap gap-x-3 text-[10px] text-violet-ink">
                 <span v-for="(r, i) in world.ruleText" :key="i">{{ r }}</span>
@@ -750,6 +759,8 @@
   import { useInventoryStore } from '@/stores/inventory'
   import { useEndgameStore } from '@/stores/endgame'
   import { SOUL_SLOTS } from '@/data/souls'
+  import { REALMS } from '@/data/realms'
+  import { tierMajor } from '@/core/formulas'
   import {
     CELESTIAL_WORLDS,
     DAO_PATHS,
@@ -828,6 +839,11 @@
 
   const resources = useResourcesStore()
   const player = usePlayerStore()
+
+  /** 某界的锚点层级落在哪一个境界 —— 界面上「此界宜 X 及以上」用它,不在模板里手写境界名 */
+  function anchorMajorOf(anchorTier: number): number {
+    return tierMajor(anchorTier)
+  }
   const inventory = useInventoryStore()
   const endgame = useEndgameStore()
 

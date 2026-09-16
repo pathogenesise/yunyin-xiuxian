@@ -21,13 +21,13 @@ import {
   trialDef,
   type FurnaceRate
 } from '@/data/endgame'
-import { WORLD_BREAK_MAJOR } from '@/data/realms'
+import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { stoneByTier } from './formulas'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
 import { SWORD_PER_WIN, SLAUGHTER_PER_WIN } from './daoDepth'
 import { recordMilestone, trackClearRecords } from './identity'
-import { celestialDepthScale, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import { celestialJudgement, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useEndgameStore } from '@/stores/endgame'
@@ -244,14 +244,14 @@ export function replayMark(mark: DaoMark): ExpeditionResult | null {
   const snap = snapFromReplay('当年的你', r)
   const stats = { attack: r.attack, defense: r.defense, maxHp: r.maxHp }
   // 词条对称按当年的构筑深度,与三维同口径——忆战要还原的是当年那一局
-  const depth = celestialDepthScale(snap.mods)
+  const judgement = celestialJudgement(snap.mods, MAX_MAJOR, (world ?? trial)!.anchorTier)
   const foes = []
   if (world) {
-    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, stats, 1, depth))
-    foes.push(worldFoeSnap(world.guardian, stats, 1, depth))
+    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, stats, 1, judgement))
+    foes.push(worldFoeSnap(world.guardian, stats, 1, judgement))
   } else if (trial) {
     for (let i = 0; i < trial.fights; i += 1) {
-      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, stats, Math.pow(trial.escalation, i), depth))
+      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, stats, Math.pow(trial.escalation, i), judgement))
     }
   }
   const target = (world ?? trial)!
@@ -289,14 +289,15 @@ export function rewriteMark(mark: DaoMark): ExpeditionResult | null {
   const player = usePlayerStore()
   const stats = player.celestialStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const depth = celestialDepthScale(stats.mods)
+  if (!trial) return null
+  const judgement = celestialJudgement(stats.mods, player.major, trial.anchorTier)
   const foes = []
   if (world) {
-    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, depth))
-    foes.push(worldFoeSnap(world.guardian, ref, 1, depth))
+    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, judgement))
+    foes.push(worldFoeSnap(world.guardian, ref, 1, judgement))
   } else if (trial) {
     for (let i = 0; i < trial.fights; i += 1)
-      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), depth))
+      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), judgement))
   }
   const target = (world ?? trial)!
   // 环境按当年(道途取今世——重写是今日之你应当年之局)
@@ -345,10 +346,11 @@ export function challengeTrial(trialId: string): ExpeditionResult | null {
   }
   const stats = player.celestialStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const depth = celestialDepthScale(stats.mods)
+  if (!trial) return null
+  const judgement = celestialJudgement(stats.mods, player.major, trial.anchorTier)
   const foes = []
   for (let i = 0; i < trial.fights; i += 1) {
-    foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), depth))
+    foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), judgement))
   }
   const rules = mergeRules(currentDaoRules(), trial.rules)
   const perWin = endgame.daoPath === 'sword' ? SWORD_PER_WIN : endgame.daoPath === 'slaughter' ? SLAUGHTER_PER_WIN : undefined

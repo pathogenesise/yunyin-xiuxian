@@ -6,6 +6,8 @@ import type { RandomService } from '@/utils/random'
 import { mulN } from '@/utils/gnum'
 import { modDepth } from './statsCalc'
 import { resolveCombat } from './combat'
+import { COMBAT_ATK_BASE, COMBAT_DEF_BASE, COMBAT_HP_BASE } from '@/data/constants'
+import { powerScale, tierMajor } from './formulas'
 
 export interface ReferenceStats {
   attack: GNum
@@ -14,43 +16,46 @@ export interface ReferenceStats {
 }
 
 /**
- * 天界器魂容量(Phase 33.3)。
+ * 天界锚点 —— 这一界「该有」的三维。
  *
- * 凡器入天界,数值尽去,只余器魂——装备贡献的词条被归一化到这个总深度,
- * 但各词条的**相对比例完全保留**。也就是说:你在人间选的构筑方向原样带进天界,
- * 变的只是「堆了多少件、堆了多高品质」不再算数。
+ * 与凡界敌人同一条纪律:**敌人按层级曲线定标,不按玩家此刻的三维定标**
+ * (凡界走 `enemyPowerAt(tier)`,这里走 powerScale(锚点层级) × 三围基数)。
+ * 于是攻防血这些**基础属性到哪儿都作数**:境界更高、装备更好、构筑更厚,
+ * 就是实打实的优势 —— 而不是被「敌人跟着你一起长」悄悄抹掉。
  *
- * 这样刷装备的价值从「累加总量」变成「调整方向」:九件神品与三件精品若方向相同,
- * 在天界是同一个构筑;想变强只能改方向,不能靠更厚的数值。
- *
- * 容量取 1.3:必须**低于**满配器魂的合计深度(三枚化真约 1.52),
- * 否则不凝器魂反而更强,系统等于没人用。
- * 语义上也说得通——不凝就是被动挨天道压制,压得更狠;
- * 凝了是主动掌控形意,略占便宜。这份便宜是「主动经营」的报酬,不是数值红利
+ * 从前那一版是把参照取成玩家自己的 celestialStats(数值成长互相抵消),
+ * 好处是「堆厚度不占便宜」,代价是玩家的基础三维在天界毫无意义:
+ * 一身神品与一身凡品打同一个守关者,结果一模一样。差别的表达权被收走了。
+ * 现在把这份表达权还给玩家,改由**敌人一侧的判定**去管堆叠(见 celestialJudgement)。
  */
-export const SOUL_CAPACITY = 1.3
-
-/** 基础三维百分比与修速:前者已由 worldFoeSnap 等比抵消,后者不参与战斗,均不入器魂 */
-const BASE_PCT_KEYS = new Set<keyof StatMods>(['attackPct', 'defensePct', 'maxHpPct', 'cultivationSpeed'])
+export function celestialAnchor(anchorTier: number): ReferenceStats {
+  const scale = powerScale(anchorTier)
+  return {
+    attack: mulN(scale, COMBAT_ATK_BASE),
+    defense: mulN(scale, COMBAT_DEF_BASE),
+    maxHp: mulN(scale, COMBAT_HP_BASE)
+  }
+}
 
 /**
- * 器魂凝炼:把装备来源的词条等比压缩到 SOUL_CAPACITY。
- * 未超出容量的原样保留(轻装玩家不受影响),超出则整体等比缩放——
- * 等比是关键,它保证「形状不变、总量归一」
+ * 天界判定层 —— 基础三维之外,敌人依据**你是什么样的人**额外做的事。
+ *
+ * 三样,都建立在攻防血之上,而不是取代它们:
+ *   一 **道之理解**:你的构筑越厚(超过基准深度),守关者越有备 —— 三维按比例加厚;
+ *   二 **增伤**:看破你的路数,打得更重;
+ *   三 **减伤**:挡得住你的路数,吃得下你的招式。
+ * 加厚与增伤减伤都设上限:判定是「让它更难缠」,不是「把你打回原点」。
  */
-export function forgeSoul(equipMods: StatMods): StatMods {
-  const depth = modDepth(equipMods)
-  if (depth <= SOUL_CAPACITY) return equipMods
-  const scale = SOUL_CAPACITY / depth
-  const out: StatMods = {}
-  for (const k in equipMods) {
-    const key = k as keyof StatMods
-    const v = equipMods[key]
-    // 只压缩正向构筑词条;负向词条(构筑代价)若一并压缩,反而是变相加强
-    out[key] = typeof v === 'number' && v > 0 && !BASE_PCT_KEYS.has(key) ? v * scale : v
-  }
-  return out
+export interface CelestialJudgement {
+  /** 三维加厚(≥1) */
+  thicken: number
+  /** 守关者增伤 */
+  damageBonus: number
+  /** 守关者减伤 */
+  damageReduction: number
 }
+
+export const NO_JUDGEMENT: CelestialJudgement = { thicken: 1, damageBonus: 0, damageReduction: 0 }
 
 /**
  * 天界词条对称基准(Phase 33.2)。
@@ -65,74 +70,84 @@ export function forgeSoul(equipMods: StatMods): StatMods {
  * 补上词条这一半后,「数值成长在天界互相抵消」才真正成立:
  * 堆得再厚也换不来碾压,胜负重新回到构筑形状本身
  */
-export const CELESTIAL_BASE_DEPTH = 2.6
 /**
- * 加厚指数。
+ * 道之理解的基准深度。
  *
- * 必须是 1.0(严格等比)。曾误设 0.85,理由是「留给玩家构筑优化的收益空间」——
- * 这个理由站不住:构筑优化的收益应当来自**形状**,不是来自**厚度**。
- * 指数 <1 时净优势 = D^(1-exp) × BASE^exp,随玩家深度 D 单调增长,
- * 等于给「堆厚度」开了后门:功法、灵脉、天赋、称号这些不受器魂约束的来源
- * (实测占真仙玩家词条深度的六成)只要堆够,就能不靠器魂直接碾过天界。
- *
- * 取 1.0 后净优势恒为 CELESTIAL_BASE_DEPTH,与玩家堆了多少完全无关——
- * 这才是「数值成长在天界互相抵消」的严格实现。
- * 注意六大标准流派深度 1.02~2.43 全在基准以下,scale 恒为 1,平衡门不受影响;
- * 加厚只对越过基准的堆叠生效,不惩罚正常构筑
+ * 六大标准流派(buildSim)的构筑深度为 1.02~2.43 —— 这一段里的堆叠属于**正常构筑**,
+ * 不触发任何判定;越过基准才叫「堆得太厚」,守关者才据此加厚与增减伤。
+ * (数值与 33.2 那一轮相同,只是它的角色从「抵消玩家三维」变成「敌人加厚」。)
  */
-export const CELESTIAL_DEPTH_EXP = 1.0
+export const CELESTIAL_BASE_DEPTH = 2.6
+/** 每超出基准一倍,守关者增伤/减伤各加这么多 */
+export const CELESTIAL_JUDGE_RATE = 0.15
+/** 增伤与减伤各自的封顶 —— 判定是让它难缠,不是把你打回原点 */
+export const CELESTIAL_JUDGE_CAP = 0.35
+/** 境界压制:未及这一界锚点境界者,守关者额外增伤 */
+export const CELESTIAL_SUPPRESS_BONUS = 0.25
 
-/** 玩家构筑深度对应的守关者加厚系数(不低于 1,浅构筑不会反被削) */
+/** 构筑深度对应的加厚系数(不低于 1,浅构筑不会反被削)—— 判定的第一样 */
 export function celestialDepthScale(playerMods: StatMods): number {
   const depth = modDepth(playerMods)
-  if (depth <= CELESTIAL_BASE_DEPTH) return 1
-  return Math.pow(depth / CELESTIAL_BASE_DEPTH, CELESTIAL_DEPTH_EXP)
+  return depth <= CELESTIAL_BASE_DEPTH ? 1 : depth / CELESTIAL_BASE_DEPTH
+}
+
+/**
+ * 这一界的判定:玩家的构筑厚度与境界,决定守关者额外做什么。
+ *
+ * @param playerMajor 玩家此刻的大境界(用于境界压制)
+ * @param anchorTier  本界锚点层级(它的境界即本界「该有的境界」)
+ */
+export function celestialJudgement(playerMods: StatMods, playerMajor: number, anchorTier: number): CelestialJudgement {
+  const thicken = celestialDepthScale(playerMods)
+  const over = thicken - 1
+  const judge = Math.min(CELESTIAL_JUDGE_CAP, over * CELESTIAL_JUDGE_RATE)
+  // 境界压制:还没走到这一界该有的境界,守关者额外增伤(规则文案里会写明)
+  const suppress = playerMajor < tierMajor(anchorTier) ? CELESTIAL_SUPPRESS_BONUS : 0
+  return { thicken, damageBonus: judge + suppress, damageReduction: judge }
 }
 
 /**
  * 天界敌人的**唯一参照口径** —— 远征 / 挑战 / 试炼 / 重写一律走它。
  *
- * 为什么必须收成一处:玩家在天界是按 `celestialStats` 打的(凡器数值已被器魂抹平,
- * 见 playerSnap 的 celestial=true),敌人若按 `finalStats`(含凡界装备)生成,
- * 就会出现「凡界装备越好,天界敌人越强,而玩家一点没变强」的倒挂 ——
- * 实测(真仙 · 赤炎天 · 同一敌人形状):
- *   凡界装备 无 → 中 → 满:玩家天界三维恒为 7.53e7,
- *   而敌人攻击按凡界口径从 5.57e7 涨到 7.17e7(+29%);
- *   同时敌人词条也没乘 `celestialDepthScale`,堆厚度的构筑在两套内容里待遇不同。
- *
- * 传 `celestialStats` 进来(不是 finalStats):参照与玩家实际出手的那一份同源,
- * 加厚系数也一并算好,调用方不必各自记得传 depth。
+ * 两件事一起给:敌人按**本界锚点**定标(与玩家此刻有多强无关),
+ * 判定按**玩家是什么样的人**算(厚度 → 加厚与增减伤;境界 → 压制)。
+ * 收成一处,是为了不让某一条造敌路径漏掉判定 —— 这正是 celestialCaliber.spec 盯的。
  */
-export function celestialFoeCaliber(stats: { attack: GNum; defense: GNum; maxHp: GNum; mods: StatMods }): {
-  ref: ReferenceStats
-  depth: number
-} {
+export function celestialFoeCaliber(
+  playerMajor: number,
+  playerMods: StatMods,
+  anchorTier: number
+): { ref: ReferenceStats; judgement: CelestialJudgement } {
   return {
-    ref: { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp },
-    depth: celestialDepthScale(stats.mods)
+    ref: celestialAnchor(anchorTier),
+    judgement: celestialJudgement(playerMods, playerMajor, anchorTier)
   }
 }
 
 /**
- * 按参照属性生成天界敌人 —— 数值成长在天界互相抵消,只有构筑形状决定胜负。
- * depthScale 让词条与三维一样参与抵消(见 celestialDepthScale)
+ * 按参照属性生成天界敌人。
+ *
+ * `judgement` 是敌人一侧的判定(道之理解 + 境界压制):三维按它加厚,
+ * 增伤减伤并入敌人词条 —— 玩家在战后分析里看得到「被看破/被挡住」那两项,
+ * 而不是莫名其妙地打不动。
  */
-export function worldFoeSnap(shape: WorldFoeShape, ref: ReferenceStats, escalation = 1, depthScale = 1): CombatantSnap {
-  const mods: StatMods = {}
-  if (shape.mods) {
-    for (const k in shape.mods) {
-      const key = k as keyof StatMods
-      const v = shape.mods[key]
-      mods[key] = typeof v === 'number' ? v * depthScale : v
-    }
-  }
+export function worldFoeSnap(
+  shape: WorldFoeShape,
+  ref: ReferenceStats,
+  escalation = 1,
+  judgement: CelestialJudgement = NO_JUDGEMENT
+): CombatantSnap {
+  const mods: StatMods = { ...(shape.mods ?? {}) }
+  if (judgement.damageBonus > 0) mods.damageBonus = (mods.damageBonus ?? 0) + judgement.damageBonus
+  if (judgement.damageReduction > 0) mods.damageReduction = (mods.damageReduction ?? 0) + judgement.damageReduction
+  const thicken = escalation * judgement.thicken
   return {
     name: shape.name,
     icon: shape.icon,
     isPlayer: false,
-    attack: mulN(ref.attack, shape.atkR * escalation),
-    defense: mulN(ref.defense, shape.defR * escalation),
-    maxHp: mulN(ref.maxHp, shape.hpR * escalation),
+    attack: mulN(ref.attack, shape.atkR * thicken),
+    defense: mulN(ref.defense, shape.defR * thicken),
+    maxHp: mulN(ref.maxHp, shape.hpR * thicken),
     speed: shape.speed,
     mods,
     skills: shape.skills.map(s => ({ ...s }))

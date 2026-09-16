@@ -17,6 +17,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useEndgameStore, type WorldRunState } from '@/stores/endgame'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
+import { useInventoryStore } from '@/stores/inventory'
 import { RandomService, mulberry32 } from '@/utils/random'
 import { previewFight, withCarriedHp } from './expedition'
 
@@ -26,11 +27,25 @@ beforeEach(() => {
   setActivePinia(createPinia())
 })
 
+/**
+ * 给这位道祖一件像样的兵器。
+ *
+ * 一条**恰好落在带里**的夹具:天界敌人按本界锚点定标,裸装打无相天的路线节点必败
+ * (三场全负 → 0.08),再添第二件就必胜(三场全胜 → 0.93)。一件时满血 3 胜、
+ * 残血 2 胜 —— 只有在这种势均偏优的局面里,「携带气血算不算进去」才量得出来。
+ */
+function dressOneWeapon(): void {
+  const inv = useInventoryStore()
+  const item = { uid: 'fx1', templateId: 'w_benyuan', quality: 'divine' as const, tier: 32, level: 5, affixes: [{ id: 'atk4', roll: 1 }, { id: 'hp4', roll: 1 }, { id: 'def4', roll: 1 }] }
+  inv.items = [item] // 每次重摆,不做追加:夹具体检两次调用,追加会悄悄变成两件
+  inv.equip('fx1', 'weapon')
+}
+
 /** 备好一个天机道玩家 + 一趟打到第 2 重的远征 */
-function fateRun(carriedHpPct: number, worldId = 'wuxiang'): WorldRunState {
+function fateRun(carriedHpPct: number, worldId = 'wuxiang', major = 14): WorldRunState {
   const player = usePlayerStore()
   const endgame = useEndgameStore()
-  player.major = 14
+  player.major = major
   endgame.daoPath = 'fate'
   const run = {
     worldId,
@@ -61,9 +76,19 @@ describe('天机道 · 预览', () => {
     const world = CELESTIAL_WORLDS.find(w => w.id === 'wuxiang')!
     const node = world.routes[1]![0]!
 
-    fateRun(1)
+    /**
+     * 这一条要在**打得起来**的局面里量。
+     *
+     * 天界敌人的强度按本界锚点定标(见 gauntlet.celestialAnchor):无相天是阶梯最深处,
+     * 拿神人境去打它,满血与残血都是必败 —— 胜负早被境界差决定,携带气血那点差别
+     * 淹没在两端饱和里,这条判据就量不出东西。故夹具摆到这一界该有的境界(混沌道祖):
+     * 裸装此时的战力比约 1.5 —— 势均,才量得出气血。
+     */
+    fateRun(1, 'wuxiang', 20)
+    dressOneWeapon()
     const full = previewFight(node.foe, node, seeded(5))!
-    fateRun(0.15)
+    fateRun(0.15, 'wuxiang', 20)
+    dressOneWeapon()
     const hurt = previewFight(node.foe, node, seeded(5))!
 
     console.log(`\n同一眼天机:满血 ${full.winText}(${full.rate.toFixed(2)}) · 带一成半气血 ${hurt.winText}(${hurt.rate.toFixed(2)})`)

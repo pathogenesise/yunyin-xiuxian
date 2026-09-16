@@ -26,17 +26,16 @@
 
       <!-- 何谓器魂 -->
       <section>
-        <SectionTitle title="何谓器魂" hint="凡器承不住天道,只余形意" />
+        <SectionTitle title="何谓器魂" hint="形销而意存,多一条路数" />
         <div class="card-ink mt-2 px-4 py-3">
           <p class="text-[11px] leading-relaxed text-ink-faint">
-            凡人的法器到了天界本就承不住:天道压顶,数值被尽数抹平,只余形意。 那点形意便是
+            凡人的法器到了天界,锋芒会被天道磨去几分,却并非抹平 —— 它记得这件法器是何路数,那份记忆便是
             <span class="text-gold-ink">器魂</span>
-            ——它记得这件法器是何路数,却记不得它有多锋利。 故而在天界,九件神品与三件精品若路数相同,并无分别;
-            <span class="text-cinnabar">欲更强,只能改路数,不能堆数值。</span>
+            。器魂**叠加**在你身上:攻防血这些基础属性照常作数,器魂是在其上多给一条路数。
           </p>
           <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
             以凡器入炉,形销而意存,得器魂一缕。神魂只容 {{ SOUL_SLOTS }} 缕——取舍便是构筑。
-            <span class="text-ink-faint">不凝器魂者,身上法器的词条由天道径直压平,压得更狠;凝了是主动掌控形意,略胜一筹。</span>
+            <span class="text-ink-faint">至于堆叠本身,天道自有应对:构筑越厚,守关者的道之理解越深;境界未及此界者,还会被境界压制。</span>
           </p>
         </div>
       </section>
