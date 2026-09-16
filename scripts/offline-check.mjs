@@ -16,8 +16,8 @@
  *
  * 用法:
  *   bun run build
- *   npm i --no-save playwright && npx playwright install chromium
- *   node scripts/offline-check.mjs
+ *   bunx playwright install chromium
+ *   bun scripts/offline-check.mjs
  */
 import { chromium } from 'playwright'
 import { createServer } from 'node:http'

@@ -6,12 +6,12 @@
  * 静态审计能查「有没有接线」,查不出「点下去会不会炸」——比如某个弹窗打开时
  * 读了一个只在特定存档下才存在的字段。故这里用真浏览器真存档,逐页点按钮。
  *
- * 用法(需要 playwright,不写进依赖):
+ * 用法(需要 playwright,已是 devDependency):
  *   bun run build
- *   npm i --no-save playwright
- *   node scripts/ui-smoke.mjs             # 每页最多点 12 个按钮
- *   node scripts/ui-smoke.mjs --depth 25  # 点更多
- *   node scripts/ui-smoke.mjs --late      # 用后期夹具存档(神人境)覆盖终局界面
+ *   bunx playwright install chromium
+ *   bun scripts/ui-smoke.mjs             # 每页最多点 12 个按钮
+ *   bun scripts/ui-smoke.mjs --depth 25  # 点更多
+ *   bun scripts/ui-smoke.mjs --late      # 用后期夹具存档(神人境)覆盖终局界面
  *
  * 会跳过有破坏性的按钮(分解/删除/清空/重置/兵解/转世),免得把冒烟盘玩坏。
  * 发现 pageerror 即失败并打印堆栈前几行 —— 那通常就是一处真 bug。

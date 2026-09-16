@@ -4,13 +4,13 @@
  *
  * 用法:
  *   bun run build
- *   npm i --no-save playwright        # 或全局装;浏览器缓存在 ~/.cache/ms-playwright
- *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
+ *   bunx playwright install chromium  # playwright 已是 devDependency;浏览器缓存在 ~/.cache/ms-playwright
+ *   bun scripts/layout-check.mjs      # 加 --shots 顺带存图到 /tmp/layout-shots
  *
  * 它同时在 CI 里跑(见 .github/workflows/deploy.yml 与 build.yml 的 ui-check job):
  * 每个 main 提交与每个发版 tag 都过这一关 —— 判据红则不发布。
- * playwright 仍**不进 package.json**(只有这一关需要它,装进 devDependencies
- * 会让每次本机 bun install 都背一份),CI 用 `npm install --no-save` 按版本号装。
+ * playwright 写在 devDependencies 里(锁版本):它没有 postinstall,bun install 只带
+ * JS 本体;真正占地的浏览器二进制由上面那句按需下,CI 另给它做缓存。
  *
  * 它做这些事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;

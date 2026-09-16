@@ -62,18 +62,24 @@ jobs:
         run: bun install --frozen-lockfile
       - name: 构建产物(自检量的是 dist)
         run: bun run build
-      # playwright 不进 package.json:它是"只有这一关才需要"的重量级依赖,
-      # 装进 devDependencies 会让每次本机 bun install 都背一份。版本与本地跑通用的一支。
+      # playwright 锁在 devDependencies 里(版本真源 = bun.lock,不再手抄进命令)。
+      # 它没有 postinstall:bun install 只带 ~19MB 的 JS 本体,占地的浏览器二进制
+      # 只由下面这一句按需下,落在 ~/.cache/ms-playwright —— 故给缓存,别每次重下。
+      - name: 缓存浏览器
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
       - name: 装浏览器
-        run: |
-          npm install --no-save playwright@1.63.0
-          npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
       - name: 排版与交互自检
-        run: node scripts/layout-check.mjs
+        run: bun scripts/layout-check.mjs
       # Service Worker 只认安全上下文,故离线自检另起一个本地静态服务量同一份产物:
       # 断网可重开、旧缓存会被清、发版能接管(见 scripts/offline-check.mjs)。
       - name: 离线/发版接管自检
-        run: node scripts/offline-check.mjs
+        run: bun scripts/offline-check.mjs
 
   # 1. 构建 Electron 客户端
   build-electron:
