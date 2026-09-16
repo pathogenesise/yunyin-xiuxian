@@ -98,6 +98,23 @@ export const BT_QI_COST_RATIO = 0.4
 /** 天劫波次基数(实际 = 基数 + 大境界序号) */
 export const TRIBULATION_BASE_WAVES = 3
 /**
+ * 天劫的三维折算 —— 血厚防高者允许**硬抗**,但两条都有绝对上限。
+ *
+ * 天劫伤害按最大生命百分比结算(见 core/formulas.tribulationWaveDamage),
+ * 攻伐/防御/气血本不进公式。可一身厚血厚防站在劫前半点用没有,说不过去:
+ * 于是把三维按「本境裸修为的一倍」当尺子折成两样天劫认的东西 ——
+ *   防御 → 天劫抗性:超出裸修为的部分,每倍折 5%,上限 30%
+ *   气血 → 开劫水位:超出裸修为的部分,每倍折 5%,上限 +60%
+ * 两条都封顶,理由与抗性/减伤本身的绝对上限一致:渡劫的正解是**准备**
+ * (抗性/减伤/恢复/护持),三维给的是"不至于白堆"的兜底,不是替代品。
+ * 尺子取 realmScale × COMBAT_*_BASE(即 baseCombatStats),与 statsCalc 同源 ——
+ * 别在这里另写一条曲线,否则"超出多少倍"会随改动悄悄漂移。
+ */
+export const TRIB_DEF_RESIST_PER_SURPLUS = 0.05
+export const TRIB_DEF_RESIST_CAP = 0.3
+export const TRIB_HP_GUARD_PER_SURPLUS = 0.05
+export const TRIB_HP_GUARD_CAP = 0.6
+/**
  * 天劫难度的境界封顶点(扩界)。
  *
  * 伤害与波次原本 = 0.15 + major×0.02(逐波) + wave×0.03,波次 = 3 + major,

@@ -20,9 +20,19 @@ import { tribulationDef, TRIBULATIONS, type TribulationDef, type TribulationKind
 import { NO_RELIEF, type TribulationRelief } from '@/data/linggenAffinity'
 import { rootElements, tribulationRelief } from './linggenAffinity'
 import { todayWeather } from './weather'
-import { TRIBULATION_BASE_WAVES, TRIBULATION_DIFFICULTY_CAP_MAJOR } from '@/data/constants'
-import { tribulationWaveDamage } from './formulas'
+import {
+  COMBAT_DEF_BASE,
+  COMBAT_HP_BASE,
+  TRIBULATION_BASE_WAVES,
+  TRIBULATION_DIFFICULTY_CAP_MAJOR,
+  TRIB_DEF_RESIST_CAP,
+  TRIB_DEF_RESIST_PER_SURPLUS,
+  TRIB_HP_GUARD_CAP,
+  TRIB_HP_GUARD_PER_SURPLUS
+} from '@/data/constants'
+import { realmScale, tribulationWaveDamage } from './formulas'
 import { mulberry32 } from '@/utils/random'
+import { toNum } from '@/utils/gnum'
 import { usePlayerStore } from '@/stores/player'
 
 export interface TribulationPlan {
@@ -67,6 +77,50 @@ export function rollTribulation(targetMajor: number): TribulationKind {
 }
 
 // ---------- 共享度量(UI 与结算的唯一口径) ----------
+
+/**
+ * 三维折算的结果:防御折出的抗性、气血折出的开劫水位。
+ * 两者都是**加法项**,且各自有绝对上限(见 data/constants 的那段注释)。
+ */
+export interface TribStatGuard {
+  resist: number
+  guard: number
+}
+
+export const NO_STAT_GUARD: TribStatGuard = { resist: 0, guard: 0 }
+
+/**
+ * 把三维折成天劫认的两样 —— 血厚防高允许硬抗一部分。
+ *
+ * 尺子是「本境裸修为」:realmScale × COMBAT_*_BASE,与 statsCalc 的
+ * baseCombatStats 同源,所以"超出多少倍"这句话在任何境界都成立、且不会随
+ * 曲线调整悄悄变形。裸修为及以下拿不到折算,超出部分按常数线性折算后封顶。
+ */
+export function statGuardOf(raw: { defense: number; maxHp: number; major: number; sub: number }): TribStatGuard {
+  const scale = toNum(realmScale(raw.major, raw.sub))
+  const bareDef = scale * COMBAT_DEF_BASE
+  const bareHp = scale * COMBAT_HP_BASE
+  // 规整到 9 位:除法会留下 1e-17 这样的尾巴,裸修为该是干净的 0,不是"白送一点点"
+  const surplus = (value: number, bare: number) =>
+    bare > 0 ? Math.max(0, Number((value / bare - 1).toFixed(9))) : 0
+  const defSurplus = surplus(raw.defense, bareDef)
+  const hpSurplus = surplus(raw.maxHp, bareHp)
+  return {
+    resist: Math.min(TRIB_DEF_RESIST_CAP, defSurplus * TRIB_DEF_RESIST_PER_SURPLUS),
+    guard: Math.min(TRIB_HP_GUARD_CAP, hpSurplus * TRIB_HP_GUARD_PER_SURPLUS)
+  }
+}
+
+/** 当前玩家的三维折算 —— 预览(currentTribulationPlan)与结算(runTribulation)共用这一个入口 */
+export function currentStatGuard(): TribStatGuard {
+  const player = usePlayerStore()
+  return statGuardOf({
+    defense: toNum(player.finalStats.defense),
+    maxHp: toNum(player.finalStats.maxHp),
+    major: player.major,
+    sub: player.sub
+  })
+}
 
 /** 天劫总波次 */
 export function tribulationWaves(targetMajor: number): number {
@@ -165,6 +219,40 @@ export function waveMultiplier(def: TribulationDef, wave: number, waves: number,
   return def.dmgMult * (0.8 + spread)
 }
 
+/**
+ * 某一劫的波形读数(供 UI 摊开)——天威本身,不含任何免疫/减伤/护持/恢复。
+ *
+ * 两个自变量都在同一行公式里:
+ *   单波 = 0.15 + 0.02×境界 + 0.03×第几道   ← 逐道加重
+ *   波次 = 3 + 境界                          ← 境界越深道数越多
+ * 所以"同一次渡劫越靠后越重"与"不同境界的劫不一样重"都是这条公式的直接后果,
+ * 不是错觉。摊出来玩家才知道该把护持留到哪一段、恢复要撑多少道。
+ */
+export function tribulationWaveSpan(
+  def: TribulationDef,
+  targetMajor: number
+): { waves: number; first: number; last: number; min: number; max: number; total: number; heaviestWave: number } {
+  const waves = tribulationWaves(targetMajor)
+  let first = 0
+  let last = 0
+  let min = Number.POSITIVE_INFINITY
+  let max = 0
+  let total = 0
+  let heaviestWave = 1
+  for (let w = 1; w <= waves; w += 1) {
+    const v = tribulationWaveDamage(targetMajor, w, 0) * waveMultiplier(def, w, waves)
+    if (w === 1) first = v
+    if (w === waves) last = v
+    min = Math.min(min, v)
+    if (v > max) {
+      max = v
+      heaviestWave = w
+    }
+    total += v
+  }
+  return { waves, first, last, min, max, total, heaviestWave }
+}
+
 /** 单波实际伤害(占最大生命比例);UI 与结算共用 */
 export function waveDamage(
   def: TribulationDef,
@@ -173,11 +261,16 @@ export function waveDamage(
   wave: number,
   hpLeft: number,
   relief: TribulationRelief = NO_RELIEF,
-  weatherMult = 1
+  weatherMult = 1,
+  stat: TribStatGuard = NO_STAT_GUARD
 ): number {
   const reduction = Math.min(0.6, modOf(mods, 'damageReduction'))
   // 厚土分担天罚:减伤按灵根亲和折算一部分为天劫抗性(无减伤者折算为零)
-  const resist = Math.min(0.8, modOf(mods, 'tribulationResist') + reduction * relief.reductionToResist)
+  // 三维折算(防御→抗性)与词条抗性同处一项、同受 0.8 上限:血厚防高者由此硬抗一部分
+  const resist = Math.min(
+    0.8,
+    modOf(mods, 'tribulationResist') + reduction * relief.reductionToResist + stat.resist
+  )
   const lowHpRed = Math.min(0.6, modOf(mods, 'lowHpReduction'))
   const waves = tribulationWaves(targetMajor)
   let dmg = tribulationWaveDamage(targetMajor, wave, resist) * (1 - reduction) * waveMultiplier(def, wave, waves, relief)
@@ -209,14 +302,16 @@ export function traceTribulation(
   mods: StatMods,
   targetMajor: number,
   relief: TribulationRelief = NO_RELIEF,
-  weatherMult = 1
+  weatherMult = 1,
+  stat: TribStatGuard = NO_STAT_GUARD
 ): TribulationTrace {
   const waves = tribulationWaves(targetMajor)
   const regen = sustainScore(mods, def, relief)
-  let hpLeft = 1 + guardScore(mods, def, relief)
+  // 开劫水位 = 满血 + 护持词条(受劫型 shieldMult 修正)+ 气血折算(三维那一半)
+  let hpLeft = 1 + guardScore(mods, def, relief) + stat.guard
   let minHp = hpLeft
   for (let w = 1; w <= waves; w += 1) {
-    hpLeft = hpLeft - waveDamage(def, mods, targetMajor, w, hpLeft, relief, weatherMult) + regen
+    hpLeft = hpLeft - waveDamage(def, mods, targetMajor, w, hpLeft, relief, weatherMult, stat) + regen
     if (hpLeft < minHp) minHp = hpLeft
     if (hpLeft <= 0) return { survived: false, hpLeft, minHp, fellAt: w }
   }
@@ -249,7 +344,8 @@ export function buildTribulationPlan(
   mods: StatMods,
   kindIn?: TribulationKind,
   relief: TribulationRelief = NO_RELIEF,
-  weatherMult = 1
+  weatherMult = 1,
+  stat: TribStatGuard = NO_STAT_GUARD
 ): TribulationPlan {
   const kind = kindIn ?? rollTribulation(targetMajor)
   const def = tribulationDef(kind)
@@ -258,13 +354,14 @@ export function buildTribulationPlan(
   const prep = {
     guard: prepTier('guard', guardScore(mods, def, relief)),
     sustain: prepTier('sustain', sustainScore(mods, def, relief)),
-    resist: prepTier('resist', resistScore(mods, def, relief)),
+    // 抗性这一维要把三维折算算进去 —— 结算吃了它,星级就必须看得见它
+    resist: prepTier('resist', resistScore(mods, def, relief) + stat.resist),
     burst: prepTier('burst', burstScore(mods))
   }
 
   // 决策档以"全程最低水位"为准:险过与稳过必须分得开,
   // 否则所有幸存者都挤在同一档,玩家只能靠堆满四维来跨线。
-  const trace = traceTribulation(def, mods, targetMajor, relief, weatherMult)
+  const trace = traceTribulation(def, mods, targetMajor, relief, weatherMult, stat)
   const expectedRate = trace.survived
     ? Math.min(0.95, 0.55 + Math.min(1, trace.minHp / 0.45) * 0.4)
     : failedRate(trace, tribulationWaves(targetMajor))
@@ -348,5 +445,12 @@ export function currentTribulationPlan(): TribulationPlan {
   const player = usePlayerStore()
   const nextMajor = player.isMajorStep ? player.major + 1 : player.major
   const kind = rollTribulation(nextMajor)
-  return buildTribulationPlan(nextMajor, player.finalStats.mods, kind, currentTribulationRelief(kind), todayWeather().tribulationMult)
+  return buildTribulationPlan(
+    nextMajor,
+    player.finalStats.mods,
+    kind,
+    currentTribulationRelief(kind),
+    todayWeather().tribulationMult,
+    currentStatGuard()
+  )
 }

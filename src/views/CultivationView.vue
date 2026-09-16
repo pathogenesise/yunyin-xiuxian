@@ -77,8 +77,12 @@
       <div class="flex items-center justify-between text-[12px] text-ink-soft">
         <span>下一步:{{ btInfo.targetLabel }}</span>
       </div>
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <div class="rounded-md bg-paper-deep/60 px-2.5 py-1.5">
+      <!--
+        天劫步不显示「突破成功率」:那条路根本不掷这个骰子(见 breakthrough.attemptBreakthrough,
+        渡劫走 runTribulation 的逐波推演),摆出来只会让人以为还有一个可以堆的概率。
+      -->
+      <div class="mt-2 grid gap-2" :class="btInfo.needTribulation ? 'grid-cols-1' : 'grid-cols-2'">
+        <div v-if="!btInfo.needTribulation" class="rounded-md bg-paper-deep/60 px-2.5 py-1.5">
           <p class="text-[10px] text-ink-faint">突破成功率(进阶)</p>
           <p class="tabular text-[16px] font-kai leading-tight" :class="btInfo.rate >= 0.7 ? 'text-jade' : 'text-cinnabar'">
             {{ btInfo.rateText }}
@@ -108,6 +112,26 @@
           · {{ PREP_NAMES.sustain }} {{ PREP_STARS[tribPlan.prep.sustain] }}
           · {{ PREP_NAMES.resist }} {{ PREP_STARS[tribPlan.prep.resist] }}
           · {{ PREP_NAMES.burst }} {{ PREP_STARS[tribPlan.prep.burst] }}
+        </p>
+        <!--
+          天劫是**按最大生命百分比**扣血的(见 core/formulas.tribulationWaveDamage),
+          攻伐不进公式;防御与气血只能按「本境裸修为」折算成抗性与开劫水位,且两条都有上限。
+          摊开读数是因为玩家最容易在这里误判:一身厚血厚防站在劫前,却不知道自己缺什么。
+        -->
+        <p class="mt-1 text-[10px] text-ink-faint tabular">
+          此劫只认百分比 —— 天劫抗性 {{ formatPercent(tribLedger.resist, 0) }}(防御折算
+          {{ formatPercent(tribLedger.statResist, 0) }})· 减伤 {{ formatPercent(tribLedger.reduction, 0) }} · 每波恢复
+          {{ formatPercent(tribLedger.sustain, 1) }} · 开劫护持 {{ formatPercent(tribLedger.guard, 0) }}(气血折算
+          {{ formatPercent(tribLedger.statGuard, 0) }})
+        </p>
+        <p class="mt-0.5 text-[10px] text-ink-ghost">
+          攻伐不进天劫公式;防御与气血按本境裸修为折算成上面的抗性与护持,各有上限 —— 血再厚也只能硬抗一部分,剩下的仍要抗性/减伤/恢复来补。
+        </p>
+        <!-- 天威本身的长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
+        <p v-if="tribWave" class="mt-0.5 text-[10px] text-ink-faint tabular">
+          共 {{ tribWave.waves }} 道,单波 {{ formatPercent(tribWave.min, 0) }}–{{ formatPercent(tribWave.max, 0) }} 最大生命(合计约
+          {{ formatPercent(tribWave.total, 0) }}),
+          {{ tribPlan.def.waveShape === 'frontLoaded' ? '起手两道最重' : '逐道加重' }}
         </p>
         <p class="mt-1 text-[10px] text-ink-soft">主要风险:<span class="text-cinnabar/80">{{ tribPlan.risks.join('; ') }}</span></p>
         <p class="mt-1 text-[10px] text-ink-faint">{{ tribPlan.advice }}</p>
@@ -279,7 +303,13 @@
   import { toNum } from '@/utils/gnum'
   import { baseCultPerSec } from '@/core/formulas'
   import { modOf } from '@/core/statsCalc'
-  import { currentTribulationPlan, verdictLabel, type TribulationPlan } from '@/core/tribulationDecision'
+  import {
+    currentStatGuard,
+    currentTribulationPlan,
+    tribulationWaveSpan,
+    verdictLabel,
+    type TribulationPlan
+  } from '@/core/tribulationDecision'
   import { reliefElements, rootElements } from '@/core/linggenAffinity'
   import { comprehendGongfa } from '@/core/gongfaService'
   import { usePill } from '@/core/pillService'
@@ -363,6 +393,31 @@
   const PREP_NAMES = { guard: '护持', sustain: '恢复', resist: '抗性', burst: '爆发' } as const
   const PREP_STARS = ['·', '✧', '✧✧', '✧✧✧'] as const
   const tribPlan = computed(() => (btInfo.value.needTribulation ? currentTribulationPlan() : null))
+
+  /**
+   * 渡劫账上的四项实际读数 —— 只摊天劫真的会读的那些(口径与 tribulationDecision 同源:
+   * 恢复 = regenPerRound + 吸血×0.3,与 sustainScore 对齐)。
+   * 摆出来是因为"血厚防高却过不去"几乎只可能来自一个误会:以为天劫看三维。
+   */
+  const tribLedger = computed(() => {
+    const mods = player.finalStats.mods
+    const stat = currentStatGuard()
+    return {
+      resist: Math.min(0.8, modOf(mods, 'tribulationResist') + stat.resist),
+      statResist: stat.resist,
+      reduction: modOf(mods, 'damageReduction'),
+      sustain: modOf(mods, 'regenPerRound') + modOf(mods, 'lifesteal') * 0.3,
+      guard: modOf(mods, 'shieldOnStart') + stat.guard,
+      statGuard: stat.guard
+    }
+  })
+
+  /** 天威本身的长相(道数 + 单波区间):与结算同一批函数,不在界面里另算一遍 */
+  const tribWave = computed(() =>
+    tribPlan.value
+      ? tribulationWaveSpan(tribPlan.value.def, player.isMajorStep ? player.major + 1 : player.major)
+      : null
+  )
 
   /** 灵气疗伤(修复)状态:负伤时才出现入口,代价随灵气容量指数增长 */
   const repair = computed(() => qiRepairView())

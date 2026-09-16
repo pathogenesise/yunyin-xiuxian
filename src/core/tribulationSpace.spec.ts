@@ -5,13 +5,17 @@
  * 验证的不是"成功率高不高",而是设计意图本身:
  *   准备度应描述"解法空间",不应退化成"四维刷满的合格线"。
  *
- * 三条门:
+ * 五条门:
  *   ① 多解门:每种劫型至少有 2 种"形态不同"的构筑可渡(不含全满)
  *   ② 非唯一门:四维全满不是唯一答案(存在专精构筑同样可渡)
  *   ③ 劫型有效门:同一构筑在不同劫型下结论必须出现分歧
  *      (若某构筑对 5 种劫型结论完全一致,劫型只是装饰)
+ *   ④ 短板门:专精构筑的最弱维度必须被风险行点名
+ *   ⑤ 全境界解法空间门:化神之后难度继续涨,而减伤类词条有绝对上限 ——
+ *      每个需渡劫的境界 × 每种劫型都必须还剩一条**非全满**之路,
+ *      否则天劫会悄悄退化成"必须堆满硬顶"的墙(见该用例里的普查读数)
  *
- * 若哪天这三条门开始失败,说明玩家已经可以回到"堆满四维"的旧最优解。
+ * 若哪天这些门开始失败,说明渡劫又回到了"堆满四维"的旧最优解。
  */
 import { describe, it, expect } from 'vitest'
 import { buildTribulationPlan, SOULREND_BURST_RELIEF } from './tribulationDecision'
@@ -43,6 +47,17 @@ const SHAPES: Shape[] = [
     mods: { shieldOnStart: 0.3, regenPerRound: 0.06, tribulationResist: 0.22, critRate: 0.2, damageReduction: 0.2 }
   },
   {
+    key: 'specialist',
+    name: '渡劫专精(抗+减)',
+    /**
+     * 抗性与减伤**两条乘数一起堆**的渡劫向构筑 —— 化神之后这是唯一还走得通的非满配路线
+     * (读数见 ⑤)。组成全部来自游戏里已存在的东西:功法分支(避劫/劫印/渡厄/淬体)、
+     * 天赋「雷体」、灵兽、称号「渡劫行者」、护腕类装备、丹药「玄冥护体」与「护心」。
+     * 它刻意不在"四维皆优"之列:没有护盾、没有爆发,照样能渡 —— 这就是要留给玩家的那条路。
+     */
+    mods: { tribulationResist: 0.65, damageReduction: 0.45, regenPerRound: 0.06 }
+  },
+  {
     key: 'maxed',
     name: '全满(四维皆优)',
     maxed: true,
@@ -55,8 +70,8 @@ const AUDIT_MAJOR = 4
 
 const PASS = new Set(['ok', 'easy'])
 
-function planOf(shape: Shape, kind: TribulationKind) {
-  return buildTribulationPlan(AUDIT_MAJOR, shape.mods, kind)
+function planOf(shape: Shape, kind: TribulationKind, major = AUDIT_MAJOR, weatherMult = 1) {
+  return buildTribulationPlan(major, shape.mods, kind, NO_RELIEF, weatherMult)
 }
 
 describe('天劫解法空间审计', () => {
@@ -129,6 +144,45 @@ describe('天劫解法空间审计', () => {
     // 爆发流在裂魂劫下不应被点"爆发被压制"(它爆发是够的)
     const sr = planOf(SHAPES.find(s => s.key === 'burst')!, 'soulrend')
     expect(sr.risks.join()).not.toContain('爆发攻势被压制')
+  })
+
+  /**
+   * ⑤ 全境界解法空间门 —— 化神之后不许变成硬墙。
+   *
+   * 上面四条门只在 major=4 上量。扩界之后难度继续随境界涨(波次 3+major、
+   * 单波 +0.02/境),而减伤类词条是**绝对上限**(抗性 0.8、减伤 0.6)——
+   * 实测:化神那条线上还有 3~6 条非满配之路,炼虚只剩 1~3 条,合体之后只剩
+   * 「抗性+减伤双堆」这一条。若不逐境盯着,天劫会悄悄从"解法空间"退化成
+   * "必须堆满硬顶"的墙,而玩家看到的只是「我血厚防高,怎么连一道劫都过不去」。
+   *
+   * 故要求:每个需渡劫的境界 × 每种劫型,都至少还剩一条**非全满**之路。
+   * 天时取最凶的 ×1.12 —— 这条路不能只在清和日成立(与上一用例同一纪律)。
+   *
+   * 口径:参考构筑只带词条,不带三维 —— 故这份普查是**下界**(真实玩家的防御/气血
+   * 还能按本境裸修为折出抗性与护持,见 tribulationDecision.statGuardOf)。
+   * 这里宁紧不松:词条一侧的路若不成立,三维兜底也补不回一个"解法空间"。
+   */
+  it('⑤ 全境界解法空间门:每个需渡劫境界、每种劫型都还剩一条非全满之路', () => {
+    const worstWeather = Math.max(
+      ...[...WEATHERS, ...Object.values(WORLD_WEATHERS).flat()].map(w => w.tribulationMult)
+    )
+    const nonMaxed = SHAPES.filter(s => !s.maxed)
+    const rows: string[] = []
+    for (let major = 1; major <= MAX_MAJOR; major += 1) {
+      if (!REALMS[major]!.tribulation) continue // 无需渡劫的境界(如真仙)跳过
+      const counts = TRIBULATIONS.map(
+        t => nonMaxed.filter(s => PASS.has(planOf(s, t.id, major, worstWeather).verdict)).length
+      )
+      rows.push(`${REALMS[major]!.name}: ${counts.join('/')}`)
+      TRIBULATIONS.forEach((t, i) => {
+        expect(
+          counts[i],
+          `${REALMS[major]!.name}·${t.name}劫:只剩「四维全满」一条路 —— 天劫退化成硬墙`
+        ).toBeGreaterThanOrEqual(1)
+      })
+    }
+    console.log(`\n  非全满可渡形态数(雷鸣/逆流/裂魂/铁躯/重压;天时 ×${worstWeather}):`)
+    for (const r of rows) console.log(`    ${r}`)
   })
 })
 
