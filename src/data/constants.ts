@@ -61,7 +61,7 @@ export const CULT_SUB_SPEED_GROWTH = 1.06
  */
 export const LATE_EXP_GROWTH = 4.0
 export const LATE_CULT_SPEED_GROWTH = 3.2
-export const LATE_COMBAT_GROWTH = 4.0
+export const LATE_COMBAT_GROWTH = 4.6
 export const LATE_QI_CAP_GROWTH = 4.0
 export const LATE_QI_REGEN_GROWTH = 3.2
 /**
@@ -116,7 +116,7 @@ export const TRIBULATION_DIFFICULTY_CAP_MAJOR = 9
 export const COMBAT_ATK_BASE = 12
 export const COMBAT_DEF_BASE = 7
 export const COMBAT_HP_BASE = 150
-export const COMBAT_MAJOR_GROWTH = 3.4
+export const COMBAT_MAJOR_GROWTH = 3.8
 export const COMBAT_SUB_GROWTH = 1.09
 export const CRIT_BASE = 0.05
 export const CRIT_DMG_BASE = 0.5
@@ -223,9 +223,18 @@ export const SEAL_STONE_BASE = 200
  * (实测:化神顶阶战力比 2.74 → 3.20,越过 3.0 的压制线)。
  * 故增速抬一档(1.105 → 1.113):早期几乎不动(+3%),中段约 +8%,后期约 +15%,
  * 与「玩家总是穿着本阶装备」这一事实对齐。玩家仍略占优(对称比 1.27 → 1.08 > 1)。
+ *
+ * Phase 37(品质=强度阶梯):品质平铺从 mult^0.6 提到 mult^1.8,
+ * 玩家的装备乘区跨度从 8.3 倍涨到 126.6 倍(凡品零级 → 神品满强化)。
+ * 敌人补偿是**跟随项**,不是常量:玩家乘区变陡,它就得同样变陡,
+ * 否则「抽到一件好东西就碾完全图」。1.113 → 1.18,19 层上的补偿总量 7.7 → 23.2 倍。
+ * 校准判据不是这条曲线自己好不好看,而是 contentCoverageAudit 的两条读数:
+ *   ① 常规档全程不出现内容死亡点(死亡点 = 所有可达区域都已被压制)
+ *   ② 顶区战力比全程 < 12(区域战斗不许失去意义)
+ * 1.18 是同时满足这两条的档位;1.13 会让常规档在真仙就推完全图。
  */
 export const ENEMY_GEAR_BASE = 0.9
-export const ENEMY_GEAR_GROWTH = 1.113
+export const ENEMY_GEAR_GROWTH = 1.18
 /** 防御减伤上限 */
 export const MITIGATION_CAP = 0.75
 /** 减伤公式系数:red = def / (def + atk × K) */
@@ -237,26 +246,56 @@ export const DAMAGE_VARIANCE = 0.1
 // (原「每掉落层级数值倍率 EQUIP_TIER_GROWTH」已于 Phase 33.2 停用:
 //  装备平铺改由 powerScale(tier) 直接对齐境界与内容曲线,该常数不再参与任何计算。)
 /**
- * 装备基础属性整体系数(Phase 33.2:1.0 → 0.6)。
+ * 装备基础属性整体系数 —— 装备这条来源的**总预算**。
  *
  * 九个槽位的平铺权重相加约为 40,而玩家境界基础攻击只有 COMBAT_ATK_BASE=12,
- * 装备平铺因此一项独占战力 57~65%,突破带来的境界成长反被稀释到个位数百分比。
- * 降低整体系数是把战力权重还给「境界 + 构筑」,不是削弱装备本身——
- * 装备的词条、套装、法宝一律未动,它依然是构筑的核心载体
+ * 系数一旦放大,装备平铺就会独占战力,境界成长反被稀释(见 inflationAudit 的来源结构)。
+ * 所以这个数管的是「装备总共占几分」,而**品质之间的差距由
+ * EQUIP_QUALITY_FLAT_EXP 表达** —— 一个管总量,一个管分配,两件事不混。
+ *
+ * Phase 37 再收一档(0.6 → 0.5):品质那一侧涨了(见 EQUIP_QUALITY_FLAT_EXP),
+ * 总预算就得跟着收 —— 让**神品**值钱,而不是让「装备」整体更值钱。
  */
-export const EQUIP_BASE_FACTOR = 0.6
+export const EQUIP_BASE_FACTOR = 0.5
 /**
- * 品质对「平铺数值」的放大指数(Phase 33.2)。
+ * 品质对「平铺数值」的放大指数 —— 品质这条阶梯**陡不陡**。
  *
- * 品质倍率 q.mult 从凡品 1.0 到神品 9.5,原样乘进平铺后,装备平铺一项就占了
- * 玩家战力的 57~65%,远超 40% 的单一来源危险线,境界基础反被稀释到 4.4%
- * (见 inflationAudit)。玩家于是只需刷装备,不必观察生态、调整构筑。
+ * 平铺倍率 = mult^本指数,而 mult 本身是一条 ×1.33 的阶梯(凡 1.0 → 神 9.5)。
+ * 1.8 时:神品平铺 ≈ 凡品的 58 倍,每高一档品质约 ×1.8。
  *
- * 这里把品质对平铺的影响压成 q.mult^0.6(神品 9.5→3.77),而词条数量与词条数值
- * 完全不动——高品质依旧珍贵,但珍贵在「多一条词条、多一种构筑可能」,
- * 而不是「平铺数值再翻一倍」。这是把成长从数值转换成构筑,不是砍数值
+ * ## 为什么从 0.6 改回 1.8(Phase 37)
+ *
+ * Phase 33.2 把它压到 0.6(神品只剩 3.77 倍),理由是装备平铺独占了玩家战力。
+ * 压完之后玩家感受到的是另一件事:**品质没有意义** ——
+ * 五阶神品打不过七阶良品(实测 0.93x),甚至不如七阶凡品(1.04x),
+ * 刷高品的动机只剩词条条数。
+ *
+ * 现在的口径是「**强度换稀有度**」:拿到手就得有优势,难度由获取概率承担
+ * (品质窗口 + 掉率,见 QUALITY_WEIGHTS 与 QUALITY_OUT_OF_BAND)。
+ * 一个现代人拿着手枪就是打得过古代第一武将 —— 但别让他轻易拿到手枪。
+ *
+ * 实测(整身九件、同阶同质对比):
+ *   五阶神品 ÷ 七阶:凡 14.0 · 良 10.3 · 精 6.9 · 灵 4.5 · 玄 2.6 · 地 1.67 · 天 0.98
+ * 即品质能跨过两个阶位、一个大境界边界去赢;但连天品/仙品也压过需要每档 ×1.9
+ * (神品 ≈ 70 倍)——那时阶位只剩准入券,游戏从「看生态、调构筑」变成
+ * 「抽一件好东西通到底」,故停在这里。
+ *
+ * 注意这条阶梯是**指数**,不是常数:调节它等于同时调节所有品质的相对关系,
+ * 而装备总预算由 EQUIP_BASE_FACTOR 兜住(见那里的注释)。
  */
-export const EQUIP_QUALITY_FLAT_EXP = 0.6
+export const EQUIP_QUALITY_FLAT_EXP = 1.8
+/**
+ * 品质窗口外的掉落权重**按距离指数衰减**的底数(见 data/qualities 的 fromTier/toTier)。
+ *
+ * 0.1 的底数 = 每离窗口远一档,权重掉到十分之一:
+ *   窗口内 ×1 · 差一档 ×0.1 · 差两档 ×0.01 · 差三档 ×0.001 …
+ * 于是「混沌海掉出凡品」这种事发生率是万分之几量级(而非旧口径下的 1.7%),
+ * 而窗口边缘又平滑过渡,不会出现「跨过某一层,某种品质突然绝迹」的墙角。
+ *
+ * 为什么不直接关掉(0):图鉴要补得齐,际遇也该有惊喜 ——
+ * 人间界掉出一件仙品,那是故事,不是数值事故,只是它一年碰不到一次。
+ */
+export const QUALITY_OUT_OF_BAND = 0.1
 /** 每强化一级基础属性 +12% */
 export const EQUIP_LEVEL_BONUS = 0.12
 export const EQUIP_MAX_LEVEL_BASE = 10
@@ -276,8 +315,20 @@ export const SMART_KEEP_PERFECT_ROLL = 0.85
 export const BAG_CAPACITY = 120
 
 // ============ 掉落 ============
-/** 品质基础权重(凡→神) */
-export const QUALITY_WEIGHTS = [5000, 3000, 1500, 400, 80, 15, 4, 1, 0.2] as const
+/**
+ * 品质基础权重(凡→神)。
+ *
+ * 与品质窗口(QUALITY_OUT_OF_BAND / data/qualities 的 fromTier/toTier)一起,
+ * 决定「哪一档品质在什么内容里、以多大概率现世」——即**获取难度**这条线。
+ * 强度那条线是 EQUIP_QUALITY_FLAT_EXP,两者是一对:想抬强度就得同时设想掉率,
+ * 否则高品要么白送(强度低时),要么只存在于图鉴里(掉率过低时)。
+ *
+ * Phase 37 随强度阶梯一起收紧了高端:天品 4 → 2.5 · 仙品 1 → 0.5 · 神品 0.2 → 0.05,
+ * 叠上窗口与层级加成后,混沌道祖一层的掉落约 天品八成 / 仙品一成半 / 神品一两个百分点
+ * (旧口径:神品 0.1%、且凡品良品还在掉)。「手枪」是可以有的,但得自己攒出来。
+ * 「手枪」是可以有的,但得自己攒出来。
+ */
+export const QUALITY_WEIGHTS = [5000, 3000, 1500, 400, 80, 15, 2.5, 0.5, 0.05] as const
 /** 层级每 +1,高品质权重乘数 */
 export const QUALITY_TIER_SHIFT = 1.18
 export const EQUIP_DROP_CHANCE = 0.3

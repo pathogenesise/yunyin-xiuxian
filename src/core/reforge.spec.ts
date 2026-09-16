@@ -141,7 +141,7 @@ describe('重铸动作 · 条数与数值一起重掷', () => {
     const inst: EquipmentInstance = {
       ...base,
       uid: 'one-slot',
-      quality: 'excellent', // 2~2 条
+      quality: 'excellent', // 精品 2~3 条
       affixes: [
         { id: 'atk1', roll: 0.5 },
         { id: 'def1', roll: 0.5 }
@@ -151,7 +151,10 @@ describe('重铸动作 · 条数与数值一起重掷', () => {
     setup(inst)
     expect(reforgeEquipment('one-slot')).toBe(true)
     const after = useInventoryStore().findItem('one-slot')!
-    expect(after.affixes.length).toBe(2)
+    const [min, max] = qualityDef('excellent').affixes
+    // 条数按品质区间重掷(精品 2~3),但封存的那条一定还在、且至少补一条新的
+    expect(after.affixes.length).toBeGreaterThanOrEqual(min)
+    expect(after.affixes.length).toBeLessThanOrEqual(max)
     expect(after.affixes.some(a => a.id === 'atk1')).toBe(true)
     expect(after.affixes.some(a => a.id !== 'atk1'), '至少要有一条新的').toBe(true)
   })

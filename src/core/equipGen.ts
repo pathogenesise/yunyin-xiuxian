@@ -8,7 +8,13 @@ import { gnZero, mulN, add } from '@/utils/gnum'
 import { AFFIXES, AFFIX_RARITY_RANK, affixDef, affixValue } from '@/data/affixes'
 import { EQUIPMENT_TEMPLATES, equipmentTemplate } from '@/data/equipment'
 import { QUALITIES, qualityDef } from '@/data/qualities'
-import { EQUIP_BASE_FACTOR, EQUIP_LEVEL_BONUS, EQUIP_QUALITY_FLAT_EXP, QUALITY_TIER_SHIFT } from '@/data/constants'
+import {
+  EQUIP_BASE_FACTOR,
+  EQUIP_LEVEL_BONUS,
+  EQUIP_QUALITY_FLAT_EXP,
+  QUALITY_OUT_OF_BAND,
+  QUALITY_TIER_SHIFT
+} from '@/data/constants'
 import { powerScale } from './formulas'
 
 export interface GenOptions {
@@ -72,17 +78,48 @@ export function equipTemplatePool(tier: number, slot?: EquipSlot) {
   return DROP_SLOTS.flatMap(s => templatesForDrop(tier, s))
 }
 
-/** 品质随机:层级越高、气运越高,高品质权重越大 */
+/**
+ * 品质随机:层级越高、气运越高,高品质权重越大。
+ *
+ * 权重 = 基础权重 × 层级加成 × 气运加成 × 窗口系数。
+ * 窗口系数来自品质自己的 [fromTier, toTier](见 data/qualities):
+ * 窗口内 ×1,窗口外 ×QUALITY_OUT_OF_BAND —— 神品从神界/混沌海长出来,
+ * 而不是青云山麓抽奖抽到的;同时高品也不至于「越往后越见不到」(旧口径下,
+ * 混沌海掉落里 35% 是玄品、神品只有 0.09%,刷到顶也不见一件神品)。
+ *
+ * 显式给了 minQualityRank(首领/秘境/际遇)时**不吃窗口** —— 那是剧情给的例外,
+ * 由调用方负责;否则「人间界的仙缘」会被一条掉落规则挡掉。
+ */
 export function rollQuality(tier: number, rng: RandomService, opts: GenOptions = {}): QualityDef {
-  const luck = opts.luck ?? 0
   const floor = opts.minQualityRank ?? 0
   const pool = QUALITIES.filter(q => q.rank >= floor)
-  return rng.weighted(pool, q => {
-    if (q.rank === 0) return q.weight
-    const tierBoost = Math.pow(QUALITY_TIER_SHIFT, (tier - 1) * Math.min(q.rank, 4) * 0.35)
-    const luckBoost = 1 + luck * (q.rank >= 3 ? 1.5 : 0.5)
-    return q.weight * tierBoost * luckBoost
-  })
+  return rng.weighted(pool, q => qualityWeightAt(q, tier, opts))
+}
+
+/**
+ * 某一档品质在某层级的掉落权重 —— **掉落与审计共用这一处**。
+ *
+ * 抽出来不是为了好看:平衡审计要问「这个层级的玩家,身上通常是哪一档品质」,
+ * 而这个问题只能用同一份权重来答。审计若自己再写一份近似公式,
+ * 那么改了窗口、改了层阶加成之后,审计还在按旧口径夸人(或骂人)。
+ */
+export function qualityWeightAt(q: QualityDef, tier: number, opts: GenOptions = {}): number {
+  const luck = opts.luck ?? 0
+  if (q.rank === 0) return q.weight * bandFactor(q, tier, opts)
+  const tierBoost = Math.pow(QUALITY_TIER_SHIFT, (tier - 1) * Math.min(q.rank, 4) * 0.35)
+  const luckBoost = 1 + luck * (q.rank >= 3 ? 1.5 : 0.5)
+  return q.weight * tierBoost * luckBoost * bandFactor(q, tier, opts)
+}
+
+/**
+ * 品质窗口系数:窗口内 1;窗口外按**离窗口的距离**指数衰减
+ * (差一档 ×0.1、差两档 ×0.01…见 constants.QUALITY_OUT_OF_BAND)。
+ * 显式指定了品质下限(首领/秘境/际遇)时不吃窗口 —— 那是剧情给的例外。
+ */
+function bandFactor(q: QualityDef, tier: number, opts: GenOptions): number {
+  if (opts.minQualityRank !== undefined) return 1
+  const distance = Math.max(0, q.fromTier - tier, tier - q.toTier)
+  return distance === 0 ? 1 : Math.pow(QUALITY_OUT_OF_BAND, distance)
 }
 
 /** 生成一件装备实例 */
@@ -131,8 +168,27 @@ export interface ResolvedEquipStats {
   /**
    * 词条展示行 —— **已是展示序**(见 sortAffixLines),不是掷出的先后。
    * 掷出的顺序是随机的,照着印出来等于把「哪条要紧」交给运气。
+   *
+   * 每行除了整句 desc,还把数值切成 before / value / after 三段
+   * (按词条定义里那一处 `{v}` 切)。理由是排版:一列词条要能**扫**——
+   *   「锋锐」 常见   攻击提升 **4.2%**
+   *   「洞虚」 传世   攻击时无视目标 **8%** 防御
+   * 数值单独拎出来,界面才好右对齐、加粗;只给整句的话,
+   * 每行长短不一,玩家对比的是句子长度而不是数字。
    */
-  affixLines: { id: string; name: string; desc: string; rarity: AffixRarity }[]
+  affixLines: {
+    id: string
+    name: string
+    /** 整句(数值已代入)—— 说得出这条管什么 */
+    desc: string
+    /** 数值之前的话(如「攻击提升 」) */
+    before: string
+    /** 数值本身(如「4.2」) */
+    value: string
+    /** 数值之后的话(如「%」) */
+    after: string
+    rarity: AffixRarity
+  }[]
 }
 
 /**
@@ -178,7 +234,17 @@ export function resolveEquipStats(inst: EquipmentInstance): ResolvedEquipStats {
     if (!def) continue
     const value = affixValue(def, roll.roll)
     mods[def.key] = (mods[def.key] ?? 0) + value / 100
-    affixLines.push({ id: def.id, name: def.name, desc: def.desc.replace('{v}', String(value)), rarity: def.rarity })
+    // desc 里 {v} 是数值的落点:切开它,界面才能只给数字加粗、并把它右对齐
+    const [before = '', after = ''] = def.desc.split('{v}')
+    affixLines.push({
+      id: def.id,
+      name: def.name,
+      desc: def.desc.replace('{v}', String(value)),
+      before,
+      value: String(value),
+      after,
+      rarity: def.rarity
+    })
   }
   return { flats, mods, affixLines }
 }

@@ -24,7 +24,8 @@ import { MORTAL_TIER_MAX, REGIONS } from '@/data/regions'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
 import { MAX_MAJOR } from '@/data/realms'
 import { enemyGearFactor, powerScale, powerScore, realmScale } from './formulas'
-import { generateEquipment, resolveEquipStats } from './equipGen'
+import { QUALITIES } from '@/data/qualities'
+import { generateEquipment, qualityWeightAt, resolveEquipStats } from './equipGen'
 import { celestialDepthScale } from './gauntlet'
 import { computeFinalStats, mergeMods, modDepth } from './statsCalc'
 
@@ -38,6 +39,15 @@ export interface GearProfile {
   name: string
   /** 装备品质 rank 随大境界的斜率 */
   qualityPerMajor: number
+  /**
+   * 装备品质的**分位**:在这一层级的真实掉落池里,这位玩家站在第几分位。
+   *
+   * Phase 37 起品质窗口决定「什么内容掉什么品质」(神品只在 24 阶以后、
+   * 混沌道祖一层约 1%),玩家身上是什么品质从此与**他打的什么内容**绑在一起。
+   * 旧的「品质 rank = 境界 × 斜率」等于假设一个真仙穿着满身神品 ——
+   * 那是拿一件传说去代表全服,审计会据此算出谁都不曾拥有的战力。
+   */
+  qualityQuantile: number
   /** 强化等级随大境界的斜率 */
   levelPerMajor: number
   /** 「其他来源」百分比随大境界的斜率(丹药+灵脉+建筑+称号+灵兽合计) */
@@ -45,10 +55,26 @@ export interface GearProfile {
 }
 
 export const GEAR_PROFILES: GearProfile[] = [
-  { id: 'casual', name: '随缘', qualityPerMajor: 0.55, levelPerMajor: 0.6, otherPctPerMajor: 0.05 },
-  { id: 'typical', name: '常规', qualityPerMajor: 0.85, levelPerMajor: 1.0, otherPctPerMajor: 0.09 },
-  { id: 'optimized', name: '极限', qualityPerMajor: 1.15, levelPerMajor: 1.5, otherPctPerMajor: 0.15 }
+  { id: 'casual', name: '随缘', qualityPerMajor: 0, levelPerMajor: 0.6, otherPctPerMajor: 0.05, qualityQuantile: 0.25 },
+  { id: 'typical', name: '常规', qualityPerMajor: 0, levelPerMajor: 1.0, otherPctPerMajor: 0.09, qualityQuantile: 0.5 },
+  { id: 'optimized', name: '极限', qualityPerMajor: 0, levelPerMajor: 1.5, otherPctPerMajor: 0.15, qualityQuantile: 0.85 }
 ]
+
+/**
+ * 某层级的掉落池按权重排开,第 p 分位落在哪一档品质。
+ * 与 rollQuality 共用 qualityWeightAt —— 掉落口径一改,这里跟着改。
+ */
+export function qualityQuantileAt(tier: number, p: number): number {
+  const weights = QUALITIES.map(q => qualityWeightAt(q, tier))
+  const total = weights.reduce((s, w) => s + w, 0)
+  if (total <= 0) return 0
+  let acc = 0
+  for (let i = 0; i < weights.length; i += 1) {
+    acc += weights[i]!
+    if (acc / total >= p) return i
+  }
+  return weights.length - 1
+}
 
 export function gearProfile(id: string): GearProfile {
   return GEAR_PROFILES.find(p => p.id === id) ?? GEAR_PROFILES[1]!
@@ -116,7 +142,7 @@ export interface ModeledPlayer {
  */
 export function modelPlayer(major: number, sub: number, profile: GearProfile, seed = 20260904): ModeledPlayer {
   const tier = maxTierForMajor(major)
-  const qualityRank = Math.max(0, Math.min(8, Math.round(major * profile.qualityPerMajor)))
+  const qualityRank = qualityQuantileAt(tier, profile.qualityQuantile)
   const level = Math.max(0, Math.min(10, Math.round(major * profile.levelPerMajor)))
   const rng = new RandomService(mulberry32(seed + major * 131 + sub * 17))
 
@@ -383,10 +409,18 @@ export interface GearAsymmetry {
  * 就是在这一段得出的。仙界以上的层级走 LATE_COMBAT_GROWTH 的平坦曲线,
  * 其玩家/内容对齐由 contentCoverageAudit 全程守;若仍按 32 层算总跨度,
  * 会把「敌人补偿在 20 层之上的自然增量」误读成乘区失衡。
+ *
+ *
+ * 注意:这里的品质跨度是**结构上的**极端值(凡品零级 → 神品满强化),
+ * 它衡量的是「这条乘区最陡能陡到什么程度」,不是某个玩家的实际穿着。
+ * 品质窗口(data/qualities 的 fromTier/toTier)决定玩家真正拿得到什么,
+ * 那条线由 lootSim / contentCoverageAudit 全程看着。
  */
 export function gearAsymmetry(): GearAsymmetry {
-  const playerLow = Math.pow(1.0, EQUIP_QUALITY_FLAT_EXP) * (1 + 0 * 0.12)
-  const playerHigh = Math.pow(9.5, EQUIP_QUALITY_FLAT_EXP) * (1 + 10 * 0.12)
+  const low = QUALITIES[qualityQuantileAt(1, 0.5)]!
+  const high = QUALITIES[qualityQuantileAt(MORTAL_TIER_MAX, 0.5)]!
+  const playerLow = Math.pow(low.mult, EQUIP_QUALITY_FLAT_EXP) * (1 + 0 * 0.12)
+  const playerHigh = Math.pow(high.mult, EQUIP_QUALITY_FLAT_EXP) * (1 + 10 * 0.12)
   const enemyLow = enemyGearFactor(1)
   const enemyHigh = enemyGearFactor(MORTAL_TIER_MAX)
   const playerGearGrowth = playerHigh / playerLow

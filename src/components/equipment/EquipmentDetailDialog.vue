@@ -45,7 +45,7 @@
       <template v-if="resolved.affixLines.length">
         <div class="ink-divider my-3" />
         <!--
-          条数上限按品质给(凡品 0~1 · 神品 6),这是玩家最该看见的一件事:
+          条数上限按品质给(凡品 0~1 · 神品 6~9),这是玩家最该看见的一件事:
           一件装备的"上限"就在它的品质里,而重铸可以重掷条数 —— 只有把它摊在明面上,
           「要不要为这件洗下去」才算得清。
         -->
@@ -56,26 +56,49 @@
             <span class="ml-1 text-ink-ghost">({{ qualityName }}上限)</span>
           </span>
         </p>
-        <div v-for="(line, i) in resolved.affixLines" :key="i" class="mb-1.5 rounded-md bg-violet-ink/7 px-3 py-1.5">
-          <div class="flex items-center justify-between">
-            <div class="min-w-0">
-              <!-- 稀有度上色 + 名目:排序说明得了「为什么这条排在前面」 -->
-              <span class="font-kai text-[12px]" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">「{{ line.name }}」</span>
-              <span class="ml-1 text-[9px] opacity-80" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
-                {{ AFFIX_RARITY_META[line.rarity].name }}
-              </span>
-              <span class="ml-1 text-[12px] text-ink-soft">{{ line.desc }}</span>
-            </div>
+        <!--
+          词条一条一行:名目与稀有度在左、效果在右、**数值单独加粗**(见 resolveEquipStats
+          的 before/value/after)。一件神品能挂九条,所以这一列要能扫:
+          左边一列名目对齐、右边一列数字对齐,行与行之间不夹长度不一的句子。
+
+          分成九行之后,原来「一条一个色块」的排法会把整张卡片压塌 ——
+          色块摞起来,装备本身的层次反而看不见。改成整体一块底 + 行间细分隔线,
+          稀有度交给左侧那道色边(与名目同色):一眼看得出哪条是撞上的大运,
+          又不至于九块颜色抢戏。
+        -->
+        <ul class="overflow-hidden rounded-md bg-violet-ink/6">
+          <li
+            v-for="(line, i) in resolved.affixLines"
+            :key="line.id"
+            class="flex items-center gap-2 py-1.5 pl-2 pr-1.5"
+            :class="i > 0 ? 'border-t border-violet-ink/12' : ''"
+            :style="{ borderLeft: `2px solid ${AFFIX_RARITY_META[line.rarity].color}` }"
+          >
+            <span class="shrink-0 font-kai text-[12px]" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
+              「{{ line.name }}」
+            </span>
+            <span class="shrink-0 text-[9px] opacity-80" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
+              {{ AFFIX_RARITY_META[line.rarity].name }}
+            </span>
+            <span class="ml-auto min-w-0 text-right text-[11px] leading-snug text-ink-soft">
+              {{ line.before }}<span class="tabular font-medium text-ink">{{ line.value }}</span>{{ line.after }}
+            </span>
             <button
               v-if="canSealAffix(line.id)"
-              class="ml-2 shrink-0 rounded-md px-2 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
+              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
+              :aria-label="`封存词条${line.name}`"
               @click="doSealAffix(line.id)"
             >
               封存
             </button>
-            <span v-else-if="isAffixSealed(line.id)" class="ml-2 shrink-0 text-[10px] text-jade">已封存</span>
-          </div>
-        </div>
+            <span v-else-if="isAffixSealed(line.id)" class="shrink-0 text-jade" role="img" aria-label="这条词条已封存">
+              <GameIcon name="lock" :size="12" />
+            </span>
+          </li>
+        </ul>
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
+          排序:稀有度(传世 → 常见)→ 掷点;左侧色边即这一条的成色
+        </p>
       </template>
       <template v-if="buildPreview">
         <div class="ink-divider my-3" />

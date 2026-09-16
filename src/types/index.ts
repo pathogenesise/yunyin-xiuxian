@@ -183,6 +183,15 @@ export interface QualityDef {
   mult: number
   /** 词条数量范围 */
   affixes: [number, number]
+  /**
+   * 现世层级窗口 —— 这一档品质只在 [fromTier, toTier] 这段内容里**正常**掉落。
+   *
+   * 行业里叫「物品等级带」:稀有度不是纯运气,而是内容深度的函数 ——
+   * 神品该从神界/混沌海长出来,不是青云山麓抽奖抽到的。
+   * 窗口外仍留一线(QUALITY_OUT_OF_BAND),给际遇与图鉴留门,但那是万分之几。
+   */
+  fromTier: number
+  toTier: number
   /** 掉落权重 */
   weight: number
   /** css 颜色变量名 */
