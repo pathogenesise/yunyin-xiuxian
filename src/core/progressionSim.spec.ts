@@ -59,7 +59,7 @@ describe('数值曲线审计(Phase 14)', () => {
     }
   })
 
-  it('界外长尾有界:修满混沌道祖的耗时不到修满真仙的 100 倍', () => {
+  it('界外长尾有界:修满混沌道祖的耗时不到修满真仙的 200 倍', () => {
     const toZhenxian = hoursToReach(WORLD_BREAK_MAJOR, 0)
     const toPeak = hoursToReach(MAX_MAJOR, 0)
     console.log(
@@ -67,7 +67,16 @@ describe('数值曲线审计(Phase 14)', () => {
         `(×${(toPeak / toZhenxian).toFixed(1)})`
     )
     expect(toPeak / toZhenxian).toBeGreaterThan(2) // 四界确实是长线,不是几步就到
-    expect(toPeak / toZhenxian).toBeLessThan(100) // 但有界,不至于数学上不可达
+    /**
+     * 上限原为 100 倍。Phase 38 把界外每境的修为需求抬了一档
+     * (LATE_EXP_GROWTH 4.0 → 4.4,每境净耗时 1.25 → 1.375 倍),
+     * 理由是**这里才是"很快就到顶"的那一段**:人界九境的节奏(真仙 73 天)
+     * 动一下就会掀翻首世体验与轮回 ROI 的结论,而界外本来就是长线目标 ——
+     * 混沌道祖该是传说,不该是第一世顺手就到的终点。
+     * 实测长尾 160 倍,故上限抬到 200:仍要"有界"(每境增幅另有一条 <2 倍的判据守着),
+     * 但允许它是一条更长的坡。
+     */
+    expect(toPeak / toZhenxian).toBeLessThan(200) // 但有界,不至于数学上不可达
   })
 
   /**

@@ -59,7 +59,7 @@ export const CULT_SUB_SPEED_GROWTH = 1.06
  * 仍落在可达范围。灵气同理(容量 ×4、回复 ×3.2),不会出现"容量涨得比回复快、
  * 越到后面越存不满"的断层。
  */
-export const LATE_EXP_GROWTH = 4.0
+export const LATE_EXP_GROWTH = 4.4
 export const LATE_CULT_SPEED_GROWTH = 3.2
 export const LATE_COMBAT_GROWTH = 4.6
 export const LATE_QI_CAP_GROWTH = 4.0
