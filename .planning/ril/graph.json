@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 206,
+  "round": 207,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-17T14:56:16+00:00",
+  "updated_at": "2026-09-17T15:21:24+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -12128,17 +12128,17 @@
       "version": 1,
       "created_at": "2026-09-17T14:20:45+00:00",
       "updated_at": "2026-09-17T14:20:45+00:00",
-      "touched_round": 206,
+      "touched_round": 207,
       "summary": "数值审计工具链(economySim 经济闭环 / inflationAudit 战力膨胀 / expIncome 修为收入 / progressionSim 曲线 + 各自的 spec):用真实公式与真实数据估算各境界读数,经 bun run test:report 汇总;只度量不改数值"
     },
     "ISS-210": {
       "id": "ISS-210",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-17T14:20:49+00:00",
-      "updated_at": "2026-09-17T14:20:49+00:00",
-      "touched_round": 205,
+      "updated_at": "2026-09-17T15:21:15+00:00",
+      "touched_round": 207,
       "severity": 0.5,
       "confidence": 0.8,
       "effort": 2,
@@ -12151,7 +12151,7 @@
       "version": 1,
       "created_at": "2026-09-17T14:20:49+00:00",
       "updated_at": "2026-09-17T14:20:49+00:00",
-      "touched_round": 205,
+      "touched_round": 207,
       "severity": 0.5,
       "confidence": 0.8,
       "effort": 3,
@@ -12241,11 +12241,11 @@
     "TASK-194": {
       "id": "TASK-194",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-17T14:21:03+00:00",
-      "updated_at": "2026-09-17T14:21:03+00:00",
-      "touched_round": 205,
+      "updated_at": "2026-09-17T15:21:15+00:00",
+      "touched_round": 207,
       "category": "test-quality",
       "severity": 0.5,
       "confidence": 0.7,
@@ -12323,6 +12323,30 @@
       "updated_at": "2026-09-17T14:56:12+00:00",
       "touched_round": 206,
       "summary": "历练三档触发与修为收入口径(core/eventTier + core/expIncome):档位稀度、渠道倍率、与引擎的对账"
+    },
+    "ISS-214": {
+      "id": "ISS-214",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T15:21:14+00:00",
+      "updated_at": "2026-09-17T15:21:14+00:00",
+      "touched_round": 207,
+      "severity": 0.6,
+      "confidence": 0.8,
+      "effort": 3,
+      "summary": "界外把材料/灵石熔成道源的速率远超终局节奏:按「每境凝一枚道果」的下限需求算,真仙 ×1.5e4、混沌道祖 ×5.1e8 —— 到混沌海,一战的灵石收入就够换一枚以上道果。根因与 ISS-211 同源:灵石收入按 1.9^区域层级 涨,而熔炉汇率与道果价(100 道源)冻结在真仙量级。属定价决策:可抬熔炉汇率/道果价,或让道果价随层级走。"
+    },
+    "CHG-242": {
+      "id": "CHG-242",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T15:21:14+00:00",
+      "updated_at": "2026-09-17T15:21:14+00:00",
+      "touched_round": 207,
+      "commit": "9d51f6a",
+      "summary": "经济审计计入天道熔炉出口:道源成为第八条流(只在界外),四样材料与灵石在界外改认熔炉为出口,界外不再出现 ∞ 与死资源;悟道流的未建模出口自报口径。界外判据升级为结构不变量 + 把道源失衡(ISS-214)钉成断言。"
     }
   },
   "edges": [
@@ -18356,6 +18380,30 @@
       "to": "COMP-026",
       "type": "governs",
       "created_at": "2026-09-17T14:56:16+00:00"
+    },
+    {
+      "from": "CHG-242",
+      "to": "ISS-210",
+      "type": "resolves",
+      "created_at": "2026-09-17T15:21:14+00:00"
+    },
+    {
+      "from": "ISS-214",
+      "to": "ISS-211",
+      "type": "causes",
+      "created_at": "2026-09-17T15:21:14+00:00"
+    },
+    {
+      "from": "ISS-214",
+      "to": "COMP-025",
+      "type": "located_in",
+      "created_at": "2026-09-17T15:21:14+00:00"
+    },
+    {
+      "from": "CHG-242",
+      "to": "TASK-194",
+      "type": "implements",
+      "created_at": "2026-09-17T15:21:24+00:00"
     }
   ]
 }
