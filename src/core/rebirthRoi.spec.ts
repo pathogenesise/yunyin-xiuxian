@@ -148,8 +148,18 @@ describe('轮回 ROI · 口径完整性', () => {
     // 三项漏掉的成本都随境界递增,分子分母同向放大,压不动阶数差
     expect(optimalRebirthPoint().major).toBe(MANUAL_REBIRTH_MIN_MAJOR)
     const g = growthOrders()
-    // 跌幅由旧口径 466 倍变为 339 倍——收窄了,但远未消除
+    /**
+     * 跌幅由旧口径 466 倍变为 339 倍(Phase 32 的口径补齐),Phase 39 又回到 537 倍。
+     *
+     * 为什么回涨:这一版把人间每大境界的净耗时从 ×3.46 抬到 ×3.65
+     * (需求 18 → 19 且基础修速 1.6 → 1.3),深修耗时这条分母陡了一档,
+     * 而道果分子仍只按 Σ(i+1) 二次增长 —— 阶数没变,剖面自然更深。
+     *
+     * 这不是把上一条结论推翻:高频轮回仍是最优(optimalRebirthPoint 仍是金丹)。
+     * 它记的是**这一版让「深修的路」相对更贵了**,若要动,该动的是道果曲线
+     * (DAO_FRUIT_PER_MAJOR / 软上限),不是把修为需求改回去 —— 后者是玩家明确要的。
+     */
     expect(g.efficiencyDrop).toBeGreaterThan(100)
-    expect(g.efficiencyDrop).toBeLessThan(466)
+    expect(g.efficiencyDrop).toBeLessThan(600)
   })
 })

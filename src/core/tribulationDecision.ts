@@ -25,12 +25,14 @@ import {
   COMBAT_HP_BASE,
   TRIBULATION_BASE_WAVES,
   TRIBULATION_DIFFICULTY_CAP_MAJOR,
+  TRIB_WORLD_STEP_STAT_FOLD,
   TRIB_DEF_RESIST_CAP,
   TRIB_DEF_RESIST_PER_SURPLUS,
   TRIB_HP_GUARD_CAP,
   TRIB_HP_GUARD_PER_SURPLUS
 } from '@/data/constants'
 import { realmScale, tribulationWaveDamage } from './formulas'
+import { isWorldEntry } from '@/data/realms'
 import { mulberry32 } from '@/utils/random'
 import { toNum } from '@/utils/gnum'
 import { usePlayerStore } from '@/stores/player'
@@ -111,15 +113,35 @@ export function statGuardOf(raw: { defense: number; maxHp: number; major: number
   }
 }
 
-/** 当前玩家的三维折算 —— 预览(currentTribulationPlan)与结算(runTribulation)共用这一个入口 */
+/**
+ * 界膜那一劫认不认血肉(= 三维折算的折扣)。
+ *
+ * 界内各关 1(照常折算);界末那一关取 TRIB_WORLD_STEP_STAT_FOLD
+ * (0 = 不认,见 constants 那段注释里的理由)。判据只在**目标境界**上成立 ——
+ * 目标是不是某个界域的第一境,决定了这一步是不是"破壁而出"。
+ */
+export function statFoldAt(targetMajor: number): number {
+  return isWorldEntry(targetMajor) ? TRIB_WORLD_STEP_STAT_FOLD : 1
+}
+
+/**
+ * 当前玩家的三维折算 —— 预览(currentTribulationPlan)与结算(runTribulation)共用这一个入口。
+ *
+ * 折叠在这里做,而不是在 waveDamage / trace 里各做一次:这是**读数的唯一入口**,
+ * 界面摊开的「防御折算 X% · 气血折算 Y%」与实际结算吃到的就是同一个数。
+ * 若在结算侧另折一次而界面上照旧显示原值,玩家会看到"护持明明写着 35%,却像没有"。
+ */
 export function currentStatGuard(): TribStatGuard {
   const player = usePlayerStore()
-  return statGuardOf({
+  const raw = statGuardOf({
     defense: toNum(player.finalStats.defense),
     maxHp: toNum(player.finalStats.maxHp),
     major: player.major,
     sub: player.sub
   })
+  const nextMajor = player.isMajorStep ? player.major + 1 : player.major
+  const fold = statFoldAt(nextMajor)
+  return { resist: raw.resist * fold, guard: raw.guard * fold }
 }
 
 /** 天劫总波次 */

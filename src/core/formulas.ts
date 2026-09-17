@@ -3,7 +3,7 @@
  * 关键设计:装备与敌人共用 powerScale 曲线,保证任何阶段数值对齐
  */
 import type { GNum } from '@/types'
-import { gn, mulN, powN, mul, add } from '@/utils/gnum'
+import { gn, gnMin, mulN, powN, mul, add } from '@/utils/gnum'
 import {
   COMBAT_ATK_BASE,
   COMBAT_DEF_BASE,
@@ -31,6 +31,10 @@ import {
   STONE_DROP_BASE,
   STONE_TIER_GROWTH,
   TRIBULATION_DIFFICULTY_CAP_MAJOR,
+  TRIB_WAVE_BASE,
+  TRIB_WAVE_MAJOR,
+  TRIB_WAVE_STEP,
+  WORLD_STEP_EXP_MULT,
   BT_MAJOR_BASE_RATE,
   BT_MAJOR_DECAY,
   BT_MAX_RATE,
@@ -46,7 +50,7 @@ import {
   UPGRADE_DUST_GROWTH,
   UPGRADE_STONE_TIER_BASE
 } from '@/data/constants'
-import { WORLD_BREAK_MAJOR, worldOf } from '@/data/realms'
+import { isWorldEntry, MAX_MAJOR, WORLD_BREAK_MAJOR, worldOf } from '@/data/realms'
 
 /**
  * 区域层级 → 对应大境界(与 regions.ts 设计同步)。
@@ -97,11 +101,23 @@ export function realmScale(major: number, sub: number): GNum {
   return mul(majorCombatFactor(major), powN(COMBAT_SUB_GROWTH, sub))
 }
 
+/**
+ * 跨越界膜那一步 —— 走完「界末境界的圆满」就要引劫飞升/破界/归返,
+ * 故界末那一境的最后一层按 WORLD_STEP_EXP_MULT 加价。
+ *
+ * 判据只此一处:界面(境界志/突破页)、模拟器、审计全部经 expRequirement,
+ * 任何地方另写一个"×2"都会让玩家看到两个不同的需求数。
+ */
+export function isWorldStepLayer(major: number, sub: number): boolean {
+  return sub >= SUB_LEVELS - 1 && major < MAX_MAJOR && isWorldEntry(major + 1)
+}
+
 /** 突破所需修为 */
 export function expRequirement(major: number, sub: number): GNum {
   const { early, late } = earlyLate(major)
   const majorFactor = mul(powN(EXP_MAJOR_GROWTH, early), powN(LATE_EXP_GROWTH, late))
-  return mulN(mul(majorFactor, powN(EXP_SUB_GROWTH, sub)), EXP_BASE)
+  const stepMult = isWorldStepLayer(major, sub) ? WORLD_STEP_EXP_MULT : 1
+  return mulN(mul(majorFactor, powN(EXP_SUB_GROWTH, sub)), EXP_BASE * stepMult)
 }
 
 /** 基础修为/秒(未计任何倍率) */
@@ -163,6 +179,22 @@ export function stoneByTier(tier: number, amount: number): GNum {
   return mulN(powN(STONE_TIER_GROWTH, Math.max(0, tier - 1)), STONE_DROP_BASE * amount * 0.1)
 }
 
+/**
+ * 即时修为的**唯一结算口径**:等效闭关时长 → 修为,封顶在「不满一层」。
+ *
+ *   修为 = min(修速 × 等效秒数, 当前一层需求 × 层上限)
+ *
+ * 三条来源(丹药 / 一场遭遇 / 一次际遇)都走这一个函数,在线与离线也走它 ——
+ * 从前每一处各写一遍「需求 × 百分比」,于是每一处都随境界指数膨胀(见 constants
+ * 里 BATTLE_EXP_SECS 的那段读数),而修速词条反倒只管得到挂机那一条线。
+ *
+ * 离线 N 场:把秒数与层上限一并乘 N(`secs × N` / `layerCap × N`)——
+ * 上限随场数线性放大,故「N 场」恒等于「N 次单场」,离线不会偷跑也不会被吃掉。
+ */
+export function expFromSecs(expReq: GNum, secs: number, cultPerSec: number, layerCap: number): GNum {
+  return gnMin(mulN(gn(cultPerSec), secs), mulN(expReq, layerCap))
+}
+
 /** 建筑升级灵石成本 */
 export function buildingCost(costBase: number, level: number): GNum {
   return mulN(powN(BUILDING_COST_GROWTH, level), costBase)
@@ -189,11 +221,17 @@ export function winChanceFromRatio(r: number): number {
   return Math.max(0.05, Math.min(0.95, chance))
 }
 
-/** 天劫单波伤害占玩家最大生命比例(裸装首劫约五成生还,备战后稳过) */
+/**
+ * 天劫单波伤害占玩家最大生命比例。
+ *
+ * 式子 = (TRIB_WAVE_BASE + TRIB_WAVE_MAJOR×境界 + TRIB_WAVE_STEP×第几道) × (1 − 抗性)
+ *        ↑ 三个系数收在 data/constants(Phase 39 由 0.15 / 0.02 / 0.03 上调 3%)
+ *        ↑ 跨界那一境(9/14/18)的加难不在这条式子里,它走「不认三维折算」那条规则
+ */
 export function tribulationWaveDamage(targetMajor: number, wave: number, resist: number): number {
   // 境界项封顶(见 constants:难度口径只为 major ≤ 8 设,减伤有绝对上限)
   const m = Math.min(targetMajor, TRIBULATION_DIFFICULTY_CAP_MAJOR)
-  const base = 0.15 + m * 0.02 + wave * 0.03
+  const base = TRIB_WAVE_BASE + m * TRIB_WAVE_MAJOR + wave * TRIB_WAVE_STEP
   return Math.max(0.04, base * (1 - resist))
 }
 

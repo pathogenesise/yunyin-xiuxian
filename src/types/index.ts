@@ -359,10 +359,22 @@ export interface PillDef {
   quality: QualityId
   kind: 'instant' | 'buff'
   instant?: {
-    /** 按当前突破需求百分比给予修为(高品质丹药) */
-    expReqPct?: number
+    /**
+     * 等效闭关秒数 —— 修为丹的药力单位(Phase 39)。
+     *
+     * 结算口径:修为 += 服丹者当下的修炼速度 × 本秒数,再封顶到「不满一层」
+     * (见 core/pillService 与 INSTANT_EXP_LAYER_CAP)。
+     *
+     * 从前这里是 `expReqPct`(按当前一层需求的百分比给修为)。那个口径看着"自平衡",
+     * 实则把**指数增长的需求墙**整段搬给了玩家:同一枚金丹期的丹留到混沌海服用,
+     * 药力跟着需求一起涨到万亿倍,而它的成本仍冻结在金丹期 —— 于是后面的境界壁垒、
+     * 破界的艰难,全都能靠囤丹抹平。改按"一段写死的闭关时长"结算之后,
+     * 丹药在任何境界值多少都是常量,囤到高境界只会显得它更弱(这是对的)。
+     */
+    expSecs?: number
     /** 固定修为点数(低品质丹药,与境界无关) */
     expFixed?: number
+    /** 灵气回满比例(上限的五成/十成)—— 容量与回速同阶,折成时间近乎恒定,故保留百分比 */
     qiPct?: number
     lifespanYears?: number
     wudao?: number
@@ -492,7 +504,14 @@ export type EventCond = { type: 'realm'; min: number } | { type: 'stone'; tierAm
 
 export type EventEffect =
   | { type: 'stone'; tierAmount: number }
-  | { type: 'exp'; reqPct: number }
+  /**
+   * 修为奖励 —— **等效闭关秒数**(Phase 39:与丹药、一场遭遇同一把尺子)。
+   *
+   * 从前这里是 reqPct(当前一层需求的百分比):一层耗时每境 ×3.65,
+   * 于是同一次际遇的价值随境界指数上涨 —— 真仙期一次际遇抵十几个时辰闭关。
+   * 现在写死成一段时长(60~240 秒),它认的是玩家的修速,不认那道墙。
+   */
+  | { type: 'exp'; secs: number }
   | { type: 'material'; id: 'herb' | 'ore' | 'page' | 'dust' | 'wudao'; amount: number }
   | { type: 'equipment'; minQualityRank?: number }
   | { type: 'pill'; id?: string; count: number }

@@ -40,7 +40,7 @@ export const EVENTS: EventDef[] = [
       c(
         '观察',
         [
-          o(70, '你仔细端详,悟出几分道韵。', { type: 'exp', reqPct: 0.05 }),
+          o(70, '你仔细端详,悟出几分道韵。', { type: 'exp', secs: 30 }),
           o(30, '看不出所以然,你随手收起了几页残卷。', { type: 'material', id: 'page', amount: 3 })
         ],
         { isDefault: true }
@@ -57,7 +57,7 @@ export const EVENTS: EventDef[] = [
       c(
         '饮下泉水',
         [
-          o(75, '泉水甘冽,灵气涌入四肢百骸。', { type: 'exp', reqPct: 0.08 }),
+          o(75, '泉水甘冽,灵气涌入四肢百骸。', { type: 'exp', secs: 60 }),
           o(25, '泉水中竟蕴含微量灵毒,你连忙运功逼出。', { type: 'buff', id: 'injury' })
         ],
         { isDefault: true }
@@ -92,7 +92,7 @@ export const EVENTS: EventDef[] = [
       c(
         '上前行礼',
         [
-          o(55, '老者睁开一只眼,指点了你几句,字字珠玑。', { type: 'exp', reqPct: 0.1 }),
+          o(55, '老者睁开一只眼,指点了你几句,字字珠玑。', { type: 'exp', secs: 60 }),
           o(30, '老者哈哈一笑,赠你一颗丹药,转眼不见踪影。', { type: 'pill', count: 1 }),
           o(15, '老者递来酒葫芦,你饮下一口,只觉道韵加身。', { type: 'buff', id: 'bless_daoyun' })
         ],
@@ -170,10 +170,10 @@ export const EVENTS: EventDef[] = [
     ['general', 'thunder'],
     [
       c('引雷淬体', [
-        o(55, '雷霆入体,气血奔涌,你只觉浑身通透!', { type: 'exp', reqPct: 0.12 }),
+        o(55, '雷霆入体,气血奔涌,你只觉浑身通透!', { type: 'exp', secs: 60 }),
         o(45, '你高估了自己,被雷劈得外焦里嫩。', { type: 'buff', id: 'injury' })
       ]),
-      c('避雨静修', [o(1, '你寻了处山洞打坐,听雨声入定。', { type: 'exp', reqPct: 0.04 })], { isDefault: true })
+      c('避雨静修', [o(1, '你寻了处山洞打坐,听雨声入定。', { type: 'exp', secs: 30 })], { isDefault: true })
     ]
   ),
   ev(
@@ -198,7 +198,7 @@ export const EVENTS: EventDef[] = [
     [
       c('尝试拔剑', [
         o(15, '古剑轻鸣,竟应手而出!', { type: 'equipment', minQualityRank: 4 }),
-        o(45, '剑纹一闪,一段剑道感悟涌入脑海。', { type: 'exp', reqPct: 0.08 }),
+        o(45, '剑纹一闪,一段剑道感悟涌入脑海。', { type: 'exp', secs: 60 }),
         o(40, '纹丝不动,你的手却被剑气所伤。', { type: 'buff', id: 'injury' })
       ]),
       c('参悟剑铭', [o(1, '你静观铭文,若有所思。', { type: 'material', id: 'wudao', amount: 5 })], { isDefault: true })
@@ -210,7 +210,7 @@ export const EVENTS: EventDef[] = [
     '月圆之夜,湖面浮起点点银辉,灵气随月光沉入水中。',
     ['general', 'water'],
     [
-      c('湖畔吐纳', [o(1, '月华入体,修为悄然精进。', { type: 'exp', reqPct: 0.09 })], { isDefault: true }),
+      c('湖畔吐纳', [o(1, '月华入体,修为悄然精进。', { type: 'exp', secs: 60 })], { isDefault: true }),
       c('潜入湖底', [
         o(40, '湖底沉着一只锈迹斑斑的铁盒。', { type: 'equipment', minQualityRank: 2 }),
         o(35, '你摸到几块温润的月华石。', { type: 'material', id: 'ore', amount: 8 }),
@@ -258,7 +258,7 @@ export const EVENTS: EventDef[] = [
     [
       c('推演棋局', [
         o(50, '一子落定,满盘皆活!你于变化之道大有所悟。', { type: 'material', id: 'wudao', amount: 8 }),
-        o(30, '棋局暗藏杀伐之意,你悟出几分战斗真谛。', { type: 'exp', reqPct: 0.06 }),
+        o(30, '棋局暗藏杀伐之意,你悟出几分战斗真谛。', { type: 'exp', secs: 30 }),
         o(20, '你陷入棋局心神难拔,醒来时已过许久,心浮气躁。', { type: 'buff', id: 'curse_xinmo' })
       ]),
       leave('你看了两眼,自知棋力不济,一笑而去。')
@@ -280,7 +280,7 @@ export const EVENTS: EventDef[] = [
         { isDefault: true }
       ),
       c('取其内丹', [
-        o(60, '你心一横下了手,取得一颗灵气充盈的内丹。', { type: 'exp', reqPct: 0.1 }),
+        o(60, '你心一横下了手,取得一颗灵气充盈的内丹。', { type: 'exp', secs: 60 }),
         o(40, '你刚出手,一声兽吼震彻山林——它的母亲来了!', { type: 'buff', id: 'injury' })
       ])
     ]
@@ -295,7 +295,7 @@ export const EVENTS: EventDef[] = [
         '彻夜长谈',
         [
           o(60, '他山之石可以攻玉,你收获良多。', { type: 'material', id: 'wudao', amount: 5 }),
-          o(40, '谈至兴起,他赠你一份不外传的心得。', { type: 'exp', reqPct: 0.06 })
+          o(40, '谈至兴起,他赠你一份不外传的心得。', { type: 'exp', secs: 30 })
         ],
         { isDefault: true }
       ),
@@ -365,7 +365,7 @@ export const EVENTS: EventDef[] = [
     ['general', 'ruin', 'dark'],
     [
       c('登塔', [
-        o(35, '塔中每层皆有传承刻文,你受益匪浅。', { type: 'exp', reqPct: 0.1 }, { type: 'material', id: 'wudao', amount: 5 }),
+        o(35, '塔中每层皆有传承刻文,你受益匪浅。', { type: 'exp', secs: 60 }, { type: 'material', id: 'wudao', amount: 5 }),
         o(30, '顶层供着一件蒙尘的法器。', { type: 'equipment', minQualityRank: 3 }),
         o(35, '塔中阴气缠身,你逃出时脸色发白。', { type: 'buff', id: 'curse_xinmo' })
       ]),
@@ -381,7 +381,7 @@ export const EVENTS: EventDef[] = [
       c(
         '凝神听讲',
         [
-          o(60, '醒来后口齿留香,道音犹在耳畔。', { type: 'exp', reqPct: 0.08 }),
+          o(60, '醒来后口齿留香,道音犹在耳畔。', { type: 'exp', secs: 60 }),
           o(30, '仙人抛下一卷经书,梦醒时它竟真在你怀中!', { type: 'gongfa' }),
           o(10, '仙人回眸一笑:「有缘人,赠你一场造化。」', { type: 'buff', id: 'bless_daoyun' })
         ],
@@ -465,8 +465,8 @@ export const EVENTS: EventDef[] = [
       c(
         '参与竞拍',
         [
-          o(50, '你拍下妖丹,炼化后修为大涨。', { type: 'stone', tierAmount: -60 }, { type: 'exp', reqPct: 0.15 }),
-          o(30, '有人恶意抬价,你多花了不少,好在妖丹货真价实。', { type: 'stone', tierAmount: -80 }, { type: 'exp', reqPct: 0.15 }),
+          o(50, '你拍下妖丹,炼化后修为大涨。', { type: 'stone', tierAmount: -60 }, { type: 'exp', secs: 90 }),
+          o(30, '有人恶意抬价,你多花了不少,好在妖丹货真价实。', { type: 'stone', tierAmount: -80 }, { type: 'exp', secs: 90 }),
           o(20, '拍到手才发现是颗赝品,黑市早已人去楼空。', { type: 'stone', tierAmount: -60 })
         ],
         { hint: '需要较多灵石', cond: { type: 'stone', tierAmount: 80 } }
@@ -484,7 +484,7 @@ export const EVENTS: EventDef[] = [
         '静坐相陪',
         [
           o(60, '你陪坐三日,起身时只觉道心通透。', { type: 'material', id: 'wudao', amount: 8 }),
-          o(40, '人影忽然散去——那只是一道残留的道韵。你若有所失,又若有所得。', { type: 'exp', reqPct: 0.08 })
+          o(40, '人影忽然散去——那只是一道残留的道韵。你若有所失,又若有所得。', { type: 'exp', secs: 60 })
         ],
         { isDefault: true }
       ),
@@ -536,7 +536,7 @@ export const EVENTS: EventDef[] = [
         o(30, '一枚温润的果实静静躺在洞底。', { type: 'pill', count: 1 }),
         o(25, '树洞的主人回来了——一只暴躁的妖猿!', { type: 'buff', id: 'injury' })
       ]),
-      c('树下打坐', [o(1, '神木灵气庇护,你修炼事半功倍。', { type: 'exp', reqPct: 0.07 })], { isDefault: true })
+      c('树下打坐', [o(1, '神木灵气庇护,你修炼事半功倍。', { type: 'exp', secs: 60 })], { isDefault: true })
     ]
   ),
   ev(
@@ -546,7 +546,7 @@ export const EVENTS: EventDef[] = [
     ['fire', 'sky'],
     [
       c('伸手接住', [
-        o(50, '羽毛化作一缕真火没入体内,气血如沸!', { type: 'exp', reqPct: 0.12 }),
+        o(50, '羽毛化作一缕真火没入体内,气血如沸!', { type: 'exp', secs: 60 }),
         o(30, '羽毛落地化作一枚赤红丹丸。', { type: 'pill', count: 1 }),
         o(20, '真火灼手,你被烫得不轻。', { type: 'buff', id: 'injury' })
       ]),
@@ -647,7 +647,7 @@ export const EVENTS: EventDef[] = [
       c(
         '掬水而饮',
         [
-          o(60, '星辉入腹,神魂为之一清。', { type: 'exp', reqPct: 0.1 }),
+          o(60, '星辉入腹,神魂为之一清。', { type: 'exp', secs: 60 }),
           o(40, '池水冰寒刺骨,你打了个激灵,灵台空明。', { type: 'material', id: 'wudao', amount: 6 })
         ],
         { isDefault: true }
@@ -666,7 +666,7 @@ export const EVENTS: EventDef[] = [
     [
       c('探手其中', [
         o(35, '你摸到一件冰凉的古物!', { type: 'artifact' }),
-        o(35, '一股精纯之气顺着手臂涌入体内。', { type: 'exp', reqPct: 0.12 }),
+        o(35, '一股精纯之气顺着手臂涌入体内。', { type: 'exp', secs: 60 }),
         o(30, '裂缝猛然收缩!你抽手不及,受了伤。', { type: 'buff', id: 'injury' })
       ]),
       leave('虚空凶险,你退避三舍。')
@@ -731,7 +731,7 @@ export const EVENTS: EventDef[] = [
     ['general'],
     [
       c('以手触碑', [
-        o(50, '古碑微光流转,你心中一个困惑已久的关隘豁然贯通。', { type: 'exp', reqPct: 0.15 }),
+        o(50, '古碑微光流转,你心中一个困惑已久的关隘豁然贯通。', { type: 'exp', secs: 90 }),
         o(30, '碑中传出一声轻叹,一页古老的纸卷飘落。', { type: 'material', id: 'page', amount: 10 }),
         o(20, '古碑纹丝不动。或许,你的问题还不够格。')
       ]),
@@ -762,14 +762,14 @@ export const EVENTS: EventDef[] = [
       c(
         '拾葫芦归还',
         [
-          o(50, '道人眯眼一笑,请你共饮一口。入喉如吞云霞!', { type: 'exp', reqPct: 0.1 }),
+          o(50, '道人眯眼一笑,请你共饮一口。入喉如吞云霞!', { type: 'exp', secs: 60 }),
           o(30, '道人打个酒嗝:「有心了。」随手赏你一物。', { type: 'artifact' }),
           o(20, '道人呼呼大睡,你把葫芦放回他怀里,悄然离去。', { type: 'buff', id: 'bless_qingfeng' })
         ],
         { isDefault: true }
       ),
       c('偷喝一口', [
-        o(40, '仙酿入喉,妙不可言!', { type: 'exp', reqPct: 0.12 }),
+        o(40, '仙酿入喉,妙不可言!', { type: 'exp', secs: 60 }),
         o(60, '「小贼!」道人眼皮都没抬,一个酒嗝把你熏得七荤八素。', { type: 'buff', id: 'injury' })
       ])
     ],
@@ -892,7 +892,7 @@ export const EVENTS: EventDef[] = [
             '门后灵光化形,一头生翼四爪的神兽自光中踏出,俯首于你。',
             { type: 'pet', id: 'pet_yinglong' }
           ),
-          o(30, '传承是你早已通晓的仙典,你仍添了几分体悟。', { type: 'exp', reqPct: 0.08 }),
+          o(30, '传承是你早已通晓的仙典,你仍添了几分体悟。', { type: 'exp', secs: 60 }),
           o(15, '禁制仍在,你被反震出数丈,气血翻涌。', { type: 'buff', id: 'injury' })
         ],
         { isDefault: true }
@@ -917,7 +917,7 @@ export const EVENTS: EventDef[] = [
         '与之结缘',
         [
           o(60, '青鸾自此随行,云海之上再无迷途。', { type: 'pet', id: 'pet_qingluan' }),
-          o(40, '青鸾啄了啄你的衣袖便飞远了,只留下一句清越的鸣声在耳。', { type: 'exp', reqPct: 0.05 })
+          o(40, '青鸾啄了啄你的衣袖便飞远了,只留下一句清越的鸣声在耳。', { type: 'exp', secs: 30 })
         ],
         { isDefault: true }
       ),
@@ -939,7 +939,7 @@ export const EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('不扰仙苑', [o(1, '机缘在前而能不取,你心境反而更明。', { type: 'exp', reqPct: 0.05 })])
+      c('不扰仙苑', [o(1, '机缘在前而能不取,你心境反而更明。', { type: 'exp', secs: 30 })])
     ],
     { minRealm: 11 }
   ),
@@ -979,7 +979,7 @@ export const EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('躬身不问', [o(1, '你拱手一礼,不去惊扰它读碑。', { type: 'exp', reqPct: 0.06 })])
+      c('躬身不问', [o(1, '你拱手一礼,不去惊扰它读碑。', { type: 'exp', secs: 30 })])
     ],
     { minRealm: 15 }
   ),
@@ -1011,7 +1011,7 @@ export const EVENTS: EventDef[] = [
         '助其化鹏',
         [
           o(60, '鲲鹏化形既成,振翅冲天,而后折返,愿随你同行。', { type: 'pet', id: 'pet_kunpeng' }),
-          o(40, '化形之劫余波扫过,你护住己身,却也见识了大道一角。', { type: 'exp', reqPct: 0.1 })
+          o(40, '化形之劫余波扫过,你护住己身,却也见识了大道一角。', { type: 'exp', secs: 60 })
         ],
         { isDefault: true }
       ),
@@ -1047,7 +1047,7 @@ export const EVENTS: EventDef[] = [
         '纳本源入道',
         [
           o(50, '本源入体,你窥见大道真容。', { type: 'material', id: 'wudao', amount: 80 }),
-          o(30, '本源太过浩瀚,你只摄得一缕,却也修为大涨。', { type: 'exp', reqPct: 0.15 }),
+          o(30, '本源太过浩瀚,你只摄得一缕,却也修为大涨。', { type: 'exp', secs: 90 }),
           o(20, '本源反噬,你道基震荡。', { type: 'buff', id: 'injury' })
         ],
         { isDefault: true }
@@ -1120,7 +1120,7 @@ export const FORTUNE_EVENTS: EventDef[] = [
     ['general', 'mountain'],
     [
       c('上前叩拜', [
-        o(55, '老翁抬眸只瞥了你一眼,一缕道韵没入你眉心。', { type: 'exp', reqPct: 0.15 }),
+        o(55, '老翁抬眸只瞥了你一眼,一缕道韵没入你眉心。', { type: 'exp', secs: 90 }),
         o(25, '老翁递来一枚丹药,转身已不见踪影。', { type: 'pill', count: 2 }),
         o(20, '老翁摇摇头:「你缘未至。」你悻悻而返。', { type: 'nothing' })
       ]),
@@ -1153,7 +1153,7 @@ export const FORTUNE_EVENTS: EventDef[] = [
         '抚琴一曲',
         [
           o(45, '琴音入神,你于道之一途豁然开朗。', { type: 'material', id: 'wudao', amount: 35 }),
-          o(35, '一曲未终,琴弦骤断,反震之力伤了你经脉。', { type: 'buff', id: 'injury' }, { type: 'exp', reqPct: 0.06 }),
+          o(35, '一曲未终,琴弦骤断,反震之力伤了你经脉。', { type: 'buff', id: 'injury' }, { type: 'exp', secs: 30 }),
           o(20, '琴中封着一段仙诀,你将其记下。', { type: 'gongfa' })
         ]
       ),
@@ -1169,7 +1169,7 @@ export const FORTUNE_EVENTS: EventDef[] = [
       c(
         '拜入门下',
         [
-          o(55, '仙尊随手一点,你修为暴涨。', { type: 'exp', reqPct: 0.12 }),
+          o(55, '仙尊随手一点,你修为暴涨。', { type: 'exp', secs: 60 }),
           o(30, '仙尊赐你一枚仙丹。', { type: 'pill', id: 'p_taichu', count: 1 }),
           o(15, '仙尊摇头:「道不同。」拂袖而去,只留你一人在云端。', { type: 'nothing' })
         ]
@@ -1205,7 +1205,7 @@ export const FORTUNE_EVENTS: EventDef[] = [
         '纳心入体',
         [
           o(50, '法则之心融入经脉,你的身体记住了它。', { type: 'material', id: 'wudao', amount: 55 }),
-          o(35, '法则太过霸道,你只摄住一角,便已气血崩裂。', { type: 'buff', id: 'injury' }, { type: 'exp', reqPct: 0.1 }),
+          o(35, '法则太过霸道,你只摄住一角,便已气血崩裂。', { type: 'buff', id: 'injury' }, { type: 'exp', secs: 60 }),
           o(15, '光核竟再度跳动起来,认你为主。', { type: 'buff', id: 'buff_shenwei' })
         ]
       ),
@@ -1222,7 +1222,7 @@ export const FORTUNE_EVENTS: EventDef[] = [
       c(
         '吞种入腹',
         [
-          o(45, '种子在你体内生根,修为随之奔涌。', { type: 'exp', reqPct: 0.18 }),
+          o(45, '种子在你体内生根,修为随之奔涌。', { type: 'exp', secs: 90 }),
           o(30, '混沌之气冲乱经脉,你强压下来,却留下暗伤。', { type: 'buff', id: 'injury' }, { type: 'material', id: 'wudao', amount: 60 }),
           o(25, '种子化开,一缕本源融入神魂。', { type: 'buff', id: 'buff_hundun' })
         ]
@@ -1241,7 +1241,7 @@ export const FORTUNE_EVENTS: EventDef[] = [
         '登台观碑',
         [
           o(50, '碑上无字,你看见的却是自己此生的路。', { type: 'material', id: 'wudao', amount: 90 }),
-          o(30, '石碑反噬,你神魂震荡,却也窥见大道一角。', { type: 'buff', id: 'injury' }, { type: 'exp', reqPct: 0.15 }),
+          o(30, '石碑反噬,你神魂震荡,却也窥见大道一角。', { type: 'buff', id: 'injury' }, { type: 'exp', secs: 90 }),
           o(20, '你于台上静立良久,寿元悄然增了数千年。', { type: 'lifespan', years: 3000 })
         ]
       ),

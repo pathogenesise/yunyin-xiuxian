@@ -20,6 +20,7 @@ import { PILLS, pillDef } from '@/data/pills'
 import { buffDef } from '@/data/buffs'
 import { qualityDef } from '@/data/qualities'
 import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
+import { BATTLE_EXP_SECS, INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import {
   DROP_CRAFT_RATIO,
   craftBattlesOf,
@@ -30,6 +31,7 @@ import {
   pillGainSecAt,
   pillLine,
   pillValueTable,
+  layerSeconds,
   type PillFamily
 } from './pillValue'
 
@@ -230,7 +232,7 @@ describe('定价法则', () => {
         expect(buffDef(p.buffId!), `${p.name} 指向不存在的增益 ${p.buffId}`).toBeDefined()
       } else {
         const i = p.instant ?? {}
-        const has = [i.expReqPct, i.expFixed, i.qiPct, i.lifespanYears, i.wudao].some(v => (v ?? 0) > 0)
+        const has = [i.expSecs, i.expFixed, i.qiPct, i.lifespanYears, i.wudao].some(v => (v ?? 0) > 0)
         expect(has, `${p.name} 是即时丹却什么也不给`).toBe(true)
       }
     }
@@ -283,6 +285,57 @@ describe('定价法则', () => {
     for (const p of PILLS) {
       if ((p.instant?.qiPct ?? 0) < 0.8) continue
       expect(p.recipe, `${p.name} 一口回满灵气却无需任何制备`).toBeDefined()
+    }
+  })
+
+  /**
+   * 【法则 G】修为丹按「等效闭关时长」结算,药力不随境界膨胀(Phase 39)。
+   *
+   * 旧口径是"当前一层需求的百分比":同一枚金丹期的丹留到混沌海服用,
+   * 药力跟着需求一路涨到天文数字,而成本还冻结在金丹期 ——
+   * 于是"囤低阶丹、到高境界嗑"成了最优解,破界那道关卡也能被买通。
+   * 这条守住新口径的三个性质:药力就是写死的那一段时长、相对药力随境界只减不增、
+   * 单枚丹永不满一层(低境界一层只要几十秒,那是最容易被整层跳过的窗口)。
+   */
+  it('G —— 修为丹按等效闭关时长结算,囤到高境界只会更弱', () => {
+    const expPills = PILLS.filter(p => pillFamily(p) === 'exp' && p.instant?.expSecs)
+    expect(expPills.length, '修为线一味按时长计价的丹都没有?那这条法则无从守起').toBeGreaterThanOrEqual(8)
+    for (const p of expPills) {
+      const secs = p.instant!.expSecs!
+      for (let m = p.minRealm; m <= MAX_MAJOR; m += 1) {
+        expect(pillGainSecAt(p, m), `${p.name} 在境界 ${m} 的药力超过了它写死的那一段`).toBeLessThanOrEqual(secs + 1e-9)
+      }
+      const ownShare = pillGainSecAt(p, p.minRealm) / layerSeconds(p.minRealm)
+      const topShare = pillGainSecAt(p, MAX_MAJOR) / layerSeconds(MAX_MAJOR)
+      expect(topShare, `${p.name} 越到高境界越值钱 —— 百分比口径又回来了`).toBeLessThanOrEqual(ownShare + 1e-12)
+      expect(ownShare, `${p.name} 在自己那一境就该满了一层`).toBeLessThanOrEqual(INSTANT_EXP_LAYER_CAP + 1e-9)
+    }
+    // 数据里不许再留旧字段(类型上已删,这里再钉一道数据侧的钉子)
+    for (const p of PILLS) {
+      expect(
+        (p.instant as Record<string, unknown> | undefined)?.expReqPct,
+        `${p.name} 还留着按需求百分比结算的旧字段`
+      ).toBeUndefined()
+    }
+  })
+
+  /**
+   * 【法则 G2】修为丹的时长与「它值多少场遭遇」同阶(Phase 39 续)。
+   *
+   * 一张丹方的灵草成本本身就是"要打多少场"—— 一枚丹若远贵于它的材料,
+   * 丹药就变成了一条绕过所有境界壁垒的通路;若远便宜于材料,则没人炼。
+   * 这条把两件事绑在一起:一枚修为丹 ≈ 其灵草成本折算的场次 × 2~5 倍
+   * (溢价来自技艺、灵石与炸炉风险)。drops 无成本,由法则 A 对着可炼对照管。
+   */
+  it('G2 —— 可炼修为丹的时长与其灵草成本同阶(2~5 倍于"多少场遭遇")', () => {
+    const expCraft = PILLS.filter(p => pillFamily(p) === 'exp' && p.recipe && p.instant?.expSecs)
+    expect(expCraft.length, '可炼修为丹一味都没有?').toBeGreaterThanOrEqual(6)
+    for (const p of expCraft) {
+      // 一场遭遇平均掉 1 味灵草(见 loot.afterWin 的掉率),故场次 ≈ herb
+      const battlesWorth = (p.instant!.expSecs! * 1) / BATTLE_EXP_SECS
+      const ratio = battlesWorth / p.recipe!.herb
+      expect(ratio, `${p.name}:${p.instant!.expSecs} 秒 ≈ ${battlesWorth.toFixed(0)} 场,而它只要 ${p.recipe!.herb} 味灵草`).toBeGreaterThan(2)
+      expect(ratio, `${p.name}:${p.instant!.expSecs} 秒 ≈ ${battlesWorth.toFixed(0)} 场,而它只要 ${p.recipe!.herb} 味灵草`).toBeLessThan(5)
     }
   })
 

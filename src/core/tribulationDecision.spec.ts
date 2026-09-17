@@ -14,7 +14,7 @@ import {
   tribulationWaveSpan,
   NO_STAT_GUARD
 } from './tribulationDecision'
-import { baseCombatStats } from './formulas'
+import { baseCombatStats, tribulationWaveDamage } from './formulas'
 import { toNum } from '@/utils/gnum'
 import { TRIBULATIONS, tribulationDef } from '@/data/tribulations'
 import { useGameStore } from '@/stores/game'
@@ -126,11 +126,12 @@ describe('⑥ 三维折算(防御→抗性 / 气血→开劫水位)', () => {
 
   it('超出部分按倍数线性折算,并各自封顶', () => {
     const six = statGuardOf({ defense: bareDef * 6, maxHp: bareHp * 6, major: MAJOR, sub: SUB })
-    expect(six.resist).toBeCloseTo(0.25, 6) // (6-1)×5%
-    expect(six.guard).toBeCloseTo(0.25, 6)
+    // (6-1)×4% = 20%,抗性那条上限 18% —— 到顶了(Phase 39 由 5%/30% 收窄)
+    expect(six.resist).toBeCloseTo(0.18, 6)
+    expect(six.guard).toBeCloseTo(0.2, 6)
     const whale = statGuardOf({ defense: bareDef * 500, maxHp: bareHp * 500, major: MAJOR, sub: SUB })
-    expect(whale.resist).toBe(0.3) // 上限
-    expect(whale.guard).toBe(0.6)
+    expect(whale.resist).toBe(0.18) // 上限(Phase 39:0.3 → 0.18)
+    expect(whale.guard).toBe(0.35) // 上限(Phase 39:0.6 → 0.35)
   })
 
   it('折算真的进了推演:同词条下血厚防高者结论更好', () => {
@@ -164,7 +165,11 @@ describe('⑦ 波形读数(道数 × 逐道加重)', () => {
     expect(span.max).toBeCloseTo(span.last, 9) // 最重的是最后一道
     expect(span.total).toBeGreaterThan(span.max) // 合计 = 逐道之和,介于单波与满额之间
     expect(span.total).toBeLessThan(span.max * span.waves)
-    expect(span.total).toBeCloseTo(3.08 * tribulationDef('thunder').dmgMult, 6)
+    // 期望值不写死数字:直接按结算那条公式把 8 道加一遍 ——
+    // 从前写死 3.08,公式一动(Phase 39 的 +3%)这条就变成在验一个过期读数
+    let expected = 0
+    for (let w = 1; w <= span.waves; w += 1) expected += tribulationWaveDamage(5, w, 0)
+    expect(span.total).toBeCloseTo(expected * tribulationDef('thunder').dmgMult, 6)
   })
 
   it('重压劫:起手两道最重,波形不是单调递增', () => {

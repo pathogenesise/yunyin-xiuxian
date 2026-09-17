@@ -4,11 +4,13 @@
  * Phase 32.3 起,炼制不再是「够级必成」的兑换按钮:
  * 成败由认知与技艺决定(见 core/craftability.ts),失手要赔料,但也长本事。
  */
-import { gn, mulN } from '@/utils/gnum'
+import { gn } from '@/utils/gnum'
 import { rng } from '@/utils/random'
 import { pillDef } from '@/data/pills'
+import { INSTANT_EXP_LAYER_CAP } from '@/data/constants'
+import { formatDuration, formatGN } from '@/utils/format'
 import { recipeCraft, type SkillId } from '@/data/crafting'
-import { stoneByTier } from './formulas'
+import { expFromSecs, stoneByTier } from './formulas'
 import { collect, track } from './progress'
 import { modOf } from './statsCalc'
 import { craftability, knownRecipes } from './craftability'
@@ -38,9 +40,18 @@ export function usePill(id: string): boolean {
   }
   const lines: string[] = []
   if (def.kind === 'instant' && def.instant) {
-    if (def.instant.expReqPct) {
-      player.gainExp(mulN(player.expReq, def.instant.expReqPct))
-      lines.push('修为精进')
+    /**
+     * 修为丹:药力 = 服丹者当下的修炼速度 × 等效闭关秒数,封顶在「不满一层」。
+     *
+     * 走的是与一场遭遇、一次际遇**同一个**结算函数(expFromSecs)——
+     * 三条来源只在"这段时长有多长"上不同,不再各有各的公式与各自的漂移。
+     * 读 player.cultPerSec 而不是裸修速:丹药说的那句"服之如闭关一时",
+     * 就该是他自己的一时(功法/建筑/状态/增益都在里头)。
+     */
+    if (def.instant.expSecs) {
+      const gain = expFromSecs(player.expReq, def.instant.expSecs, player.cultPerSec, INSTANT_EXP_LAYER_CAP)
+      player.gainExp(gain)
+      lines.push(`修为 +${formatGN(gain)}(约抵闭关 ${formatDuration(def.instant.expSecs)})`)
     }
     if (def.instant.expFixed) {
       player.gainExp(gn(def.instant.expFixed))
@@ -178,4 +189,3 @@ function failLine(weakness: readonly string[]): string {
   const reason = weakness[0]
   return reason ? `炉中一声闷响,丹毁了。${reason}` : '炉中一声闷响,丹毁了——火候差了那么一线。'
 }
-

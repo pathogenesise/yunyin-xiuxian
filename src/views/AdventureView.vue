@@ -31,6 +31,18 @@
         镇压收益中 {{ player.suppressedRegions.length }} 处 —— 与历练互不冲突,可同时收取;一次只能历练一处。
       </p>
       <!--
+        途中三档:际遇 / 奇缘 / 机缘。
+        从前它们在弹窗里长得一模一样(标题都叫「际遇」),低概率的机缘等于白设了稀有度。
+        这三枚胶囊把档位、稀有度与一句话摆在**出发之前**,名字与概率全部取自 core/eventTier,
+        与事件引擎真正掷的那条乘法链同源(见 data/constants 那段)。
+      -->
+      <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
+        <span class="text-ink-faint">途中三档:</span>
+        <span v-for="t in EVENT_TIERS" :key="t.id" class="chip-ink text-[10px]" :style="{ color: t.color }">
+          {{ t.name }} · {{ tierOddsText(t.id) }}
+        </span>
+      </p>
+      <!--
         镇压规则压成一行:地界行里已经逐项写着「当前值 / 需≤阈值」,
         这里只交代一句总纲(四条长句堆在列表前面就是一堵文字墙)。
       -->
@@ -285,6 +297,7 @@
   import { REALMS } from '@/data/realms'
   import { EXPLORE_MODES } from '@/data/constants'
   import { regionFoeOrigin, startExploration } from '@/core/exploration'
+  import { EVENT_TIERS, tierOddsText } from '@/core/eventTier'
   import { foeOriginPartsText } from '@/core/battleAnalysis'
   import { SUPPRESS_THRESHOLDS, suppressRateFor, suppressionProgress } from '@/core/suppress'
   import { REVIVE_AFTER_HOURS, hoursUntilRevive, regionRecallFor, prosperityName, isReviving, prosperityYieldMult } from '@/core/worldMemory'

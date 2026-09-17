@@ -29,13 +29,17 @@ export const LIFESPAN_CRITICAL_RATIO = 0.1
 export const EXP_BASE = 40
 /**
  * 每大境界需求倍率 / 基础速度倍率
- * 净耗时增长 ≈ 18 / 5.2 ≈ ×3.46 每大境界(经 progressionSim 审计,终局约 80~90 天在线等效)
+ *
+ * Phase 39「壁已非壁」:需求抬一档(18 → 19)、基础修速压一档(1.6 → 1.3),
+ * 净耗时增长 ≈ 19 / 5.2 ≈ ×3.65 每大境界(原 ≈ ×3.46)。
+ * 两头一起动,是因为只动一边会挪走整条曲线的形状(前期秒过、后期陡崖)——
+ * 「每一境慢多少」这个数只由两者的比决定。终局口径见 progressionSim 的里程碑与长尾两条。
  */
-export const EXP_MAJOR_GROWTH = 18
+export const EXP_MAJOR_GROWTH = 19
 /** 每小层需求倍率 */
 export const EXP_SUB_GROWTH = 1.32
-/** 基础修为/秒 */
-export const CULT_BASE_SPEED = 1.6
+/** 基础修为/秒 —— Phase 39 由 1.6 降到 1.3(灵气修为的获取速度整体压一档) */
+export const CULT_BASE_SPEED = 1.3
 /** 每大境界基础速度倍率 */
 export const CULT_MAJOR_SPEED_GROWTH = 5.2
 /** 每小层基础速度倍率 */
@@ -44,26 +48,42 @@ export const CULT_SUB_SPEED_GROWTH = 1.06
 /**
  * 界外成长节奏(仙界/神界/混沌海,即 major > WORLD_BREAK_MAJOR)。
  *
- * 人间界 0-9 号境界沿用上面 18 / 5.2 这套曲线(净耗时 ≈ ×3.46/境),
+ * 人间界 0-9 号境界沿用上面 19 / 5.2 这套曲线(净耗时 ≈ ×3.65/境),
  * 若原样外推到 21 境,终局需求会变成天文数字,那 12 个新境界等同于不存在。
- * 界外仍走**指数复利**,只是把每境的需求基数换成 4.0、修炼/灵气基数换成 3.2:
+ * 界外仍走**指数复利**,只是把每境的需求基数换成 4.6、修炼/灵气基数换成 3.2:
  *
- *   修为需求/境 = LATE_EXP_GROWTH       = ×4.0   (指数复利:远超线性)
+ *   修为需求/境 = LATE_EXP_GROWTH       = ×4.6   (指数复利:远超线性)
  *   灵气上限/境 = LATE_QI_CAP_GROWTH    = ×4.0
  *   灵气回复/境 = LATE_QI_REGEN_GROWTH  = ×3.2
- *   战力/境     = LATE_COMBAT_GROWTH    = ×4.0
- *   净耗时/境   = 4.0 / 3.2             = ×1.25  (见下行:与战力不对齐的只有它)
+ *   战力/境     = LATE_COMBAT_GROWTH    = ×4.6
+ *   净耗时/境   = 4.6 / 3.2             = ×1.44  (见下行:与战力不对齐的只有它)
  *
- * 关键在最后一行的分工:需求与战力都按 ×4 指数堆叠(数值上是实打实的指数增长),
- * 而净耗时只按 1.25 倍增长 —— 于是"每境更难的量级"是指数级的,但整条 21 境阶梯
+ * 关键在最后一行的分工:需求与战力都按指数堆叠(数值上是实打实的复利),
+ * 而净耗时只按 1.44 倍增长 —— 于是"每境更难的量级"是指数级的,但整条 21 境阶梯
  * 仍落在可达范围。灵气同理(容量 ×4、回复 ×3.2),不会出现"容量涨得比回复快、
  * 越到后面越存不满"的断层。
+ *
+ * Phase 39:4.4 → 4.6。界外本就是"这一世之后"的长线,而玩家反馈的口径是
+ * 「上界太快、快到顶」—— 每境净耗时 1.375 → 1.44 倍。仍受两条判据约束:
+ * 每境增幅 <2 倍、长尾相对真仙有界(见 progressionSim.spec)。
  */
-export const LATE_EXP_GROWTH = 4.4
+export const LATE_EXP_GROWTH = 4.6
 export const LATE_CULT_SPEED_GROWTH = 3.2
 export const LATE_COMBAT_GROWTH = 4.6
 export const LATE_QI_CAP_GROWTH = 4.0
 export const LATE_QI_REGEN_GROWTH = 3.2
+
+/**
+ * 跨界那一境的修为需求倍率 —— 人间→仙界、仙界→神界、神界→混沌海。
+ *
+ * 数值上的落点:把**界末那一境的圆满**抬成一道真正的墙 —— 走完它才能引劫跨界,
+ * 而那一劫本身另有一档加难(见 TRIB_WORLD_STEP_STAT_FOLD)。两道合起来,
+ * 破界才是一步,而不是又一次寻常突破。
+ *
+ * 只抬圆满那一层,不抬整个界末境界:前面九层仍按正常曲线走,
+ * 玩家能清楚感到「最后一步忽然重了」,而不是「这一境莫名其妙地长」。
+ */
+export const WORLD_STEP_EXP_MULT = 2
 /**
  * 灵气「积余」上限(相对标称容量的倍数)。
  *
@@ -79,7 +99,8 @@ export const SUB_LEVELS = 10
 export const QI_BASE_CAP = 100
 export const QI_CAP_MAJOR_GROWTH = 6
 export const QI_CAP_SUB_GROWTH = 1.12
-export const QI_BASE_REGEN = 1.2
+/** 基础灵气回复/秒 —— Phase 39 由 1.2 降到 0.9(灵气这条线一并收慢) */
+export const QI_BASE_REGEN = 0.9
 export const QI_REGEN_MAJOR_GROWTH = 5.2
 /** 灵气高于上限一半时,修炼速度额外加成 */
 export const QI_RICH_BONUS = 0.15
@@ -98,26 +119,57 @@ export const BT_QI_COST_RATIO = 0.4
 /** 天劫波次基数(实际 = 基数 + 大境界序号) */
 export const TRIBULATION_BASE_WAVES = 3
 /**
+ * 天劫单波伤害那一条式子:
+ *   单波(占最大生命) = TRIB_WAVE_BASE + TRIB_WAVE_MAJOR × 境界(封顶) + TRIB_WAVE_STEP × 第几道
+ *
+ * 收进常数只为**单一事实源**:公式(core/formulas)、界面读数(core/tribulationDecision)、
+ * 设计记录(docs/superpowers/specs/2026-09-17-*)三处都要能对着同一组数说话。
+ * 从前它们是 formulas 里的一行字面量,记录一写下来就只能靠人去核。
+ */
+export const TRIB_WAVE_BASE = 0.155
+export const TRIB_WAVE_MAJOR = 0.02
+export const TRIB_WAVE_STEP = 0.031
+/**
+ * 跨界那一劫对「三维折算」的态度 —— 人间→仙界、仙界→神界、神界→混沌海。
+ *
+ * 界内的关认血肉(防御折抗性、气血折开劫水位,见上面那两条 TRIB_DEF / TRIB_HP 常量),
+ * 界膜那一关不认:0 = 折算一概作废,只剩词条与准备说话。
+ *
+ * 之所以用**规则**而不是再调一次伤害公式:
+ *   · 天劫的伤害口径已在 TRIBULATION_DIFFICULTY_CAP_MAJOR 封顶,再抬一档,
+ *     tribulationSpace.spec 的「四维皆优必可渡」当场失守(实测 +7% 即倒);
+ *   · 三维折算本来就是上一版给"血厚防高"的兜底,它**只对真实修士存在**,
+ *     参考构筑(只带词条)从不吃它 —— 于是这条规则加的是玩家的体感,
+ *     而不是把解题空间挤掉:三条非满配之路(抗性/减伤/恢复)一条不少。
+ * 界膜之前,血肉之厚不算数;要过去,得真备好那几样。
+ */
+export const TRIB_WORLD_STEP_STAT_FOLD = 0
+/**
  * 天劫的三维折算 —— 血厚防高者允许**硬抗**,但两条都有绝对上限。
  *
  * 天劫伤害按最大生命百分比结算(见 core/formulas.tribulationWaveDamage),
  * 攻伐/防御/气血本不进公式。可一身厚血厚防站在劫前半点用没有,说不过去:
  * 于是把三维按「本境裸修为的一倍」当尺子折成两样天劫认的东西 ——
- *   防御 → 天劫抗性:超出裸修为的部分,每倍折 5%,上限 30%
- *   气血 → 开劫水位:超出裸修为的部分,每倍折 5%,上限 +60%
+ *   防御 → 天劫抗性:超出裸修为的部分,每倍折 4%,上限 18%
+ *   气血 → 开劫水位:超出裸修为的部分,每倍折 4%,上限 +35%
  * 两条都封顶,理由与抗性/减伤本身的绝对上限一致:渡劫的正解是**准备**
  * (抗性/减伤/恢复/护持),三维给的是"不至于白堆"的兜底,不是替代品。
  * 尺子取 realmScale × COMBAT_*_BASE(即 baseCombatStats),与 statsCalc 同源 ——
  * 别在这里另写一条曲线,否则"超出多少倍"会随改动悄悄漂移。
+ *
+ * Phase 39:两条上限 30%/60% → 18%/35%,折算率 5% → 4%。
+ * 「兜底」不该厚到让准备变得可有可无:一位厚血厚防的修士原本能白拿三成抗性 + 六成开劫水位,
+ * 那已不是兜底,而是把渡劫的四维解法空间挤掉一半 —— 也正是"渡劫又太容易"的来源之一。
+ * 三维仍作数(不至于白堆),但补不满"准备"那一半。
  */
-export const TRIB_DEF_RESIST_PER_SURPLUS = 0.05
-export const TRIB_DEF_RESIST_CAP = 0.3
-export const TRIB_HP_GUARD_PER_SURPLUS = 0.05
-export const TRIB_HP_GUARD_CAP = 0.6
+export const TRIB_DEF_RESIST_PER_SURPLUS = 0.04
+export const TRIB_DEF_RESIST_CAP = 0.18
+export const TRIB_HP_GUARD_PER_SURPLUS = 0.04
+export const TRIB_HP_GUARD_CAP = 0.35
 /**
  * 天劫难度的境界封顶点(扩界)。
  *
- * 伤害与波次原本 = 0.15 + major×0.02(逐波) + wave×0.03,波次 = 3 + major,
+ * 伤害与波次原为 = 0.15 + major×0.02(逐境) + wave×0.03(逐波),波次 = 3 + major,
  * 这套口径是为「major ≤ 8(渡劫)」设的:彼时封顶的减伤/护持绝对值(减伤 55%、
  * 抗性 80%)足以应付。扩界后若让 major 一路线性涨到 20,总量会翻几倍,
  * 而减伤类词条是**有绝对上限**的——结果就是连设计者自己那套「四维皆优」
@@ -126,6 +178,14 @@ export const TRIB_HP_GUARD_CAP = 0.6
  *
  * 故难度在 TRIBULATION_DIFFICULTY_CAP_MAJOR 处封顶:≤ 此境者一律不变,
  * 其上的境界沿用同一难度基线;上界的威压由区域/首领与绝对上限的构筑要求承担。
+ *
+ * Phase 39(「渡劫又似乎太容易」):这次加难走三条路,且都不许碰解题空间 ——
+ *   ① 基数 0.15 → 0.155、逐波 0.03 → 0.031:同一套式子,整条曲线上移 3%;
+ *      (这是本口径能加的**上限**:实测再加 4% 就会让参考构筑在雷鸣/逆流劫下不渡)
+ *   ② 三维折算的上限收窄(30%/60% → 18%/35%,见上面那段)—— 兜底不再是半张答案;
+ *   ③ 跨界那一境**不认三维折算**(TRIB_WORLD_STEP_STAT_FOLD)—— 只加「这一步」。
+ * 加完之后必须仍然过得了 tribulationSpace.spec 的五道门(四维皆优必可渡、
+ * 每境每种劫型都还剩一条非满配之路)—— 那是这次改难的**上限**,不是可选项。
  */
 export const TRIBULATION_DIFFICULTY_CAP_MAJOR = 9
 
@@ -355,8 +415,38 @@ export const ARTIFACT_DROP_CHANCE = 0.015
 /** 战斗灵石基础掉落(按层级指数放大) */
 export const STONE_DROP_BASE = 12
 export const STONE_TIER_GROWTH = 1.9
-/** 战斗修为奖励占当前需求比例 */
-export const BATTLE_EXP_REQ_PCT = 0.012
+/**
+ * 修为的**唯一计价单位:等效闭关时长**。
+ *
+ * 从前三条来源各说各话:挂机按修速/秒、丹药按「当前一层需求的百分比」、
+ * 战斗与际遇也是百分比。凡是按需求百分比给的那几条,价值都随境界指数上涨,
+ * 而它们的"代价"(一枚丹的材料、一场遭遇的 12 秒)是恒定的 —— 于是越往上,
+ * 它们越不像奖励、越像通路:实测真仙期一场遭遇值 35.7 小时闭关、
+ * 比值 8984× 于挂机,化神之后挂机修炼近乎装饰(读数见 core/expIncome)。
+ *
+ * 现在统一成一句话:**一切即时修为 = 修速 × 一段等效闭关时长,且不满一层。**
+ *   · 一场取胜的遭遇:BATTLE_EXP_SECS
+ *   · 一次际遇/机缘:见 data/events 与 data/chains 的 secs(30~120 秒)
+ *   · 一枚修为丹:见 data/pills 的 expSecs(30 分~2 日半,炼制出来的东西本就该更重)
+ * 三者的差别只在"这段时长有多长",不再有一处随境界跑飞。
+ *
+ * 12 秒不是拍的:遭遇每小时 300 次(在线每 12 秒一次、离线照算),其中约 252 场战斗、
+ * 48 次际遇 —— 252 × 12 秒 + 48 × 60 秒 = 1.64 小时/小时,即
+ * **全时历练把修行速率抬到约 1.6 倍**(读数见 core/expIncome 的对账表)。
+ * 三条渠道因此各有其位:**挂机修炼是底(1.0×)· 历练加掉落(≈1.6×)·
+ * 闭关专修最快(2.5×,但期间不能历练)**。这个倍率在任何境界都成立,
+ * 因为两侧都随"修速"缩放:修速词条、洞府、灵脉、闭关、丹药增益因此对
+ * **两条收入线同时有效** —— 这正是修好之后的性质,也是修之前丢掉的性质。
+ */
+export const BATTLE_EXP_SECS = 12
+/**
+ * 任何即时修为(丹药 / 一场遭遇 / 一次际遇)**都不得填满当前这一层**。
+ *
+ * 与「等效闭关时长」配套:低境界一层只要几十秒,而写死的时长(丹药尤其)动辄以时计,
+ * 不封顶的话一枚丹就能连跳几层。封顶只认"一层"这个与境界无关的自然刻度,
+ * 故它不会随境界改变任何东西 —— 高境界一层以日计,这条几乎用不到。
+ */
+export const INSTANT_EXP_LAYER_CAP = 0.9
 
 // ============ 历练 ============
 export const EXPLORE_BATTLE_INTERVAL = 12
@@ -368,6 +458,21 @@ export const EXPLORE_BATTLE_INTERVAL = 12
  */
 export const EXPLORE_BOSS_AFTER_WINS = 10
 export const EXPLORE_EVENT_CHANCE = 0.16
+/**
+ * 历练里三档触发的概率 —— **一条乘法链,不是一个一个独立数字**。
+ *
+ * 一次遭遇先掷 EXPLORE_EVENT_CHANCE(这一程出不出事);出了事才在里面取一个:
+ * 先看有没有该走的奇缘(CHAIN_STAGE_CHANCE),再看要不要撞机缘(FORTUNE_CHANCE),
+ * 都不是才是寻常际遇。于是三档的稀度是乘出来的:
+ *
+ *   际遇 ≈ 每 6 程一次 · 奇缘 ≈ 每 21 程一次 · 机缘 ≈ 每 313 程一次
+ *
+ * 三个数摆在一处,是为了让「档位」有据可依:改任何一个,三档的稀度梯级一起动。
+ * 散在两个文件里各写一遍,迟早出现「机缘比奇缘还常见」这种倒挂。
+ * 界面口径见 core/eventTier,梯级审计见 core/eventTier.spec。
+ */
+export const CHAIN_STAGE_CHANCE = 0.3
+export const FORTUNE_CHANCE = 0.02
 /** 事件搁置超过该秒数后自动按默认选项处理 */
 export const EVENT_AUTO_RESOLVE_SECONDS = 120
 export const EXPLORE_MODES = {

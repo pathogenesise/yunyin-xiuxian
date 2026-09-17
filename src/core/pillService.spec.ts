@@ -24,6 +24,8 @@ import { craftability } from './craftability'
 import { pillDef } from '@/data/pills'
 import { recipeCraft } from '@/data/crafting'
 import { stoneByTier } from './formulas'
+import { expRequirement } from './formulas'
+import { INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { useLoreStore } from '@/stores/lore'
@@ -252,6 +254,38 @@ describe('服丹 · 丹从包里出去,药力真的落下', () => {
     const before = toNum(player.exp)
     expect(usePill('p_jvqidan')).toBe(true)
     expect(toNum(player.exp) - before).toBeCloseTo(80, 3)
+  })
+
+  /**
+   * Phase 39:修为丹从「当前需求的百分比」改成「一段等效闭关时长」。
+   *
+   * 这条守的正是那次改动的两个后果,缺一不可:
+   *   ① 单枚丹**永远填不满一层** —— 低境界一层只要刻把钟,不封顶的话
+   *      一枚写在纸上的"闭关三时"能连跳好几层;
+   *   ② 药力不随境界暴涨 —— 一枚金丹期的丹在混沌海只该是一点药力,
+   *      旧口径下它按"当前一层需求的百分比"结算,在任何境界都同样能顶掉一块墙,
+   *      于是囤低阶丹成了破界的最优解。
+   */
+  it('修为丹按等效闭关时长结算:单枚不满一层,且不随境界暴涨', () => {
+    const gainAt = (major: number, sub: number): { gain: number; req: number } => {
+      setActivePinia(createPinia())
+      const player = usePlayerStore()
+      const inventory = useInventoryStore()
+      player.$patch({ major, sub, exp: { m: 0, e: 0 } })
+      inventory.addPill('p_xuanyuan', 1)
+      const before = toNum(player.exp)
+      expect(usePill('p_xuanyuan')).toBe(true)
+      return { gain: toNum(player.exp) - before, req: toNum(expRequirement(major, sub)) }
+    }
+    const low = gainAt(2, 5)
+    const high = gainAt(8, 5)
+    expect(low.gain / low.req).toBeLessThanOrEqual(INSTANT_EXP_LAYER_CAP + 1e-9)
+    expect(low.gain, '单枚丹把整层填满了 —— 低境界那一层只要几十秒,这条一破就是连跳几层').toBeLessThan(low.req)
+    // 高境界:同一枚丹只占那一层千分之几(旧口径下它在任何境界都占同样的百分比)
+    expect(high.gain / high.req).toBeLessThan(0.002)
+    expect(high.gain / high.req, '在高境界反而更值钱 —— 按需求百分比的旧口径又回来了').toBeLessThanOrEqual(
+      low.gain / low.req
+    )
   })
 
   it('增益丹:状态真的加到身上(带到期时间),不是只弹一句话', () => {

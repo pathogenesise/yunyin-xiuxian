@@ -3,7 +3,7 @@
  */
 import type { ArtifactDef, EquipmentInstance, GNum, RegionDef } from '@/types'
 import { rng } from '@/utils/random'
-import { gnZero, isZero, mulN } from '@/utils/gnum'
+import { gnZero, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { qualityDef } from '@/data/qualities'
 import { equipmentTemplate } from '@/data/equipment'
@@ -11,13 +11,14 @@ import { PILLS } from '@/data/pills'
 import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import {
   ARTIFACT_DROP_CHANCE,
-  BATTLE_EXP_REQ_PCT,
+  BATTLE_EXP_SECS,
   EQUIP_DROP_CHANCE,
+  INSTANT_EXP_LAYER_CAP,
   PAGE_DROP_CHANCE,
   PILL_DROP_CHANCE
 } from '@/data/constants'
 import { generateEquipment } from './equipGen'
-import { stoneByTier } from './formulas'
+import { expFromSecs, stoneByTier } from './formulas'
 import { modOf } from './statsCalc'
 import { personalityEffects } from './petPersonality'
 import { compareEvictable, keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
@@ -210,9 +211,14 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   const stone = stoneByTier(tier, 10 * stoneAmt)
   resources.addStone(stone)
 
-  // 战斗修为
-  const expPct = BATTLE_EXP_REQ_PCT * rewardMult * (isBoss ? 4 : 1) * doubled * (1 + modOf(mods, 'expGain'))
-  const exp = mulN(player.expReq, expPct)
+  /**
+   * 战斗修为 —— 与丹药、际遇同一把尺子:等效闭关时长 × 各种倍率,封顶不满一层。
+   *
+   * 倍率仍然照旧:出行方式(收益 ×1/1.4/1.9)、首领 ×4、福缘 ×2、修为增益词条。
+   * 它们是"这一场值多少"的相对刻度,不再改变"一场遭遇值多少"的量级。
+   */
+  const expSecs = BATTLE_EXP_SECS * rewardMult * (isBoss ? 4 : 1) * doubled * (1 + modOf(mods, 'expGain'))
+  const exp = expFromSecs(player.expReq, expSecs, player.cultPerSec, INSTANT_EXP_LAYER_CAP)
   player.gainExp(exp)
 
   // 材料 —— 数量进标量库存,同时抽出"你到底捡到了什么"推进认知

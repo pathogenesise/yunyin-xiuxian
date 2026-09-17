@@ -10,11 +10,12 @@ import { regionDef } from '@/data/regions'
 import { enemyDef } from '@/data/enemies'
 import {
   AGE_YEARS_PER_HOUR,
-  BATTLE_EXP_REQ_PCT,
+  BATTLE_EXP_SECS,
   EQUIP_DROP_CHANCE,
   EXPLORE_BATTLE_INTERVAL,
   EXPLORE_BOSS_AFTER_WINS,
   EXPLORE_MODES,
+  INSTANT_EXP_LAYER_CAP,
   OFFLINE_BOSS_REWARD_MULT,
   OFFLINE_EFFICIENCY,
   OFFLINE_MODAL_MIN_SECONDS
@@ -27,7 +28,7 @@ import { autoResolveEvent, regionEventPoolFor } from './eventEngine'
 import { clearRegionAndUnlockNext, exploreEventChance, dangerFactorFor, explorationRules } from './exploration'
 import { currentRegionEvent, regionEventDef } from './regionEvent'
 import { placeContent } from './mortalWorldService'
-import { stoneByTier } from './formulas'
+import { expFromSecs, stoneByTier } from './formulas'
 import { settleSuppressedRegions } from './suppress'
 import { harvestMaterials, studyTick } from './loreService'
 import { modOf } from './statsCalc'
@@ -179,9 +180,16 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           10 * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'spiritStoneGain')) * doubleMult
         )
         resources.addStone(stoneGain)
-        const expGain = mulN(
+        /**
+         * 修为与在线 afterWin 同源(同一把尺子、同一个结算函数):
+         * 秒数与层上限一并随场数线性放大,故「N 场」恒等于「N 次单场」——
+         * 离线不会偷跑,也不会因为整段结算而被封顶吃掉(见 formulas.expFromSecs)。
+         */
+        const expGain = expFromSecs(
           player.expReq,
-          BATTLE_EXP_REQ_PCT * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')) * doubleMult
+          BATTLE_EXP_SECS * wins * modeDef.rewardMult * regionEventReward * (1 + modOf(mods, 'expGain')) * doubleMult,
+          player.cultPerSec,
+          INSTANT_EXP_LAYER_CAP * wins
         )
         player.gainExp(expGain)
         trip.stone = add(trip.stone, stoneGain)

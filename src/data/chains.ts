@@ -107,7 +107,7 @@ export const CHAIN_EVENTS: EventDef[] = [
       c(
         '据实相告',
         [
-          o(65, '老者点点头:「答得诚,不答得巧。」他指给你看石缝里的一线苔痕。', { type: 'exp', reqPct: 0.06 }),
+          o(65, '老者点点头:「答得诚,不答得巧。」他指给你看石缝里的一线苔痕。', { type: 'exp', secs: 30 }),
           o(35, '老者摇头:「你答的是别人的道。」他不再言语。', { type: 'material', id: 'wudao', amount: 1 })
         ],
         { isDefault: true }
@@ -127,7 +127,7 @@ export const CHAIN_EVENTS: EventDef[] = [
       c(
         '接过石子',
         [
-          o(60, '石子入手微凉,内里竟有一缕极淡的灵气。', { type: 'exp', reqPct: 0.08 }, { type: 'material', id: 'ore', amount: 4 }),
+          o(60, '石子入手微凉,内里竟有一缕极淡的灵气。', { type: 'exp', secs: 60 }, { type: 'material', id: 'ore', amount: 4 }),
           o(40, '石子不过是石子。老者道:「你看,你还是在找里头有什么。」', { type: 'material', id: 'wudao', amount: 2 })
         ],
         { isDefault: true }
@@ -145,7 +145,7 @@ export const CHAIN_EVENTS: EventDef[] = [
       c(
         '抚字静观',
         [
-          o(55, '指尖触到刻痕的一瞬,那三个字的意思忽然齐了 —— 是他留下的最后一问。', { type: 'exp', reqPct: 0.15 }),
+          o(55, '指尖触到刻痕的一瞬,那三个字的意思忽然齐了 —— 是他留下的最后一问。', { type: 'exp', secs: 90 }),
           o(45, '你看了很久,只觉得字刻得深。', { type: 'material', id: 'wudao', amount: 3 })
         ],
         { isDefault: true }
@@ -166,7 +166,7 @@ export const CHAIN_EVENTS: EventDef[] = [
       c(
         '俯身细看',
         [
-          o(60, '你盯得久了,竟从剑势里看出半式杀招。', { type: 'exp', reqPct: 0.07 }),
+          o(60, '你盯得久了,竟从剑势里看出半式杀招。', { type: 'exp', secs: 60 }),
           o(40, '剑影骤亮,你眼中刺痛,忙闭目退开。', { type: 'buff', id: 'injury' })
         ],
         { isDefault: true }
@@ -189,7 +189,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('合十而退', [o(1, '你朝旧剑行了一礼。湖风忽起,衣袂翻飞。', { type: 'exp', reqPct: 0.1 })])
+      c('合十而退', [o(1, '你朝旧剑行了一礼。湖风忽起,衣袂翻飞。', { type: 'exp', secs: 60 })])
     ]
   ),
 
@@ -248,7 +248,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('推回去', [o(1, '你把草轻轻推回它面前。它歪头看你半晌,最后自己吃了,转身入林。', { type: 'exp', reqPct: 0.12 })])
+      c('推回去', [o(1, '你把草轻轻推回它面前。它歪头看你半晌,最后自己吃了,转身入林。', { type: 'exp', secs: 60 })])
     ]
   ),
 
@@ -285,7 +285,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('不取', [o(1, '你把匣子放回原处,重新系好。古树在头顶落下一片叶,正巧落进你掌心。', { type: 'exp', reqPct: 0.09 })])
+      c('不取', [o(1, '你把匣子放回原处,重新系好。古树在头顶落下一片叶,正巧落进你掌心。', { type: 'exp', secs: 60 })])
     ]
   ),
 
@@ -299,7 +299,7 @@ export const CHAIN_EVENTS: EventDef[] = [
       c(
         '跟随灯火',
         [
-          o(60, '灯把你引到一处从没走过的岔口,岔口后头是条近路。', { type: 'exp', reqPct: 0.06 }),
+          o(60, '灯把你引到一处从没走过的岔口,岔口后头是条近路。', { type: 'exp', secs: 30 }),
           o(40, '追了半夜,灯忽然灭在一处荒坟前。', { type: 'buff', id: 'curse_xinmo' })
         ],
         { isDefault: true }
@@ -322,7 +322,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         ],
         { isDefault: true }
       ),
-      c('远远行礼', [o(1, '你远远一揖。人影没有回头,只是灯亮了一亮,像是在应。', { type: 'exp', reqPct: 0.1 })])
+      c('远远行礼', [o(1, '你远远一揖。人影没有回头,只是灯亮了一亮,像是在应。', { type: 'exp', secs: 60 })])
     ]
   ),
 
@@ -339,7 +339,7 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             70,
             '苔痕落尽,碑上浮起一层极淡的灵光。说不清为什么,你心里某处松了一下。',
-            { type: 'exp', reqPct: 0.05 },
+            { type: 'exp', secs: 30 },
             { type: 'material', id: 'wudao', amount: 2 }
           ),
           o(30, '苔痕擦不净 —— 像有人年年替你补上。你收回手,没再擦。', { type: 'material', id: 'page', amount: 1 })
@@ -362,7 +362,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         o(
           1,
           '你写下新去的地名。隔日再看,旧图自己又长出一寸。',
-          { type: 'exp', reqPct: 0.08 },
+          { type: 'exp', secs: 60 },
           { type: 'material', id: 'page', amount: 2 }
         )
       ]),
@@ -389,11 +389,11 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             60,
             '你们对坐一夜。临别他不说再见,只说:「路还长。」',
-            { type: 'exp', reqPct: 0.12 },
+            { type: 'exp', secs: 60 },
             { type: 'buff', id: 'bless_daoyun' },
             { type: 'material', id: 'wudao', amount: 6 }
           ),
-          o(40, '你想说的话终究没说出口,他也没问。天亮时山道上只剩你一个。', { type: 'exp', reqPct: 0.1 })
+          o(40, '你想说的话终究没说出口,他也没问。天亮时山道上只剩你一个。', { type: 'exp', secs: 60 })
         ],
         { isDefault: true }
       ),
@@ -401,7 +401,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         o(
           1,
           '你郑重一揖。他受了一半,把另一半还了回来:「本就是你的。」',
-          { type: 'exp', reqPct: 0.08 },
+          { type: 'exp', secs: 60 },
           { type: 'material', id: 'page', amount: 3 }
         )
       ]),
@@ -422,13 +422,13 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             60,
             '你收下名册。册子入手极轻,像什么都没写 —— 可你知道,从这一刻起它记着你的手。',
-            { type: 'exp', reqPct: 0.08 },
+            { type: 'exp', secs: 60 },
             { type: 'material', id: 'page', amount: 2 }
           ),
           o(
             40,
             '你双手接下,册子却烫了一下:凡间的名字,神界的墨,写上去是要烧的。',
-            { type: 'exp', reqPct: 0.07 },
+            { type: 'exp', secs: 60 },
             { type: 'buff', id: 'bless_qingfeng' }
           )
         ],
@@ -452,7 +452,7 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             65,
             '他说了三百年:谁改的册子,谁替他瞒的,谁在他飞升那夜替他受了那一刀。末了他把一物推到你面前:「账清不清,你都该拿走。」',
-            { type: 'exp', reqPct: 0.12 },
+            { type: 'exp', secs: 60 },
             { type: 'material', id: 'page', amount: 3 }
           ),
           o(35, '他只说了一句:「你来得比我晚,却走得比我远。」', { type: 'material', id: 'wudao', amount: 6 })
@@ -463,7 +463,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         o(
           1,
           '你们对坐一夜。天亮时他把名册上那一页撕了下来,塞进你手里:「就当没见过我。」',
-          { type: 'exp', reqPct: 0.1 },
+          { type: 'exp', secs: 60 },
           { type: 'material', id: 'dust', amount: 10 }
         )
       ]),
@@ -482,11 +482,11 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             55,
             '你念出了那三个名字。阶下有两人变色,一人抬头看你,笑了一下。散朝之后,差役递还名册:「此册往后归你。」',
-            { type: 'exp', reqPct: 0.15 },
+            { type: 'exp', secs: 90 },
             { type: 'material', id: 'wudao', amount: 10 },
             { type: 'buff', id: 'bless_daoyun' }
           ),
-          o(45, '你念完最后一个名字,才发现那名字是本册新写的 —— 写的是你自己。', { type: 'exp', reqPct: 0.14 })
+          o(45, '你念完最后一个名字,才发现那名字是本册新写的 —— 写的是你自己。', { type: 'exp', secs: 90 })
         ],
         { isDefault: true }
       ),
@@ -515,7 +515,7 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             65,
             '它在你掌心里安静下来,透出一点微光。你忽然明白:它不是认得你,是认得你身上那些还没长成的部分。',
-            { type: 'exp', reqPct: 0.1 },
+            { type: 'exp', secs: 60 },
             { type: 'material', id: 'wudao', amount: 8 }
           ),
           o(35, '它跳了一下,烫得你缩手。落地时已凝成一块石头,再无动静。', { type: 'material', id: 'ore', amount: 12 })
@@ -543,7 +543,7 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             60,
             '你看了一日一夜:有人出生,有人筑屋,有人围着一块石头争了很久。最后有人在石上刻了两个字,笔画与你当年刻的一样。',
-            { type: 'exp', reqPct: 0.14 },
+            { type: 'exp', secs: 90 },
             { type: 'material', id: 'page', amount: 4 }
           ),
           o(40, '你什么也没看清。渊底忽然起雾,再看时,那枚世界已经转过去了。', { type: 'material', id: 'wudao', amount: 10 })
@@ -571,11 +571,11 @@ export const CHAIN_EVENTS: EventDef[] = [
           o(
             60,
             '你松开手。空壳落进渊中,世界应声而亮,像谁在很远的地方点了一盏灯。',
-            { type: 'exp', reqPct: 0.18 },
+            { type: 'exp', secs: 90 },
             { type: 'material', id: 'wudao', amount: 14 },
             { type: 'buff', id: 'bless_daoyun' }
           ),
-          o(40, '你松开手,却听见里面有人喊了一声。你没能听清那两个字是什么。', { type: 'exp', reqPct: 0.16 })
+          o(40, '你松开手,却听见里面有人喊了一声。你没能听清那两个字是什么。', { type: 'exp', secs: 90 })
         ],
         { isDefault: true }
       ),
@@ -583,7 +583,7 @@ export const CHAIN_EVENTS: EventDef[] = [
         o(
           1,
           '你合掌一收,万川归寂。世界坍回一滴,重新悬在你掌心 —— 这一次它不等你决定,它就是你。',
-          { type: 'exp', reqPct: 0.2 },
+          { type: 'exp', secs: 120 },
           { type: 'material', id: 'dust', amount: 16 }
         )
       ]),

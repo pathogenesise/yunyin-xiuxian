@@ -3,15 +3,18 @@
  */
 import type { EventChoice, EventDef, EventEffect, RegionDef } from '@/types'
 import { RandomService, rng } from '@/utils/random'
-import { mulN } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
 import { CHAINS, chainOfEvent } from '@/data/chains'
+// 三档触发概率是同一份数据(见 data/constants 那段注释):际遇在 exploration 掷,
+// 奇缘与机缘在这里从上一步的结果里再掷一次。数字不在本文件另写一遍 ——
+// core/eventTier 要把这条乘法链讲给玩家听,两边各写一份就会互相撒谎。
+import { CHAIN_STAGE_CHANCE, FORTUNE_CHANCE, INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import { pillDef, PILLS } from '@/data/pills'
 import { buffDef } from '@/data/buffs'
 import { PETS, petDef } from '@/data/pets'
 import { qualityDef } from '@/data/qualities'
-import { stoneByTier } from './formulas'
+import { expFromSecs, stoneByTier } from './formulas'
 import { generateEquipment } from './equipGen'
 import { acquireArtifact, acquireEquipment, randomDropArtifact } from './loot'
 import { learnRandomGongfa } from './gongfaService'
@@ -28,17 +31,6 @@ import { useAdventureStore } from '@/stores/adventure'
 import { useQuestsStore } from '@/stores/quests'
 
 const MATERIAL_NAMES = { herb: '灵草', ore: '玄铁', page: '功法残页', dust: '器灵尘', wudao: '悟道点' } as const
-
-/** 机缘事件触发概率(每次事件判定,极低) */
-const FORTUNE_CHANCE = 0.02
-
-/**
- * 奇缘阶段出现概率。
- *
- * 不设成 1:缘分要"再遇上",不是排着队一次走完 ——
- * 每有一次事件判定就掷一次,掷中就把当前该走的那一程请出来。
- */
-const CHAIN_STAGE_CHANCE = 0.3
 
 /** 此刻该走的那几程(链条未结、境界够、尚未抽到过) */
 export function pendingChainStages(major: number): { chainId: string; stage: number; event: EventDef }[] {
@@ -155,7 +147,8 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
       return `灵石 -${formatGN(v)}`
     }
     case 'exp': {
-      const v = mulN(player.expReq, effect.reqPct)
+      // 与丹药、一场遭遇同一把尺子:等效闭关时长,封顶不满一层(见 formulas.expFromSecs)
+      const v = expFromSecs(player.expReq, effect.secs, player.cultPerSec, INSTANT_EXP_LAYER_CAP)
       player.gainExp(v)
       return `修为 +${formatGN(v)}`
     }

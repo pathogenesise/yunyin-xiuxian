@@ -127,6 +127,17 @@
         <p class="mt-0.5 text-[10px] text-ink-ghost">
           攻伐不进天劫公式;防御与气血按本境裸修为折算成上面的抗性与护持,各有上限 —— 血再厚也只能硬抗一部分,剩下的仍要抗性/减伤/恢复来补。进阶成功率与突破准备也只作用于小进阶,大关不看它们。
         </p>
+        <!--
+          界膜之劫:这一版对跨界那一关的规则加难(见 data/constants 的
+          TRIB_WORLD_STEP_STAT_FOLD)。必须**在决意之前**说清楚 ——
+          上一版玩家吃过"护持明明写着有,过劫时却像没有"的亏,
+          那种误会不该靠失败去发现。
+        -->
+        <div v-if="worldStep" class="mt-2 rounded-md border border-cinnabar/30 bg-cinnabar/5 px-2.5 py-2">
+          <p class="text-[10px] leading-relaxed text-cinnabar/90">
+            界膜之劫:跨界这一关血肉之厚一概不算 —— 防御与气血折算出的抗性、开劫护持在此作废,只认词条与准备。
+          </p>
+        </div>
         <!-- 天威本身的长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
         <p v-if="tribWave" class="mt-0.5 text-[10px] text-ink-faint tabular">
           共 {{ tribWave.waves }} 道,单波 {{ formatPercent(tribWave.min, 0) }}–{{ formatPercent(tribWave.max, 0) }} 最大生命(合计约
@@ -153,7 +164,13 @@
       <div v-if="!btInfo.needTribulation" class="mt-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
         <div class="flex items-center justify-between text-[10px] text-ink-faint">
           <span>突破准备(一次有效)</span>
-          <span v-if="btInfo.prep.sitting" class="text-amber-ink">调息中 · {{ formatDuration(btInfo.prep.remainingSec) }}</span>
+          <!--
+            倒计时一律走 formatCountdown(定宽),不用 formatDuration:
+            后者每秒都可能改宽度,这枚胶囊一涨一缩,同一行的其余内容会跟着跳。
+          -->
+          <span v-if="btInfo.prep.sitting" class="text-amber-ink tabular">
+            调息中 · <span class="inline-block min-w-[3.5rem] text-right">{{ formatCountdown(btInfo.prep.remainingSec) }}</span>
+          </span>
           <span v-else-if="btInfo.prep.ready" class="text-jade">加成 +{{ Math.round(btInfo.prep.bonus * 100) }}% 就绪</span>
         </div>
         <!--
@@ -184,7 +201,9 @@
     <div class="card-ink px-4 py-3">
       <div class="flex items-center justify-between">
         <span class="text-[11px] text-ink-soft">闭关参悟</span>
-        <span v-if="retreating" class="text-[10px] text-amber-ink tabular">闭关中 · {{ formatDuration(retreatRemaining) }}</span>
+        <span v-if="retreating" class="text-[10px] text-amber-ink tabular">
+          闭关中 · <span class="inline-block min-w-[3.5rem] text-right">{{ formatCountdown(retreatRemaining) }}</span>
+        </span>
       </div>
       <p class="mt-0.5 text-[10px] text-ink-faint">
         静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出历练。
@@ -198,16 +217,22 @@
     <section v-if="activeBuffs.length">
       <SectionTitle title="状态" />
       <div class="mt-2 flex flex-wrap gap-2">
+        <!--
+          状态胶囊每秒刷新一次,倒数文本必须定宽:formatCountdown 逐位补零,
+          再给它一个固定宽度的槽位(文字右对齐)—— 否则「10分0秒 → 10分1秒」
+          这一位的增减会把整排胶囊推来推去,看起来就是「状态一直在抖」。
+        -->
         <button
           v-for="b in activeBuffs"
           :key="b.def!.id"
           type="button"
-          class="chip-ink transition-transform active:scale-95"
+          class="chip-ink tabular transition-transform active:scale-95"
           :class="b.def!.kind === 'injury' ? 'border-cinnabar/60 text-cinnabar' : 'border-jade/60 text-jade'"
           @click="ui.buffDetailId = b.def!.id"
         >
           <GameIcon :name="b.def!.icon" :size="11" />
-          {{ b.def!.name }} {{ formatDuration(b.remain) }}
+          {{ b.def!.name }}
+          <span class="inline-block min-w-[3.5rem] text-right">{{ formatCountdown(b.remain) }}</span>
         </button>
       </div>
     </section>
@@ -306,6 +331,7 @@
   import {
     currentStatGuard,
     currentTribulationPlan,
+    statFoldAt,
     tribulationWaveSpan,
     verdictLabel,
     type TribulationPlan
@@ -322,7 +348,7 @@
   import { buffDef } from '@/data/buffs'
   import { pillDef } from '@/data/pills'
   import { COMPREHEND_PAGE_COST } from '@/data/constants'
-  import { formatDuration, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
+  import { formatCountdown, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'
@@ -395,6 +421,15 @@
   const tribPlan = computed(() => (btInfo.value.needTribulation ? currentTribulationPlan() : null))
 
   /**
+   * 这一劫是不是「界膜」那一关(人间→仙界 / 仙界→神界 / 神界→混沌海)。
+   *
+   * 判据取自 tribulationDecision.statFoldAt(三维折算的折扣):
+   * 界面与结算读的必须是同一个数,否则又会出现"显示有护持、结算没有"。
+   */
+  const tribTargetMajor = computed(() => (player.isMajorStep ? player.major + 1 : player.major))
+  const worldStep = computed(() => statFoldAt(tribTargetMajor.value) < 1)
+
+  /**
    * 渡劫账上的四项实际读数 —— 只摊天劫真的会读的那些(口径与 tribulationDecision 同源:
    * 恢复 = regenPerRound + 吸血×0.3,与 sustainScore 对齐)。
    * 摆出来是因为"血厚防高却过不去"几乎只可能来自一个误会:以为天劫看三维。
@@ -452,7 +487,7 @@
     Object.entries(inventory.pills)
       .map(([id, count]) => ({ def: pillDef(id), count }))
       .filter(x => x.def !== undefined && x.count > 0)
-      .filter(x => x.def!.kind === 'buff' || x.def!.instant?.expReqPct || x.def!.instant?.qiPct)
+      .filter(x => x.def!.kind === 'buff' || x.def!.instant?.expSecs || x.def!.instant?.expFixed || x.def!.instant?.qiPct)
       .sort((a, b) => qualityDef(b.def!.quality).rank - qualityDef(a.def!.quality).rank)
       .slice(0, 4)
   )

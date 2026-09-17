@@ -25,6 +25,7 @@ import { buildPlayerSnap } from './playerSnap'
 import { currentDaoRules } from './endgameService'
 import { afterWin } from './loot'
 import { autoResolveEvent, pickEventFor } from './eventEngine'
+import { eventTierDef, eventTierOf } from './eventTier'
 import { modOf } from './statsCalc'
 import { track } from './progress'
 import { usePlayerStore } from '@/stores/player'
@@ -479,6 +480,16 @@ export function tickExploration(now: number): void {
       const ev = pickEventFor({ ...region, eventTags: [...placeContent(region.id).eventTags] })
       if (ev) {
         adventure.setPendingEvent(ev.id, now)
+        /**
+         * 三档各报各的名。
+         *
+         * 弹窗是从「际遇」这个入口弹出来的,机缘与奇缘若不吭声,玩家看到的
+         * 就只是又一次寻常遭遇 —— 千分之几的稀有度在体感上等于零。
+         * 档名与颜色取自 core/eventTier,不在这里另写一份判据。
+         */
+        const tier = eventTierDef(eventTierOf(ev.id))
+        if (tier.id === 'jiyuan') useUiStore().toast(`千载难逢 —— 机缘「${ev.title}」`, 'rare')
+        else if (tier.id === 'qiyuan') useUiStore().toast(`缘分再续 —— 「${ev.title}」`, 'info')
         return
       }
     }

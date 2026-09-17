@@ -17,7 +17,7 @@
  *
  * | 轴            | 换算                          | 随境界 |
  * |---------------|-------------------------------|--------|
- * | expReqPct     | pct × 一层耗时                | 恒定   |
+ * | expSecs       | 直接就是秒数(封顶一层)         | **绝对恒定** |
  * | expFixed      | 点数 ÷ 修炼速度               | 每大境界 ÷5.2,指数贬值 |
  * | qiPct         | pct × 灵气上限 ÷ 灵气回速     | 近乎恒定 |
  * | lifespanYears | 年数 × 3600(每现实小时老一岁) | 绝对值恒定,相对寿限急剧贬值 |
@@ -46,7 +46,13 @@ import { PILLS } from '@/data/pills'
 import { qualityDef } from '@/data/qualities'
 import { buffDef } from '@/data/buffs'
 import { recipeCraft } from '@/data/crafting'
-import { AGE_YEARS_PER_HOUR, EXPLORE_BATTLE_INTERVAL, LIBRARY_WUDAO_PER_HOUR, PILL_DROP_CHANCE } from '@/data/constants'
+import {
+  AGE_YEARS_PER_HOUR,
+  EXPLORE_BATTLE_INTERVAL,
+  LIBRARY_WUDAO_PER_HOUR,
+  PILL_DROP_CHANCE,
+  INSTANT_EXP_LAYER_CAP
+} from '@/data/constants'
 import { toNum } from '@/utils/gnum'
 import { baseCultPerSec, baseQiRegen, expRequirement, qiCap, stoneByTier } from './formulas'
 import { bearableRank, composeSuccessRate } from './craftability'
@@ -107,7 +113,7 @@ function tempoRateOf(def: PillDef): number {
 export function pillFamily(def: PillDef): PillFamily {
   const i = def.instant
   if (def.kind === 'instant' && i) {
-    if (i.expReqPct || i.expFixed) return 'exp'
+    if (i.expSecs || i.expFixed) return 'exp'
     if (i.qiPct) return 'qi'
     if (i.lifespanYears) return 'lifespan'
     if (i.wudao) return 'wudao'
@@ -137,7 +143,12 @@ export function pillGainSecAt(def: PillDef, major: number): number {
   const m = Math.max(0, major)
   const i = def.instant
   if (def.kind === 'instant' && i) {
-    if (i.expReqPct) return i.expReqPct * layerSeconds(m)
+    /**
+     * 修为丹的药力**直接就是等效秒数**(Phase 39 起)—— 这正是这一版要的性质:
+     * 药力不再乘上"当前一层的耗时",于是它在任何境界都是同一个数。
+     * 唯一的上限是「不满一层」(INSTANT_EXP_LAYER_CAP),故低境界要 fold 一刀。
+     */
+    if (i.expSecs) return Math.min(i.expSecs, layerSeconds(m) * INSTANT_EXP_LAYER_CAP)
     // gainExp 封顶于当前一层的需求,固定点数给不满一层
     if (i.expFixed) return Math.min(i.expFixed, toNum(expRequirement(m, AUDIT_SUB))) / baseCultPerSec(m, AUDIT_SUB)
     if (i.qiPct) return (i.qiPct * qiCap(m, AUDIT_SUB)) / baseQiRegen(m)
