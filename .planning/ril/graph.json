@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 209,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-17T15:42:31+00:00",
+  "updated_at": "2026-09-17T15:42:45+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -3096,7 +3096,7 @@
       "version": 1,
       "created_at": "2026-09-11T16:45:58+00:00",
       "updated_at": "2026-09-11T16:45:58+00:00",
-      "touched_round": 208,
+      "touched_round": 209,
       "summary": "属性汇总(statsCalc + player 各 mod 源:装备/功法/buff/建筑/灵脉/称号/师承/灵兽/天时/在身之卦/命格/天赋)"
     },
     "DEC-022": {
@@ -12005,7 +12005,7 @@
       "version": 1,
       "created_at": "2026-09-17T13:52:34+00:00",
       "updated_at": "2026-09-17T13:52:34+00:00",
-      "touched_round": 208,
+      "touched_round": 209,
       "confidence": 0.95,
       "summary": "历练修为失效挂机的根因是「按玩家自身数值缩放」的百分比口径 × 遭遇自动高频:奖励随需求指数上涨,而遭遇的代价(12 秒)恒定 —— 与丹药那处同源(已改),故同一把尺子(等效闭关时长)可以同时治两处。"
     },
@@ -12421,11 +12421,11 @@
     "ISS-216": {
       "id": "ISS-216",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-17T15:38:46+00:00",
-      "updated_at": "2026-09-17T15:38:46+00:00",
-      "touched_round": 208,
+      "updated_at": "2026-09-17T15:42:37+00:00",
+      "touched_round": 209,
       "severity": 0.5,
       "confidence": 0.9,
       "effort": 2,
@@ -12442,6 +12442,40 @@
       "source": "ruleBudget.budgetOfMods × data/talents(33 件按 grade 汇总)",
       "summary": "按等阶汇总预算:凡赋 n=7 [0.3,1.0] · 灵赋 n=14 [0.5,1.7] · 天赋 n=7 [0.4,1.2] · 道赋 n=5 [1.4,2.8]。区间重叠严重(天赋的下界低于凡赋的下界)。",
       "confidence": 1.0
+    },
+    "EV-193": {
+      "id": "EV-193",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T15:42:36+00:00",
+      "updated_at": "2026-09-17T15:42:36+00:00",
+      "touched_round": 209,
+      "source": "src/core/talentLadder.spec.ts(三条承诺 + 领地对照表)",
+      "summary": "复盘的结论与上一轮相反:① 0 例支配;② 均预算随等阶单调(0.54/0.86/0.90/2.18);③ 每一等各有属性领地(凡赋=速度/灵石/回复 · 灵赋=运气/掉落/炼丹炼器/低血反击 · 天赋=防御/伤害加成/渡劫抗性 · 道赋=攻击/暴击/寿元/修速/生命)。故 ISS-216 的\"倒挂\"是尺子误用(budgetOfMods 是机制复杂度会计,按战斗口径定参考档),不是数据缺陷。",
+      "confidence": 1.0
+    },
+    "CHG-246": {
+      "id": "CHG-246",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T15:42:36+00:00",
+      "updated_at": "2026-09-17T15:42:36+00:00",
+      "touched_round": 209,
+      "commit": "7ae5638",
+      "summary": "天赋四等的三条真承诺写成 talentLadder.spec(不被支配 / 期望更强 / 各有领地);不动 33 件数值。文件头记下这次\"尺子误用\"的复盘,免得下次再拿复杂度预算当强度阶梯。"
+    },
+    "DEC-052": {
+      "id": "DEC-052",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T15:42:36+00:00",
+      "updated_at": "2026-09-17T15:42:36+00:00",
+      "touched_round": 209,
+      "rationale": "稀有度的承诺是三条:不被支配、期望更强、各有领地。budgetOfMods 是机制复杂度会计(它自己的注释写着\"不是玩家资源\"),按战斗口径定参考档,会把条件类战斗词条算重、运气与进阶率算轻 —— 拿它当强度阶梯就会得出错误的平衡结论。故判定:ISS-216 不是缺陷,判据按三条真承诺重写,数值不动。",
+      "alternatives_rejected": "①按预算重排 33 件数值:为一把错的尺子改动数据,会把真平衡改坏(且会连带抽取权重的体感);②按预算重新分等:等于让\"复杂度\"决定稀缺度,与\"稀有=强\"的玩家认知相反;③无视这条告警:下次还会有人重新发现并再判一遍。"
     }
   },
   "edges": [
@@ -18553,6 +18587,24 @@
       "to": "ISS-215",
       "type": "causes",
       "created_at": "2026-09-17T15:38:46+00:00"
+    },
+    {
+      "from": "EV-193",
+      "to": "HYP-096",
+      "type": "refutes",
+      "created_at": "2026-09-17T15:42:36+00:00"
+    },
+    {
+      "from": "DEC-052",
+      "to": "COMP-013",
+      "type": "governs",
+      "created_at": "2026-09-17T15:42:37+00:00"
+    },
+    {
+      "from": "CHG-246",
+      "to": "ISS-216",
+      "type": "resolves",
+      "created_at": "2026-09-17T15:42:45+00:00"
     }
   ]
 }
