@@ -11,6 +11,7 @@ import { INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import { formatDuration, formatGN } from '@/utils/format'
 import { recipeCraft, type SkillId } from '@/data/crafting'
 import { expFromSecs, stoneByTier } from './formulas'
+import { maxTierForMajor } from '@/data/regions'
 import { collect, track } from './progress'
 import { modOf } from './statsCalc'
 import { craftability, knownRecipes } from './craftability'
@@ -86,7 +87,14 @@ export function usePill(id: string): boolean {
 export function pillCraftCost(id: string): { herb: number; stone: GNum } | null {
   const def = pillDef(id)
   if (!def?.recipe) return null
-  const tier = Math.max(1, def.minRealm * 2 + 1)
+  /**
+   * 灵石开销按这张方子**准入境界能拿到的最高层级**折算。
+   *
+   * 从前这里自写 `minRealm × 2 + 1`,界外就飞出区域表了:第 18 境的方子算出层级 37,
+   * 而玩家在混沌海能到的最高层级是 32 —— 一张方子的价格凭空高出 322 倍(1.9^5),
+   * 于是界外炼丹被自己的报价挡在门外(ISS-211)。层级只有一个事实源:区域表。
+   */
+  const tier = maxTierForMajor(def.minRealm)
   return { herb: def.recipe.herb, stone: stoneByTier(tier, def.recipe.stoneBase / 10) }
 }
 

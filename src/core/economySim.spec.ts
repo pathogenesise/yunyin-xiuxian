@@ -135,25 +135,27 @@ describe('经济闭环审计(Phase 19 · Phase 40 补界外与修为)', () => {
   })
 
   /**
-   * 已知失衡(ISS-214):界外把材料/灵石熔成道源的速率,远超「每境凝一枚道果」的终局节奏。
+   * 终局的进度杠杆:**凝一枚道果要多少小时的材料产出**。
    *
-   * 这是建模之后**露出来**的真实问题,不是模型误差:灵石收入按 1.9^层级 涨,
-   * 而灵石熔铸价与道果价(100 道源)冻结在真仙量级 —— 到混沌海,一场战斗的灵石
-   * 就能换出一枚以上道果。断言它,是为了让"哪天有人把熔炉/道果重定价"这件事
-   * 有一个明确的红灯位置,而不是靠谁想起来去翻表。
+   * ISS-214 的旧病是"价格冻死":灵石收入按 1.9^层级 涨,而熔炉的灵石价写死在真仙那一层
+   * (tier 20),于是到混沌海(tier 32)道果相对收入便宜了 1.9^12 ≈ 293 倍 ——
+   * 一战的灵石就够换一枚以上道果。定价改随层级之后,这个代价落在 **1 小时上下**,
+   * 而且整条长尾上只差一个量级以内。
+   *
+   * 守两条:① 绝对量级(几分钟一枚太贱、一天一枚太贵);② 量级不漂移。
+   * 允许的残余梯度来自器灵尘 —— 高品质装备分解出的尘随层级变多,而熔炉的尘价是绝对数,
+   * 故深处略便宜(1.68h → 0.90h,约 1.9 倍);那是品质窗口的副作用,不是价格冻死。
+   * 「每境凝几枚道果」是玩法节奏,不是审计能替玩家定的。
    */
-  it('已知失衡:界外的道源产出远超终局节奏(ISS-214)', () => {
-    const rows = outer.map(era => {
-      const dao = era.flows.find(f => f.resource === 'daoSource')!
-      return { major: era.major, ratio: dao.ratio }
-    })
-    console.log(`\n  [界外道源] 产出 ÷ 「每境一枚道果」的节奏:`)
-    for (const r of rows) console.log(`    第${r.major}境 ×${r.ratio.toExponential(1)}`)
-    for (const r of rows) {
-      expect(r.ratio, `第${r.major}境道源产出`).toBeGreaterThan(1)
-    }
-    // 至少有一境高到三位数以上:这说明"道果在该段几乎免费",需要一次定价决策
-    expect(Math.max(...rows.map(r => r.ratio)), '道源不再过剩了?那这条失衡账该销掉').toBeGreaterThan(100)
+  it('界外:凝一枚道果的材料代价不随层级漂移(ISS-214 的旧病)', () => {
+    const rows = outer.map(era => ({ major: era.major, hours: era.daoCostHours ?? 0 }))
+    console.log('\n  [界外道果价] 凝一枚道果 ≈ 多少小时的材料产出:')
+    for (const r of rows) console.log(`    第${r.major}境 ${r.hours.toFixed(2)}h`)
+    const min = Math.min(...rows.map(r => r.hours))
+    const max = Math.max(...rows.map(r => r.hours))
+    expect(min, '凝一枚道果便宜到几分钟一枚 —— 终局数值出口会失去意义').toBeGreaterThan(0.1)
+    expect(max, '凝一枚道果贵到一天以上 —— 终局会变成摆设').toBeLessThan(24)
+    expect(max / min, `道果价随层级漂移了:${min.toFixed(2)}h → ${max.toFixed(2)}h`).toBeLessThan(2)
   })
 
   /**

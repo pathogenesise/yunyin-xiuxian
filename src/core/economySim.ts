@@ -49,8 +49,6 @@ import { generateEquipment } from './equipGen'
 import { secondsForMajor } from './progressionSim'
 import { tripExpSecsPerHour, winsPerHour } from './expIncome'
 
-/** 灵石熔铸按哪一层的价格折算(与 endgameService.furnaceStoneCost 同一处口径) */
-const FURNACE_STONE_TIER = 20
 
 // ---- 挂机行为假设 ----
 const UPGRADES_PER_HOUR = 3
@@ -83,6 +81,12 @@ export interface EraAudit {
   tier: number
   eraHours: number
   flows: ResourceFlow[]
+  /**
+   * 界外专有:凝一枚道果需要多少小时的材料产出(道果价 ÷ 熔炉潜力)。
+   *
+   * 这是终局的进度杠杆 —— 应当**不随层级漂移**;漂移即有人把某一段价格冻死了。
+   */
+  daoCostHours?: number
 }
 
 function buildingLevel(major: number, maxLevel: number): number {
@@ -155,7 +159,7 @@ export function auditEra(major: number): EraAudit {
   const recipes = PILLS.filter(p => p.recipe && p.minRealm <= major)
   const avgHerbCost = recipes.length ? recipes.reduce((s, p) => s + p.recipe!.herb, 0) / recipes.length : 0
   const avgPillStone = recipes.length
-    ? recipes.reduce((s, p) => s + toNum(stoneByTier(Math.max(1, p.minRealm * 2 + 1), p.recipe!.stoneBase / 10)), 0) / recipes.length
+    ? recipes.reduce((s, p) => s + toNum(stoneByTier(maxTierForMajor(p.minRealm), p.recipe!.stoneBase / 10)), 0) / recipes.length
     : 0
   // 装备强化
   const up = upgradeCost(3, tier, 3, 0)
@@ -181,8 +185,11 @@ export function auditEra(major: number): EraAudit {
    * 这里的建模口径(与终局玩法同源,数字全部取自 data/endgame):
    *   潜力 = Σ 各材料产出 ÷ 该材料的熔铸率 + 灵石产出 ÷ 灵石熔铸价 × 每次道源数
    *   需求 = 每境凝一枚道果(DAO_SOURCE_PER_FRUIT / 本境时长)
-   * 于是比值回答的是「材料够不够撑起终局节奏」,而不是玩家实际熔了多少 ——
-   * 需求取的是**下限**(远征与试炼的入场开销另需道源),故这个比值是上界。
+   *
+   * 但**别把这个比值当健康判据** —— 它主要是"这一境有多长"的函数(一境越长,
+   * 摊出来的需求越小)。真正有意义的是速率与价格那条:**凝一枚道果要多少小时的材料产出**
+   * (见 daoCostHours),它才是终局的进度杠杆,而且必须**不随层级漂移** ——
+   * 漂移就说明有人把某一段的价格又冻死了(ISS-214 的旧病)。
    */
   const furnace = ((): { potential: number; demand: number } | null => {
     if (major < WORLD_BREAK_MAJOR) return null
@@ -197,8 +204,14 @@ export function auditEra(major: number): EraAudit {
       const income = byResource[rate.resource as AuditResource]
       if (income) potential += income / rate.per
     }
-    // 灵石熔铸:一份灵石(按第 20 层折算)换 FURNACE_STONE_DAO_SOURCE 缕道源
-    const stonePerDao = toNum(stoneByTier(FURNACE_STONE_TIER, FURNACE_STONE_TIER_AMOUNT))
+    /**
+     * 灵石熔铸:一份灵石换 FURNACE_STONE_DAO_SOURCE 缕道源。
+     *
+     * 价格按**这一境的层级**折算 —— 与 endgameService.furnaceStoneCost 同一口径。
+     * 从前两边都写死第 20 层:灵石收入按 1.9^层级 涨,价格却不动,
+     * 于是到混沌海一条石脉就能换来满地道果(ISS-214)。
+     */
+    const stonePerDao = toNum(stoneByTier(tier, FURNACE_STONE_TIER_AMOUNT))
     if (stonePerDao > 0) potential += (stoneIncome / stonePerDao) * FURNACE_STONE_DAO_SOURCE
     return { potential, demand: DAO_SOURCE_PER_FRUIT / Math.max(eraHours, 1) }
   })()
@@ -209,6 +222,12 @@ export function auditEra(major: number): EraAudit {
    * 它说的正是「材料总量是终局需求的几倍」。
    */
   const furnaceShare = furnace && furnace.potential > 0 ? Math.min(1, furnace.demand / furnace.potential) : 0
+
+  /**
+   * 凝一枚道果要多少小时的材料产出 = 道果价(道源) ÷ 熔炉潜力(道源/小时)。
+   * 这是终局的进度杠杆:它是常数,说明"材料 → 道果"的换算在整条长尾上同一个价。
+   */
+  const daoCostHours = furnace && furnace.potential > 0 ? DAO_SOURCE_PER_FRUIT / furnace.potential : 0
 
   const make = (resource: AuditResource, income: number, sink: number, note?: string): ResourceFlow => {
     const ratio = sink > 0 ? income / sink : Infinity
@@ -226,6 +245,7 @@ export function auditEra(major: number): EraAudit {
     major,
     tier,
     eraHours,
+    ...(furnace ? { daoCostHours } : {}),
     flows: [
       make('stone', stoneIncome, stoneSinkHour),
       withFurnace('herb', herbIncome, herbSinkHour),

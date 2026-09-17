@@ -22,6 +22,7 @@ import {
   type FurnaceRate
 } from '@/data/endgame'
 import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
+import { maxTierForMajor } from '@/data/regions'
 import { stoneByTier } from './formulas'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
@@ -84,8 +85,18 @@ export function furnaceConvert(rate: FurnaceRate): number {
   return daoSource
 }
 
+/**
+ * 灵石熔铸价 —— 按**玩家当前层级**折算,不是冻结在真仙那一层。
+ *
+ * 灵石收入随区域层级按 1.9^层级 涨(与强化、重铸、建筑同一条经济),
+ * 而熔铸价从前写死 `stoneByTier(20, …)`:到混沌海(层级 32),一战的灵石
+ * 就能换出一枚以上道果 —— 道果价相对收入塌了 1.9^12 ≈ 293 倍(ISS-214)。
+ * 价随层级走之后,「熔一枚道源要多少灵石」相对玩家的收入恒定,
+ * 道果在整条界外长尾上是同一个价。口径与强化/重铸一致:花的是**你这一层**的钱。
+ */
 export function furnaceStoneCost(): ReturnType<typeof stoneByTier> {
-  return stoneByTier(20, FURNACE_STONE_TIER_AMOUNT)
+  const player = usePlayerStore()
+  return stoneByTier(maxTierForMajor(player.major), FURNACE_STONE_TIER_AMOUNT)
 }
 
 export function furnaceConvertStone(): boolean {

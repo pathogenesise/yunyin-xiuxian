@@ -22,6 +22,9 @@ vi.mock('@/utils/random', async importOriginal => {
 import { craftPill, pillCraftCost, salvageRatio, usePill } from './pillService'
 import { craftability } from './craftability'
 import { pillDef } from '@/data/pills'
+import { PILLS } from '@/data/pills'
+import { maxTierForMajor } from '@/data/regions'
+import { MAX_MAJOR } from '@/data/realms'
 import { recipeCraft } from '@/data/crafting'
 import { stoneByTier } from './formulas'
 import { expRequirement } from './formulas'
@@ -110,9 +113,29 @@ describe('炼丹 · 开炉前的两道门', () => {
     expect(spend, '开炉没有按报价扣灵石').toHaveBeenCalledWith(cost.stone)
     expect(stoneBefore - toNum(resources.spiritStone), '灵石扣少了或扣多了').toBeCloseTo(toNum(cost.stone), 3)
     expect(herbBefore - resources.herb).toBe(cost.herb)
-    // 成本口径本身:灵草按方子,灵石按丹方阶位折出的层级价
+    // 成本口径本身:灵草按方子,灵石按**这张方子准入境界能到的最高层级**折价
     expect(cost.herb).toBe(pillDef(ID)!.recipe!.herb)
-    expect(toNum(cost.stone)).toBeCloseTo(toNum(stoneByTier(1, pillDef(ID)!.recipe!.stoneBase / 10)), 6)
+    expect(toNum(cost.stone)).toBeCloseTo(
+      toNum(stoneByTier(maxTierForMajor(pillDef(ID)!.minRealm), pillDef(ID)!.recipe!.stoneBase / 10)),
+      6
+    )
+  })
+
+  /**
+   * 层级只有一个事实源(ISS-211):丹方灵石价从前自写 `minRealm × 2 + 1`,
+   * 界外就飞出区域表了 —— 第 18 境的方子算层级 37,而玩家在混沌海最高只能到 32,
+   * 一张方子凭空贵 322 倍,炼丹被自己的报价挡在门外。现在按区域表取。
+   */
+  it('丹方灵石价按区域表取层级 —— 不超过玩家能到的最高层级', () => {
+    const recipes = PILLS.filter(p => p.recipe)
+    expect(recipes.length).toBeGreaterThan(0)
+    for (const p of recipes) {
+      const tier = maxTierForMajor(p.minRealm)
+      expect(tier, `${p.name} 的计价层级超过了它准入境界的上限`).toBeLessThanOrEqual(maxTierForMajor(MAX_MAJOR))
+      // 与 pillCraftCost 的实际报价一致(报价即实收那条判据的另一面)
+      const cost = pillCraftCost(p.id)!
+      expect(toNum(cost.stone)).toBeCloseTo(toNum(stoneByTier(tier, p.recipe!.stoneBase / 10)), 6)
+    }
   })
 })
 

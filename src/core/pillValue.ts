@@ -46,6 +46,7 @@ import { PILLS } from '@/data/pills'
 import { qualityDef } from '@/data/qualities'
 import { buffDef } from '@/data/buffs'
 import { recipeCraft } from '@/data/crafting'
+import { maxTierForMajor } from '@/data/regions'
 import {
   AGE_YEARS_PER_HOUR,
   EXPLORE_BATTLE_INTERVAL,
@@ -189,7 +190,8 @@ export function auditYield(def: PillDef): number {
  */
 export function craftBattlesOf(def: PillDef): number {
   if (!def.recipe) return 0
-  const tier = Math.max(1, def.minRealm * 2 + 1)
+  // 层级只有一个事实源:区域表(与 pillService.pillCraftCost 同一处口径)
+  const tier = maxTierForMajor(def.minRealm)
   const stoneCost = toNum(stoneByTier(tier, def.recipe.stoneBase / 10))
   const stonePerBattle = toNum(stoneByTier(tier, STONE_AMT_PER_BATTLE))
   const opens = 1 / auditCraftRate(def)
