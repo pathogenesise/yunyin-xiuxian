@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 204,
+  "round": 205,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-17T14:08:26+00:00",
+  "updated_at": "2026-09-17T14:21:14+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -8772,7 +8772,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 204,
+      "touched_round": 205,
       "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
     },
     "EV-142": {
@@ -11958,7 +11958,7 @@
       "version": 1,
       "created_at": "2026-09-16T01:33:21+00:00",
       "updated_at": "2026-09-16T01:33:21+00:00",
-      "touched_round": 204,
+      "touched_round": 205,
       "summary": "src/core/pillService.ts + src/core/breakthrough.ts + src/core/save.ts(炼丹/突破/存档三条主干)"
     },
     "CHG-239": {
@@ -11988,11 +11988,11 @@
     "ISS-209": {
       "id": "ISS-209",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-17T13:52:33+00:00",
-      "updated_at": "2026-09-17T13:52:33+00:00",
-      "touched_round": 204,
+      "updated_at": "2026-09-17T14:21:14+00:00",
+      "touched_round": 205,
       "severity": 0.5,
       "confidence": 1.0,
       "effort": 1,
@@ -12005,7 +12005,7 @@
       "version": 1,
       "created_at": "2026-09-17T13:52:34+00:00",
       "updated_at": "2026-09-17T13:52:34+00:00",
-      "touched_round": 204,
+      "touched_round": 205,
       "confidence": 0.95,
       "summary": "历练修为失效挂机的根因是「按玩家自身数值缩放」的百分比口径 × 遭遇自动高频:奖励随需求指数上涨,而遭遇的代价(12 秒)恒定 —— 与丹药那处同源(已改),故同一把尺子(等效闭关时长)可以同时治两处。"
     },
@@ -12061,11 +12061,11 @@
     "TASK-192": {
       "id": "TASK-192",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-17T13:52:40+00:00",
-      "updated_at": "2026-09-17T13:52:40+00:00",
-      "touched_round": 204,
+      "updated_at": "2026-09-17T14:21:14+00:00",
+      "touched_round": 205,
       "category": "test-quality",
       "severity": 0.4,
       "confidence": 1.0,
@@ -12120,6 +12120,151 @@
       "source": "src/core/pillValue.spec.ts 法则 G2 / src/data/pills.ts",
       "summary": "丹药阶梯按新基准重定价:一枚丹的时长 ≈ 其灵草成本折算的场次 × 3。重定后 玄元丹一刻 → 混元丹六时,掉落线压在可炼对照六成(雷灵丹九分 / 龙气丹一刻半 / 混沌丹与仙药丹一时半)。重定前顶级丹抵 71 小时历练,而其灵草只值 1.6 小时 —— 丹药会成为比历练强几十倍的通路。",
       "confidence": 1.0
+    },
+    "COMP-025": {
+      "id": "COMP-025",
+      "type": "component",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:45+00:00",
+      "updated_at": "2026-09-17T14:20:45+00:00",
+      "touched_round": 205,
+      "summary": "数值审计工具链(economySim 经济闭环 / inflationAudit 战力膨胀 / expIncome 修为收入 / progressionSim 曲线 + 各自的 spec):用真实公式与真实数据估算各境界读数,经 bun run test:report 汇总;只度量不改数值"
+    },
+    "ISS-210": {
+      "id": "ISS-210",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:49+00:00",
+      "updated_at": "2026-09-17T14:20:49+00:00",
+      "touched_round": 205,
+      "severity": 0.5,
+      "confidence": 0.8,
+      "effort": 2,
+      "summary": "界外十二境没有出口模型:①玄铁 sink 恒为 0 —— 建筑等级 lv=2+2m 在 2+2m≥20 处全部封顶,界外十二境一格建筑都不再升;②残页/器灵尘/悟道闲置 ×40~10^5,灵石也在 19~0.5 之间摆。真正的出口是天道熔炉(玄铁/残页/器灵尘 → 道源,灵石 → 道源),审计压根没把它计入。故界外读到的「闲置」是模型缺口,不等于资源真没用 —— 但「界外到底靠什么消耗」这件事目前只有一句直觉。"
+    },
+    "ISS-211": {
+      "id": "ISS-211",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:49+00:00",
+      "updated_at": "2026-09-17T14:20:49+00:00",
+      "touched_round": 205,
+      "severity": 0.5,
+      "confidence": 0.8,
+      "effort": 3,
+      "summary": "界外丹方的灵石价按一个玩家挣不到的层级折算:pillCraftCost 的 tier=2×minRealm+1(最高境界 20 → 层级 41),而区域表上限是 32(混沌道祖)。实测第 20 境一枚顶级丹 2.9e13 灵石 ≈ 全时历练 25 小时的收入,平均丹方成本 2.2e12/小时 > 收入 1.13e12/小时 —— 界外灵石因此被判「瓶颈」,而那其实不是收入不够。"
+    },
+    "ISS-212": {
+      "id": "ISS-212",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:49+00:00",
+      "updated_at": "2026-09-17T14:20:49+00:00",
+      "touched_round": 205,
+      "severity": 0.3,
+      "confidence": 0.9,
+      "effort": 1,
+      "summary": "灵气回满时长在界外越走越长:第 14 境 1229 秒、第 15 境 1537 秒、第 16 境起越过 30 分钟(1921s → 混沌道祖 4689s),而「回满不超过 30 分钟」这条判据只跑 0~9 境 —— 与 ISS-209 ② 同一种「只体检人间界」。是有意让高境灵气更慢,还是曲线该收,需定。"
+    },
+    "HYP-097": {
+      "id": "HYP-097",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:52+00:00",
+      "updated_at": "2026-09-17T14:20:52+00:00",
+      "touched_round": 205,
+      "confidence": 0.7,
+      "summary": "界外十二境的高闲置/瓶颈读数的根因是审计口径缺一环:只算了建筑升级与装备强化两个出口,没算天道熔炉(界外唯一成规模的资源出口 → 道源),而不是界外资源真的没人要。"
+    },
+    "HYP-098": {
+      "id": "HYP-098",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:52+00:00",
+      "updated_at": "2026-09-17T14:20:52+00:00",
+      "touched_round": 205,
+      "confidence": 0.75,
+      "summary": "界外灵石被读成瓶颈的根因是丹方计价层级(2×minRealm+1,最高 41)越过了区域层级上限(32),而非灵石收入不足:把丹方价格按同一层级重折后,界外灵石收支会回到收入侧。"
+    },
+    "EV-186": {
+      "id": "EV-186",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:56+00:00",
+      "updated_at": "2026-09-17T14:20:56+00:00",
+      "touched_round": 205,
+      "source": "economySim.spec.ts(21 境流水表)· commit c389d96",
+      "summary": "补全后读数:①修为作为一条流进表,全程恒定 ×5.03(21 境最大最小差 <0.01)—— 挂机 3600 + 历练(214.2 胜 ×12 秒 + 48 际遇 ×60 秒)≈9050 等效秒/小时 ÷ 需求 1800/小时,不随境界漂移;②界外层级 21~32(修前一律 20);③修前人间界收入偏低:第 1 境灵石收支比 0.46 → 0.86、第 2 境 0.46 → 0.85(层级 4→5、6→7);④界外读数:玄铁 ∞(零出口)、残页 ×7480~164949、器灵尘 ×11~63、悟道 ×42~67、灵石 ×19~0.5。",
+      "confidence": 1.0
+    },
+    "EV-187": {
+      "id": "EV-187",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:20:56+00:00",
+      "updated_at": "2026-09-17T14:20:56+00:00",
+      "touched_round": 205,
+      "source": "economySim.spec.ts 探针读数 · 第 20 境分层对账 · commit c389d96",
+      "summary": "第 20 境(层级 32)灵石三项对账:战斗收入 1.13e12/小时;强化 sink 3×1.97e10=5.9e10/小时;炼丹 sink 2×(平均丹方 1.10e12)=2.19e12/小时 —— 丹方一项就把灵石推到 0.5 比值。平均丹方成本随境界只涨不跌:第 8 境 2.5e4、第 12 境 1.95e7、第 16 境 4.9e9、第 20 境 1.1e12;顶级丹方层级 41(第 20 境丹方),而区域表上限 32。",
+      "confidence": 1.0
+    },
+    "DEC-051": {
+      "id": "DEC-051",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:21:00+00:00",
+      "updated_at": "2026-09-17T14:21:00+00:00",
+      "touched_round": 205,
+      "rationale": "①「这一境能到多深的区域」只允许有一处实现,且必须落在数据层(data/regions.maxTierForMajor):它同时决定掉落层级、装备来源上限、秘境入口代价与审计收入,四处各写一遍正是本仓库反复踩的坑(HYP-015)。审计原来那份 min(20,2m+2) 在人间界看着差不多,界外十二境却压死在 20 —— 这类「看起来对的第二份实现」只有把口径收成一处才治得住。②判据分两段:人间界(0~8)模型已校准,照旧守健康不变量;界外(9~20)只守「读数有定义、层级单源、修为比值不漂移」,并把表与闲置读数打出来 —— 出口模型(熔炉)补齐之前,不把「界外健康」写成断言,也不为了让断言通过而调阈值(SKILL §6 硬性禁止)。③界外的读数按「待补出口模型」记账(ISS-210),不按「设计已定」记账。",
+      "alternatives_rejected": "①在 economySim 里再写一份 2m+2 的界外映射(第四份实现,且与区域表无关);②把审计上限直接砍到 32 并手写映射;③把界外的健康不变量放宽阈值让测试变绿(等于用改标准制造通过);④把 maxTierForMajor 留在 inflationAudit 里让经济审计反向依赖审计模块(依赖方向反了,故下沉到数据层再由 inflationAudit 转出)。"
+    },
+    "CHG-240": {
+      "id": "CHG-240",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:21:00+00:00",
+      "updated_at": "2026-09-17T14:21:00+00:00",
+      "touched_round": 205,
+      "commit": "c389d96",
+      "summary": "审计补全:层级映射下沉到 data/regions.maxTierForMajor(inflationAudit 转出、secretRealm.tierOfMajor 与 economySim 共读)+ 修为作为第七条流进 economySim(等效闭关秒口径)+ fullEconomyAudit 由 0~8 扩到 0~20(MAX_MAJOR)+ spec 分段守(人间界健康 / 界外有定义并打表);174 文件 1761 用例、vue-tsc、eslint 全绿"
+    },
+    "TASK-194": {
+      "id": "TASK-194",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:21:03+00:00",
+      "updated_at": "2026-09-17T14:21:03+00:00",
+      "touched_round": 205,
+      "category": "test-quality",
+      "severity": 0.5,
+      "confidence": 0.7,
+      "effort": 2,
+      "summary": "把天道熔炉(道源)出口计入经济审计:玄铁/残页/器灵尘/灵草 → 道源、灵石 → 道源,再让界外十二境受与人间界同一套健康不变量约束(取代现在那条「界外只守读数有定义」的分段)。判据升级后 ISS-210 才算结清。"
+    },
+    "TASK-195": {
+      "id": "TASK-195",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:21:03+00:00",
+      "updated_at": "2026-09-17T14:21:03+00:00",
+      "touched_round": 205,
+      "category": "core-feature",
+      "severity": 0.5,
+      "confidence": 0.6,
+      "effort": 3,
+      "summary": "设计拍板项(需人定):界外丹方的灵石计价要不要与区域层级上限对齐 —— 现在 tier=2×minRealm+1 最高折到层级 41,而玩家挣的是层级 32(1.9^9 ≈ 322× 差)。可对齐层级、可给溢价设上限、也可明说「顶级丹就是攒一辈子的东西」。改它等于动整条丹方计价链,故先记账不擅自改。"
     }
   },
   "edges": [
@@ -18051,6 +18196,84 @@
       "to": "COMP-024",
       "type": "governs",
       "created_at": "2026-09-17T14:08:26+00:00"
+    },
+    {
+      "from": "CHG-240",
+      "to": "ISS-209",
+      "type": "resolves",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "CHG-240",
+      "to": "TASK-192",
+      "type": "implements",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "TASK-194",
+      "to": "ISS-210",
+      "type": "addresses",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "TASK-195",
+      "to": "ISS-211",
+      "type": "addresses",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "ISS-210",
+      "to": "COMP-025",
+      "type": "located_in",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "ISS-211",
+      "to": "COMP-025",
+      "type": "located_in",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "ISS-211",
+      "to": "COMP-024",
+      "type": "located_in",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "ISS-212",
+      "to": "COMP-025",
+      "type": "located_in",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "COMP-025",
+      "to": "COMP-016",
+      "type": "part_of",
+      "created_at": "2026-09-17T14:21:11+00:00"
+    },
+    {
+      "from": "EV-186",
+      "to": "HYP-097",
+      "type": "validates",
+      "created_at": "2026-09-17T14:21:12+00:00"
+    },
+    {
+      "from": "EV-186",
+      "to": "HYP-096",
+      "type": "validates",
+      "created_at": "2026-09-17T14:21:12+00:00"
+    },
+    {
+      "from": "EV-187",
+      "to": "HYP-098",
+      "type": "validates",
+      "created_at": "2026-09-17T14:21:12+00:00"
+    },
+    {
+      "from": "DEC-051",
+      "to": "COMP-025",
+      "type": "governs",
+      "created_at": "2026-09-17T14:21:12+00:00"
     }
   ]
 }
