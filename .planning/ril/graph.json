@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 203,
+  "round": 204,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-16T01:33:38+00:00",
+  "updated_at": "2026-09-17T14:08:26+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 189,
+      "touched_round": 204,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 199,
+      "touched_round": 204,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -8772,7 +8772,7 @@
       "version": 1,
       "created_at": "2026-09-12T21:00:41+00:00",
       "updated_at": "2026-09-12T21:00:41+00:00",
-      "touched_round": 182,
+      "touched_round": 204,
       "summary": "工程工具链:CI 工作流(build/deploy/yunyin)、自检脚本(ui-smoke/layout-check/test-report)、包脚本编排"
     },
     "EV-142": {
@@ -11958,7 +11958,7 @@
       "version": 1,
       "created_at": "2026-09-16T01:33:21+00:00",
       "updated_at": "2026-09-16T01:33:21+00:00",
-      "touched_round": 202,
+      "touched_round": 204,
       "summary": "src/core/pillService.ts + src/core/breakthrough.ts + src/core/save.ts(炼丹/突破/存档三条主干)"
     },
     "CHG-239": {
@@ -11971,6 +11971,155 @@
       "touched_round": 202,
       "commit": "41d2d34",
       "summary": "核心功能端到端判据:pillService.spec(炼丹+服丹 11 条)、breakthroughFlow.spec(突破/渡劫 6 条)、saveRoundTrip 补战报读数往返"
+    },
+    "ISS-208": {
+      "id": "ISS-208",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-17T13:52:33+00:00",
+      "updated_at": "2026-09-17T14:05:49+00:00",
+      "touched_round": 204,
+      "severity": 0.9,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "历练/际遇的修为奖励按「当前一层需求的百分比」结算(战斗 1.2%、际遇 5%~15%),而一层耗时每境 ×3.65 —— 遭遇又是自动的(在线每 12 秒一场、离线照算,每小时 252 场)。实测(expIncome):每场折算闭关 金丹 14.8 秒 / 化神 3.3 分 / 合体 43.9 分 / 渡劫 9.8 时 / 真仙 35.7 时 / 混沌道祖 1931 时,历练÷挂机 自金丹起 >1、合体起 >10、真仙起 8984。后果:化神之后「修为/秒、闭关 +150%、修炼速度词条」近乎装饰,界末圆满那道 ×2 修为墙在真仙约 83 场遭遇(20 分钟)即可跨过,而全仓库所有「这一境要修多久」的读数只算挂机那一条线。"
+    },
+    "ISS-209": {
+      "id": "ISS-209",
+      "type": "issue",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T13:52:33+00:00",
+      "updated_at": "2026-09-17T13:52:33+00:00",
+      "touched_round": 204,
+      "severity": 0.5,
+      "confidence": 1.0,
+      "effort": 1,
+      "summary": "经济闭环审计缺两条:①六条资源流(灵石/灵草/玄铁/残页/尘/悟道)里没有修为 —— 而修为恰是最大的一条收入;②fullEconomyAudit 只跑 0~8 境(人间界),界外十二境没有同一套收支体检,那里正是最长的一段。"
+    },
+    "HYP-096": {
+      "id": "HYP-096",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T13:52:34+00:00",
+      "updated_at": "2026-09-17T13:52:34+00:00",
+      "touched_round": 204,
+      "confidence": 0.95,
+      "summary": "历练修为失效挂机的根因是「按玩家自身数值缩放」的百分比口径 × 遭遇自动高频:奖励随需求指数上涨,而遭遇的代价(12 秒)恒定 —— 与丹药那处同源(已改),故同一把尺子(等效闭关时长)可以同时治两处。"
+    },
+    "EV-182": {
+      "id": "EV-182",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T13:52:40+00:00",
+      "updated_at": "2026-09-17T13:52:40+00:00",
+      "touched_round": 204,
+      "source": "src/core/expIncome.spec.ts(读数表)与 src/core/expIncome.ts(battleExpSecsAt / expIncomeAt)",
+      "summary": "两条收入线对账:挂机 3600 秒闭关/小时;历练 252 场/小时 × min(1.2% × 本境一层耗时, 封顶)。封顶前真仙每场 35.7 时、比值 8984×;加一个时辰封顶后每场 ≤3600 秒、比值 ≤252×。",
+      "confidence": 1.0
+    },
+    "EV-183": {
+      "id": "EV-183",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T13:52:40+00:00",
+      "updated_at": "2026-09-17T13:52:40+00:00",
+      "touched_round": 204,
+      "source": "src/core/economySim.ts:auditEra / fullEconomyAudit",
+      "summary": "flows 只有 stone/herb/ore/page/dust/wudao 六条;fullEconomyAudit 循环 m=0..8,界外不体检。",
+      "confidence": 1.0
+    },
+    "DEC-049": {
+      "id": "DEC-049",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T13:52:40+00:00",
+      "updated_at": "2026-09-17T13:52:40+00:00",
+      "touched_round": 204,
+      "rationale": "丹药那处已证明「按玩家自身数值缩放的百分比」在深境必然失控。战斗/际遇与丹药同源,故用同一把尺子:保留百分比(前期是对的 —— 炼气每场 1.1 秒、金丹 14.8 秒),再加「等效闭关时长」封顶(一场遭遇至多一个时辰、一次际遇至多四个时辰),并把在线与离线的结算收进同一个函数 formulas.reqPctExp(离线上限随场数线性放大)。封顶取在人界直到合体的每场收益之上 —— 那一段一点没动,只收紧大乘起的界外。",
+      "alternatives_rejected": "①直接改成固定时长(每场 N 秒闭关):会同时压到元婴~合体这一段的手感(现值 54 秒~44 分),而那是玩家最常待的一段;②只把 BATTLE_EXP_REQ_PCT 调小:前期跟着一起被削,且深境仍随境界上涨;③不动:化神之后挂机修炼彻底失效,Phase 39 刚立的界末墙形同虚设。"
+    },
+    "TASK-191": {
+      "id": "TASK-191",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-17T13:52:40+00:00",
+      "updated_at": "2026-09-17T14:05:49+00:00",
+      "touched_round": 204,
+      "category": "core-feature",
+      "severity": 0.5,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "设计拍板项(需人定):封顶后历练仍以最多 252× 主宰修为收入。要让挂机修炼在深境也算一条路,应把 BATTLE_EXP_CAP_SECS 从 3600 调到十分钟量级(比值降到 ~42×),代价是元婴~合体手感一起变慢;要连同 progressionSim/realPacing 的口径一起重写(它们目前只算挂机)。"
+    },
+    "TASK-192": {
+      "id": "TASK-192",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T13:52:40+00:00",
+      "updated_at": "2026-09-17T13:52:40+00:00",
+      "touched_round": 204,
+      "category": "test-quality",
+      "severity": 0.4,
+      "confidence": 1.0,
+      "effort": 2,
+      "summary": "把经济闭环审计补全:①修为作为一条流进 flows(收入=历练/挂机两条线,已在 core/expIncome 打好样);②fullEconomyAudit 由 0~8 境扩到 0~20 境(界外十二境目前无体检,而那是最长的一段)。"
+    },
+    "DEC-050": {
+      "id": "DEC-050",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:05:43+00:00",
+      "updated_at": "2026-09-17T14:05:43+00:00",
+      "touched_round": 204,
+      "rationale": "修为只许有一种计价单位:等效闭关时长(且不满一层)。三条渠道各有其位、倍率在任何境界相同(因为都只跟修速走):挂机 1.0× 是底;历练 ≈1.6×(一场遭遇 12 秒等效 + 一次际遇 30~120 秒)另给掉落;闭关 2.5× 但期间不能历练。四条来源(丹/遭遇/离线 N 场/际遇)共用 formulas.expFromSecs,离线把秒数与层上限一并乘胜场数。于是修速词条/洞府/灵脉/闭关/丹药增益对两条收入线同时有效 —— 这是修好之后的性质,也是百分比口径下丢掉的性质。",
+      "alternatives_rejected": "①只加封顶(第一版做法):把真仙的 8984× 收到 252×,挂机在深境依旧不是一条路;②保留「当前需求百分比」只调小系数:前期一起被削且深境仍指数发散;③把历练修为直接砍成点缀(例如每场 2 秒):历练会变成纯掉落渠道,与「派遣式历练是核心循环」的定位冲突。"
+    },
+    "EV-184": {
+      "id": "EV-184",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:05:43+00:00",
+      "updated_at": "2026-09-17T14:05:43+00:00",
+      "touched_round": 204,
+      "source": "src/core/expIncome.spec.ts(场景判据)与 src/core/expIncome.ts(expIncomeAudit)",
+      "summary": "改后读数:21 境的历练倍率恒为 ×1.64、且低于闭关 ×2.5;每场遭遇 12 秒等效、典型际遇 60 秒;界末圆满那道具 ×2 墙单靠战斗 ≈81 天(渡劫),此前约 83 场遭遇(20 分钟)。",
+      "confidence": 1.0
+    },
+    "TASK-193": {
+      "id": "TASK-193",
+      "type": "task",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:05:43+00:00",
+      "updated_at": "2026-09-17T14:05:43+00:00",
+      "touched_round": 204,
+      "category": "maintainability",
+      "severity": 0.3,
+      "confidence": 0.8,
+      "effort": 1,
+      "summary": "闭关(startRetreat)幂等但无冷却,2.5× 可常驻 —— 目前是「要掉落还是要修为」的取舍;若要它成为节奏而非常驻状态,应加冷却或改收益结构。"
+    },
+    "EV-185": {
+      "id": "EV-185",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T14:08:26+00:00",
+      "updated_at": "2026-09-17T14:08:26+00:00",
+      "touched_round": 204,
+      "source": "src/core/pillValue.spec.ts 法则 G2 / src/data/pills.ts",
+      "summary": "丹药阶梯按新基准重定价:一枚丹的时长 ≈ 其灵草成本折算的场次 × 3。重定后 玄元丹一刻 → 混元丹六时,掉落线压在可炼对照六成(雷灵丹九分 / 龙气丹一刻半 / 混沌丹与仙药丹一时半)。重定前顶级丹抵 71 小时历练,而其灵草只值 1.6 小时 —— 丹药会成为比历练强几十倍的通路。",
+      "confidence": 1.0
     }
   },
   "edges": [
@@ -17806,6 +17955,102 @@
       "to": "ISS-207",
       "type": "resolves",
       "created_at": "2026-09-16T01:33:38+00:00"
+    },
+    {
+      "from": "EV-182",
+      "to": "HYP-096",
+      "type": "validates",
+      "created_at": "2026-09-17T13:52:43+00:00"
+    },
+    {
+      "from": "EV-183",
+      "to": "HYP-096",
+      "type": "validates",
+      "created_at": "2026-09-17T13:52:43+00:00"
+    },
+    {
+      "from": "ISS-208",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-17T13:52:43+00:00"
+    },
+    {
+      "from": "ISS-208",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-17T13:52:43+00:00"
+    },
+    {
+      "from": "ISS-209",
+      "to": "COMP-016",
+      "type": "located_in",
+      "created_at": "2026-09-17T13:52:43+00:00"
+    },
+    {
+      "from": "ISS-209",
+      "to": "ISS-208",
+      "type": "causes",
+      "created_at": "2026-09-17T13:52:44+00:00"
+    },
+    {
+      "from": "TASK-191",
+      "to": "ISS-208",
+      "type": "addresses",
+      "created_at": "2026-09-17T13:52:44+00:00"
+    },
+    {
+      "from": "TASK-192",
+      "to": "ISS-209",
+      "type": "addresses",
+      "created_at": "2026-09-17T13:52:44+00:00"
+    },
+    {
+      "from": "DEC-049",
+      "to": "COMP-010",
+      "type": "governs",
+      "created_at": "2026-09-17T13:52:44+00:00"
+    },
+    {
+      "from": "EV-184",
+      "to": "HYP-096",
+      "type": "validates",
+      "created_at": "2026-09-17T14:05:46+00:00"
+    },
+    {
+      "from": "DEC-050",
+      "to": "COMP-010",
+      "type": "governs",
+      "created_at": "2026-09-17T14:05:46+00:00"
+    },
+    {
+      "from": "DEC-050",
+      "to": "COMP-006",
+      "type": "governs",
+      "created_at": "2026-09-17T14:05:46+00:00"
+    },
+    {
+      "from": "DEC-050",
+      "to": "DEC-049",
+      "type": "supersedes",
+      "created_at": "2026-09-17T14:05:46+00:00"
+    },
+    {
+      "from": "TASK-193",
+      "to": "ISS-208",
+      "type": "addresses",
+      "created_at": "2026-09-17T14:05:46+00:00"
+    },
+    {
+      "from": "EV-185",
+      "to": "HYP-096",
+      "type": "validates",
+      "created_at": "2026-09-17T14:08:26+00:00"
+    },
+    {
+      "from": "DEC-050",
+      "to": "COMP-024",
+      "type": "governs",
+      "created_at": "2026-09-17T14:08:26+00:00"
     }
   ]
 }
