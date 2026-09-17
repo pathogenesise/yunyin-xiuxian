@@ -622,7 +622,10 @@ function railProblems(rail) {
   const out = []
   if (!rail) return out
   if (rail.scrolled < 500) out.push(`页签吸顶没量到:内容只滚了 ${rail.scrolled}px(占位没垫进容器?)`)
-  if (rail.drift !== 0) out.push(`页签栏没吸顶:滚 ${rail.scrolled}px 后偏离内容区顶 ${rail.drift}px`)
+  // 吸顶允许 1px 亚像素误差:getBoundingClientRect 是小数,滚动容器的顶与吸顶盒的顶
+  // 各自落在半像素上时,差值四舍五入会在 0 与 1 之间跳(1280×800 的 /codex 实测时红时绿,
+  // 两边仓库的 CI 都撞过)。「没吸顶」的读数是几百像素,不是 1 像素。
+  if (Math.abs(rail.drift) > 1) out.push(`页签栏没吸顶:滚 ${rail.scrolled}px 后偏离内容区顶 ${rail.drift}px`)
   if (rail.bleed > 0) out.push(`页签栏没铺满内容区宽度,两侧共留 ${rail.bleed}px 缝(内容会从缝里穿过去)`)
   return out
 }
@@ -2669,14 +2672,21 @@ for (const vp of VIEWPORTS) {
   }
   checked += 1
   /**
-   * 先把「可能还在排队的写盘」等掉,再投入。
+   * 投入之前先**强制刷一次盘**,把节流周期归零。
    *
-   * 存档是节流的(SAVE_FLUSH_MS = 5 秒):只要此前任何一次状态变更还在窗口里,
-   * 这一笔投入就会搭着那次定时器一起落盘 —— 于是下面「此刻磁盘该还是旧值」读到的是
-   * 「已经写了」,判据报「节流没起作用」,而真相只是它撞上了别人的定时器(实测复现过)。
-   * 等满一个窗口再动手,这笔投入就是唯一待写的一笔,读数才由这条判据说了算。
+   * 存档是节流的(SAVE_FLUSH_MS = 5 秒),定时器由「上次刷盘后的第一笔写入」启动 ——
+   * 而引擎每秒都在写(修为、灵气、产出),所以任何时刻都有一个定时器在跑、剩余 0~5 秒不等。
+   * 此前这里是「等满 5.8 秒再投入」,以为等出一个安静窗口;但引擎从不安静,
+   * 投入落在周期里的哪一点全凭运气:落在末尾 1.2 秒内,磁盘就「立刻变了」,
+   * 判据误报「节流没起作用」(CI 实测约四分之一的运行撞上,两边仓库都红过)。
+   *
+   * 派发 pagehide 即触发 flushSaveWrites:待写清空、定时器清掉。下一次写入(最迟 1 秒后
+   * 的引擎 tick)才重新起一个整 5 秒的定时器,而下面「投入 → 读磁盘」全程不到 2.5 秒,
+   * 稳落在窗口之内 —— 这条判据从此由节流说了算,不再由时机说了算。
+   * (仓库里只有 storage.ts 监听 pagehide,派发它没有别的副作用。)
    */
-  await page.waitForTimeout(5800)
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide')))
+  await page.waitForTimeout(200)
   const start = await readFormatted(page, '灵石')
   const afterInvest = await investOnce()
   const onDiskBefore = await diskStone()
@@ -2800,18 +2810,28 @@ for (const vp of VIEWPORTS) {
    * 启动提示只活两秒多,而冷启动到首帧的耗时是浮动的 —— 固定读一次会偶发读空
    * (实测同一份产物两次跑,一次读到、一次读到空串)。故轮询到它出现为止:
    * 判据不变(提示文本必须含「损坏/异常/隔离」),只是不再拿运气当判据。
+   *
+   * 但「等到它出现」和「再读一次」之间还有一次往返:CI 机器慢的时候这一步就超过两秒,
+   * 再读时提示已经收走、位子上换成了别的提示(实测读到「成就达成「万古长生」」而误判)。
+   * 所以匹配那一刻**顺手把提示文本带回来**,断言用带回来的那份,不再第二次去读。
    */
-  await page
-    .waitForFunction(() => /损坏|异常|隔离/.test(document.body.innerText), { timeout: 8000 })
-    .catch(() => undefined)
+  const bootToasts = await page
+    .waitForFunction(
+      () => {
+        const t = [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
+        return /损坏|异常|隔离/.test(t) ? t : false
+      },
+      { timeout: 8000 }
+    )
+    .then(h => h.jsonValue())
+    .catch(() => '')
   const boot = await page.evaluate(() => ({
     alive: !!document.querySelector('#app')?.firstElementChild,
     hash: location.hash,
-    toasts: [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|'),
     backedUp: Object.keys(localStorage).some(k => k.startsWith('corrupt.'))
   }))
   if (!boot.alive) failures.push('[390] 坏档场景:坏掉一个分片之后界面都没起来(白屏)')
-  if (!/损坏|异常|隔离/.test(boot.toasts)) failures.push(`[390] 坏档场景:启动时没有交代坏档(${boot.toasts || '无提示'})`)
+  if (!/损坏|异常|隔离/.test(bootToasts)) failures.push(`[390] 坏档场景:启动时没有交代坏档(${bootToasts || '无提示'})`)
   if (!boot.backedUp) failures.push('[390] 坏档场景:坏掉的分片没有被隔离备份(原档直接丢了)')
   await page.goto(INDEX + '#' + '/settings', { waitUntil: 'load' })
   await page.waitForTimeout(900)
@@ -2824,7 +2844,7 @@ for (const vp of VIEWPORTS) {
   if (!/corrupt\./.test(notice)) failures.push('[390] 坏档场景:设置页没说出原档备份在哪(玩家/帮他的人找不回来)')
   if (pageErrors.length) failures.push(`[390] 坏档场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`
-坏档开局:界面照常起来 · 启动提示「${boot.toasts.split('|')[0] ?? '无'}」 · 设置页「${notice.slice(0, 46)}…」`)
+坏档开局:界面照常起来 · 启动提示「${bootToasts.split("|")[0] || "无"}」 · 设置页「${notice.slice(0, 46)}…」`)
   await ctx.close()
 }
 
