@@ -2,7 +2,7 @@
   "ril_version": 1,
   "round": 207,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-17T15:21:24+00:00",
+  "updated_at": "2026-09-17T15:22:41+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -12160,11 +12160,11 @@
     "ISS-212": {
       "id": "ISS-212",
       "type": "issue",
-      "status": "active",
-      "version": 1,
+      "status": "resolved",
+      "version": 2,
       "created_at": "2026-09-17T14:20:49+00:00",
-      "updated_at": "2026-09-17T14:20:49+00:00",
-      "touched_round": 205,
+      "updated_at": "2026-09-17T15:22:41+00:00",
+      "touched_round": 207,
       "severity": 0.3,
       "confidence": 0.9,
       "effort": 1,
@@ -12347,6 +12347,29 @@
       "touched_round": 207,
       "commit": "9d51f6a",
       "summary": "经济审计计入天道熔炉出口:道源成为第八条流(只在界外),四样材料与灵石在界外改认熔炉为出口,界外不再出现 ∞ 与死资源;悟道流的未建模出口自报口径。界外判据升级为结构不变量 + 把道源失衡(ISS-214)钉成断言。"
+    },
+    "EV-190": {
+      "id": "EV-190",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-17T15:22:34+00:00",
+      "updated_at": "2026-09-17T15:22:34+00:00",
+      "touched_round": 207,
+      "source": "src/core/economySim.spec.ts(灵气回满分段判据)",
+      "summary": "覆盖缺口补上:人间界 0~8 回满 ≤30 分钟(绝对线,沿用 Phase 19);界外 9~20 回满 ≤ 本境一层耗时的 1%(第 16 境 4689s ≈ 78 分钟,而那一层要修数百年)—— 灵气在界外不可能成为瓶颈。",
+      "confidence": 1.0
+    },
+    "CHG-243": {
+      "id": "CHG-243",
+      "type": "change",
+      "status": "active",
+      "version": 2,
+      "created_at": "2026-09-17T15:22:34+00:00",
+      "updated_at": "2026-09-17T15:22:41+00:00",
+      "touched_round": 207,
+      "commit": "0537484",
+      "summary": "灵气回满判据按界域分段并覆盖到 0~20 境(人间界 30 分钟绝对线;界外守「回满 ≤ 本境一层耗时的 1%」),补上 ISS-212 只守 0~9 的覆盖缺口。"
     }
   },
   "edges": [
@@ -18404,6 +18427,12 @@
       "to": "TASK-194",
       "type": "implements",
       "created_at": "2026-09-17T15:21:24+00:00"
+    },
+    {
+      "from": "CHG-243",
+      "to": "ISS-212",
+      "type": "resolves",
+      "created_at": "2026-09-17T15:22:41+00:00"
     }
   ]
 }
