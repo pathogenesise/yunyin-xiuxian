@@ -16,7 +16,7 @@ import {
   randomDropArtifact
 } from './loot'
 import { upgradeEquipment } from './forge'
-import { ARTIFACTS, artifactDef } from '@/data/artifacts'
+import { ARTIFACTS, artifactDef, artifactValue } from '@/data/artifacts'
 import type { ArtifactDef } from '@/types'
 import { budgetOfMods } from './ruleBudget'
 import { regionDef } from '@/data/regions'
@@ -207,8 +207,16 @@ describe('法宝掉落 · 高界的池子该像高界', () => {
  */
 describe('法宝品阶 · 稀缺标签', () => {
   it('标签跟着 fromTier 走:深地界出的那件,品阶不低于浅地界出的', () => {
+    /**
+     * 排序键是**玩家看到的**被动预算(artifactValue 之后的),不是数据里的基线 ——
+     * 品阶倍率是玩家看得见的那一层,承诺"标签=强度阶梯"就该用那一层的数去对。
+     * 同预算时按品阶排,避免"数组书写顺序"这种与玩家无关的东西决定成败。
+     */
     const ranked = [...ARTIFACTS].sort(
-      (a, b) => a.fromTier - b.fromTier || budgetOfMods(a.passive) - budgetOfMods(b.passive)
+      (a, b) =>
+        a.fromTier - b.fromTier ||
+        budgetOfMods(artifactValue(a, 0).passive) - budgetOfMods(artifactValue(b, 0).passive) ||
+        qualityDef(a.quality).rank - qualityDef(b.quality).rank
     )
     const bad: string[] = []
     for (let i = 1; i < ranked.length; i += 1) {
