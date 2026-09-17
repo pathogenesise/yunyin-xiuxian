@@ -29,12 +29,9 @@ import { qualityDef } from '@/data/qualities'
 import { MAX_MAJOR } from '@/data/realms'
 import { maxTierForMajor } from '@/data/regions'
 import {
-  BATTLE_EXP_SECS,
   COMPREHEND_PAGE_COST,
   DECOMPOSE_DUST,
   EQUIP_DROP_CHANCE,
-  EXPLORE_BATTLE_INTERVAL,
-  EXPLORE_EVENT_CHANCE,
   FIELD_HERB_PER_HOUR,
   FIELD_ORE_PER_HOUR,
   LIBRARY_WUDAO_PER_HOUR,
@@ -43,10 +40,9 @@ import {
 import { buildingCost, gongfaUpCost, qiCap, baseQiRegen, stoneByTier, upgradeCost } from './formulas'
 import { generateEquipment } from './equipGen'
 import { secondsForMajor } from './progressionSim'
-import { TYPICAL_EVENT_EXP_SECS } from './expIncome'
+import { tripExpSecsPerHour, winsPerHour } from './expIncome'
 
 // ---- 挂机行为假设 ----
-const WIN_RATE = 0.85
 const UPGRADES_PER_HOUR = 3
 const CRAFTS_PER_HOUR = 2
 const GONGFA_UPS_PER_ERA = 6
@@ -98,27 +94,30 @@ export function auditEra(major: number): EraAudit {
   const tier = maxTierForMajor(major)
   const eraHours = (secondsForMajor(major, 0) / 3600) * REAL_TIME_FACTOR || 0.1
   const amortizeHours = Math.max(eraHours, MIN_AMORTIZE_HOURS)
-  const encountersPerHour = 3600 / EXPLORE_BATTLE_INTERVAL
-  const battlesPerHour = encountersPerHour * (1 - EXPLORE_EVENT_CHANCE)
-  const eventsPerHour = encountersPerHour * EXPLORE_EVENT_CHANCE
-  const winsPerHour = battlesPerHour * WIN_RATE
-  const dropsPerHour = winsPerHour * EQUIP_DROP_CHANCE
+  /**
+   * 遭遇速率取自 core/expIncome —— 那是"一次遭遇值多少"的唯一口径所在地,
+   * 这里再写一遍就会出现两个「全时历练 = ×N」的说法(本审计第一版正是如此:
+   * 一处按全胜算、一处按 0.85 胜率算,同一句话读出 1.64 与 1.51 两个数)。
+   */
+  const winsThisHour = winsPerHour()
+  const dropsPerHour = winsThisHour * EQUIP_DROP_CHANCE
 
   const fieldLv = buildingLevel(major, 15)
   const libLv = buildingLevel(major, 12)
 
   // ---- 生产 ----
-  const stoneIncome = winsPerHour * toNum(stoneByTier(tier, 10))
-  const herbIncome = winsPerHour * 0.5 * 2 + fieldLv * FIELD_HERB_PER_HOUR
-  const oreIncome = winsPerHour * 0.35 * 1.5 + fieldLv * FIELD_ORE_PER_HOUR
-  const pageIncome = winsPerHour * PAGE_DROP_CHANCE * 1.5
+  const stoneIncome = winsThisHour * toNum(stoneByTier(tier, 10))
+  const herbIncome = winsThisHour * 0.5 * 2 + fieldLv * FIELD_HERB_PER_HOUR
+  const oreIncome = winsThisHour * 0.35 * 1.5 + fieldLv * FIELD_ORE_PER_HOUR
+  const pageIncome = winsThisHour * PAGE_DROP_CHANCE * 1.5
   const dustIncome = dropsPerHour * avgDustPerDrop(tier)
   const wudaoIncome = libLv * LIBRARY_WUDAO_PER_HOUR
   /**
-   * 修为收入 = 挂机(底:1.0× 修速 = 3600 等效秒/小时)+ 历练(战斗胜场与际遇)。
+   * 修为收入 = 挂机(底:1.0× 修速 = 3600 等效秒/小时)+ 历练(战斗胜场与际遇),
    * 两条线都随修速缩放,故这一行的比值在任何境界都该是同一个数 —— 判据据此断。
+   * 速率与时长都取自 core/expIncome(同一把尺子)。
    */
-  const expIncome = 3600 + winsPerHour * BATTLE_EXP_SECS + eventsPerHour * TYPICAL_EVENT_EXP_SECS
+  const expIncome = 3600 + tripExpSecsPerHour()
 
   // ---- 消耗(时期总量摊销到每小时) ----
   let stoneSinkEra = 0

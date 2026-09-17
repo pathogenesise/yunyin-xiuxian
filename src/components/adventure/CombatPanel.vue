@@ -7,7 +7,10 @@
           {{ region?.name }}
           <span class="text-[11px] text-ink-faint">· {{ modeName }}</span>
         </p>
-        <span class="tabular text-[12px] text-ink-soft">余 {{ formatDuration(timeLeft) }}</span>
+        <!-- 每秒在走的倒计时同样要定宽:与状态面板同一类抖动,修就修干净 -->
+        <span class="tabular text-[12px] text-ink-soft">
+          余 <span class="countdown-slot">{{ formatCountdown(timeLeft) }}</span>
+        </span>
       </div>
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         胜 {{ session?.wins ?? 0 }} 场 · 际遇 {{ session?.events ?? 0 }} 次 · 拾获 {{ session?.itemGain ?? 0 }} 件
@@ -226,7 +229,7 @@
   import { useSettingsStore } from '@/stores/settings'
   import { stopExploration, winsUntilRegionBoss } from '@/core/exploration'
   import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES } from '@/data/constants'
-  import { formatDuration, formatGN } from '@/utils/format'
+  import { formatCountdown, formatGN } from '@/utils/format'
   import { useNow } from '@/composables/useNow'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, enemyTraits, starsText, TRAIT_NAMES, type RegionEcology } from '@/core/buildAdvisor'

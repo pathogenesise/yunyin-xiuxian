@@ -81,26 +81,43 @@ export function eventTierOf(eventId: string): EventTier {
   return 'jingyu'
 }
 
-/** 一次遭遇里各档的触发概率(三档同源于同一条乘法链) */
-export function tierChances(): Record<EventTier, number> {
+/**
+ * 一次遭遇里各档的触发概率 —— **逐字复刻引擎的掷法**(eventEngine.pickEventFor):
+ *
+ *   1. 先看这一程出不出事:EXPLORE_EVENT_CHANCE。不出事就什么都没有。
+ *   2. 出事后先掷奇缘:CHAIN_STAGE_CHANCE 的闸门,**且必须真有该走的下一程**
+ *      (缘未起 / 已走完时这扇门是关的)—— 这时 chain 取 0。
+ *   3. 没走奇缘才掷机缘:FORTUNE_CHANCE,且该区域的机缘池非空。
+ *   4. 剩下的都是际遇。
+ *
+ * 从前这里写成「三档各自 = 出事概率 × 各自的数」,把三档当成互斥抽取 ——
+ * 于是三档概率之和 0.211 大于「出事」本身的 0.16,数学上就不可能成立:
+ * 公告的「际遇约每 6 程」实际是「每 6.4 程会出一次事」,出的事里还有三成是奇缘。
+ * 现在按闸门顺序算,并且**把"有没有缘在续"当成入参**(它本来就改变答案):
+ *   无缘在续 → 际遇 ≈ 每 6.4 程 · 机缘 ≈ 每 319 程 · 奇缘 不出现
+ *   有缘在续 → 际遇 ≈ 每 9.1 程 · 奇缘 ≈ 每 20.8 程 · 机缘 ≈ 每 446 程
+ * 判据 eventTier.spec 用真引擎做蒙特卡洛对账,两边不许分叉。
+ */
+export function tierChances(stagePending: boolean): Record<EventTier, number> {
   const any = EXPLORE_EVENT_CHANCE
+  const chain = stagePending ? CHAIN_STAGE_CHANCE : 0
   return {
-    jingyu: any,
-    qiyuan: any * CHAIN_STAGE_CHANCE,
-    jiyuan: any * FORTUNE_CHANCE
+    qiyuan: any * chain,
+    jiyuan: any * (1 - chain) * FORTUNE_CHANCE,
+    jingyu: any * (1 - chain) * (1 - FORTUNE_CHANCE)
   }
 }
 
-/** 折成「平均多少程遭遇才见一次」—— 玩家真正读得懂的量级 */
-export function tierEncountersPerTrigger(tier: EventTier): number {
-  const p = tierChances()[tier]
+/** 折成「平均多少程遭遇才见一次」—— 玩家真正读得懂的量级(0 = 这一档此刻不出现) */
+export function tierEncountersPerTrigger(tier: EventTier, stagePending: boolean): number {
+  const p = tierChances(stagePending)[tier]
   return p > 0 ? 1 / p : Number.POSITIVE_INFINITY
 }
 
-/** 界面用的一句话:「约每 6 程一次」 */
-export function tierOddsText(tier: EventTier): string {
-  const n = tierEncountersPerTrigger(tier)
-  if (!Number.isFinite(n)) return '不出现'
+/** 界面用的一句话:「约每 6 程一次」;奇缘无缘在续时说明它为什么不来 */
+export function tierOddsText(tier: EventTier, stagePending: boolean): string {
+  const n = tierEncountersPerTrigger(tier, stagePending)
+  if (!Number.isFinite(n)) return tier === 'qiyuan' ? '缘起之后才来' : '不出现'
   if (n < 20) return `约每 ${Math.round(n)} 程一次`
   return `约每 ${Math.round(n / 10) * 10} 程一次`
 }

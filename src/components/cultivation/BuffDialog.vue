@@ -28,7 +28,7 @@
       <p class="flex justify-between text-[13px]">
         <span class="text-ink-soft">剩余</span>
         <!-- 剩余每秒在走:定宽(见 utils/format.formatCountdown),否则这一行的数字一直在跳 -->
-        <span class="tabular inline-block min-w-[3.5rem] text-right text-ink">{{ formatCountdown(remainSec) }}</span>
+        <span class="countdown-slot tabular">{{ formatCountdown(remainSec) }}</span>
       </p>
       <p class="mt-1 flex justify-between text-[13px]">
         <span class="text-ink-soft">全程</span>

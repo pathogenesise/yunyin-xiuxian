@@ -9,8 +9,8 @@
     <template v-if="!result && def">
       <!--
         档位横幅:名字 + 这一档是什么 + 多久能撞上一次。
-        数字不是手写的 —— tierOddsText 从 data/constants 的三个概率乘出来,
-        与事件引擎真正掷的那条链同源,改概率这里自己跟着变。
+        数字不是手写的 —— tierOddsText 按引擎的闸门顺序(先奇缘、再机缘、余下际遇)
+        与 data/constants 的三个概率算出来,并把「此刻有没有缘在续」算进去。
       -->
       <div class="mb-2.5 rounded-md border-l-2 bg-ink/4 px-2.5 py-1.5" :style="{ borderColor: tierDef.color }">
         <p class="flex items-center gap-2">
@@ -63,6 +63,8 @@
   import { useAdventureStore } from '@/stores/adventure'
   import { eventDef } from '@/data/events'
   import { choiceAvailable, resolveEventChoice, type EventResolution } from '@/core/eventEngine'
+  import { pendingChainStages } from '@/core/eventEngine'
+  import { usePlayerStore } from '@/stores/player'
   import { afterEventResolved } from '@/core/exploration'
   import { aftermathText, shouldTriggerAftermath } from '@/core/worldMemory'
   import { echoFor, rollEcho, ECHO_CHANCE } from '@/core/fortuneEcho'
@@ -96,7 +98,9 @@
   )
   /** 档位定义(名字/颜色/一句话)与概率文案 */
   const tierDef = computed(() => eventTierDef(tierId.value))
-  const tierOdds = computed(() => tierOddsText(tierId.value))
+  const tierOdds = computed(() => tierOddsText(tierId.value, chainPending.value))
+  /** 有没有缘在续 —— 奇缘与机缘的实际概率都受它影响(见 core/eventTier.tierChances) */
+  const chainPending = computed(() => pendingChainStages(usePlayerStore().major).length > 0)
   const tier = computed(() => adventure.currentRegion?.tier ?? 1)
   const open = computed(() => def.value !== undefined || result.value !== null)
 

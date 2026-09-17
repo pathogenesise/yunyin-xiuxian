@@ -169,7 +169,7 @@
             后者每秒都可能改宽度,这枚胶囊一涨一缩,同一行的其余内容会跟着跳。
           -->
           <span v-if="btInfo.prep.sitting" class="text-amber-ink tabular">
-            调息中 · <span class="inline-block min-w-[3.5rem] text-right">{{ formatCountdown(btInfo.prep.remainingSec) }}</span>
+            调息中 · <span class="countdown-slot">{{ formatCountdown(btInfo.prep.remainingSec) }}</span>
           </span>
           <span v-else-if="btInfo.prep.ready" class="text-jade">加成 +{{ Math.round(btInfo.prep.bonus * 100) }}% 就绪</span>
         </div>
@@ -202,7 +202,7 @@
       <div class="flex items-center justify-between">
         <span class="text-[11px] text-ink-soft">闭关参悟</span>
         <span v-if="retreating" class="text-[10px] text-amber-ink tabular">
-          闭关中 · <span class="inline-block min-w-[3.5rem] text-right">{{ formatCountdown(retreatRemaining) }}</span>
+          闭关中 · <span class="countdown-slot">{{ formatCountdown(retreatRemaining) }}</span>
         </span>
       </div>
       <p class="mt-0.5 text-[10px] text-ink-faint">
@@ -232,7 +232,7 @@
         >
           <GameIcon :name="b.def!.icon" :size="11" />
           {{ b.def!.name }}
-          <span class="inline-block min-w-[3.5rem] text-right">{{ formatCountdown(b.remain) }}</span>
+          <span class="countdown-slot">{{ formatCountdown(b.remain) }}</span>
         </button>
       </div>
     </section>

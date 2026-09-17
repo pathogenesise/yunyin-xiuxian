@@ -39,7 +39,7 @@
       <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
         <span class="text-ink-faint">途中三档:</span>
         <span v-for="t in EVENT_TIERS" :key="t.id" class="chip-ink text-[10px]" :style="{ color: t.color }">
-          {{ t.name }} · {{ tierOddsText(t.id) }}
+          {{ t.name }} · {{ tierOddsText(t.id, chainPending) }}
         </span>
       </p>
       <!--
@@ -298,6 +298,7 @@
   import { EXPLORE_MODES } from '@/data/constants'
   import { regionFoeOrigin, startExploration } from '@/core/exploration'
   import { EVENT_TIERS, tierOddsText } from '@/core/eventTier'
+  import { pendingChainStages } from '@/core/eventEngine'
   import { foeOriginPartsText } from '@/core/battleAnalysis'
   import { SUPPRESS_THRESHOLDS, suppressRateFor, suppressionProgress } from '@/core/suppress'
   import { REVIVE_AFTER_HOURS, hoursUntilRevive, regionRecallFor, prosperityName, isReviving, prosperityYieldMult } from '@/core/worldMemory'
@@ -316,6 +317,15 @@
   const ui = useUiStore()
 
   const modeTarget = ref<RegionDef | null>(null)
+
+  /**
+   * 有没有缘在续 —— 三档的稀度**此刻**是多少,取决于这个。
+   *
+   * 引擎的掷法是先掷奇缘(闸门 0.3,且必须真有该走的下一程)、再掷机缘、
+   * 剩下才是际遇;故「际遇约每 6 程」只在无缘在续时成立(有缘在续时约每 9 程,
+   * 那三成去了奇缘)。档位胶囊按当前状态显示,而不是报一组永远同时成立的数。
+   */
+  const chainPending = computed(() => pendingChainStages(player.major).length > 0)
 
   /** 顶部链接的一句话:说清这一世是什么世界 */
   const worldBrief = computed(() => {

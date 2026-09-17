@@ -21,13 +21,14 @@ import {
   gearAsymmetry,
   gearProfile,
   GEAR_PROFILES,
-  maxTierForMajor,
   modDepth,
   modelPlayer,
   powerSourceAudit,
   realmLeapAudit,
   reachableTiers
 } from './inflationAudit'
+// 层级映射的真相源在区域表(审计只是它的消费者,不再转发一份)
+import { maxTierForMajor } from '@/data/regions'
 
 const TYPICAL = gearProfile('typical')
 

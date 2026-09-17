@@ -84,7 +84,6 @@ export function gearProfile(id: string): GearProfile {
  * 该大境界能进入的最高区域层级(即装备来源上限)。
  * 口径落在数据层(regions.ts)—— 秘境入口代价与经济审计读的是同一个函数。
  */
-export { maxTierForMajor }
 
 /** 该大境界可进入的全部区域层级 */
 export function reachableTiers(major: number): number[] {
