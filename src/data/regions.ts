@@ -295,6 +295,22 @@ export const REGIONS: RegionDef[] = [
 /** 人间界最高区域层级 —— 其上的层级属仙界/神界/混沌海,不进凡界路线池 */
 export const MORTAL_TIER_MAX = 20
 
+/**
+ * 该大境界**能进入的最高区域层级**(即这一境的装备/掉落/敌人的来源上限)。
+ *
+ * 从前这件事有第三份实现:经济审计自己写 `min(20, 2m+2)` —— 人间界看着差不多,
+ * 界外十二境却全部压死在 20,而真实区域表是 21~32(仙界 9 起一境一层)。
+ * 于是「界外有没有同样的收支」这个问题的答案里,收入那一半先错了 1.9^12。
+ * 唯一事实源是区域表本身,凡界内外一视同仁。
+ */
+export function maxTierForMajor(major: number): number {
+  let best = 1
+  for (const region of REGIONS) {
+    if (region.minRealm <= major && region.tier > best) best = region.tier
+  }
+  return best
+}
+
 /** 凡界路线生成的素材池(只含人间界区域) */
 export const MORTAL_REGIONS: RegionDef[] = REGIONS.filter(x => x.tier <= MORTAL_TIER_MAX)
 

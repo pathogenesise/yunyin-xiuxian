@@ -7,13 +7,29 @@
  * - 全程挂机历练,战斗间隔与胜率取典型值;
  * - 建筑等级随大境界成长(lv ≈ 2 + 2×境界,受各自上限约束);
  * - 消耗按「该时期内的总沉没成本 / 该时期时长」摊销。
+ *
+ * Phase 40 补全两处(见 ISS-209):
+ * - **修为也进表**。它此前不在六条资源流里,而它恰是最大的一条收入 ——
+ *   口径随 Phase 39 统一:一切即时修为 = 修速 × 一段等效闭关时长,故这一行
+ *   量的是「等效闭关秒/小时」,收入 = 挂机 + 历练两条线(core/expIncome 同一把尺子),
+ *   消耗 = 通关本境的修为需求。比值全程恒定,不随境界漂移 —— 这正是要守的性质。
+ * - **界外十二境一并体检**(0~20 境,不再只跑人间界 0~8)。区域层级取自
+ *   data/regions 的 maxTierForMajor —— 从前这里自写 `min(20, 2m+2)`,把界外
+ *   十二境全压死在层级 20,收入那一半先错了 1.9^12。
+ *
+ * 读界外的表须知:那一段的**出口**多半不在建筑上(建筑早已封顶),而在天道熔炉
+ * (玄铁/残页/器灵尘 → 道源)。本模型尚未把熔炉出口计入,故界外读到的高闲置
+ * 是「没有出口模型」的读数,不等于「这些资源真的没用」—— 见 ISS-210。
  */
 import { toNum } from '@/utils/gnum'
 import { mulberry32, RandomService } from '@/utils/random'
 import { BUILDINGS } from '@/data/buildings'
 import { PILLS } from '@/data/pills'
 import { qualityDef } from '@/data/qualities'
+import { MAX_MAJOR } from '@/data/realms'
+import { maxTierForMajor } from '@/data/regions'
 import {
+  BATTLE_EXP_SECS,
   COMPREHEND_PAGE_COST,
   DECOMPOSE_DUST,
   EQUIP_DROP_CHANCE,
@@ -27,6 +43,7 @@ import {
 import { buildingCost, gongfaUpCost, qiCap, baseQiRegen, stoneByTier, upgradeCost } from './formulas'
 import { generateEquipment } from './equipGen'
 import { secondsForMajor } from './progressionSim'
+import { TYPICAL_EVENT_EXP_SECS } from './expIncome'
 
 // ---- 挂机行为假设 ----
 const WIN_RATE = 0.85
@@ -37,7 +54,7 @@ const REAL_TIME_FACTOR = 2 // 真实体感 ≈ 纯修炼估算 ×2
 /** 沉没成本摊销的最小时长:早期时期极短,玩家实际用数小时慢慢补齐建筑 */
 const MIN_AMORTIZE_HOURS = 2
 
-export type AuditResource = 'stone' | 'herb' | 'ore' | 'page' | 'dust' | 'wudao'
+export type AuditResource = 'stone' | 'herb' | 'ore' | 'page' | 'dust' | 'wudao' | 'exp'
 
 export interface ResourceFlow {
   resource: AuditResource
@@ -52,10 +69,6 @@ export interface EraAudit {
   tier: number
   eraHours: number
   flows: ResourceFlow[]
-}
-
-function eraTier(major: number): number {
-  return Math.min(20, major * 2 + 2)
 }
 
 function buildingLevel(major: number, maxLevel: number): number {
@@ -82,10 +95,12 @@ export function avgDustPerDrop(tier: number, samples = 200): number {
 
 /** 单个境界时期的资源流审计 */
 export function auditEra(major: number): EraAudit {
-  const tier = eraTier(major)
+  const tier = maxTierForMajor(major)
   const eraHours = (secondsForMajor(major, 0) / 3600) * REAL_TIME_FACTOR || 0.1
   const amortizeHours = Math.max(eraHours, MIN_AMORTIZE_HOURS)
-  const battlesPerHour = (3600 / EXPLORE_BATTLE_INTERVAL) * (1 - EXPLORE_EVENT_CHANCE)
+  const encountersPerHour = 3600 / EXPLORE_BATTLE_INTERVAL
+  const battlesPerHour = encountersPerHour * (1 - EXPLORE_EVENT_CHANCE)
+  const eventsPerHour = encountersPerHour * EXPLORE_EVENT_CHANCE
   const winsPerHour = battlesPerHour * WIN_RATE
   const dropsPerHour = winsPerHour * EQUIP_DROP_CHANCE
 
@@ -99,6 +114,11 @@ export function auditEra(major: number): EraAudit {
   const pageIncome = winsPerHour * PAGE_DROP_CHANCE * 1.5
   const dustIncome = dropsPerHour * avgDustPerDrop(tier)
   const wudaoIncome = libLv * LIBRARY_WUDAO_PER_HOUR
+  /**
+   * 修为收入 = 挂机(底:1.0× 修速 = 3600 等效秒/小时)+ 历练(战斗胜场与际遇)。
+   * 两条线都随修速缩放,故这一行的比值在任何境界都该是同一个数 —— 判据据此断。
+   */
+  const expIncome = 3600 + winsPerHour * BATTLE_EXP_SECS + eventsPerHour * TYPICAL_EVENT_EXP_SECS
 
   // ---- 消耗(时期总量摊销到每小时) ----
   let stoneSinkEra = 0
@@ -125,6 +145,13 @@ export function auditEra(major: number): EraAudit {
   const dustSinkHour = UPGRADES_PER_HOUR * up.dust
   const stoneSinkHour = UPGRADES_PER_HOUR * toNum(up.stone) + CRAFTS_PER_HOUR * avgPillStone + stoneSinkEra / amortizeHours
   const herbSinkHour = CRAFTS_PER_HOUR * avgHerbCost
+  /**
+   * 修为消耗 = 通关本境所需的等效闭关秒 ÷ 本境时长。
+   *
+   * 这里**不套 MIN_AMORTIZE_HOURS**:那道下限是给建筑的(「玩家用数小时慢慢补齐」),
+   * 而修为需求本来就摊在本境这一段时长里,早期一境只有十几分钟也照摊。
+   */
+  const expSinkHour = secondsForMajor(major, 0) / eraHours
 
   const make = (resource: AuditResource, income: number, sink: number): ResourceFlow => {
     const ratio = sink > 0 ? income / sink : Infinity
@@ -141,14 +168,15 @@ export function auditEra(major: number): EraAudit {
       make('ore', oreIncome, oreSinkEra / amortizeHours),
       make('page', pageIncome, pageSinkEra / amortizeHours),
       make('dust', dustIncome, dustSinkHour),
-      make('wudao', wudaoIncome, wudaoSinkEra / amortizeHours)
+      make('wudao', wudaoIncome, wudaoSinkEra / amortizeHours),
+      make('exp', expIncome, expSinkHour)
     ]
   }
 }
 
 export function fullEconomyAudit(): EraAudit[] {
   const out: EraAudit[] = []
-  for (let m = 0; m <= 8; m += 1) out.push(auditEra(m))
+  for (let m = 0; m <= MAX_MAJOR; m += 1) out.push(auditEra(m))
   return out
 }
 

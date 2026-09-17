@@ -20,7 +20,7 @@ import { toNum } from '@/utils/gnum'
 import { mulberry32, RandomService } from '@/utils/random'
 import { COMBAT_ATK_BASE, COMBAT_DEF_BASE, COMBAT_HP_BASE, EQUIP_QUALITY_FLAT_EXP } from '@/data/constants'
 import { GONGFA } from '@/data/gongfa'
-import { MORTAL_TIER_MAX, REGIONS } from '@/data/regions'
+import { MORTAL_TIER_MAX, REGIONS, maxTierForMajor } from '@/data/regions'
 import { CELESTIAL_WORLDS } from '@/data/endgame'
 import { MAX_MAJOR } from '@/data/realms'
 import { enemyGearFactor, powerScale, powerScore, realmScale } from './formulas'
@@ -80,14 +80,11 @@ export function gearProfile(id: string): GearProfile {
   return GEAR_PROFILES.find(p => p.id === id) ?? GEAR_PROFILES[1]!
 }
 
-/** 该大境界能进入的最高区域层级(即装备来源上限) */
-export function maxTierForMajor(major: number): number {
-  let best = 1
-  for (const region of REGIONS) {
-    if (region.minRealm <= major && region.tier > best) best = region.tier
-  }
-  return best
-}
+/**
+ * 该大境界能进入的最高区域层级(即装备来源上限)。
+ * 口径落在数据层(regions.ts)—— 秘境入口代价与经济审计读的是同一个函数。
+ */
+export { maxTierForMajor }
 
 /** 该大境界可进入的全部区域层级 */
 export function reachableTiers(major: number): number[] {

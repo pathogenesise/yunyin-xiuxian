@@ -12,7 +12,7 @@ import type { WorldFoeShape } from '@/types'
 import { formatGN } from '@/utils/format'
 import { rng } from '@/utils/random'
 import { ENEMIES, enemyDef } from '@/data/enemies'
-import { REGIONS } from '@/data/regions'
+import { maxTierForMajor } from '@/data/regions'
 import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES, secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
 import { resolveCombat } from './combat'
 import { mergeRules, worldFoeSnap } from './gauntlet'
@@ -47,10 +47,12 @@ export interface SecretRealmState {
   finished: boolean
 }
 
-/** 玩家当前地界层级(入口代价按它折算) */
+/**
+ * 玩家当前地界层级(入口代价按它折算)。
+ * 与装备来源上限是同一件事 —— 同源在数据层,不在这里再筛一遍区域表。
+ */
 export function tierOfMajor(major: number): number {
-  const pool = REGIONS.filter(r => r.minRealm <= major)
-  return pool.length > 0 ? Math.max(...pool.map(r => r.tier)) : 1
+  return maxTierForMajor(major)
 }
 
 /** 入口代价:凡境按当前层级折算灵石;天界是道源定额 */
