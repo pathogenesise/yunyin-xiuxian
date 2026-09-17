@@ -4,6 +4,7 @@ import { fullEconomyAudit, qiFillSeconds } from './economySim'
 import { BT_QI_COST_RATIO } from '@/data/constants'
 import { MAX_MAJOR, worldOf } from '@/data/realms'
 import { maxTierForMajor } from '@/data/regions'
+import { layerSeconds } from './pillValue'
 
 /**
  * 审计的判据分两段,理由写在 economySim 的文件头:
@@ -155,15 +156,24 @@ describe('经济闭环审计(Phase 19 · Phase 40 补界外与修为)', () => {
     expect(Math.max(...rows.map(r => r.ratio)), '道源不再过剩了?那这条失衡账该销掉').toBeGreaterThan(100)
   })
 
-  it('灵气结构健康:回满不超过 30 分钟(判据守 0~9 境,界外读数见 ISS-212)', () => {
-    for (let m = 0; m <= 9; m += 1) {
-      expect(qiFillSeconds(m), `第${m}境灵气回满`).toBeLessThan(1800)
-    }
+  /**
+   * 灵气是突破的门槛资源(一次耗上限的四成),所以它的体检问题只有一个:
+   **它会不会成为卡关的那一环**。判据按界域分段,因为"多久算久"在这里本就不同:
+   · 人间界(0~8):突破节奏以分钟计,回满要是拖到半小时以上,玩家就真的在等灵气 ——
+     故沿用 30 分钟这条绝对线(Phase 19 定的口径)。
+   · 界外(9~20):一层修为以**天**计(真仙一层 124 天),而回满只有小时级,
+     灵气不可能成为瓶颈 —— 故这一段守的是**相对**口径:回满 ≤ 本境一层耗时的 1%。
+     绝对线在这一段没有意义(第 16 境回满 78 分钟,而那一层要修 700 年)。
+   (ISS-212 原本报的是"30 分钟这条线只覆盖 0~9 境"这个覆盖缺口,现按上口径补全。)
+   */
+  it('灵气结构健康:人间界回满 ≤30 分钟;界外回满 ≪ 本境一层耗时(永不成为瓶颈)', () => {
     expect(BT_QI_COST_RATIO).toBeLessThan(1)
     const rows: string[] = []
     for (let m = 0; m <= MAX_MAJOR; m += 1) {
       const fill = qiFillSeconds(m)
       expect(Number.isFinite(fill) && fill > 0, `第${m}境灵气回满读数`).toBe(true)
+      if (m <= 8) expect(fill, `第${m}境灵气回满`).toBeLessThan(1800)
+      else expect(fill / layerSeconds(m), `第${m}境回满占一层的比例`).toBeLessThan(0.01)
       rows.push(`第${m}境 ${fill.toFixed(0)}s`)
     }
     console.log(`\n  [灵气回满时长] ${rows.join(' · ')}`)
