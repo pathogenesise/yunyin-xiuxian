@@ -2,15 +2,19 @@
  * 事件引擎 —— 挑选事件 / 结算选项 / 应用效果
  */
 import type { EventChoice, EventDef, EventEffect, RegionDef } from '@/types'
-import { rng } from '@/utils/random'
-import { mulN, gte } from '@/utils/gnum'
+import { RandomService, rng } from '@/utils/random'
 import { formatGN } from '@/utils/format'
 import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
+import { CHAINS, chainOfEvent } from '@/data/chains'
+// 三档触发概率是同一份数据(见 data/constants 那段注释):际遇在 exploration 掷,
+// 奇缘与机缘在这里从上一步的结果里再掷一次。数字不在本文件另写一遍 ——
+// core/eventTier 要把这条乘法链讲给玩家听,两边各写一份就会互相撒谎。
+import { CHAIN_STAGE_CHANCE, FORTUNE_CHANCE, INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import { pillDef, PILLS } from '@/data/pills'
 import { buffDef } from '@/data/buffs'
 import { PETS, petDef } from '@/data/pets'
 import { qualityDef } from '@/data/qualities'
-import { stoneByTier } from './formulas'
+import { expFromSecs, stoneByTier } from './formulas'
 import { generateEquipment } from './equipGen'
 import { acquireArtifact, acquireEquipment, randomDropArtifact } from './loot'
 import { learnRandomGongfa } from './gongfaService'
@@ -28,30 +32,86 @@ import { useQuestsStore } from '@/stores/quests'
 
 const MATERIAL_NAMES = { herb: '灵草', ore: '玄铁', page: '功法残页', dust: '器灵尘', wudao: '悟道点' } as const
 
-/** 机缘事件触发概率(每次事件判定,极低) */
-const FORTUNE_CHANCE = 0.02
+/** 此刻该走的那几程(链条未结、境界够、尚未抽到过) */
+export function pendingChainStages(major: number): { chainId: string; stage: number; event: EventDef }[] {
+  const player = usePlayerStore()
+  const out: { chainId: string; stage: number; event: EventDef }[] = []
+  for (const chain of CHAINS) {
+    const done = player.eventChains[chain.id] ?? 0
+    const eventId = chain.stages[done]
+    if (!eventId) continue // 这条缘已了
+    const def = eventDef(eventId)
+    if (!def) continue
+    if (def.minRealm !== undefined && major < def.minRealm) continue
+    out.push({ chainId: chain.id, stage: done, event: def })
+  }
+  return out
+}
 
-/** 为区域挑选一个事件 */
-export function pickEventFor(region: RegionDef): EventDef | null {
+/** 从当前该走的几程里掷一程(缘分不分先后,几条链可以并行) */
+export function pickChainStageEvent(major: number, rand: RandomService = rng): EventDef | null {
+  const pending = pendingChainStages(major)
+  if (pending.length === 0) return null
+  return rand.pick(pending).event
+}
+
+/** 奇缘录:已起了头的缘(未起的不列,免得把往后的路先说破) */
+export interface ChainProgress {
+  id: string
+  name: string
+  hint: string
+  stage: number
+  total: number
+  finished: boolean
+}
+
+export function chainProgressRows(): ChainProgress[] {
+  const player = usePlayerStore()
+  return CHAINS.map(chain => {
+    const stage = player.eventChains[chain.id] ?? 0
+    return { id: chain.id, name: chain.name, hint: chain.hint, stage, total: chain.stages.length, finished: stage >= chain.stages.length }
+  }).filter(c => c.stage > 0)
+}
+
+/**
+ * 区域事件池 —— **不含奇缘阶段**。
+ *
+ * 奇缘不属于任何地界:它按链条推进,不按区域标签出现。
+ * 抽出来单独成函数,既是为了让"奇缘不漏进随机池"这条契约可测,
+ * 也是为了提醒后来者:往池子里加东西之前,先想清楚它属于哪一类。
+ */
+export function regionEventPoolFor(region: RegionDef): EventDef[] {
   const player = usePlayerStore()
   const adventure = useAdventureStore()
+  return EVENTS.filter(ev => {
+    if (chainOfEvent(ev.id)) return false
+    if (ev.minRealm !== undefined && player.major < ev.minRealm) return false
+    if (ev.once && adventure.seenOnceEvents.includes(ev.id)) return false
+    return ev.tags.some(t => region.eventTags.includes(t))
+  })
+}
+
+/** 为区域挑选一个事件(rand 可注入,便于测试与模拟) */
+export function pickEventFor(region: RegionDef, rand: RandomService = rng): EventDef | null {
+  const player = usePlayerStore()
+  // Phase 34.2 奇缘:上一程结在哪里,下一程才从哪里起
+  if (rand.chance(CHAIN_STAGE_CHANCE)) {
+    const chainEvent = pickChainStageEvent(player.major, rand)
+    if (chainEvent) return chainEvent
+  }
   // Phase 31 S2:极小概率先判机缘事件(带代价选择)
-  if (rng.chance(FORTUNE_CHANCE)) {
+  if (rand.chance(FORTUNE_CHANCE)) {
     const fortune = FORTUNE_EVENTS.filter(ev => ev.tags.some(t => region.eventTags.includes(t)))
     // Phase 32.2:同源机缘更容易撞见——灵根在此接入"机缘 → 师承 → 流派"的因果链起点。
     // 非同源机缘权重不变(仍是 ev.weight),没有一条路被灵根关掉。
     if (fortune.length > 0) {
       const elements = rootElements(player.linggen?.roots)
-      return rng.weighted(fortune, ev => ev.weight * fortuneAffinity(ev.element, elements))
+      return rand.weighted(fortune, ev => ev.weight * fortuneAffinity(ev.element, elements))
     }
   }
-  const pool = EVENTS.filter(ev => {
-    if (ev.minRealm !== undefined && player.major < ev.minRealm) return false
-    if (ev.once && adventure.seenOnceEvents.includes(ev.id)) return false
-    return ev.tags.some(t => region.eventTags.includes(t))
-  })
+  const pool = regionEventPoolFor(region)
   if (pool.length === 0) return null
-  return rng.weighted(pool, ev => ev.weight)
+  return rand.weighted(pool, ev => ev.weight)
 }
 
 /** 选项条件校验 */
@@ -82,11 +142,13 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
         resources.addStone(v)
         return `灵石 +${formatGN(v)}`
       }
-      resources.spendStone(gte(resources.spiritStone, v) ? v : { ...resources.spiritStone })
+      // 入不敷出就拒绝,不「把整份余额奉上」——传余额拷贝会让 gte 恒真、清零收场
+      if (!resources.spendStone(v)) return null
       return `灵石 -${formatGN(v)}`
     }
     case 'exp': {
-      const v = mulN(player.expReq, effect.reqPct)
+      // 与丹药、一场遭遇同一把尺子:等效闭关时长,封顶不满一层(见 formulas.expFromSecs)
+      const v = expFromSecs(player.expReq, effect.secs, player.cultPerSec, INSTANT_EXP_LAYER_CAP)
       player.gainExp(v)
       return `修为 +${formatGN(v)}`
     }
@@ -172,6 +234,13 @@ export function resolveEventChoice(def: EventDef, choiceIdx: number, tier: numbe
   if (def.once) adventure.markEventSeen(def.id)
   collect('event', def.id)
   track('events')
+
+  // Phase 34.2 奇缘:解了哪一程,就把那条链往前推一程;断了缘,直接记到尽头
+  const chain = chainOfEvent(def.id)
+  if (chain) {
+    const ended = def.choices[choiceIdx]?.endsChain ?? false
+    usePlayerStore().setEventChain(chain.chain.id, ended ? chain.chain.stages.length : chain.stage + 1)
+  }
 
   // Phase 30.9 S3:记录事件记忆(完成的余波后,未来再遇时有机会触发余波文本)
   adventure.eventMemories = recordEvent(adventure.eventMemories, def.id, choiceIdx, Date.now())

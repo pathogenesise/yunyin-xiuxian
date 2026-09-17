@@ -10,7 +10,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { echoFor, echoEligible, ECHO_CHANCE } from './fortuneEcho'
 import { usePlayerStore } from '@/stores/player'
 import { resolveEventChoice } from './eventEngine'
-import { fortuneEventDef, FORTUNE_EVENTS } from '@/data/events'
+import { eventDef, FORTUNE_EVENTS } from '@/data/events'
 
 describe('遗产回声(fortuneEcho)', () => {
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe('遗产回声(fortuneEcho)', () => {
     // 回声只是文案;resolveEventChoice 返回的 lines 不因回声而变
     const player = usePlayerStore()
     player.setFortuneChoices({ ft_ancient_elixir: 'leave' })
-    const def = fortuneEventDef('ft_ancient_elixir')!
+    const def = eventDef('ft_ancient_elixir')!
     // 若选择"放弃"(isDefault),回声后仍无奖励
     const defaultIdx = def.choices.findIndex(c => c.isDefault)
     const res = resolveEventChoice(def, defaultIdx >= 0 ? defaultIdx : 0, 3)

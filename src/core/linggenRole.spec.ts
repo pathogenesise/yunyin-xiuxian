@@ -33,7 +33,7 @@ import { rollLinggen } from './linggenGen'
 import { fortuneAffinity, gongfaAffinity, reliefKinds, rootElements } from './linggenAffinity'
 import { RandomService, mulberry32 } from '@/utils/random'
 import { BUILDINGS } from '@/data/buildings'
-import { CREATE_REROLL_LIMIT, DAO_FRUIT_CULT_BONUS, REINCARNATE_APTITUDE_FLOOR } from '@/data/constants'
+import { CREATE_REROLL_QUOTA, DAO_FRUIT_CULT_BONUS, REINCARNATE_APTITUDE_FLOOR } from '@/data/constants'
 import { EVENTS, FORTUNE_EVENTS } from '@/data/events'
 import { GONGFA } from '@/data/gongfa'
 import { ELEMENTS } from '@/data/linggen'
@@ -193,15 +193,15 @@ describe('灵根职能审计 ② 稀释来源', () => {
 })
 
 describe('灵根职能审计 ④ 转世时的交互形态', () => {
-  it('建号可重掷 8 次,转世一掷定终身——灵根在转世时没有决策点', () => {
-    // 建号:CreateView 给 CREATE_REROLL_LIMIT 次重掷,玩家会挑
+  it('建号可无限重掷,转世一掷定终身——灵根在转世时没有决策点', () => {
+    // 建号:CreateView 不限次重掷(CREATE_REROLL_QUOTA = null),玩家会一直挑到满意
     // 转世:reincarnation.ts 直接 player.rebirth(rollLinggen(rng, floor)),没有任何挑选界面
-    console.log(`\n  建号重掷次数:${CREATE_REROLL_LIMIT}  →  灵根是玩家会反复看的东西`)
-    console.log('  转世重掷次数:0            →  灵根是系统发下来的一张牌')
+    console.log('\n  建号重掷次数:不限  →  灵根是玩家会反复看的东西')
+    console.log('  转世重掷次数:0     →  灵根是系统发下来的一张牌')
 
     // "玩家看了灵根后是否改变选择"这个行为链,第二步在转世流程里不存在。
     // 这比"数值被稀释"更根本:不是决策变弱了,是压根没有决策动作。
-    expect(CREATE_REROLL_LIMIT, '建号无重掷,则两处形态一致,不构成对比').toBeGreaterThan(0)
+    expect(CREATE_REROLL_QUOTA, '建号重掷变成有限次数,两处形态就要重新对比').toBeNull()
   })
 
   it('转世资质保底会在第 12 世彻底顶满,灵根之间只剩根数差别', () => {

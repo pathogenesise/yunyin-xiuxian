@@ -1,4 +1,4 @@
-/** 随机词条池 —— 118 条,通过权重与品质门槛控制稀有度 */
+/** 随机词条池 —— 113 条,通过权重与品质门槛控制稀有度 */
 import type { AffixDef, AnyStatKey, EquipSlot, AffixRarity } from '@/types'
 
 const W = ['weapon'] as EquipSlot[]
@@ -64,22 +64,24 @@ export const AFFIXES: AffixDef[] = [
   a('qi1', '聚灵', 'qiRegen', 4, 8, '灵气恢复提升 {v}%', 90, { slots: AJ }),
   a('qi2', '引灵', 'qiRegen', 8, 16, '灵气恢复提升 {v}%', 50, { slots: AJ, minRank: 2 }),
   a('qi3', '吞灵', 'qiRegen', 16, 28, '灵气恢复提升 {v}%', 18, { slots: AJ, minRank: 5 }),
-  // ---- 突破成功率 ----
-  a('bt1', '通明', 'breakthroughRate', 1, 2, '突破成功率提升 {v}%', 70, { slots: J }),
-  a('bt2', '道基', 'breakthroughRate', 2, 4, '突破成功率提升 {v}%', 35, { slots: J, minRank: 3 }),
-  a('bt3', '天命', 'breakthroughRate', 4, 6, '突破成功率提升 {v}%', 12, { slots: J, minRank: 6 }),
+  // ---- 进阶成功率(小进阶;大关天劫不看此数,见 ui/statNames) ----
+  a('bt1', '通明', 'breakthroughRate', 1, 2, '进阶成功率提升 {v}%', 70, { slots: J }),
+  a('bt2', '道基', 'breakthroughRate', 2, 4, '进阶成功率提升 {v}%', 35, { slots: J, minRank: 3 }),
+  a('bt3', '天命', 'breakthroughRate', 4, 6, '进阶成功率提升 {v}%', 12, { slots: J, minRank: 6 }),
   // ---- 气运 ----
   a('luck1', '福缘', 'luck', 2, 5, '气运提升 {v}%', 80, { slots: J }),
   a('luck2', '鸿运', 'luck', 5, 10, '气运提升 {v}%', 40, { slots: J, minRank: 3 }),
   a('luck3', '天眷', 'luck', 10, 15, '气运提升 {v}%', 12, { slots: J, minRank: 6 }),
-  // ---- 探索速度 ----
+  // ---- 历练速度 ----
   a('exp1', '疾行', 'explorationSpeed', 4, 8, '历练速度提升 {v}%', 80, { slots: ['boots', ...J] }),
   a('exp2', '御风', 'explorationSpeed', 8, 15, '历练速度提升 {v}%', 40, { slots: ['boots', ...J], minRank: 3 }),
   a('exp3', '缩地', 'explorationSpeed', 15, 25, '历练速度提升 {v}%', 12, { slots: ['boots', ...J], minRank: 6 }),
   // ---- 身法 ----
-  a('spd1', '迅捷', 'speed', 3, 6, '出手速度提升 {v}%', 80, { slots: ['boots', 'wrist', ...W] }),
-  a('spd2', '流光', 'speed', 6, 12, '出手速度提升 {v}%', 40, { slots: ['boots', 'wrist', ...W], minRank: 3 }),
-  a('spd3', '瞬影', 'speed', 12, 20, '出手速度提升 {v}%', 12, { slots: ['boots', ...W], minRank: 6 }),
+  // 「出手速度提升 N%」读起来像连续收益,机制上却是一条阈值(1+修正 ≥ 对手速度即抢先)——
+  // 差一点就是完全没抢先,故照实写成「先手判定」。战后分析会把两个数与差额一并摆出来
+  a('spd1', '迅捷', 'speed', 5, 10, '先手判定 +{v}%', 80, { slots: ['boots', 'wrist', ...W] }),
+  a('spd2', '流光', 'speed', 10, 15, '先手判定 +{v}%', 40, { slots: ['boots', 'wrist', ...W], minRank: 3 }),
+  a('spd3', '瞬影', 'speed', 15, 25, '先手判定 +{v}%', 12, { slots: ['boots', ...W], minRank: 6 }),
   // ---- 战斗修为 ----
   a('gain1', '参悟', 'expGain', 4, 8, '战斗所得修为提升 {v}%', 80),
   a('gain2', '明心', 'expGain', 8, 16, '战斗所得修为提升 {v}%', 40, { minRank: 3 }),
@@ -121,6 +123,10 @@ export const AFFIXES: AffixDef[] = [
   a('dg1', '轻身', 'dodgeRate', 2, 5, '闪避概率提升 {v}%', 70, { slots: ['boots', ...A] }),
   a('dg2', '虚步', 'dodgeRate', 5, 9, '闪避概率提升 {v}%', 30, { slots: ['boots'], minRank: 4 }),
   a('dg3', '化影', 'dodgeRate', 9, 14, '闪避概率提升 {v}%', 10, { slots: ['boots'], minRank: 7 }),
+  // ---- 特殊:命中(破除幻影 —— 闪避型首领的对照面) ----
+  a('ac1', '洞彻', 'accuracy', 2, 5, '无视目标 {v}% 闪避', 70, { slots: WJ }),
+  a('ac2', '破妄', 'accuracy', 5, 9, '无视目标 {v}% 闪避', 30, { slots: WJ, minRank: 4 }),
+  a('ac3', '明察', 'accuracy', 9, 14, '无视目标 {v}% 闪避', 10, { slots: WJ, minRank: 7 }),
   // ---- 特殊:濒危减伤 ----
   a('low1', '背水', 'lowHpReduction', 10, 20, '生命低于三成时受伤降低 {v}%', 70, { slots: A, decimals: 0 }),
   a('low2', '涅槃', 'lowHpReduction', 20, 35, '生命低于三成时受伤降低 {v}%', 30, { slots: A, minRank: 4, decimals: 0 }),
@@ -130,8 +136,8 @@ export const AFFIXES: AffixDef[] = [
   // ---- 特殊:双倍掉落 ----
   a('dd1', '丰饶', 'doubleDropRate', 5, 10, '{v}% 概率获得双倍战利品', 60, { slots: J }),
   a('dd2', '满载', 'doubleDropRate', 10, 20, '{v}% 概率获得双倍战利品', 25, { slots: J, minRank: 4 }),
-  // ---- 特殊:奇遇 ----
-  a('ev1', '奇遇', 'eventLuck', 5, 10, '历练事件概率提升 {v}%', 60, { slots: J }),
+  // ---- 特殊:际遇 ----
+  a('ev1', '际遇', 'eventLuck', 5, 10, '历练事件概率提升 {v}%', 60, { slots: J }),
   a('ev2', '仙缘', 'eventLuck', 10, 20, '历练事件概率提升 {v}%', 25, { slots: J, minRank: 4 }),
   // ---- 特殊:御雷 ----
   a('tb1', '御雷', 'tribulationResist', 5, 10, '天劫伤害降低 {v}%', 60, { slots: A }),
@@ -178,6 +184,20 @@ const BY_ID = new Map(AFFIXES.map(x => [x.id, x]))
 
 export function affixDef(id: string): AffixDef | undefined {
   return BY_ID.get(id)
+}
+
+/**
+ * 词条稀有度的高低序(0 最常见,3 最难得)。
+ *
+ * 它一直只活在数据里(reforge 按它加权抽取),界面上从没露过面 ——
+ * 于是玩家看到一件装备的四条词条时,分不出哪条是随手给的、哪条是撞上的大运。
+ * 展示层现在按它排序上色,故序也一并写在这里,免得界面另编一套。
+ */
+export const AFFIX_RARITY_RANK: Record<AffixRarity, number> = {
+  common: 0,
+  rare: 1,
+  epic: 2,
+  legendary: 3
 }
 
 /** 词条实际数值 = min + (max - min) × roll */

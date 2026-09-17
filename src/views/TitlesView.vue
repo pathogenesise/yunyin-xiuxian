@@ -21,7 +21,7 @@
             <p class="truncate text-[10px] text-ink-ghost">{{ row.def.desc }}</p>
             <p v-if="row.owned && row.modText" class="text-[10px] text-azure tabular">{{ row.modText }}</p>
           </div>
-          <button v-if="row.owned" class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="toggleTitle(row.def.id)">
+          <button v-if="row.owned" class="btn-ghost shrink-0 !px-2.5 !py-1.5 !text-[11px]" @click="toggleTitle(row.def.id)">
             {{ row.worn ? '卸下' : '佩戴' }}
           </button>
         </div>
@@ -41,6 +41,12 @@
             </p>
             <p class="truncate text-[10px] text-ink-ghost">{{ row.def.desc }}</p>
             <p v-if="row.modText" class="text-[10px] text-azure tabular">{{ row.modText }}</p>
+            <!-- 性格是灵兽的"人味":它在历练里怎么表现,得让玩家看得见,而不是只看数值 -->
+            <p class="text-[10px] text-violet-ink">
+              {{ row.personalityName }} · <span class="text-ink-faint">{{ row.personalityDesc }}</span>
+            </p>
+            <!-- 定性的话之外还要给数:换不换这只伙伴,靠「更容易」三个字算不出来 -->
+            <p v-if="row.traitText" class="text-[10px] text-azure/80 tabular">{{ row.traitText }}</p>
           </div>
           <button class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="togglePet(row.def.id)">
             {{ row.active ? '暂别' : '唤来' }}
@@ -50,7 +56,7 @@
       <p v-else class="mt-10 text-center text-[12px] text-ink-ghost">
         尚无灵兽相伴
         <br />
-        <span class="text-[11px]">灵兽多在历练奇遇中结缘</span>
+        <span class="text-[11px]">灵兽多在历练际遇中结缘</span>
       </p>
     </template>
   </div>
@@ -62,6 +68,8 @@
   import { useQuestsStore } from '@/stores/quests'
   import { TITLES } from '@/data/titles'
   import { petDef, PETS } from '@/data/pets'
+  import { PERSONALITY_NAMES, personalityDesc } from '@/core/petPersonality'
+  import { petTraitText } from '@/ui/itemText'
   import { qualityDef } from '@/data/qualities'
   import { formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
@@ -109,7 +117,14 @@
     quests.collections.pet
       .map(id => petDef(id))
       .filter(def => def !== undefined)
-      .map(def => ({ def: def!, active: player.petId === def!.id, modText: modsText(def!.mods) }))
+      .map(def => ({
+        def: def!,
+        active: player.petId === def!.id,
+        modText: modsText(def!.mods),
+        personalityName: PERSONALITY_NAMES[def!.personality],
+        personalityDesc: personalityDesc(def!.personality),
+        traitText: petTraitText(def!)
+      }))
       .sort((a, b) => Number(b.active) - Number(a.active))
   )
 

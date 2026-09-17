@@ -1,19 +1,23 @@
 /* eslint-disable no-console */
 /**
- * 天界器魂转化(Phase 33.3)
+ * 器魂 · 叠加,而不是压缩
  *
- * 33.2 让守关者按玩家深度加厚,吸收了膨胀;33.3 更进一步改变装备在天界的性质:
- * 凡器入天界,数值尽去,只余器魂——装备贡献的词条被归一化到固定容量,
- * 但各词条的相对比例完全保留。
+ * 旧口径:凡器入天界先被 `forgeSoul` 压到 SOUL_CAPACITY —— 玩家在天界的强度与
+ * 「装备堆了多厚」无关,换来「堆厚度不占便宜」,代价是**基础属性在天界等于不存在**
+ * (一身神品与一身凡品打同一个守关者,结果一模一样)。
  *
- * 设计意图:刷装备的价值从「累加总量」变成「调整方向」。
- * 九件神品与三件精品若构筑方向相同,在天界就是同一个构筑;
- * 想在天界变强只能改方向,不能靠更厚的数值。
+ * 现口径(改由判定承担代价):
+ *   · 凡界装备照常作数(三维与词条都算),器魂是**叠加**上去的一层;
+ *   · 堆叠这件事交给**敌人一侧的判定**:构筑越厚,守关者的道之理解越深
+ *     (三维加厚 + 增伤 + 减伤,见 gauntlet.celestialJudgement),且判定有上限。
+ *
+ * 判据三组:①器魂是加法的一层 ②方向不同则器魂不同 ③厚度的代价真的落在判定上。
  */
 import { describe, expect, it } from 'vitest'
 import type { StatMods } from '@/types'
-import { forgeSoul, SOUL_CAPACITY } from './gauntlet'
 import { modDepth } from './statsCalc'
+import { SOUL_GRADES, SOUL_SLOTS, SOUL_TYPES, soulMods, type SoulInstance } from '@/data/souls'
+import { celestialDepthScale, celestialJudgement } from './gauntlet'
 
 /** 按比例放大一组词条,模拟「同方向但堆得更厚」 */
 function scaleMods(mods: StatMods, k: number): StatMods {
@@ -22,106 +26,73 @@ function scaleMods(mods: StatMods, k: number): StatMods {
   return out
 }
 
-/** 两组词条的方向是否一致(各分量占比相同) */
-function sameShape(a: StatMods, b: StatMods): boolean {
-  const da = modDepth(a)
-  const db = modDepth(b)
-  if (da === 0 || db === 0) return da === db
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)])
-  for (const k of keys) {
-    const key = k as keyof StatMods
-    const ra = (a[key] ?? 0) / da
-    const rb = (b[key] ?? 0) / db
-    if (Math.abs(ra - rb) > 1e-9) return false
-  }
-  return true
+/** 一个满配等级的器魂(品阶拉满) */
+function soulAt(type: SoulInstance['type'], grade: number, uid = 's'): SoulInstance {
+  return { uid, type, grade, fromName: '测试' }
 }
 
-const LIGHT: StatMods = { critRate: 0.2, critDamage: 0.4, lifesteal: 0.1 }
 const HEAVY: StatMods = { critRate: 0.9, critDamage: 2.4, lifesteal: 0.7, comboRate: 0.5 }
 
-describe('器魂 · 容量归一', () => {
-  it('轻装未越容量,原样保留(不惩罚装备不足的玩家)', () => {
-    expect(modDepth(LIGHT)).toBeLessThan(SOUL_CAPACITY)
-    expect(forgeSoul(LIGHT)).toEqual(LIGHT)
+describe('器魂 · 是加法的一层', () => {
+  it('两枚器魂的深度相加 —— 没有"压到容量"这一步', () => {
+    const one = modDepth(soulMods(soulAt(SOUL_TYPES[0]!.id, 5, 'a')))
+    const two =
+      modDepth(soulMods(soulAt(SOUL_TYPES[0]!.id, 5, 'a'))) + modDepth(soulMods(soulAt(SOUL_TYPES[1]!.id, 5, 'b')))
+    expect(one).toBeGreaterThan(0)
+    expect(two).toBeGreaterThan(one)
   })
 
-  it('重装越过容量后被压到容量线', () => {
-    expect(modDepth(HEAVY)).toBeGreaterThan(SOUL_CAPACITY)
-    const soul = forgeSoul(HEAVY)
-    expect(modDepth(soul)).toBeCloseTo(SOUL_CAPACITY, 6)
-    console.log(`\n重装词条深度 ${modDepth(HEAVY).toFixed(2)} → 器魂 ${modDepth(soul).toFixed(2)}(容量 ${SOUL_CAPACITY})`)
+  it('品阶越高,器魂越厚(它现在是实打实的战力,不再只是形状)', () => {
+    const low = modDepth(soulMods(soulAt(SOUL_TYPES[0]!.id, 0, 'a')))
+    const high = modDepth(soulMods(soulAt(SOUL_TYPES[0]!.id, SOUL_GRADES.length - 1, 'a')))
+    expect(high).toBeGreaterThan(low)
+    expect(high).toBeLessThan(low * 4)
   })
 
-  it('无论堆多厚,凝出的器魂深度恒为容量', () => {
-    for (const k of [2, 5, 20, 100]) {
-      expect(modDepth(forgeSoul(scaleMods(HEAVY, k)))).toBeCloseTo(SOUL_CAPACITY, 6)
+  it('三枚满配的合计深度有界 —— 凝魂是投入,不该改写整个构筑尺度', () => {
+    const best = SOUL_TYPES.slice(0, SOUL_SLOTS).map<SoulInstance>((t, i) =>
+      soulAt(t.id, SOUL_GRADES.length - 1, `s${i}`)
+    )
+    const total = best.reduce((sum, s) => sum + modDepth(soulMods(s)), 0)
+    console.log(`\n三枚化真器魂合计深度 ${total.toFixed(2)}`)
+    expect(total).toBeGreaterThan(0.5)
+    expect(total, '三枚器魂的深度上限 —— 再厚也不该越过基准深度太多').toBeLessThan(2.5)
+  })
+
+  it('方向不同则器魂不同 —— 天界仍有构筑空间', () => {
+    const a = soulMods(soulAt(SOUL_TYPES[0]!.id, 3, 'a'))
+    const b = soulMods(soulAt(SOUL_TYPES[1]!.id, 3, 'b'))
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)])
+    const differs = [...keys].some(k => (a[k as keyof StatMods] ?? 0) !== (b[k as keyof StatMods] ?? 0))
+    expect(differs, '两枚不同类型的器魂给出了同一份词条').toBe(true)
+  })
+})
+
+describe('器魂 · 厚度的代价落在敌人判定上', () => {
+  it('浅构筑不触发判定,厚构筑被加厚且被看破/挡住', () => {
+    const thin = celestialJudgement({}, 20, 22)
+    const thick = celestialJudgement(scaleMods(HEAVY, 3), 20, 22)
+    expect(thin.thicken, '浅构筑不触发判定').toBe(1)
+    expect(thin.damageBonus).toBe(0)
+    expect(thick.thicken, '厚构筑该被加厚').toBeGreaterThan(1)
+    expect(thick.damageBonus, '厚构筑该被看破(增伤)').toBeGreaterThan(0)
+    expect(thick.damageReduction, '厚构筑该被挡住(减伤)').toBeGreaterThan(0)
+  })
+
+  it('判定有上限:让它难缠,不是把你打回原点', () => {
+    const absurd = celestialJudgement(scaleMods(HEAVY, 500), 20, 22)
+    expect(absurd.damageBonus).toBeLessThanOrEqual(0.35 + 1e-9)
+    expect(absurd.damageReduction).toBeLessThanOrEqual(0.35 + 1e-9)
+    // 加厚本身不封顶(它就是"堆多厚、对面有多厚"),封顶的是增伤减伤那两味
+    expect(celestialDepthScale(scaleMods(HEAVY, 500))).toBeGreaterThan(1)
+  })
+
+  it('判定随厚度单调:再厚一点,守关者只会更有备', () => {
+    let prev = celestialJudgement({}, 20, 22).thicken
+    for (const k of [1, 2, 4, 8, 16]) {
+      const now = celestialJudgement(scaleMods(HEAVY, k), 20, 22).thicken
+      expect(now).toBeGreaterThanOrEqual(prev)
+      prev = now
     }
-  })
-})
-
-describe('器魂 · 形状守恒(设计的核心)', () => {
-  it('压缩是等比的,构筑方向原样保留', () => {
-    const soul = forgeSoul(HEAVY)
-    expect(sameShape(HEAVY, soul)).toBe(true)
-  })
-
-  it('同方向堆到不同厚度,凝出的器魂完全相同', () => {
-    // 这正是「刷装备的价值从累加总量变成调整方向」的直接体现:
-    // 三件精品与九件神品若方向一致,在天界是同一个构筑
-    const thin = forgeSoul(scaleMods(HEAVY, 1))
-    const thick = forgeSoul(scaleMods(HEAVY, 8))
-    for (const k of Object.keys(thin)) {
-      const key = k as keyof StatMods
-      expect(thick[key]).toBeCloseTo(thin[key] ?? 0, 9)
-    }
-  })
-
-  it('改变方向会得到不同的器魂——天界仍有构筑优化空间', () => {
-    const critLean = forgeSoul({ critRate: 1.2, critDamage: 2.0, lifesteal: 0.2 })
-    const stealLean = forgeSoul({ critRate: 0.3, critDamage: 0.5, lifesteal: 2.6 })
-    expect(sameShape(critLean, stealLean)).toBe(false)
-    // 但两者深度相同:天界比的是形状,不是厚度
-    expect(modDepth(critLean)).toBeCloseTo(modDepth(stealLean), 6)
-  })
-})
-
-describe('器魂 · 边界处理', () => {
-  it('基础三维百分比不入器魂(它已由 worldFoeSnap 等比抵消)', () => {
-    const withBase: StatMods = { ...HEAVY, attackPct: 3.5, defensePct: 2.0, maxHpPct: 2.8 }
-    const soul = forgeSoul(withBase)
-    expect(soul.attackPct).toBe(3.5)
-    expect(soul.defensePct).toBe(2.0)
-    expect(soul.maxHpPct).toBe(2.8)
-  })
-
-  it('修炼速度不入器魂(不参与战斗)', () => {
-    const soul = forgeSoul({ ...HEAVY, cultivationSpeed: 4.2 })
-    expect(soul.cultivationSpeed).toBe(4.2)
-  })
-
-  it('负向词条不被压缩——构筑代价必须原样带入', () => {
-    // 若把代价一并等比缩小,堆得越厚代价越轻,等于变相奖励极端堆叠
-    const withCost: StatMods = { ...HEAVY, damageReduction: -0.3 }
-    const soul = forgeSoul(withCost)
-    expect(soul.damageReduction).toBe(-0.3)
-  })
-
-  it('空词条与零值安全处理', () => {
-    expect(forgeSoul({})).toEqual({})
-    expect(modDepth(forgeSoul({ critRate: 0 }))).toBe(0)
-  })
-})
-
-describe('器魂 · 与 33.2 深度对称的分工', () => {
-  it('器魂先归一装备侧,守关者加厚再处理其余来源', () => {
-    // 分工:器魂只管装备(玩家能无限刷的那部分),
-    // 功法/洞府/称号/师承/灵兽/天赋属修士自身之道,不受器魂约束,
-    // 它们带来的超额深度由 33.2 的 celestialDepthScale 兜底。
-    // 两层各司其职,合起来才让「数值成长在天界互相抵消」真正成立
-    const soul = forgeSoul(scaleMods(HEAVY, 50))
-    expect(modDepth(soul)).toBeCloseTo(SOUL_CAPACITY, 6)
-    // 器魂本身不会把玩家压到低于容量,自身之道的加成仍能叠上去
-    expect(modDepth(soul)).toBeGreaterThan(0)
   })
 })

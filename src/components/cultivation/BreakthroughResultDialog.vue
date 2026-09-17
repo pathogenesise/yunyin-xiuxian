@@ -3,7 +3,7 @@
   <Teleport to="body">
     <div v-if="view?.success" class="ink-wave" />
   </Teleport>
-  <BaseModal :open="view !== null" :closable="false">
+  <BaseModal :open="view !== null" :closable="false" aria-label="突破结果">
     <div v-if="view" class="text-center">
       <!-- 印心:成功时朱砂墨点迸溅、金环荡开 -->
       <div class="relative mx-auto mt-2 h-20 w-20">

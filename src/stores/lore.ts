@@ -47,6 +47,14 @@ export const useLoreStore = defineStore(
     const studyFrac = ref(0)
     /** 入门丹方是否已播种(旧存档首次进入本体系时补发,幂等) */
     const seeded = ref(false)
+    /**
+     * 装备见闻:模板 id → 生平见过的最好一件(最高品质 rank 与最高层级)。
+     *
+     * 图鉴此前只有「收没收录」两态,而装备的深度本来就存在别处 —— 只是没人记。
+     * 记的是**见过的最好一件**,不是当前行囊:化尘了、分解了、被挤掉了,
+     * 见过就是见过(与灵材的「照面次数」同一性质,故也放在这个 store 里)。
+     */
+    const equipLore = ref<Record<string, { q: number; t: number; u: number }>>({})
 
     /** 已辨识(认知层 ≥1)的灵材数 */
     const knownMaterialCount = computed(() => Object.values(materialLore.value).filter(v => v >= 1).length)
@@ -61,6 +69,43 @@ export const useLoreStore = defineStore(
 
     function loreOf(id: string): number {
       return materialLore.value[id] ?? 0
+    }
+
+    /** 该模板见过的最高成色(没见过返回 undefined);u = 是否亲手用过(强化或装备过) */
+    function equipSeen(id: string): { q: number; t: number; u: number } | undefined {
+      return equipLore.value[id]
+    }
+
+    /**
+     * 记下「亲手用过这一件」——强化过或装备过都算。
+     *
+     * 与「见过什么成色」分开记:成色靠运气(要撞上天品),而用不用它由玩家自己决定。
+     * 图鉴的收录深度因此多了一档**可推进**的台阶(见 ui/codex 的装备梯子)。
+     */
+    function noteEquipUsed(templateId: string): void {
+      const cur = equipLore.value[templateId]
+      if (cur?.u) return
+      equipLore.value = {
+        ...equipLore.value,
+        [templateId]: { q: cur?.q ?? 0, t: cur?.t ?? 0, u: 1 }
+      }
+    }
+
+    /**
+     * 记下一件装备的成色:品质取其高,层级取其高,各记各的。
+     *
+     * 不分先后地一起比(「这一件整体更好」)是没有定义的 —— 15 阶天品与 20 阶良品
+     * 谁更「好」要看用途。故两个维度各自刷新,谁也不冒充谁。
+     */
+    function noteEquipSeen(templateId: string, qualityRank: number, tier: number): void {
+      const cur = equipLore.value[templateId]
+      const q = Math.max(0, Math.min(8, Math.floor(qualityRank || 0)))
+      const t = Math.max(0, Math.floor(tier || 0))
+      if (cur && cur.q >= q && cur.t >= t) return
+      equipLore.value = {
+        ...equipLore.value,
+        [templateId]: { q: Math.max(cur?.q ?? 0, q), t: Math.max(cur?.t ?? 0, t), u: cur?.u ?? 0 }
+      }
     }
 
     function seenOf(id: string): number {
@@ -137,6 +182,17 @@ export const useLoreStore = defineStore(
 
     /** 存档修复:补齐新增技艺键、夹紧越界值 */
     function sanitize(): void {
+      /**
+       * 先补形再夹值:存档可能缺栏(旧版本)或被写坏。
+       * 此前只有 enemyLore/enemySeen 用了 `?? {}`,其余几张表直接进 Object.entries ——
+       * 一旦缺栏就是 "Cannot convert undefined or null to object",读档即白屏。
+       * (见 storeResilience.spec:逐个字段灌 undefined 的坏档韧性红线)
+       */
+      if (!skillExp.value || typeof skillExp.value !== 'object') skillExp.value = emptySkillExp()
+      if (!materialLore.value || typeof materialLore.value !== 'object') materialLore.value = {}
+      if (!materialSeen.value || typeof materialSeen.value !== 'object') materialSeen.value = {}
+      if (!recipeLore.value || typeof recipeLore.value !== 'object') recipeLore.value = {}
+      if (!blueprintLore.value || typeof blueprintLore.value !== 'object') blueprintLore.value = {}
       const fixedExp: Record<string, number> = {}
       for (const id of SKILL_IDS) {
         const v = skillExp.value[id]
@@ -157,6 +213,21 @@ export const useLoreStore = defineStore(
       // 旧存档没有这两张表,?? {} 保证补齐而非留 undefined
       enemyLore.value = clampMap(enemyLore.value ?? {}, 0, ENEMY_LORE_MAX)
       enemySeen.value = clampMap(enemySeen.value ?? {}, 0, Number.MAX_SAFE_INTEGER)
+      // 装备见闻:每个条目是 { q, t } 两个数,形状烂掉就整条丢掉
+      const seenFixed: Record<string, { q: number; t: number; u: number }> = {}
+      for (const [id, v] of Object.entries(equipLore.value ?? {})) {
+        const q = (v as { q?: unknown })?.q
+        const t = (v as { t?: unknown })?.t
+        // 只认真正的数字:Number(null) 是 0、"9" 会悄悄转成 9 —— 那会让坏条目冒充「见过一件凡品·0 阶」
+        if (typeof q !== 'number' || typeof t !== 'number' || !Number.isFinite(q) || !Number.isFinite(t)) continue
+        const u = (v as { u?: unknown })?.u
+        seenFixed[id] = {
+          q: Math.max(0, Math.min(8, Math.floor(q))),
+          t: Math.max(0, Math.floor(t)),
+          u: u === 1 ? 1 : 0
+        }
+      }
+      equipLore.value = seenFixed
       if (!Number.isFinite(studyFrac.value)) studyFrac.value = 0
     }
 
@@ -168,6 +239,7 @@ export const useLoreStore = defineStore(
       skillExp,
       enemyLore,
       enemySeen,
+      equipLore,
       studyFrac,
       seeded,
       knownMaterialCount,
@@ -190,6 +262,9 @@ export const useLoreStore = defineStore(
       enemySeenOf,
       markEnemySeen,
       advanceEnemyLore,
+      equipSeen,
+      noteEquipSeen,
+      noteEquipUsed,
       sanitize
     }
   },

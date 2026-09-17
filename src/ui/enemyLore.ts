@@ -20,6 +20,7 @@ import { enemyDef } from '@/data/enemies'
 import { ENEMY_LORE_MAX, ENEMY_LORE_STAGE_NAMES, useLoreStore } from '@/stores/lore'
 import { currentStage } from '@/core/samsaraService'
 import type { BossArchetype, EnemyDef, EnemySkill } from '@/types'
+import { ARCHETYPES } from '@/core/bossArchetypes'
 
 /** 招式效果的门道 —— 玩家该据此调整构筑,而不是死记 effect 枚举 */
 const EFFECT_NOTES: Record<NonNullable<EnemySkill['effect']>, string> = {
@@ -74,6 +75,8 @@ export interface EnemyLoreView {
   phases: EnemyPhaseNote[]
   /** 首领本相(层 = 3;非首领为 null) */
   archetype: string | null
+  /** 首领机制家族名与印(如「狂暴型 · 狂」),与本相同层揭示 */
+  archetypeLabel: string | null
   /** 还差什么才看得更清楚(已洞悉为 null) */
   hint: string | null
 }
@@ -133,6 +136,10 @@ export function describeEnemy(def: EnemyDef, stage: number, boosted = false): En
     skills: seen2 ? def.skills.map(sk => ({ name: sk.name, note: skillNote(sk) })) : [],
     phases: seen3 ? phaseNotes(def) : [],
     archetype: seen3 && def.archetype ? ARCHETYPE_NOTES[def.archetype] : null,
+    archetypeLabel:
+      seen3 && def.archetype && ARCHETYPES[def.archetype]
+        ? `${ARCHETYPES[def.archetype].name} · ${ARCHETYPES[def.archetype].seal}`
+        : null,
     hint: seen3 ? null : (HINTS[lv] ?? null)
   }
 }

@@ -139,7 +139,7 @@ export function realConsumers(): FruitConsumer[] {
 /** 用户猜测过、但实际与道果无关的系统 */
 export const NOT_FRUIT_DRIVEN: readonly { name: string; actual: string }[] = [
   { name: '轮回阶位', actual: '走宿慧 totalInsight(存量+认知折算),与道果无关' },
-  { name: '天界与道痕', actual: 'endgameUnlocked() 只看 major >= MAX_MAJOR' },
+  { name: '天界与道痕', actual: 'endgameUnlocked() 只看 major >= WORLD_BREAK_MAJOR(真仙)' },
   { name: '本世命题', actual: 'lifeThemes 按阶位开放,奖励是宿慧不是道果' },
   { name: '先天之姿', actual: '每世抽取,数量按 major,与道果无关' },
   { name: '灵根资质', actual: 'aptitudeFloorNow = max(次数×5, 宿慧/12)' }

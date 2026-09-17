@@ -47,7 +47,19 @@
   --color-violet-ink: rgb(var(--color-violet-ink-rgb));
   --color-amber-ink: rgb(var(--color-amber-ink-rgb));
 
-  --font-kai: 'Kaiti SC', 'STKaiti', KaiTi, 'LXGW WenKai', 'Noto Serif SC', serif;
+  /*
+   * 楷体栈 —— **这里是唯一事实源**(tailwind.config 里的 kai/song 只是把它接成 utility)
+   *
+   * 内置那份排第一:先前是系统优先,于是同一个游戏在三端长成三种字形 —— iOS 华文楷体、
+   * Windows 楷体(它还属「中文补充字体」,Win10/11 里按需安装,没装的机器直接落到内置)、
+   * 安卓内置的那份。三端截图摆在一起,差异比「多下一次字体」更伤。
+   *
+   * 系统楷体留在第二位兜底:子集只收游戏用字 + GB2312(6940 字),名字里的生僻字
+   * (玥 玦 燊 龑 这类 GBK 扩展字)任何合理体积的子集都盖不住 —— iOS 上由华文楷体接住
+   * (还是楷体),安卓上落到系统衬线。这条退路删不得。
+   */
+  --font-kai: 'LXGW WenKai GB Screen', 'Kaiti SC', 'STKaiti', KaiTi, 'Noto Serif SC', serif;
+  --font-song: 'Noto Serif SC', 'Source Han Serif SC', STSong, SimSun, 'Kaiti SC', serif;
 
   /* 明暗通用阴影色(暗色主题下重定义) */
   --shadow-ink: rgb(41 39 34);
@@ -332,9 +344,35 @@
 }
 
 /* ================= 基础 ================= */
+/*
+ * 外壳高度 —— 顶栏与底栏能不能钉住,全看这一个值。
+ *
+ * 手机浏览器里的 100vh 是**大视口**:地址栏收起时的高度。地址栏还挂着的时候,
+ * 外壳比看得见的区域高一截 —— 底栏被浏览器工具栏压在下面(要往下拖才露出来),
+ * 文档层同时攒出一段可滚余量,拖一下两栏就跟着内容走,看着就是「没固定」。
+ * 装成 PWA 或跑在安卓壳里时 100vh 恰是全屏,所以这个毛病只在手机浏览器里现形,
+ * 桌面与无头浏览器都复现不出来(实测:见 scripts/layout-check.mjs「两栏钉死」一节)。
+ *
+ * dvh 跟着可见高度走,故外壳认 dvh;不认 dvh 的老浏览器退回 vh ——
+ * 行为与修复前一致,不会更糟。
+ */
+:root {
+  --app-shell-height: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --app-shell-height: 100dvh;
+  }
+}
+
+/*
+ * html、body、#app、外壳四层用同一个高度,文档层就**没有**可滚余量:
+ * 内容区在外壳里自己滚(main 是唯一的滚动宿主),window 从头到尾不动,
+ * 两栏也就无从被拖走。四层但凡有一层还用 vh,那点差值就会变成可滚区间。
+ */
 html,
 body {
-  height: 100%;
+  height: var(--app-shell-height);
   overscroll-behavior: none;
 }
 
@@ -375,7 +413,73 @@ html[data-theme='dark'] {
 }
 
 #app {
-  height: 100vh;
+  height: var(--app-shell-height);
+  /*
+   * flow-root 只为防**外边距塌出**:大屏上外壳有 1rem 上下留白,而 #app 没有
+   * 边框也没有内边距,子元素的上外边距会穿过它塌到 body 上 —— 文档层于是凭空多出
+   * 16px 可滚余量(自检「两栏钉死」那条当场报红)。flow-root 建一层 BFC,把外边距
+   * 关在里面,不裁切、不影响布局。
+   */
+  display: flow-root;
+}
+
+/* 外壳:与 #app 同高(模板里的 h-screen 已被它取代) */
+.app-shell {
+  height: var(--app-shell-height);
+}
+
+/*
+ * 楷体 —— 随包分发的一份子集(霞鹜文楷 GB 屏幕阅读版,SIL OFL 1.1)
+ *
+ * 为什么需要它:iOS 有 Kaiti SC、Windows 有 KaiTi,**安卓一个楷体都没有**。而这套
+ * 水墨味的标题、境界名、名号全压在 font-kai 上 —— APK 是主力渠道,不能在那儿落成衬线。
+ *
+ * 为什么选这一支(GB 屏幕阅读版,而不是原版霞鹜文楷):原版源自日本 Klee One,带日式
+ * 字形 —— 「这 边 过 运 巡 遍 遥 道」的辶旁是日式两点辶,「令 骨 直 真」也不合大陆规范;
+ * GB 版按 G 源改过,对简体玩家这是对错而非审美。屏幕阅读版则把笔画调实,10~13px 的小字
+ * (本项目 UI 的主战场)清楚得多。两者同版本(v1.522),覆盖也够:游戏用字一个不少。
+ *
+ * 为什么这样挂:字体栈(kai)把它排第一位 —— **三端统一用这份内置字体**,系统的华文楷体 /
+ * 楷体退到第二位只作兜底。装了「GB 屏幕阅读版」本体的人由 local() 命中、不必下载;
+ * 注意 local() **只认这一支**:写成 local('LXGW WenKai') 会把装了原版的人悄悄换成日式
+ * 字形,那正好破坏这次统一。
+ *
+ * 子集外的生僻字(GBK 扩展区,如 玥 玦 燊 龑)按字符回退到系统楷体或系统衬线,不会
+ * 变成豆腐块;▬▸▾◈✧ 这几个装饰符号母体里就没有,一直由系统符号字体画(生成脚本里
+ * 有一份显式名单,新增内容若用到别的、字体又画不出的字,脚本会当场报错)。
+ *
+ * 1.5MB 的来历与重做方式见 scripts/fonts/build-kai-font.py(24.4MB 的母体不入库,
+ * 只入库子集);协议全文在 public/fonts/OFL.txt —— OFL 要求再分发时带着它,别删。
+ *
+ * font-display: swap —— 先用回退字体把字显示出来,楷体到了再换,不白屏。
+ * 没有加 preload:这份字体是首屏 JS+CSS 的二十倍,提前抢带宽反而可能拖慢可玩时间,
+ * 而 swap 已经保证文字立刻可读(要不要上 preload 得拿真机实测那一下切换再说)。
+ */
+@font-face {
+  font-family: 'LXGW WenKai GB Screen';
+  src:
+    local('LXGW WenKai GB Screen'),
+    url('./assets/fonts/lxgw-wenkai-gb-screen-subset.woff2') format('woff2');
+  font-display: swap;
+}
+
+/*
+ * 大屏:把窄栏收成一「册」
+ *
+ * 桌面与平板上,430px 的栏直接顶到屏幕上下边缘、两侧不描线,看着像一条没做完的
+ * 窄带;上下各留一指、加圆角与一道细边之后,同一栏宽才像一册摊开的书页。
+ *
+ * 留白要从高度里扣:1rem + (100dvh - 2rem) + 1rem 恰好一屏,文档层依旧没有可滚
+ * 余量,顶栏底栏照旧钉死(判据见 scripts/layout-check.mjs 第二十七件事)。
+ */
+/* 矮屏(横屏手机)例外:那里高度比气度要紧,1rem 的上下留白正是内容区缺的 32px */
+@media (min-width: 768px) and (min-height: 561px) {
+  .app-shell {
+    height: calc(var(--app-shell-height) - 2rem);
+    margin-block: 1rem;
+    border: 1px solid rgb(var(--color-ink-rgb) / 0.22);
+    border-radius: 16px;
+  }
 }
 
 /* 宣纸颗粒 */
@@ -426,8 +530,15 @@ html[data-theme='dark'] {
 }
 
 .btn-seal:disabled {
-  background: var(--color-ink-ghost);
-  color: rgb(255 255 255 / 0.75);
+  /*
+   * 禁用态**不是装饰态**:按钮上的字往往正是「为什么不让我点」
+   * (「修为未至圆满」「灵石不足」「道源不足」)—— 那是玩家最需要读到的一句。
+   * 原先用最淡的 ink-ghost 打底 + 75% 白字,实测对比度只有 1.79:1,
+   * 在手机上基本看不见。改用 ink-faint 打底,对比度约 3.9:1,
+   * 「灰掉」的观感不变,字却读得出来。
+   */
+  background: var(--color-ink-faint);
+  color: rgb(255 255 255 / 0.92);
   box-shadow: none;
 }
 
@@ -454,7 +565,15 @@ html[data-theme='dark'] {
 }
 
 .btn-ghost:disabled {
-  opacity: 0.4;
+  /*
+   * 与 btn-seal 的禁用态同理:这里的字常常正是门槛本身(「需 筑基 境」「灵石不足」)。
+   * 原先整块压到 40% 透明 —— 实测前景对背景只剩 2.23:1,手机上读不出来。
+   * 改成压色不压字:底色淡下去、字保留 ink-soft,仍一眼看出「点不得」。
+   */
+  opacity: 1;
+  border-color: rgb(var(--color-ink-rgb) / 0.12);
+  color: var(--color-ink-faint);
+  background: rgb(var(--color-ink-rgb) / 0.04);
 }
 
 .chip-ink {
@@ -467,6 +586,41 @@ html[data-theme='dark'] {
   border: 1px solid currentColor;
   line-height: 1.5;
   white-space: nowrap;
+}
+
+/*
+ * 吸顶页签栏(InkTabs 的外壳:背包的四册、图鉴、名号、界域志、天界)
+ *
+ * 这几册都是越往下越长的列表 —— 页签若跟着滚走,想换一册就得先滚回顶上。
+ * 故把它钉在内容区顶部,内容从底下穿过。三处细节都不是随手写的:
+ *
+ * 一 只动横向边距(-mx-4 + px-4):页面根节点的内边距是 px-4 pt-4,吸顶盒
+ *    要铺满内容区宽度,否则内容会从两侧那 16px 的空隙里明晃晃地穿过去。
+ *    **纵向一分不碰** —— space-y-4 的间距写在父级上(如天界页,页签前面还有
+ *    一张道源卡),负的上边距会被父级的间距规则盖掉,只有第一个孩子才吃得到,
+ *    同一套样式在五页里会长得不一样。
+ * 二 自己铺一层纸色 + 毛玻璃:穿过去的东西必须被挡住,与顶栏、底栏同一种做法。
+ *    颜色走 --color-paper-rgb,夜间主题自动跟随。
+ * 三 ::after 是往下 12px 的渐隐遮罩。卡片是圆角的,圆角底下那两块三角缺口
+ *    挡不住,内容会从角上冒出来。它只画不占位,页面上原有的行距一点没变。
+ */
+.tab-rail {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  background: rgb(var(--color-paper-rgb) / 0.94);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.tab-rail::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto;
+  height: 0.75rem;
+  background: linear-gradient(to bottom, rgb(var(--color-paper-rgb) / 0.94), transparent);
+  pointer-events: none;
 }
 
 .ink-divider {
@@ -732,6 +886,31 @@ html[data-theme='dark'] {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * 倒计时的定宽槽位 —— 与 formatCountdown 配套使用。
+ *
+ * 逐位补零只保证「同一量级内宽度相同」;跨量级(秒→分→时)与不同字数(如"1天"与"10天")
+ * 仍会变。再给它一个固定宽度的右对齐槽位,整行才不会随倒数推移而左右跳。
+ * 收成一个类而不是在四处各写一遍 min-w-[3.5rem]:它是同一件事的同一条口径。
+ */
+.countdown-slot {
+  display: inline-block;
+  min-inline-size: 3.5rem;
+  text-align: right;
+}
+
+/*
+ * 键盘焦点的可见指示 —— 统一成朱砂描边,不再听浏览器默认(默认那圈颜色
+ * 在暗色纸面上有时很淡,而 `outline-none` 这类写法一旦落到某个控件上,
+ * 键盘用户就彻底看不出走到哪了)。
+ *
+ * 只对 :focus-visible 生效:鼠标点击不该冒出一圈描边。
+ */
+:focus-visible {
+  outline: 2px solid var(--color-cinnabar);
+  outline-offset: 2px;
 }
 
 /* 滚动条 */

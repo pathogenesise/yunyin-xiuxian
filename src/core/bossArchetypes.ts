@@ -135,15 +135,3 @@ export const ARCHETYPES: Record<BossArchetype, ArchetypeDef> = {
     statPersonality: { atkMult: 1.1, defMult: 1.2, hpMult: 0.95 }
   }
 }
-
-/** 区域生态 → Boss 机制的自然映射(生态极端表达) */
-export const ARCHETYPE_BY_ECOLOGY: Record<string, BossArchetype> = {
-  burst: 'berserk', // 高爆发区域 → 狂暴型 Boss
-  multi: 'counter', // 多段区域 → 反制型 Boss
-  pierce: 'truedmg', // 真伤区域 → 真伤型 Boss
-  sustain: 'antiheal', // 持续区域 → 治疗压制型 Boss
-  shield: 'threshold', // 护盾区域 → 门槛型 Boss
-  dodge: 'evasive', // 闪避区域 → 闪避型 Boss
-  heal: 'attrition', // 回血区域 → 消耗型 Boss
-  combo: 'spellbane' // 连击区域 → 吞法型 Boss
-}

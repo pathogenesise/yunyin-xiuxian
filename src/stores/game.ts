@@ -2,8 +2,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { persistConfig, SAVE_VERSION } from '@/utils/storage'
-import { CREATE_REROLL_LIMIT } from '@/data/constants'
+import { CREATE_REROLL_QUOTA } from '@/data/constants'
 import type { LinggenProfile } from '@/types'
+import { asFiniteNumber, asObjectOrNull } from '@/utils/saveShape'
 
 export const useGameStore = defineStore(
   'game',
@@ -15,18 +16,38 @@ export const useGameStore = defineStore(
     const totalPlaySec = ref(0)
 
     // ---- 建号草稿(持久化:否则刷新页面就是一次免费重掷) ----
-    /** 剩余「逆天改命」次数 */
-    const createRerolls = ref(CREATE_REROLL_LIMIT)
+    /**
+     * 剩余「逆天改命」次数;null = 不限次(当前建号政策,见 CREATE_REROLL_QUOTA)。
+     * 保留数字形态是为了将来收紧次数时不必再动存档结构。
+     */
+    const createRerolls = ref<number | null>(CREATE_REROLL_QUOTA)
     /** 当前摆在建号页上的那副牌;null 表示尚未开掷 */
     const createProfile = ref<LinggenProfile | null>(null)
+
+    /** 存档修复:时间戳/时长被写坏会让离线结算与展示算出 NaN */
+    function sanitize(): void {
+      createdAt.value = asFiniteNumber(createdAt.value, 0, 0)
+      lastActiveAt.value = asFiniteNumber(lastActiveAt.value, 0, 0)
+      totalPlaySec.value = asFiniteNumber(totalPlaySec.value, 0, 0)
+      // 不限次时,旧存档里遗留的数字额度(如 8→0)一律归位;有限次数则取整并夹在 [0, 上限]
+      createRerolls.value =
+        CREATE_REROLL_QUOTA === null
+          ? null
+          : Math.min(
+              CREATE_REROLL_QUOTA,
+              Math.max(0, Math.floor(asFiniteNumber(createRerolls.value, CREATE_REROLL_QUOTA, 0)))
+            )
+      createProfile.value = asObjectOrNull<LinggenProfile>(createProfile.value)
+    }
 
     /** 记下当前掷出的灵根(不扣次数,扣次数由 spendCreateReroll 负责) */
     function setCreateProfile(profile: LinggenProfile): void {
       createProfile.value = profile
     }
 
-    /** 花掉一次重掷额度;额度耗尽返回 false */
+    /** 花掉一次重掷额度;不限次(null)或还有余量时返回 true,额度耗尽返回 false */
     function spendCreateReroll(): boolean {
+      if (createRerolls.value === null) return true
       if (createRerolls.value <= 0) return false
       createRerolls.value -= 1
       return true
@@ -34,7 +55,7 @@ export const useGameStore = defineStore(
 
     /** 新的一世:上一世的建号草稿作废,重掷额度归满 */
     function resetCreateDraft(): void {
-      createRerolls.value = CREATE_REROLL_LIMIT
+      createRerolls.value = CREATE_REROLL_QUOTA
       createProfile.value = null
     }
 
@@ -65,7 +86,8 @@ export const useGameStore = defineStore(
       resetCreateDraft,
       markStarted,
       stampActive,
-      addPlayTime
+      addPlayTime,
+      sanitize
     }
   },
   { persist: persistConfig('game') }

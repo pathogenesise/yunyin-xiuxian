@@ -1,5 +1,5 @@
 /**
- * Phase 28 前期玩法数据 —— 悟道顿悟/突破准备/探索路线/洞府巡游
+ * Phase 28 前期玩法数据 —— 悟道顿悟/突破准备/历练路线/洞府巡游
  */
 import type { EnlightenmentOption, BreakthroughPrepOption } from '@/types'
 
@@ -39,7 +39,7 @@ export const ENLIGHTENMENT_OPTIONS: EnlightenmentOption[] = [
   {
     type: 'breakthrough',
     label: '悟透瓶颈',
-    desc: '下次突破成功率 +8%',
+    desc: '下次进阶成功率 +8%',
     buffId: 'enlighten_bt',
     duration: 1800
   },
@@ -73,14 +73,14 @@ export const BREAKTHROUGH_PREP_OPTIONS: BreakthroughPrepOption[] = [
   {
     id: 'meditate',
     label: '静坐调息',
-    desc: '耗时3分钟,成功率 +8%',
+    desc: '耗时3分钟,进阶成功率 +8%',
     bonusRate: 0.08,
     duration: 180
   },
   {
     id: 'pill',
     label: '服用聚气丹',
-    desc: '消耗80灵石,成功率 +5%',
+    desc: '消耗80灵石,进阶成功率 +5%',
     cost: { stone: 80 },
     bonusRate: 0.05,
     duration: 0
@@ -150,15 +150,6 @@ export const CAVE_EVENT_POOL = {
     }
   ]
 }
-
-/** 奇遇连锁事件ID列表(标记哪些事件是连锁的) */
-export const CHAIN_EVENT_IDS = [
-  'old_man_stone', // 青石上的老者(3阶段)
-  'sword_in_lake', // 湖中剑影(2阶段)
-  'wounded_fox', // 受伤的灵狐(3阶段)
-  'ancient_tree', // 古树(2阶段)
-  'night_lantern' // 夜灯(2阶段)
-]
 
 /** 连胜奖励阈值与奖励 */
 export const WIN_STREAK_REWARDS = [

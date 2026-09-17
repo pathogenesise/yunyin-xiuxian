@@ -22,8 +22,46 @@ export const PERSISTED_STORES = [
   'settings',
   'loadouts',
   'endgame',
-  'lore'
+  'lore',
+  /**
+   * 节奏遥测(store id 是 pacingTelemetry,分片键取 'pacing')。
+   *
+   * 此前它不在清单里 —— 于是玩家点「清空存档」之后,这片遥测仍留在本机;
+   * 导出也不含它。清单是导出/导入/清档/损坏扫描的唯一范围,漏一个就等于
+   * 存档少一块(且没有任何提示)。审计 saveRoundTrip 现在从源码倒推这份清单。
+   */
+  'pacing',
+  /**
+   * 异常留档(store id 是 diag)。
+   *
+   * 单独一片的理由与 pacing 相同:它不是游戏进度,却必须随「导出存档」一起走 ——
+   * 玩家报问题时,那份导出文件是他唯一会交出来的东西。
+   */
+  'diag'
 ] as const
+
+/**
+ * 分片的中文名 —— 只在说人话的地方用(如「哪一片坏了」)。
+ *
+ * 与 PERSISTED_STORES 放在一起:清单改了这个也得跟着改,
+ * 否则界面上会出现一个叫「resources」的东西。
+ */
+export const STORE_NAMES: Record<string, string> = {
+  game: '开局',
+  player: '角色',
+  resources: '资源',
+  inventory: '背包',
+  cultivation: '修炼',
+  dongfu: '洞府',
+  adventure: '历练',
+  quests: '任务与成就',
+  settings: '设置',
+  loadouts: '构筑',
+  endgame: '终局',
+  lore: '认知',
+  pacing: '节奏遥测',
+  diag: '异常留档'
+}
 
 export function storageKey(storeId: string): string {
   return SAVE_PREFIX + storeId
@@ -47,22 +85,68 @@ export const SAVE_FLUSH_MS = 5000
 const pending = new Map<string, string>()
 let flushTimer: ReturnType<typeof setTimeout> | undefined
 
-/** 立即把待落盘内容写出去 */
+/**
+ * 写盘失败的状态。
+ *
+ * 此前失败是**静默**的:catch 里什么也不做,随后 pending.clear() 把这一批丢掉 ——
+ * 玩家可能玩了几小时、存了好几个 store,一次容量不足就把这段时间全抹了,
+ * 而界面上没有任何迹象(设置页仍显示「存档版本 v2」)。写不进去是要紧事:
+ * 它意味着从现在到修好为止的所有进度都不会进档,玩家至少该有机会先导出备份。
+ */
+let writeFailure: { at: number; keys: string[] } | null = null
+type WriteFailureHandler = (failure: { at: number; keys: string[] } | null) => void
+/** 可以有多个订阅方(App 弹提示、设置页显示状态)—— 故用集合而非单个回调 */
+const writeFailureHandlers = new Set<WriteFailureHandler>()
+
+function emitWriteFailure(failure: { at: number; keys: string[] } | null): void {
+  for (const handler of writeFailureHandlers) handler(failure)
+}
+
+/** 订阅写盘失败/恢复(注册方负责提示玩家);解构处返回退订函数 */
+export function subscribeSaveWriteFailure(handler: WriteFailureHandler): () => void {
+  writeFailureHandlers.add(handler)
+  return () => {
+    writeFailureHandlers.delete(handler)
+  }
+}
+
+/** 此刻的写盘失败状态(界面读它显示警告);从未失败过则为 null */
+export function saveWriteFailure(): { at: number; keys: string[] } | null {
+  return writeFailure
+}
+
+/** 立即把待落盘内容写出去;单个分片失败时留在队列里等下一次重试 */
 export function flushSaveWrites(): void {
   if (flushTimer !== undefined) {
     clearTimeout(flushTimer)
     flushTimer = undefined
   }
   if (pending.size === 0) return
+  const failed: string[] = []
   for (const [key, plain] of pending) {
     try {
       // 加密只在这里做一次,而不是每次 store 变更都做
       localStorage.setItem(key, encryptSave(plain))
     } catch {
-      // 单键失败不阻断其余键
+      // 单键失败不阻断其余键;失败的那一片留在队列里,下次再写
+      failed.push(key)
     }
   }
-  pending.clear()
+  for (const key of pending.keys()) {
+    if (!failed.includes(key)) pending.delete(key)
+  }
+  if (failed.length > 0) {
+    const first = writeFailure === null
+    writeFailure = { at: Date.now(), keys: failed }
+    if (first) emitWriteFailure(writeFailure)
+    // 自动重试:玩家清一点空间、或系统短暂拒绝之后,不用等下一次变更才有机会落盘
+    if (flushTimer === undefined) flushTimer = setTimeout(flushSaveWrites, SAVE_FLUSH_MS)
+    return
+  }
+  if (writeFailure !== null) {
+    writeFailure = null
+    emitWriteFailure(null)
+  }
 }
 
 /** 丢弃待落盘内容 —— 清档/导入前必须调用,否则排队的旧数据会把新状态覆盖回去 */
@@ -231,22 +315,58 @@ export function validateImportPayload(obj: unknown): string | null {
   return null
 }
 
-/** 将导入数据加密写入 localStorage(调用方负责随后 reload)。先清空现有存档,再写入导入数据,确保完全覆盖 */
+/**
+ * 将导入数据加密写入 localStorage(调用方负责随后 reload)。
+ *
+ * 原子性:先清空现有存档、再逐片写入,确保完全覆盖;但写入中途失败
+ * (配额不足是移动端的家常便饭)时,**回滚到旧档**而不是留下半清的存档 ——
+ * 「game 分片还在、player 分片没了」的主页空角色正是这半清状态造出来的。
+ */
 export function applyImportPayload(payload: ExportPayload): void {
-  // 先清空所有现有存档
+  // 一 先把现有各片读进内存作快照(原样密文,回滚时按原样写回)
+  const backup = new Map<string, string | null>()
+  try {
+    for (const id of PERSISTED_STORES) {
+      backup.set(id, localStorage.getItem(storageKey(id)))
+    }
+  } catch {
+    // 快照读不出时不阻塞:回滚能力降级,但不清成半档的那层仍适合尽力而为
+  }
+  // 二 清空现有存档
   clearAllSave()
-  // 再写入导入的数据
+  // 三 逐片写入导入数据
+  const failed: string[] = []
   for (const id of PERSISTED_STORES) {
     const slice = payload.data[id]
-    if (slice !== undefined) {
+    if (slice === undefined) continue
+    try {
       localStorage.setItem(storageKey(id), encryptSave(JSON.stringify(slice)))
+    } catch {
+      failed.push(id)
     }
+  }
+  // 四 任一失败:把快照里的旧档救回来,再向上抛,让调用方说「原档还在」
+  if (failed.length > 0) {
+    for (const [id, raw] of backup) {
+      try {
+        if (raw === null) localStorage.removeItem(storageKey(id))
+        else localStorage.setItem(storageKey(id), raw)
+      } catch {
+        // 回滚尽力而为:若存储完全不可用,剩下的是已报错的现状
+      }
+    }
+    throw new Error(`写入存档失败(${failed.join('/')}),原存档已保留`)
   }
 }
 
 export function clearAllSave(): void {
   // 先丢弃待落盘队列 —— 否则清完档之后那次 flush 会把旧数据原样写回来
   dropPendingWrites()
+  // 清档后没有待写内容,旧的「写盘失败」警告已无意义(下次真写不进去会重新浮出来)
+  if (writeFailure !== null) {
+    writeFailure = null
+    emitWriteFailure(null)
+  }
   for (const id of PERSISTED_STORES) {
     try {
       localStorage.removeItem(storageKey(id))

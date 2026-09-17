@@ -5,7 +5,7 @@
  * 这一组测试守的不是某个数值,而是**定价法则本身**。
  *
  * 玩家的原话是「灵乳回得太多」,但真问题在他没说出口的那半句:凭什么白捡的比炼的强?
- * 于是这里立七条法则,让三十二味丹各安其位 —— 不是把某个数按下去了事,
+ * 于是这里立七条法则,让每一味丹各安其位 —— 不是把某个数按下去了事,
  * 而是让往后每一味新丹都得先过这七关。
  *
  * 其中最要紧的一条(法则 A)不是我定的,是**从游戏自己的数据里读出来的**:
@@ -19,7 +19,8 @@ import { describe, it, expect } from 'vitest'
 import { PILLS, pillDef } from '@/data/pills'
 import { buffDef } from '@/data/buffs'
 import { qualityDef } from '@/data/qualities'
-import { MAX_MAJOR } from '@/data/realms'
+import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
+import { BATTLE_EXP_SECS, INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import {
   DROP_CRAFT_RATIO,
   craftBattlesOf,
@@ -30,6 +31,7 @@ import {
   pillGainSecAt,
   pillLine,
   pillValueTable,
+  layerSeconds,
   type PillFamily
 } from './pillValue'
 
@@ -80,7 +82,7 @@ function unifiedRealm(pills: readonly { minRealm: number }[]): number {
 // ============ 审计报告(只打印,不断言) ============
 
 describe('丹药价值审计报告', () => {
-  it('列出三十二味丹的价值表', () => {
+  it('列出全丹药的价值表', () => {
     const rows = pillValueTable()
     console.log('\n=== 丹药价值总表 ===')
     console.log('  药力 = 折成等效挂机秒数(在该丹准入境界处取值);代价 = 折成战斗场次')
@@ -230,7 +232,7 @@ describe('定价法则', () => {
         expect(buffDef(p.buffId!), `${p.name} 指向不存在的增益 ${p.buffId}`).toBeDefined()
       } else {
         const i = p.instant ?? {}
-        const has = [i.expReqPct, i.expFixed, i.qiPct, i.lifespanYears, i.wudao].some(v => (v ?? 0) > 0)
+        const has = [i.expSecs, i.expFixed, i.qiPct, i.lifespanYears, i.wudao].some(v => (v ?? 0) > 0)
         expect(has, `${p.name} 是即时丹却什么也不给`).toBe(true)
       }
     }
@@ -257,6 +259,22 @@ describe('定价法则', () => {
   })
 
   /**
+   * 【法则 E2】仙界以上的掉落池里得有该境界用得上的丹。
+   *
+   * 「非空」是字面满足:如果高境界只能捡到炼气期的妖血丹,池子不空却毫无内容。
+   * 这条要求仙界及其上每一境的掉落池里,至少有一味是高界(准入境界 ≥ 仙界门槛)的丹。
+   */
+  it('E2 —— 仙界以上的掉落池不是入门丹的堆砌', () => {
+    for (let m = WORLD_BREAK_MAJOR; m <= MAX_MAJOR; m += 1) {
+      const pool = dropPoolAt(m)
+      expect(
+        pool.some(p => p.minRealm >= WORLD_BREAK_MAJOR),
+        `境界 ${m} 只能捡到入门丹`
+      ).toBe(true)
+    }
+  })
+
+  /**
    * 【法则 F】满额资源重置类必须是可炼品。
    *
    * 灵气是突破的门槛资源(突破耗去上限的四成),一枚回满即抵两次半突破。
@@ -267,6 +285,57 @@ describe('定价法则', () => {
     for (const p of PILLS) {
       if ((p.instant?.qiPct ?? 0) < 0.8) continue
       expect(p.recipe, `${p.name} 一口回满灵气却无需任何制备`).toBeDefined()
+    }
+  })
+
+  /**
+   * 【法则 G】修为丹按「等效闭关时长」结算,药力不随境界膨胀(Phase 39)。
+   *
+   * 旧口径是"当前一层需求的百分比":同一枚金丹期的丹留到混沌海服用,
+   * 药力跟着需求一路涨到天文数字,而成本还冻结在金丹期 ——
+   * 于是"囤低阶丹、到高境界嗑"成了最优解,破界那道关卡也能被买通。
+   * 这条守住新口径的三个性质:药力就是写死的那一段时长、相对药力随境界只减不增、
+   * 单枚丹永不满一层(低境界一层只要几十秒,那是最容易被整层跳过的窗口)。
+   */
+  it('G —— 修为丹按等效闭关时长结算,囤到高境界只会更弱', () => {
+    const expPills = PILLS.filter(p => pillFamily(p) === 'exp' && p.instant?.expSecs)
+    expect(expPills.length, '修为线一味按时长计价的丹都没有?那这条法则无从守起').toBeGreaterThanOrEqual(8)
+    for (const p of expPills) {
+      const secs = p.instant!.expSecs!
+      for (let m = p.minRealm; m <= MAX_MAJOR; m += 1) {
+        expect(pillGainSecAt(p, m), `${p.name} 在境界 ${m} 的药力超过了它写死的那一段`).toBeLessThanOrEqual(secs + 1e-9)
+      }
+      const ownShare = pillGainSecAt(p, p.minRealm) / layerSeconds(p.minRealm)
+      const topShare = pillGainSecAt(p, MAX_MAJOR) / layerSeconds(MAX_MAJOR)
+      expect(topShare, `${p.name} 越到高境界越值钱 —— 百分比口径又回来了`).toBeLessThanOrEqual(ownShare + 1e-12)
+      expect(ownShare, `${p.name} 在自己那一境就该满了一层`).toBeLessThanOrEqual(INSTANT_EXP_LAYER_CAP + 1e-9)
+    }
+    // 数据里不许再留旧字段(类型上已删,这里再钉一道数据侧的钉子)
+    for (const p of PILLS) {
+      expect(
+        (p.instant as Record<string, unknown> | undefined)?.expReqPct,
+        `${p.name} 还留着按需求百分比结算的旧字段`
+      ).toBeUndefined()
+    }
+  })
+
+  /**
+   * 【法则 G2】修为丹的时长与「它值多少场遭遇」同阶(Phase 39 续)。
+   *
+   * 一张丹方的灵草成本本身就是"要打多少场"—— 一枚丹若远贵于它的材料,
+   * 丹药就变成了一条绕过所有境界壁垒的通路;若远便宜于材料,则没人炼。
+   * 这条把两件事绑在一起:一枚修为丹 ≈ 其灵草成本折算的场次 × 2~5 倍
+   * (溢价来自技艺、灵石与炸炉风险)。drops 无成本,由法则 A 对着可炼对照管。
+   */
+  it('G2 —— 可炼修为丹的时长与其灵草成本同阶(2~5 倍于"多少场遭遇")', () => {
+    const expCraft = PILLS.filter(p => pillFamily(p) === 'exp' && p.recipe && p.instant?.expSecs)
+    expect(expCraft.length, '可炼修为丹一味都没有?').toBeGreaterThanOrEqual(6)
+    for (const p of expCraft) {
+      // 一场遭遇平均掉 1 味灵草(见 loot.afterWin 的掉率),故场次 ≈ herb
+      const battlesWorth = (p.instant!.expSecs! * 1) / BATTLE_EXP_SECS
+      const ratio = battlesWorth / p.recipe!.herb
+      expect(ratio, `${p.name}:${p.instant!.expSecs} 秒 ≈ ${battlesWorth.toFixed(0)} 场,而它只要 ${p.recipe!.herb} 味灵草`).toBeGreaterThan(2)
+      expect(ratio, `${p.name}:${p.instant!.expSecs} 秒 ≈ ${battlesWorth.toFixed(0)} 场,而它只要 ${p.recipe!.herb} 味灵草`).toBeLessThan(5)
     }
   })
 
@@ -352,12 +421,13 @@ describe('本次校准的落点', () => {
   /**
    * 未处置的账 —— 本 Phase 明确不动,记在这里免得下次重新发现一遍。
    *
-   * 1. **可炼修为丹的性价比跨一百余倍**(聚气散 → 九转还魂丹):药力按需求百分比走,
+   * 1. **可炼修为丹的性价比跨百万倍**(聚气散 → 道源丹):药力按需求百分比走,
    *    成本按材料线性走,两条曲线量纲不同。修它等于重设全部材料成本曲线。
    * 2. **跨族性价比相差数百倍**:藏经阁 1.5 悟道/时太慢、寿元按绝对年数不贬值。
    *    所以本文件的性价比只在族内比较。
-   * 3. **悟道族与修速族的可炼线止于玄品/精品**,其上由掉落品独占 —— 内容缺口,
-   *    补法是加丹方,不是砍掉落。
+   * 3. ~~悟道族与修速族的可炼线止于玄品/精品,其上由掉落品独占 —— 内容缺口~~
+   *    **已结清**(扩界补丹方):悟道线今有仙品的道音丹、修速线有神品的本源丹,
+   *    灵气线有仙品的仙泉玉液 —— 各族可炼顶端都已越过掉落顶端。见「各族可炼线已至仙品以上」一条。
    * 4. **造化丹(天品)比聚灵丹(精品)还弱**:高规格低内容。它与奇遇系统共用
    *    「道韵加身」,改增益会波及 events.ts 十余处,本 Phase 不动。
    * 5. **品质(quality)不参与任何效果计算**,只影响掉落权重与图鉴配色。
@@ -373,5 +443,20 @@ describe('本次校准的落点', () => {
     // 它虽是天品却弱于精品的聚灵丹 —— 记录在案,不在本 Phase 处置
     const juling = pillDef('p_juling')!
     expect(pillGainSecAt(p, 5)).toBeLessThan(pillGainSecAt(juling, 5))
+  })
+
+  it('各族可炼线已至仙品以上 —— 曾经的「内容缺口」已由丹方补上', () => {
+    // 曾经的账:悟道/修速/灵气的可炼线止于玄品/精品,其上只有掉落品。
+    // 扩界补了一批高界丹方后,五族可炼顶端都应越过掉落顶端(法则 H 的另一面)。
+    for (const fam of TIMED_FAMILIES) {
+      const inFam = PILLS.filter(p => pillFamily(p) === fam)
+      if (inFam.length === 0) continue
+      const at = unifiedRealm(inFam)
+      const craftPeak = familyPeakGain(fam, 'craft', at)
+      const drops = inFam.filter(p => pillLine(p) === 'drop')
+      const dropPeak = drops.length > 0 ? familyPeakGain(fam, 'drop', at) : 0
+      expect(craftPeak, `${FAMILY_NAME[fam]}族没有可炼品`).toBeGreaterThan(0)
+      if (dropPeak > 0) expect(craftPeak, `${FAMILY_NAME[fam]}族顶端仍被掉落品压过`).toBeGreaterThanOrEqual(dropPeak)
+    }
   })
 })

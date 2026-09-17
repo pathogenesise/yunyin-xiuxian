@@ -46,8 +46,16 @@ export default {
         'amber-ink': withAlpha('--color-amber-ink-rgb')
       },
       fontFamily: {
-        kai: ['Kaiti SC', 'STKaiti', 'KaiTi', 'LXGW WenKai', 'Noto Serif SC', 'serif'],
-        song: ['Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', 'Kaiti SC', 'serif']
+        /*
+         * 只做「utility 名 → 变量」这一步;字体栈本体在 style.css 的 --font-kai / --font-song。
+         *
+         * 原来这里另抄了一份完整字体栈,而 style.css 里 `.font-kai{font-family:var(--font-kai)}`
+         * 在产物中排在它后面、把它整个盖掉 —— 于是改这里不生效(改字号字体时真被坑过一次:
+         * 配置改了、产物里纹丝不动)。同一样东西两处维护迟早对不上,故只留这一层转发,
+         * 事实源归 style.css 一处。
+         */
+        kai: ['var(--font-kai)'],
+        song: ['var(--font-song)']
       },
       /* v4 的 @theme 按需生成任意数值,v3 只有固定 scale,缺的须显式补齐。
          v4 的 spacing 公式是 calc(0.25rem * N),下面的值据此换算。
@@ -95,5 +103,19 @@ export default {
       }
     }
   },
-  plugins: []
+  /*
+   * short: —— 高度断点(横屏手机、桌面矮窗)
+   *
+   * Tailwind 只有宽度断点,而「上下两栏把屏幕吃掉四分之一」这个毛病是按**高度**
+   * 现形的:844×390 横屏下内容区只剩 289px,占屏 26%,两栏吃掉 102px。
+   *
+   * 这里没有走 theme.screens 的 { raw: … } 写法 —— 那条路 Tailwind 会当场警告
+   * 「min-* / max-* 变体不可用」,等于为了一个高度断点把任意宽度断点(min-[340px]:)
+   * 全废掉;addVariant 只加一个变体,两边都不耽误。
+   */
+  plugins: [
+    ({ addVariant }) => {
+      addVariant('short', '@media (max-height: 560px)')
+    }
+  ]
 }

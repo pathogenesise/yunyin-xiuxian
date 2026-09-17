@@ -131,7 +131,7 @@
             </div>
             <div class="ink-divider my-2.5" />
             <!-- 择路 -->
-            <template v-if="run.layer <= 2 && currentNodes">
+            <template v-if="run.layer < EXPEDITION_ROUTE_LAYERS && currentNodes">
               <p class="mb-1.5 text-[11px] text-ink-faint">第 {{ run.layer + 1 }} 重 · 两径择一(层间可回凡界换构筑)</p>
               <div class="stagger-in grid grid-cols-2 gap-2">
                 <button
@@ -149,8 +149,8 @@
               </div>
             </template>
             <!-- 界主 -->
-            <template v-else-if="run.layer === 3">
-              <p class="mb-1.5 text-[11px] text-ink-faint">三重已过,界主临阵。可先回凡界整备,再来决战。</p>
+            <template v-else-if="run.layer === EXPEDITION_GUARDIAN_LAYER">
+              <p class="mb-1.5 text-[11px] text-ink-faint">{{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重已过,界主临阵。可先回凡界整备,再来决战。</p>
               <p v-if="guardianPreview" class="mb-1.5 text-[10px] text-violet-ink">
                 天机:{{ guardianPreview.winText }} · {{ guardianPreview.skillLines.join(' / ') }}
               </p>
@@ -175,7 +175,16 @@
                 <span v-if="endgame.worldClears[world.id]" class="chip-ink border-jade/60 text-[9px] text-jade">
                   已破 ×{{ endgame.worldClears[world.id] }}
                 </span>
-                <span class="ml-auto tabular text-[11px] text-ink-faint">入界+三重+界主</span>
+                <span class="ml-auto tabular text-[11px] text-ink-faint">入界+{{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重+界主</span>
+              </p>
+              <!--
+                这一界「该有的境界」:敌人按本界锚点层级定标(见 gauntlet.celestialAnchor),
+                未至此境者会被**境界压制**(守关者额外增伤)。名字从境界表取,不手写 ——
+                哪天梯子挪了,这句自己跟上。
+              -->
+              <p class="mt-0.5 text-[10px]" :class="player.major < anchorMajorOf(world.anchorTier) ? 'text-cinnabar/80' : 'text-ink-ghost'">
+                此界宜 {{ REALMS[anchorMajorOf(world.anchorTier)]?.name ?? '' }} 及以上
+                <template v-if="player.major < anchorMajorOf(world.anchorTier)"> · 你尚在此境之下,受境界压制</template>
               </p>
               <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{{ world.desc }}</p>
               <p class="mt-1 flex flex-wrap gap-x-3 text-[10px] text-violet-ink">
@@ -235,7 +244,7 @@
           <div class="card-ink mt-2 px-4 py-3">
             <p class="flex items-center gap-2">
               <span class="font-kai text-[14px] tracking-widest text-ink">{{ dailyWorld?.name }}</span>
-              <span class="tabular text-[11px] text-ink-soft">{{ daily.verdict.difficulty }} · 可行 {{ daily.verdict.viable }}/6</span>
+              <span class="tabular text-[11px] text-ink-soft">{{ daily.verdict.difficulty }} · 可行 {{ daily.verdict.viable }}/{{ BUILD_PROFILES.length }}</span>
               <span class="ml-auto tabular text-[11px] text-gold-ink">赏 {{ daily.verdict.reward }}</span>
             </p>
             <p class="mt-1 flex flex-wrap gap-x-3 text-[10px] text-violet-ink">
@@ -262,7 +271,7 @@
               </div>
             </template>
             <template v-else>
-              <p class="text-[11px] leading-relaxed text-ink-faint">天道无常,规则无定。窥探本次变数,再决定是否应战——六连战,规则叠加。</p>
+              <p class="text-[11px] leading-relaxed text-ink-faint">天道无常,规则无定。窥探本次变数,再决定是否应战——{{ cnNumber(MUTATION_FIGHTS) }}连战,规则叠加。</p>
               <button class="btn-ghost mt-2 w-full !py-2 !text-[12px]" @click="mutationDraw = rollMutators()">窥探变数</button>
             </template>
           </div>
@@ -295,6 +304,9 @@
 
         <!-- 天道挑战书:玩家定规则,天道定难度与赏格 -->
         <section>
+          <!-- 天界秘境:真仙起,道源代价,与远征/试炼并列的一阶一次性内容 -->
+          <SecretRealmCard gate="celestial" />
+
           <SectionTitle title="天道挑战书" hint="你定规则,天道定赏" />
           <div class="card-ink mt-2 px-4 py-3">
             <p class="text-[11px] text-ink-faint">选界 · 叠变数(至多三条)· 立契 · 命名。赏格由天道实测难度定价,无从作弊。</p>
@@ -316,15 +328,21 @@
                 class="chip-ink"
                 :class="draft.mutatorIds.includes(m.id) ? 'border-violet-ink text-violet-ink' : 'border-ink/25 text-ink-faint'"
                 :title="m.text"
+                :aria-pressed="draft.mutatorIds.includes(m.id)"
                 @click="toggleDraftMutator(m.id)"
               >
                 {{ m.name }}
               </button>
             </div>
+            <!-- 变数已选的,把效果正文亮出来 —— 手机没有 hover,赌约规则得看得见 -->
+            <p v-if="selectedMutators.length" class="mt-1 text-[10px] leading-relaxed text-violet-ink">
+              {{ selectedMutators.map(m => `${m.name}：${m.text}`).join('；') }}
+            </p>
             <div class="mt-1.5 flex flex-wrap gap-1.5">
               <button
                 class="chip-ink"
                 :class="draft.pactId === null ? 'border-jade text-jade' : 'border-ink/25 text-ink-faint'"
+                :aria-pressed="draft.pactId === null"
                 @click="setDraftPact(null)"
               >
                 不立契
@@ -335,11 +353,15 @@
                 class="chip-ink"
                 :class="draft.pactId === p.id ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
                 :title="p.ruleText"
+                :aria-pressed="draft.pactId === p.id"
                 @click="setDraftPact(p.id)"
               >
                 {{ p.name }}
               </button>
             </div>
+            <p v-if="challengePact" class="mt-1 text-[10px] leading-relaxed text-ink-soft">
+              立约「{{ challengePact.name }}」：{{ challengePact.ruleText }}
+            </p>
             <input
               v-model="draft.name"
               maxlength="8"
@@ -352,7 +374,7 @@
               :class="challengeVerdict.ok ? 'bg-paper-deep/70' : 'bg-cinnabar/10'"
             >
               <p v-if="challengeVerdict.ok" class="flex items-center justify-between text-[11px]">
-                <span class="text-ink-soft">天道受此约:{{ challengeVerdict.difficulty }} · 可行流派 {{ challengeVerdict.viable }}/6</span>
+                <span class="text-ink-soft">天道受此约:{{ challengeVerdict.difficulty }} · 可行流派 {{ challengeVerdict.viable }}/{{ BUILD_PROFILES.length }}</span>
                 <span class="tabular text-gold-ink">赏 道源 {{ challengeVerdict.reward }}</span>
               </p>
               <p v-else class="text-[11px] text-cinnabar">{{ challengeVerdict.reason }}</p>
@@ -371,6 +393,12 @@
         <!-- 道痕 -->
         <section>
           <SectionTitle title="道痕" :hint="`历代修行履历 · ${endgame.marks.length} 则`" />
+          <div class="mt-2 flex items-center justify-between px-1">
+            <p class="text-[10px] tabular text-ink-ghost">
+              规则纪元 {{ RULESET_VERSION }} · 天道共改过 {{ RULESET_CHANGELOG.length }} 次
+            </p>
+            <button class="font-kai text-[10px] text-azure active:scale-95" @click="openEra(null)">纪元变迁史 →</button>
+          </div>
           <!-- 今昔之比:与过去的自己对话 -->
           <div v-if="legacy.length" class="card-ink mt-2 px-4 py-3">
             <p class="mb-1.5 font-kai text-[12px] tracking-[0.3em] text-ink-faint">今昔之比</p>
@@ -393,6 +421,14 @@
               </span>
               <span class="ml-auto shrink-0 tabular text-[10px] text-ink-faint">{{ mark.rounds }}回合 · {{ mark.buildName }}</span>
               <button
+                v-if="isStaleRuleset(mark.ruleset)"
+                class="shrink-0 rounded border border-cinnabar/50 bg-cinnabar/10 px-1 py-0.5 font-kai text-[9px] text-cinnabar active:scale-90"
+                :title="`录于旧纪 ${mark.ruleset},天道已变`"
+                @click="openEra(mark)"
+              >
+                变
+              </button>
+              <button
                 v-if="mark.replay"
                 class="shrink-0 rounded border border-gold-ink/40 px-1.5 py-0.5 font-kai text-[10px] text-gold-ink active:scale-90"
                 title="以当年的构筑重打此战"
@@ -400,17 +436,32 @@
               >
                 忆
               </button>
+              <!-- 重写要花道源,代价内联在按钮上(不再是 hover 专属),触控面放大,并加一步确认 -->
+              <template v-if="mark.cleared && mark.replay && rewriteConfirm === i">
+                <button
+                  class="shrink-0 rounded border border-cinnabar/50 bg-cinnabar/10 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
+                  @click="rewriteConfirm = null"
+                >
+                  算了
+                </button>
+                <button
+                  class="shrink-0 rounded bg-cinnabar px-2 py-1 font-kai text-[10px] text-paper active:scale-90"
+                  @click="doRewrite(mark)"
+                >
+                  确认重写
+                </button>
+              </template>
               <button
-                v-if="mark.cleared && mark.replay"
-                class="shrink-0 rounded border border-cinnabar/40 px-1.5 py-0.5 font-kai text-[10px] text-cinnabar active:scale-90"
-                :title="`以今日之你重打此战,快过 ${mark.rounds} 回合即【胜于旧我】(道源 ${REWRITE_ENTRY_COST})`"
-                @click="goRewrite(mark)"
+                v-else-if="mark.cleared && mark.replay"
+                class="shrink-0 rounded border border-cinnabar/40 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
+                :title="`以今日之你重打此战,快过 ${mark.rounds} 回合即【胜于旧我】`"
+                @click="rewriteConfirm = i"
               >
-                写
+                写(道源{{ REWRITE_ENTRY_COST }})
               </button>
             </div>
           </div>
-          <p v-else class="card-ink mt-2 px-4 py-4 text-center text-[11px] text-ink-ghost">此页尚白。你在天界的每一战,都会留下痕迹。</p>
+          <p v-else class="card-ink mt-2 px-4 py-4 text-center text-[11px] text-ink-faint">此页尚白。你在天界的每一战,都会留下痕迹。</p>
         </section>
       </template>
     </template>
@@ -419,7 +470,7 @@
     <BaseModal :open="prepWorld !== null" :title="prepWorld ? `远征 · ${prepWorld.name}` : ''" @close="prepWorldId = null">
       <template v-if="prepWorld">
         <p class="text-[11px] leading-relaxed text-ink-faint">
-          入界一战 → 三重择路(沿途道源)→ 界主。层间可回凡界换构筑。启程前,可与天道立契——风险换道源。
+          入界一战 → {{ cnNumber(EXPEDITION_ROUTE_LAYERS) }}重择路(沿途道源)→ 界主。层间可回凡界换构筑。启程前,可与天道立契——风险换道源。
         </p>
         <div class="mt-2 space-y-1.5">
           <button
@@ -444,6 +495,38 @@
             </span>
           </button>
         </div>
+        <!-- 奇门遁甲:择门入界(免费,换的是打法,不碰道源倍数) -->
+        <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">
+          奇门 · 择门入界 —— 立契是与天道做交易,择门是选这一趟从哪一门进:免费,改的是打法。
+        </p>
+        <div class="mt-1.5 grid grid-cols-4 gap-1.5">
+          <button
+            class="rounded-md px-1 py-1.5 text-center text-[11px]"
+            :class="prepGate === null ? 'bg-jade/10 border border-jade/40 text-ink-soft' : 'bg-paper-deep/60 border border-transparent text-ink-faint'"
+            @click="prepGate = null"
+          >
+            常道
+          </button>
+          <button
+            v-for="g in GATES"
+            :key="g.id"
+            class="rounded-md px-1 py-1.5 text-center text-[11px]"
+            :class="prepGate === g.id ? 'bg-violet-ink/10 border border-violet-ink/40 text-ink' : 'bg-paper-deep/60 border border-transparent text-ink-faint'"
+            :title="`${g.fullName}(${g.kind}) · ${g.gua}${g.direction}${g.palace}宫 —— ${g.desc}`"
+            @click="prepGate = g.id"
+          >
+            <span class="font-kai text-[13px]">{{ g.name }}</span>
+            <span class="ml-0.5 text-[9px]" :class="g.kind === '凶' ? 'text-cinnabar/80' : g.kind === '吉' ? 'text-jade' : 'text-ink-ghost'">{{ g.kind }}</span>
+          </button>
+        </div>
+        <p v-if="selectedGate" class="mt-1.5 rounded-md bg-paper-deep/70 px-3 py-2 text-[10px] leading-relaxed text-ink-soft">
+          <span class="font-kai text-ink">{{ selectedGate.fullName }}</span>
+          <span class="text-ink-ghost"> · {{ selectedGate.gua }}{{ selectedGate.direction }}{{ selectedGate.palace }}宫 · {{ selectedGate.kind }}</span>
+          <br />
+          {{ selectedGate.desc }}
+          <br />
+          <span class="text-ink-faint">{{ selectedGate.gist }}</span>
+        </p>
         <!-- 天道赌约:整程预估(信息归玩家,答案也归玩家) -->
         <div v-if="prepForecast" class="mt-2.5 rounded-md bg-paper-deep/70 px-3 py-2">
           <p class="flex items-center justify-between text-[11px]">
@@ -455,7 +538,14 @@
               当前构筑相性
               <span class="text-gold-ink">{{ prepForecast.stars }}</span>
             </span>
-            <span>预计可行流派 {{ prepForecast.viableStyles }}/6</span>
+            <span>预计可行流派 {{ prepForecast.viableStyles }}/{{ BUILD_PROFILES.length }}</span>
+          </p>
+          <!--
+            敌人一侧的判定(道之理解 / 境界压制):这是"为什么这一界对我更难"的答案。
+            判定的文案与数值同源(core/gauntlet.celestialJudgementLines),界面不再另编一套说法。
+          -->
+          <p v-for="(line, i) in prepForecast.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-cinnabar/80">
+            {{ line }}
           </p>
         </div>
         <p v-if="prepPreview" class="mt-2 text-[10px] leading-relaxed text-violet-ink">
@@ -495,6 +585,16 @@
             <span class="tabular text-[11px] text-ink-faint">{{ row.rounds }}回合 · 余血{{ Math.round(row.hpLeftPct * 100) }}%</span>
           </p>
         </div>
+        <!--
+          输也要输得明白:敌人一侧的判定(道之理解 / 境界压制)与战前预估同源,
+          连同"怎么办"一并写在这里 —— 战报不是判决书,是下一次出发的依据。
+        -->
+        <div v-if="expedition.judgementLines?.length" class="mt-2 rounded-md bg-cinnabar/5 px-3 py-2">
+          <p class="font-kai text-[11px] tracking-widest text-cinnabar/80">此战之判</p>
+          <p v-for="(line, i) in expedition.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">
+            {{ line }}
+          </p>
+        </div>
         <p v-if="expedition.reward > 0" class="mt-2 text-[12px] text-gold-ink tabular">
           <GameIcon name="sparkles" :size="12" class="inline" />
           道源 +{{ expedition.reward }}
@@ -509,11 +609,28 @@
     <BaseModal :open="furnaceOpen" title="天道熔炉" @close="furnaceOpen = false">
       <p class="mb-2 text-[11px] leading-relaxed text-ink-faint">前尘俗物,皆可熔作道源。</p>
       <div class="card-ink divide-y divide-ink/7 px-4">
-        <div v-for="row in furnaceRows" :key="row.rate.resource" class="flex items-center justify-between py-2.5">
-          <span class="text-[12px] text-ink-soft">{{ row.rate.name }}(存 {{ formatNum(row.have) }})</span>
-          <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="furnaceConvert(row.rate)">
-            {{ row.rate.per }} → 1 道源
-          </button>
+        <div v-for="row in furnaceRows" :key="row.rate.resource" class="py-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[12px] text-ink-soft">{{ row.rate.name }}(存 {{ formatNum(row.have) }})</span>
+            <!-- 全熔防误触:文案亮出『整包』与可得道源(不再是『按 25:1 换』的可兑换暗示),再按一下才熔 -->
+            <button
+              class="btn-ghost !px-3 !py-1 !text-[11px] tabular"
+              :disabled="furnacePreview(row.rate) <= 0"
+              @click="furnaceConfirm = row.rate.resource"
+            >
+              熔尽本包 → {{ furnacePreview(row.rate) }} 道源
+            </button>
+          </div>
+          <div v-if="furnaceConfirm === row.rate.resource" class="mt-1.5 rounded-md bg-cinnabar/5 px-3 py-2">
+            <p class="text-[10px] leading-relaxed text-cinnabar/90">
+              将 <span class="tabular">{{ row.rate.name }} ×{{ formatNum(row.have) }}</span> 尽数熔作道源,共
+              <span class="tabular">+{{ furnacePreview(row.rate) }}</span> 缕 —— 此举不可逆,这些资源再无炼丹/锻造/参悟之途。
+            </p>
+            <div class="mt-1.5 flex justify-end gap-2">
+              <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="furnaceConfirm = null">再想想</button>
+              <button class="btn-seal !px-3 !py-1 !text-[11px] tabular" @click="doFurnace(row.rate)">确认熔尽</button>
+            </div>
+          </div>
         </div>
         <div class="flex items-center justify-between py-2.5">
           <span class="text-[12px] text-ink-soft">灵石(存 {{ formatGN(resources.spiritStone) }})</span>
@@ -524,7 +641,7 @@
         <div class="py-2.5">
           <div class="flex items-center justify-between">
             <span class="text-[12px] text-ink-soft">道源凝道果(跨世保留)</span>
-            <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="condenseDaoFruit()">
+            <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="doCondense()">
               {{ DAO_SOURCE_PER_FRUIT }} 道源 → 道果 +1
             </button>
           </div>
@@ -578,13 +695,53 @@
       </template>
     </BaseModal>
 
+    <!-- 天道已变:旧纪道痕为何不能按老眼光看 -->
+    <!-- 首次凝道果:把「跨世保留的到底是什么」讲一次 -->
+    <BaseModal :open="fruitDialogOpen" title="道果" @close="fruitDialogOpen = false">
+      <div class="space-y-2.5 text-[12px] leading-relaxed">
+        <p class="text-ink-soft">{{ fruitDialog.intro }}</p>
+        <div>
+          <p class="font-kai text-[12px] tracking-wider text-ink">用途</p>
+          <p class="text-ink-faint">{{ fruitDialog.usages.join(' · ') }}</p>
+        </div>
+        <div>
+          <p class="font-kai text-[12px] tracking-wider text-ink">来处</p>
+          <p class="text-ink-faint">{{ fruitDialog.gains.join(' · ') }}</p>
+        </div>
+        <p class="border-l-2 border-violet-ink/60 pl-2 text-[11px] text-violet-ink">{{ fruitDialog.lifecycle }}</p>
+      </div>
+      <template #footer>
+        <button class="btn-seal w-full" @click="fruitDialogOpen = false">知道了</button>
+      </template>
+    </BaseModal>
+
+    <BaseModal :open="eraOpen" title="天道已变" @close="eraOpen = false">
+      <p v-if="eraMark" class="text-[11px] leading-relaxed text-ink-soft">
+        此战录于规则纪元 <span class="tabular text-cinnabar">{{ eraMark.ruleset }}</span>,今为
+        <span class="tabular">{{ RULESET_VERSION }}</span>。同界同契,当年的你依当年的规矩取胜 ——
+        如今再忆,规矩已换。
+      </p>
+      <p v-else class="text-[11px] leading-relaxed text-ink-soft">
+        纪元变迁史只记改变战斗规则本身的变更,内容增删不入此列。
+      </p>
+      <div class="mt-2.5 space-y-2">
+        <div v-for="c in eraChanges" :key="c.version" class="card-ink px-3 py-2">
+          <p class="font-kai text-[12px] tabular text-cinnabar">纪元 {{ c.version }}</p>
+          <p class="mt-0.5 text-[11px] leading-relaxed text-ink-soft">{{ c.note }}</p>
+        </div>
+        <p v-if="!eraChanges.length" class="card-ink px-3 py-3 text-center text-[11px] text-ink-ghost">
+          {{ eraMark ? '此后天道未再改过规矩 —— 当年的打法,今日依旧算数。' : '尚无变更记录。' }}
+        </p>
+      </div>
+    </BaseModal>
+
     <!-- Phase 30.9 S4:首次登真仙·终局导览 -->
     <BaseModal :open="tutorialOpen" title="登临真仙" :closable="false">
       <div class="space-y-2.5 text-[13px] leading-relaxed">
         <p class="font-kai text-ink">凡间所得,终有尽时。</p>
         <p class="text-ink-soft">
           玄铁、残页、灵石……到了此境,皆可献入
-          <a class="text-azure" @click="tutorialOpen = false">天道熔炉</a>
+          <a class="-my-2 inline-block py-2 text-azure" @click="tutorialOpen = false">天道熔炉</a>
           ,熔作道源。
         </p>
         <p class="text-ink-soft">
@@ -599,10 +756,9 @@
         </p>
         <p class="mt-2 text-[11px] text-ink-faint">
           一句话:
-          <span class="text-cinnabar">道源是此世拿来折腾的</span>
-          ,
-          <span class="text-violet-ink">道果是几世以后仍受益的财富</span>
-          。
+          <!-- 标点跟着前一句走:单独成行会在窄屏上被折成孤零零一个句号 -->
+          <span class="text-cinnabar">道源是此世拿来折腾的,</span>
+          <span class="text-violet-ink">道果是几世以后仍受益的财富。</span>
         </p>
       </div>
       <template #footer>
@@ -620,8 +776,21 @@
   import { useInventoryStore } from '@/stores/inventory'
   import { useEndgameStore } from '@/stores/endgame'
   import { SOUL_SLOTS } from '@/data/souls'
-  import { DAO_PATHS, CELESTIAL_WORLDS, TRIALS, FURNACE_RATES, DAO_SOURCE_PER_FRUIT, daoPathDef } from '@/data/endgame'
+  import { REALMS } from '@/data/realms'
+  import { tierMajor } from '@/core/formulas'
+  import {
+    CELESTIAL_WORLDS,
+    DAO_PATHS,
+    DAO_SOURCE_PER_FRUIT,
+    EXPEDITION_GUARDIAN_LAYER,
+    EXPEDITION_ROUTE_LAYERS,
+    FURNACE_RATES,
+    TRIALS,
+    daoPathDef,
+    type FurnaceRate
+  } from '@/data/endgame'
   import { PACTS, pactDef } from '@/data/pacts'
+  import { GATES, gateDef } from '@/data/qimen'
   import { MUTATORS, mutatorDef } from '@/data/mutators'
   import { legacyComparisons } from '@/core/compare'
   import { todayChallenge, undertakeDaily } from '@/core/dailyChallenge'
@@ -638,6 +807,7 @@
     REWRITE_ENTRY_COST
   } from '@/core/endgameService'
   import { currentDaoNarrative } from '@/core/identity'
+  import { RULESET_CHANGELOG, RULESET_VERSION, isStaleRuleset, rulesetChangesSince } from '@/data/ruleset'
   import {
     abandonExpedition,
     challengeGuardian,
@@ -646,6 +816,7 @@
     forecastExpedition,
     MUTATION_BASE_REWARD,
     MUTATION_ENTRY_COST,
+    MUTATION_FIGHTS,
     previewFight,
     rerollVoidWorld,
     resolveWorld,
@@ -655,6 +826,9 @@
     type StepOutcome
   } from '@/core/expedition'
   import { detectBuild } from '@/core/buildDetect'
+  import { foeOriginLines } from '@/core/battleAnalysis'
+  import type { CombatantSnap } from '@/types'
+  import { BUILD_PROFILES } from '@/core/buildSim'
   import { swordPurity } from '@/core/daoDepth'
   import {
     CHALLENGE_ENTRY_COST,
@@ -664,15 +838,19 @@
     type ChallengeDraft,
     type ChallengeVerdict
   } from '@/core/challenge'
-  import { formatGN, formatNum } from '@/utils/format'
+  import { cnNumber, formatGN, formatNum } from '@/utils/format'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import GauntletPanel from '@/components/celestial/GauntletPanel.vue'
+  import SecretRealmCard from '@/components/adventure/SecretRealmCard.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import {
     daoSourceDialog,
+    daoFruitDialog,
     fruitMarginalInfo,
+    markFruitTutorialSeen,
+    shouldShowFruitTutorial,
     shouldShowEndgameTutorial,
     markEndgameTutorialSeen,
     markResourceDialogSeen
@@ -680,6 +858,11 @@
 
   const resources = useResourcesStore()
   const player = usePlayerStore()
+
+  /** 某界的锚点层级落在哪一个境界 —— 界面上「此界宜 X 及以上」用它,不在模板里手写境界名 */
+  function anchorMajorOf(anchorTier: number): number {
+    return tierMajor(anchorTier)
+  }
   const inventory = useInventoryStore()
   const endgame = useEndgameStore()
 
@@ -693,6 +876,19 @@
   // Phase 30.9:道源说明弹窗 / 道果链路 / 首次终局教学
   const daoSourceDialogOpen = ref(false)
   const furnaceOpen = ref(false)
+  /** 熔炉全熔确认态(按资源键)。熔炉弹窗关闭即复位,不残留旧行 */
+  const furnaceConfirm = ref<FurnaceRate['resource'] | null>(null)
+  watch(furnaceOpen, open => {
+    if (!open) furnaceConfirm.value = null
+  })
+  /** 全熔一包可得道源(预览,与 furnaceConvert 同口径 floor(have/per)) */
+  function furnacePreview(rate: FurnaceRate): number {
+    return Math.floor(resources[rate.resource] / rate.per)
+  }
+  function doFurnace(rate: FurnaceRate): void {
+    furnaceConfirm.value = null
+    furnaceConvert(rate)
+  }
   const tutorialOpen = ref(false)
   const fruitInfo = computed(() => fruitMarginalInfo())
   // 首次进入天界(已解锁且未见过教学):自动弹终局导览
@@ -710,7 +906,35 @@
     daoSourceDialogOpen.value = true
     markResourceDialogSeen()
   }
+
+  // 规则纪元:旧纪道痕为何与今日不可同日而语(纪元变迁史同出一源,视图不手抄)
+  const eraOpen = ref(false)
+  const eraMark = ref<(typeof endgame.marks)[number] | null>(null)
+  const eraChanges = computed(() => (eraMark.value ? rulesetChangesSince(eraMark.value.ruleset) : RULESET_CHANGELOG))
+  function openEra(mark: (typeof endgame.marks)[number] | null): void {
+    eraMark.value = mark
+    eraOpen.value = true
+  }
+
   const currentDao = computed(() => (endgame.daoPath ? daoPathDef(endgame.daoPath) : undefined))
+
+  /**
+   * 凝道果 —— 首次成功时把「道果是什么」讲一次。
+   *
+   * shouldShowFruitTutorial / daoFruitDialog 写好了却无人调用:
+   * 玩家第一次凝出道果(整套轮回经济的核心货币)时,没有任何解释。
+   */
+  const fruitDialogOpen = ref(false)
+  const fruitDialog = computed(() => daoFruitDialog())
+  function doCondense(): void {
+    const before = player.reincarnation.daoFruit
+    condenseDaoFruit()
+    if (player.reincarnation.daoFruit === before) return
+    if (shouldShowFruitTutorial()) {
+      fruitDialogOpen.value = true
+      markFruitTutorialSeen()
+    }
+  }
 
   // ---- 页签:长卷分册(远征在途时落在远征册) ----
   type CelTab = 'dao' | 'exped' | 'trial' | 'marks'
@@ -725,8 +949,11 @@
   /** 页签行:远征在途时挂朱点提醒 */
   const celTabRows = computed(() => CEL_TABS.map(t => ({ ...t, dot: t.id === 'exped' && !!endgame.worldRun })))
 
-  /** 远征行程四站(layer 0~2 为三重择路,3 为界主) */
-  const RUN_STAGES = ['一重', '二重', '三重', '界主']
+  /** 远征行程点列:重层择路 + 界主(层号与 EXPEDITION_* 同源,不另外数) */
+  const RUN_STAGES = [
+    ...Array.from({ length: EXPEDITION_ROUTE_LAYERS }, (_, i) => `${cnNumber(i + 1)}重`),
+    '界主'
+  ]
 
   /** 剑道:当前剑意层数与纯度构成 */
   const swordInfo = computed(() => {
@@ -750,11 +977,24 @@
   // ---- 远征准备 ----
   const prepWorldId = ref<string | null>(null)
   const prepPact = ref<string | null>(null)
+  /** 奇门遁甲:所择之门(常道 = null) */
+  const prepGate = ref<string | null>(null)
+  const selectedGate = computed(() => (prepGate.value ? gateDef(prepGate.value) : undefined))
   const prepWorld = computed(() => (prepWorldId.value ? resolveWorld(prepWorldId.value) : null))
   const selectedPact = computed(() => (prepPact.value ? pactDef(prepPact.value) : undefined))
-  const prepPreview = computed(() => (prepWorld.value ? previewFight(prepWorld.value.foes[0]!) : null))
+  const prepPreview = computed(() =>
+    prepWorld.value
+      ? previewFight(prepWorld.value.foes[0]!, undefined, undefined, {
+          worldId: prepWorldId.value!,
+          pactId: prepPact.value,
+          gateId: prepGate.value
+        })
+      : null
+  )
   /** 天道赌约:整程预估(随契约选择实时重算) */
-  const prepForecast = computed(() => (prepWorldId.value ? forecastExpedition(prepWorldId.value, prepPact.value) : null))
+  const prepForecast = computed(() =>
+    prepWorldId.value ? forecastExpedition(prepWorldId.value, prepPact.value, prepGate.value) : null
+  )
 
   function openPrep(id: string): void {
     prepWorldId.value = id
@@ -777,15 +1017,35 @@
     title: string
     cleared: boolean
     markText: string
-    rows: { foeName: string; win: boolean; rounds: number; hpLeftPct: number }[]
+    /** 逐场摘要;`foe` 带着那一场敌人的加成来源(旧记录可能没有) */
+    rows: { foeName: string; win: boolean; rounds: number; hpLeftPct: number; foe?: CombatantSnap }[]
     reward: number
+    judgementLines?: string[]
   }
   const expedition = ref<ReportView | null>(null)
+
+  /**
+   * 开战报 —— 判定归因只此一处。
+   *
+   * 远征的文案带玩家自己的构筑厚度(见 core/gauntlet.celestialJudgementLines),
+   * 试炼/变数/忆战/重写/挑战没有那一份,就照敌人快照上的来源说明讲
+   * (worldFoeSnap 一路带下来)。两条路给的都是同一件事:这一战为什么变难。
+   */
+  function openReport(o: {
+    title: string
+    cleared: boolean
+    markText: string
+    rows: ReportView['rows']
+    reward: number
+    judgementLines?: string[]
+  }): void {
+    expedition.value = { ...o, judgementLines: o.judgementLines ?? foeOriginLines(o.rows[0]?.foe?.origin) }
+  }
 
   function handleOutcome(outcome: StepOutcome | null, title: string): void {
     if (!outcome || outcome.type === 'advance') return
     const rows = outcome.finalRows ?? [outcome.row]
-    expedition.value = {
+    openReport({
       title,
       cleared: outcome.type === 'cleared',
       markText:
@@ -795,24 +1055,39 @@
             ? `契约崩碎于第 ${rows.length} 战`
             : `止步第 ${rows.length} 战`,
       rows,
-      reward: outcome.rewardDaoSource
-    }
+      reward: outcome.rewardDaoSource,
+      judgementLines: outcome.judgementLines
+    })
   }
 
   function depart(): void {
     if (!prepWorld.value) return
     const title = prepWorld.value.name
-    const outcome = startWorldExpedition(prepWorld.value.id, prepPact.value)
+    const outcome = startWorldExpedition(prepWorld.value.id, prepPact.value, prepGate.value)
     if (outcome) prepWorldId.value = null
     handleOutcome(outcome, title)
   }
 
+  /**
+   * 战报标题要在动手**之前**取。
+   *
+   * 从前写成 `handleOutcome(chooseRouteNode(i), runWorld.value?.name ?? '远征')` ——
+   * 实参从左往右求值:先打完这一场,而「连败被逐」「功成出界」都会把 worldRun 清成 null,
+   * 于是轮到读 runWorld 时它已经是空的,标题就退成了光秃秃的「远征」。
+   * 实测(后期档真点一次择路):弹窗标题「远征」,而不是「赤炎天」。
+   */
+  function titleOfRun(): string {
+    return runWorld.value?.name ?? '远征'
+  }
+
   function pickNode(i: 0 | 1): void {
-    handleOutcome(chooseRouteNode(i), runWorld.value?.name ?? '远征')
+    const title = titleOfRun()
+    handleOutcome(chooseRouteNode(i), title)
   }
 
   function fightBoss(): void {
-    handleOutcome(challengeGuardian(), runWorld.value?.name ?? '远征')
+    const title = titleOfRun()
+    handleOutcome(challengeGuardian(), title)
   }
 
   function abandonRun(): void {
@@ -827,26 +1102,26 @@
     const result = challengeMutation(mutationDraw.value)
     if (!result) return
     mutationDraw.value = []
-    expedition.value = {
+    openReport({
       title: '天道变数',
       cleared: result.report.cleared,
       markText: result.report.cleared ? `六战全捷,共 ${result.report.totalRounds} 回合` : `止步第 ${result.report.fightsWon + 1} 战`,
       rows: result.report.rows,
       reward: result.rewardDaoSource
-    }
+    })
   }
 
   // ---- 试炼 ----
   function goTrial(id: string): void {
     const result = challengeTrial(id)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: result.rewardDaoSource
-      }
+      })
     }
   }
 
@@ -854,28 +1129,34 @@
   function goReplay(mark: (typeof endgame.marks)[number]): void {
     const result = replayMark(mark)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: 0
-      }
+      })
     }
   }
 
   // ---- 重写此痕:以今日之你,快过当年 ----
+  /** 重写确认态(按道痕索引):写入要花道源,需要看明白再点 */
+  const rewriteConfirm = ref<number | null>(null)
   function goRewrite(mark: (typeof endgame.marks)[number]): void {
     const result = rewriteMark(mark)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: 0
-      }
+      })
     }
+  }
+  function doRewrite(mark: (typeof endgame.marks)[number]): void {
+    rewriteConfirm.value = null
+    goRewrite(mark)
   }
 
   /** 道途行为叙事(本世道痕 ≥2 则方语) */
@@ -884,6 +1165,9 @@
   // ---- 天道挑战书 ----
   const draft = ref<ChallengeDraft>({ worldId: CELESTIAL_WORLDS[0]!.id, mutatorIds: [], pactId: null, name: '' })
   const challengeVerdict = ref<ChallengeVerdict | null>(null)
+  /** 已选变数(把效果正文亮到行内,移动端不靠 hover) */
+  const selectedMutators = computed(() => MUTATORS.filter(m => draft.value.mutatorIds.includes(m.id)))
+  const challengePact = computed(() => (draft.value.pactId ? pactDef(draft.value.pactId) ?? null : null))
 
   function setDraftWorld(id: string): void {
     draft.value = { ...draft.value, worldId: id }
@@ -914,13 +1198,13 @@
     const result = undertakeChallenge(draft.value, challengeVerdict.value)
     challengeVerdict.value = null
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: result.rewardDaoSource
-      }
+      })
     }
   }
 
@@ -941,13 +1225,13 @@
     if (!daily.value) return
     const result = undertakeDaily(daily.value)
     if (result) {
-      expedition.value = {
+      openReport({
         title: result.title,
         cleared: result.report.cleared,
         markText: result.markText,
         rows: result.report.rows,
         reward: result.rewardDaoSource
-      }
+      })
     }
   }
 

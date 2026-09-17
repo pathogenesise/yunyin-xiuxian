@@ -3,12 +3,12 @@
  */
 import type { ArtifactDef, CombatantSnap, CombatRules, DaoMark, DaoPathId } from '@/types'
 import { rng } from '@/utils/random'
-import { toNum } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { artifactDef } from '@/data/artifacts'
 import { pactDef } from '@/data/pacts'
 import { mutatorDef } from '@/data/mutators'
-import { RULESET_VERSION } from '@/data/ruleset'
+import { gateDef } from '@/data/qimen'
+import { RULESET_VERSION, isStaleRuleset } from '@/data/ruleset'
 import {
   CELESTIAL_WORLDS,
   celestialWorldDef,
@@ -21,21 +21,28 @@ import {
   trialDef,
   type FurnaceRate
 } from '@/data/endgame'
-import { MAX_MAJOR } from '@/data/realms'
+import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
+import { maxTierForMajor } from '@/data/regions'
 import { stoneByTier } from './formulas'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
 import { SWORD_PER_WIN, SLAUGHTER_PER_WIN } from './daoDepth'
 import { recordMilestone, trackClearRecords } from './identity'
-import { celestialDepthScale, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import { celestialJudgement, mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useEndgameStore } from '@/stores/endgame'
 import { useUiStore } from '@/stores/ui'
 
-/** 真仙方可踏足天界 */
+/**
+ * 真仙(仙界门槛)方可踏足天界。
+ *
+ * 旧设计里「满级 = 真仙 = 天界」,故门槛写作 major >= MAX_MAJOR;
+ * 扩界后真仙之上还有玄仙至混沌道祖,若仍借 MAX_MAJOR,终局会随加境漂移。
+ * 现改锚到具名的飞升门槛 WORLD_BREAK_MAJOR(真仙),语义与手感都不变。
+ */
 export function endgameUnlocked(): boolean {
-  return usePlayerStore().major >= MAX_MAJOR
+  return usePlayerStore().major >= WORLD_BREAK_MAJOR
 }
 
 /** 当前道途的全局战斗规则(历练/离线同样生效) */
@@ -78,8 +85,18 @@ export function furnaceConvert(rate: FurnaceRate): number {
   return daoSource
 }
 
+/**
+ * 灵石熔铸价 —— 按**玩家当前层级**折算,不是冻结在真仙那一层。
+ *
+ * 灵石收入随区域层级按 1.9^层级 涨(与强化、重铸、建筑同一条经济),
+ * 而熔铸价从前写死 `stoneByTier(20, …)`:到混沌海(层级 32),一战的灵石
+ * 就能换出一枚以上道果 —— 道果价相对收入塌了 1.9^12 ≈ 293 倍(ISS-214)。
+ * 价随层级走之后,「熔一枚道源要多少灵石」相对玩家的收入恒定,
+ * 道果在整条界外长尾上是同一个价。口径与强化/重铸一致:花的是**你这一层**的钱。
+ */
 export function furnaceStoneCost(): ReturnType<typeof stoneByTier> {
-  return stoneByTier(20, FURNACE_STONE_TIER_AMOUNT)
+  const player = usePlayerStore()
+  return stoneByTier(maxTierForMajor(player.major), FURNACE_STONE_TIER_AMOUNT)
 }
 
 export function furnaceConvertStone(): boolean {
@@ -196,10 +213,11 @@ export function snapFromReplay(name: string, r: NonNullable<DaoMark['replay']>):
 }
 
 /** 道痕的环境规则(道途按当年 + 目标规则 + 变数 + 契约):忆战与重写共用 */
-function markRules(
+/** 道痕当年的规则(道途 + 界/试炼 + 变数 + 契约 + 所择之门)—— 忆战/重写按此重打 */
+export function markRules(
   mark: DaoMark,
-  world: ReturnType<typeof celestialWorldDef>,
-  trial: ReturnType<typeof trialDef>
+  world?: ReturnType<typeof celestialWorldDef>,
+  trial?: ReturnType<typeof trialDef>
 ): CombatRules | undefined {
   const daoRules = mark.daoPathId ? daoPathDef(mark.daoPathId)?.rules : undefined
   let rules = mergeRules(daoRules, (world ?? trial)?.rules)
@@ -209,6 +227,8 @@ function markRules(
   }
   const pactId = mark.replay?.pactId
   if (pactId) rules = mergeRules(rules, pactDef(pactId)?.rules)
+  const gateId = mark.context?.gateId
+  if (gateId) rules = mergeRules(rules, gateDef(gateId)?.rules)
   return rules
 }
 
@@ -235,20 +255,20 @@ export function replayMark(mark: DaoMark): ExpeditionResult | null {
   const snap = snapFromReplay('当年的你', r)
   const stats = { attack: r.attack, defense: r.defense, maxHp: r.maxHp }
   // 词条对称按当年的构筑深度,与三维同口径——忆战要还原的是当年那一局
-  const depth = celestialDepthScale(snap.mods)
+  const judgement = celestialJudgement(snap.mods, MAX_MAJOR, (world ?? trial)!.anchorTier)
   const foes = []
   if (world) {
-    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, stats, 1, depth))
-    foes.push(worldFoeSnap(world.guardian, stats, 1, depth))
+    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, stats, 1, judgement))
+    foes.push(worldFoeSnap(world.guardian, stats, 1, judgement))
   } else if (trial) {
     for (let i = 0; i < trial.fights; i += 1) {
-      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, stats, Math.pow(trial.escalation, i), depth))
+      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, stats, Math.pow(trial.escalation, i), judgement))
     }
   }
   const target = (world ?? trial)!
   const rules = markRules(mark, world, trial)
   const report = runGauntlet(snap, foes, rules, 'healBetweenPct' in target ? target.healBetweenPct : 0.5, rng)
-  const era = mark.ruleset && mark.ruleset !== RULESET_VERSION ? `(此战录于规则纪元 ${mark.ruleset},今为 ${RULESET_VERSION},天道已变)` : ''
+  const era = isStaleRuleset(mark.ruleset) ? `(此战录于规则纪元 ${mark.ruleset},今为 ${RULESET_VERSION},天道已变)` : ''
   ui.toast(report.cleared ? '忆战功成——当年的你,如今依旧能赢' : '忆战未竟,当年之勇亦有时运', 'info')
   return {
     title: `忆战 · ${mark.targetName}`,
@@ -280,14 +300,15 @@ export function rewriteMark(mark: DaoMark): ExpeditionResult | null {
   const player = usePlayerStore()
   const stats = player.celestialStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const depth = celestialDepthScale(stats.mods)
+  if (!trial) return null
+  const judgement = celestialJudgement(stats.mods, player.major, trial.anchorTier)
   const foes = []
   if (world) {
-    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, depth))
-    foes.push(worldFoeSnap(world.guardian, ref, 1, depth))
+    for (let i = 0; i < world.fights - 1; i += 1) foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, judgement))
+    foes.push(worldFoeSnap(world.guardian, ref, 1, judgement))
   } else if (trial) {
     for (let i = 0; i < trial.fights; i += 1)
-      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), depth))
+      foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), judgement))
   }
   const target = (world ?? trial)!
   // 环境按当年(道途取今世——重写是今日之你应当年之局)
@@ -319,50 +340,6 @@ export function rewriteMark(mark: DaoMark): ExpeditionResult | null {
   }
 }
 
-/** 远征特殊世界(旧线性模式,Phase 21 起由 core/expedition.ts 的路线远征取代;保留给模拟器基线) */
-export function challengeWorld(worldId: string): ExpeditionResult | null {
-  const endgame = useEndgameStore()
-  const player = usePlayerStore()
-  const ui = useUiStore()
-  const world = celestialWorldDef(worldId)
-  if (!world || !endgameUnlocked()) return null
-  if (!endgame.daoPath) {
-    ui.toast('先择道途,方可踏天', 'warn')
-    return null
-  }
-  if (!endgame.spendDaoSource(world.entryCost)) {
-    ui.toast(`道源不足 ${world.entryCost}(天道熔炉可献祭闲置资财)`, 'warn')
-    return null
-  }
-  const stats = player.celestialStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const depth = celestialDepthScale(stats.mods)
-  const foes = []
-  for (let i = 0; i < world.fights - 1; i += 1) {
-    foes.push(worldFoeSnap(world.foes[i % world.foes.length]!, ref, 1, depth))
-  }
-  foes.push(worldFoeSnap(world.guardian, ref, 1, depth))
-  const rules = mergeRules(currentDaoRules(), world.rules)
-  const report = runGauntlet(buildPlayerSnap(true), foes, rules, world.healBetweenPct, rng)
-
-  let reward = 0
-  if (report.cleared) {
-    reward = world.rewardDaoSource
-    endgame.addDaoSource(reward)
-    endgame.recordWorldClear(world.id)
-    ui.toast(`你踏破${world.name}!道源 +${reward}`, 'rare')
-  } else {
-    ui.toast(`${world.name}将你逐出天门(第 ${report.fightsWon + 1} 战失利)`, 'warn')
-  }
-  recordMark(world.id, world.name, report.cleared, report.totalRounds)
-  return {
-    title: world.name,
-    report,
-    rewardDaoSource: reward,
-    markText: report.cleared ? `${world.fights} 战全捷,共 ${report.totalRounds} 回合` : `止步第 ${report.fightsWon + 1} 战`
-  }
-}
-
 /** 天道试炼(极限 Build 挑战,记录最少总回合;剑意/杀意逐胜叠层同样生效) */
 export function challengeTrial(trialId: string): ExpeditionResult | null {
   const endgame = useEndgameStore()
@@ -380,10 +357,11 @@ export function challengeTrial(trialId: string): ExpeditionResult | null {
   }
   const stats = player.celestialStats
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const depth = celestialDepthScale(stats.mods)
+  if (!trial) return null
+  const judgement = celestialJudgement(stats.mods, player.major, trial.anchorTier)
   const foes = []
   for (let i = 0; i < trial.fights; i += 1) {
-    foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), depth))
+    foes.push(worldFoeSnap(TRIAL_FOES[i % TRIAL_FOES.length]!, ref, Math.pow(trial.escalation, i), judgement))
   }
   const rules = mergeRules(currentDaoRules(), trial.rules)
   const perWin = endgame.daoPath === 'sword' ? SWORD_PER_WIN : endgame.daoPath === 'slaughter' ? SLAUGHTER_PER_WIN : undefined
@@ -415,4 +393,3 @@ export function challengeTrial(trialId: string): ExpeditionResult | null {
 }
 
 export { CELESTIAL_WORLDS, FURNACE_RATES, DAO_SOURCE_PER_FRUIT }
-export const furnaceStoneTierAmountNum = (): number => toNum(furnaceStoneCost())

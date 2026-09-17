@@ -7,6 +7,7 @@ import { gongfaDef } from '@/data/gongfa'
 import { buffDef } from '@/data/buffs'
 import { gongfaBranchDef } from '@/data/gongfaBranches'
 import { mergeMods } from '@/core/statsCalc'
+import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
 
 /** 功法在某等级下的属性 */
 export function gongfaModsAt(id: string, level: number): StatMods {
@@ -34,6 +35,22 @@ export const useCultivationStore = defineStore(
     const buffs = ref<BuffInstance[]>([])
     /** Phase 31 A3:功法悟道分支(gongfaId → branchId,满级后择一) */
     const gongfaBranch = ref<Record<string, string>>({})
+
+    /**
+     * 存档修复:功法表/分支表被写坏时,属性汇总会在渲染期 Object.entries(null) 抛错。
+     * 形状不对就修回可用值 —— 见 utils/saveShape 与 storeResilience.spec。
+     */
+    function sanitize(): void {
+      const fixedLearned: Record<string, number> = {}
+      for (const [id, lv] of Object.entries(asNumberRecord(learned.value, 0))) {
+        if (lv > 0) fixedLearned[id] = Math.floor(lv)
+      }
+      learned.value = fixedLearned
+      if (typeof mainGongfa.value !== 'string' || !fixedLearned[mainGongfa.value]) mainGongfa.value = null
+      subGongfa.value = asStringArray(subGongfa.value).filter(id => fixedLearned[id] !== undefined)
+      buffs.value = asArray<BuffInstance>(buffs.value, [], b => !!b && typeof (b as BuffInstance).defId === 'string')
+      gongfaBranch.value = asRecord<string>(gongfaBranch.value)
+    }
 
     const gongfaMods = computed<StatMods>(() => {
       const sources: StatMods[] = []
@@ -96,15 +113,26 @@ export const useCultivationStore = defineStore(
       return true
     }
 
+    /**
+     * 施加状态 —— 同一状态重复施加时**时长叠加**,不是取较长者刷新。
+     *
+     * 旧实现 Math.max(旧 endsAt, now + dur) 等价于「刷新」:buff 还剩 20 分钟时再服同一味丹,
+     * 那 20 分钟被清零重算,药力白丢。改为把新时长加到已有剩余时长上(尚在生效的实例以
+     * 旧 endsAt 为基准),「药力化开」这句承诺的时长才足额兑现。
+     *
+     * 已过期(理论上 pruneBuffs 已清,但离线/坏档可能残留)的实例以 now 为基准,
+     * 不把历史负剩余时间叠进来。
+     */
     function addBuff(defId: string, now: number): void {
       const def = buffDef(defId)
       if (!def) return
-      const endsAt = now + def.durationSec * 1000
+      const add = def.durationSec * 1000
       const existing = buffs.value.find(b => b.defId === defId)
       if (existing) {
-        buffs.value = buffs.value.map(b => (b.defId === defId ? { ...b, endsAt: Math.max(b.endsAt, endsAt) } : b))
+        const endsAt = Math.max(existing.endsAt, now) + add
+        buffs.value = buffs.value.map(b => (b.defId === defId ? { ...b, endsAt } : b))
       } else {
-        buffs.value = [...buffs.value, { defId, endsAt }]
+        buffs.value = [...buffs.value, { defId, endsAt: now + add }]
       }
     }
 
@@ -153,7 +181,8 @@ export const useCultivationStore = defineStore(
       hasBuff,
       pruneBuffs,
       clearNegativeBuffs,
-      chooseBranch
+      chooseBranch,
+      sanitize
     }
   },
   { persist: persistConfig('cultivation') }

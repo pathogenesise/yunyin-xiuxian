@@ -8,8 +8,13 @@
  * 量化出来,再谈砍什么。
  *
  * 核心原则(拿来当判据用):**保留「我是谁」,重置「我现在拥有多少」。**
- *   遗产(应继承):知识、丹方、认知、履历、道果、成就
- *   状态(应重建):境界、肉身、资源、装备、洞府、持有丹药
+ *   遗产(应继承)= 记忆 / 精神 / 灵魂:认知与丹方、履历与成就、道果与天赋与宿慧、
+ *     称号(荣誉)、师承(道统)、道源与道痕、世界记忆(镇压资格/宿敌/机缘选择)
+ *   状态(应重建)= 皮囊 / 外物:境界与修为、灵石与灵材、装备与法宝、丹药、
+ *     灵兽、洞府建筑、灵脉投资、区域进度、本世之界、进行中的秘境/事件、连胜
+ *
+ * 本清单要求**最小完备**:凡有跨世去留的功能都必须在此登记一行(见 samsaraAudit.spec
+ * 的「覆盖度」一条),既不留半截状态,也不漏掉一个子系统。
  *
  * 关键读数不是「出生战力继承了多少」——境界从真仙掉回炼气,出生战力必然极低。
  * 真正决定轮回有无意义的是 **追平时间**:第 N 世重修回上一世终点要花多久。
@@ -25,10 +30,9 @@
  *   作废:任何「第 N 世需要 X 小时」的读数
  * 引用本模块出绝对时长的结论前,先看 saveCalibration.spec.ts
  */
-import { DAO_FRUIT_COMBAT_BONUS, TALENT_DRAW_DIV, VEIN_MAIN_CAPACITY, VEIN_TOTAL_CAPACITY } from '@/data/constants'
-import { VEINS } from '@/data/veins'
+import { DAO_FRUIT_COMBAT_BONUS, TALENT_DRAW_DIV } from '@/data/constants'
 import { TALENTS } from '@/data/talents'
-import { MAX_MAJOR } from '@/data/realms'
+import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 import type { StatMods } from '@/types'
 import { daoFruitGain } from './formulas'
 import { effectiveDaoFruit } from './statsCalc'
@@ -113,17 +117,17 @@ export const HERITAGE: HeritageRow[] = [
   {
     id: 'buildings',
     name: '洞府建筑',
-    mode: 'partial',
-    detail: '每座建筑等级折半(向下取整)',
+    mode: 'reset',
+    detail: 'dongfu.resetForRebirth() 将每座建筑等级归零 —— 屋舍是外物,随皮囊散去',
     kind: 'state',
     power: 'mid',
-    compressesGrowth: true
+    compressesGrowth: false
   },
   {
     id: 'gongfa',
     name: '功法',
     mode: 'partial',
-    detail: 'carryGongfa 层数折半;顶阶宿慧可留一门不折',
+    detail: '记得哪些功法(门类)是记忆,留下;练到几层是修为进度,归零回一层;顶阶宿慧可留一门满层',
     kind: 'state',
     power: 'high',
     compressesGrowth: true
@@ -132,7 +136,7 @@ export const HERITAGE: HeritageRow[] = [
     id: 'daoFruit',
     name: '道果',
     mode: 'full',
-    detail: `每世凝 ${daoFruitGain(MAX_MAJOR, 9)} 枚(修满真仙口径),永不清零`,
+    detail: `每世凝 ${daoFruitGain(REBIRTH_REFERENCE_MAJOR, 9)} 枚(修满人间界并飞升真仙口径),永不清零`,
     kind: 'legacy',
     power: 'high',
     compressesGrowth: true
@@ -167,11 +171,11 @@ export const HERITAGE: HeritageRow[] = [
   {
     id: 'pet',
     name: '灵兽',
-    mode: 'full',
-    detail: 'rebirth() 未重置 petId,灵兽 mods 直接带入下一世',
+    mode: 'reset',
+    detail: 'rebirth() 调 setPet(null) —— 灵兽是相伴的外物,下一世要与新的灵兽相识',
     kind: 'state',
     power: 'mid',
-    compressesGrowth: true
+    compressesGrowth: false
   },
   {
     id: 'mentor',
@@ -185,11 +189,11 @@ export const HERITAGE: HeritageRow[] = [
   {
     id: 'veins',
     name: '灵脉投资',
-    mode: 'full',
-    detail: `veinPoints/veinMain 完全不重置;满投 ${VEIN_TOTAL_CAPACITY} 点后封顶,主脉修速 +${(VEIN_TOTAL_CAPACITY * 0.4).toFixed(0)}%`,
+    mode: 'reset',
+    detail: 'dongfu.resetForRebirth() 清空 veinPoints/veinMain —— 灵脉投资是外物,每世从零重投(旧稿曾满投封顶后跨世保留)',
     kind: 'state',
     power: 'mid',
-    compressesGrowth: true
+    compressesGrowth: false
   },
   {
     id: 'lore',
@@ -226,13 +230,174 @@ export const HERITAGE: HeritageRow[] = [
     kind: 'state',
     power: 'none',
     compressesGrowth: false
+  },
+  // ---- 补全:此前未被清单收录、却同样有跨世去留的功能 ----
+  {
+    id: 'secretRealm',
+    name: '短期秘境',
+    mode: 'reset',
+    detail: 'player.rebirth() 置 secretRealm=null —— 进行中的一次性内容随本世结束',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'regionEvent',
+    name: '区域动态事件',
+    mode: 'reset',
+    detail: 'player.rebirth() 置 regionEvent=null(临时异象不该跨世)',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'mortalWorld',
+    name: '本世之界',
+    mode: 'reset',
+    detail: 'rerollMortalWorld() 每世换一方天地(与上一世去重)',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'fortuneMemory',
+    name: '机缘与际遇记忆',
+    mode: 'full',
+    detail: 'fortuneChoices / eventChains / eventMemories 不清 —— 「世界记得你的选择」',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'bonds',
+    name: '道友',
+    mode: 'partial',
+    detail: '关系归档入履历(archiveBond),人不留下;留的是曾同行这件事',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'trial',
+    name: '逆旅契',
+    mode: 'reset',
+    detail: '契随皮囊散去,下一世要签得重新花道果(setLifeTrial(null))',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'streak',
+    name: '连胜与当日巡游',
+    mode: 'reset',
+    detail: 'winStreak / lastCaveEventDay 归零 —— 属「这一世」的当下进度',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'linggen',
+    name: '灵根',
+    mode: 'reset',
+    detail: 'rebirth() 重掷灵根;资质地板随宿慧上浮(aptitudeFloorNow)',
+    kind: 'state',
+    power: 'high',
+    compressesGrowth: false
+  },
+  // ---- 补全(Phase 34.8):本轮新加的三处状态与一处身份,此前清单里没有 ----
+  {
+    id: 'divination',
+    name: '问卦所得之卦',
+    mode: 'reset',
+    detail: 'rebirth() 置 divination=null —— 卦是「此一时的时机」,不是「我是谁」',
+    kind: 'state',
+    power: 'low',
+    compressesGrowth: false
+  },
+  {
+    id: 'breakthroughPrep',
+    name: '突破准备(静坐/聚气丹)',
+    mode: 'reset',
+    detail: 'rebirth() 置 breakthroughPrep=null —— 下一世要重新备;未用完的一次性加成也不跨世',
+    kind: 'state',
+    power: 'low',
+    compressesGrowth: false
+  },
+  {
+    id: 'enlightenmentAt',
+    name: '悟道频次(顿悟冷却)',
+    mode: 'full',
+    detail: 'enlightenmentAt 不随转世清零 —— 它是频次闸不是本世进度;清了就能靠转世刷顿悟',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'name',
+    name: '姓名',
+    mode: 'full',
+    detail: 'rebirth() 不改 name —— 名与道号随神魂不灭',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'reincarnationCount',
+    name: '转世次数',
+    mode: 'full',
+    detail: 'reincarnation.count 只增不减 —— 每世道果与天赋的发放都按它计',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: true
+  },
+  {
+    id: 'lives',
+    name: '历世履历',
+    mode: 'full',
+    detail: 'confirmReincarnation 里 recordLife 逐世归档,只增不改(修仙录据此成书)',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
+    id: 'vow',
+    name: '本世命题',
+    mode: 'reset',
+    detail: 'beginLife() 每世重立;上一世的题只入履历与宿慧,不再参与本世结算',
+    kind: 'state',
+    power: 'none',
+    compressesGrowth: false
   }
 ]
 
 // ---------------- 跨世永久量的累积 ----------------
 
-/** 修满真仙再转世时,每世凝得的道果 */
-export const FRUIT_PER_LIFE = daoFruitGain(MAX_MAJOR, 9)
+export interface HeritageGroup {
+  mode: HeritageMode
+  /** 界面用语:这一组是「带走」还是「放下」 */
+  title: string
+  rows: HeritageRow[]
+}
+
+/**
+ * 按去留分组的继承清单 —— 界面(轮回结算)与审计共用同一份,
+ * 保证玩家看到的「带走/放下」与代码实际交割不会分叉。
+ */
+export function heritageGroups(): HeritageGroup[] {
+  const titles: Record<HeritageMode, string> = {
+    full: '随神魂带走',
+    partial: '折损带走',
+    reset: '随皮囊放下'
+  }
+  return (['full', 'partial', 'reset'] as const).map(mode => ({
+    mode,
+    title: titles[mode],
+    rows: HERITAGE.filter(r => r.mode === mode)
+  }))
+}
+
+/** 修满人间界并飞升真仙再转世时,每世凝得的道果 */
+export const FRUIT_PER_LIFE = daoFruitGain(REBIRTH_REFERENCE_MAJOR, 9)
 
 /** 走完 n 世后累积的道果总数 */
 export function daoFruitAfterLives(lives: number): number {
@@ -241,7 +406,7 @@ export function daoFruitAfterLives(lives: number): number {
 
 /** 走完 n 世后持有的天赋数(每世 1 + major/DIV,封顶于天赋总数) */
 export function talentsAfterLives(lives: number): number {
-  const perLife = 1 + Math.floor(MAX_MAJOR / TALENT_DRAW_DIV)
+  const perLife = 1 + Math.floor(REBIRTH_REFERENCE_MAJOR / TALENT_DRAW_DIV)
   return Math.min(TALENTS.length, Math.max(0, lives) * perLife)
 }
 
@@ -290,21 +455,11 @@ export interface PaceRow {
 }
 
 /**
- * 灵脉的跨世修速加成。
- * veinPoints 完全不重置,故第二世起就带着上一世投满的灵脉出生。
- * 与道果不同,它满投 VEIN_TOTAL_CAPACITY 点即封顶——是有界项,
- * 但这个界本身不低(全投主脉 +40% 修速),且第二世就能吃满
+ * 第 n 世的修行假设:灵根取典型值,天赋按已积累量折算。
+ * 灵脉不再计入 —— 地脉是外物,每世从零重投(见 HERITAGE 的 veins 一行)。
  */
-export function veinCultBonusAt(lives: number): number {
-  if (lives <= 0) return 0
-  const perPoint = VEINS.find(v => v.id === 'gather')?.perPoint.cultivationSpeed ?? 0
-  // 保守口径:玩家把主脉投满(VEIN_MAIN_CAPACITY),其余投别脉不计修速
-  return perPoint * VEIN_MAIN_CAPACITY
-}
-
-/** 第 n 世的修行假设:灵根取典型值,天赋与灵脉按已积累量折算 */
 function assumptionsAt(lives: number): SimAssumptions {
-  return { linggenMult: 1.6, talentCultBonus: talentCultBonusAt(lives - 1) + veinCultBonusAt(lives - 1) }
+  return { linggenMult: 1.6, talentCultBonus: talentCultBonusAt(lives - 1) }
 }
 
 /**
@@ -312,7 +467,7 @@ function assumptionsAt(lives: number): SimAssumptions {
  * 道果与天赋都按「上一世结束时」的存量计——这一世出生就带着它们
  */
 export function hoursToPeakAt(lives: number): number {
-  return hoursToReach(MAX_MAJOR, daoFruitAfterLives(lives - 1), assumptionsAt(lives))
+  return hoursToReach(REBIRTH_REFERENCE_MAJOR, daoFruitAfterLives(lives - 1), assumptionsAt(lives))
 }
 
 export function pacePerLife(lifeList: number[]): PaceRow[] {

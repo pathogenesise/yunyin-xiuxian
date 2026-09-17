@@ -6,7 +6,13 @@ import type { VeinId } from '@/data/veins'
 import { persistConfig } from '@/utils/storage'
 import { BUILDINGS, buildingDef } from '@/data/buildings'
 import { INSIGHT_DISCOUNT_PER_POINT, VEINS } from '@/data/veins'
-import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS } from '@/data/constants'
+import {
+  FIELD_HERB_PER_HOUR,
+  FIELD_ORE_PER_HOUR,
+  FORGE_LEVEL_PER_CAP,
+  LIBRARY_WUDAO_PER_HOUR,
+  OFFLINE_CAP_HOURS
+} from '@/data/constants'
 import { mergeMods } from '@/core/statsCalc'
 import { useResourcesStore } from './resources'
 
@@ -68,7 +74,8 @@ export const useDongfuStore = defineStore(
     }
     const subGongfaSlots = computed(() => 1 + Math.floor(levels.value.library / 3))
     const alchemyLevel = computed(() => levels.value.alchemy)
-    const forgeCapBonus = computed(() => Math.floor(levels.value.forge / 2))
+    // 炼器台每 FORGE_LEVEL_PER_CAP 级提高强化上限 1(此前把 2 写死在业务代码里)
+    const forgeCapBonus = computed(() => Math.floor(levels.value.forge / FORGE_LEVEL_PER_CAP))
     const qiCapMult = computed(() => 1 + levels.value.array * 0.08)
     const beastMult = computed(() => 1 + levels.value.beast * 0.1)
 
@@ -108,6 +115,19 @@ export const useDongfuStore = defineStore(
 
     function setVeinMain(id: VeinId): void {
       veinMain.value = id
+    }
+
+    /**
+     * 转世:洞府与地脉都是「外物」,随皮囊一同散去 —— 建筑归零、灵脉清零。
+     * 留下的只有认知与宿慧(见 core/reincarnation 的继承清单)。
+     */
+    function resetForRebirth(): void {
+      const nextLevels = { ...levels.value }
+      for (const def of BUILDINGS) nextLevels[def.id] = 0
+      levels.value = nextLevels
+      frac.value = { herb: 0, ore: 0, wudao: 0 }
+      veinMain.value = null
+      veinPoints.value = { gather: 0, craft: 0, alchemy: 0, insight: 0 }
     }
 
     /** 建筑产出(灵田/藏经阁),按秒推进 */
@@ -151,6 +171,7 @@ export const useDongfuStore = defineStore(
       setLevel,
       addVeinPoint,
       setVeinMain,
+      resetForRebirth,
       produce,
       sanitize
     }

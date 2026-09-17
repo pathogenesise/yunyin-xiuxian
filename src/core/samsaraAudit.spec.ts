@@ -9,11 +9,15 @@
  * 遗产(知识、认知、履历、道果)该继承;状态(境界、肉身、资源、装备)该重建。
  */
 import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { usePlayerStore } from '@/stores/player'
 import {
-  veinCultBonusAt,
   daoFruitAfterLives,
   FRUIT_PER_LIFE,
   HERITAGE,
+  heritageGroups,
   hoursToPeakAt,
   pacePerLife,
   permanentPowerMultAt,
@@ -37,18 +41,21 @@ describe('轮回审计 · 继承清单(逐条对照代码核实)', () => {
     for (const id of ['equipment', 'pills', 'artifacts', 'materials', 'regions', 'realm']) {
       expect(byId(id).mode).toBe('reset')
     }
-    // 洞府与功法是折半,不是原样带走
-    expect(byId('buildings').mode).toBe('partial')
+    // 洞府是外物,整座归零;功法只留门类、层数归零(仍属"半留")
+    expect(byId('buildings').mode).toBe('reset')
     expect(byId('gongfa').mode).toBe('partial')
   })
 
-  it('仍有「状态」类资产被完整继承——违反「重置我拥有多少」', () => {
+  it('外物已全部归零;仍完整继承的状态类只剩荣誉/道统/世界记忆', () => {
     const s = summarize()
     const names = s.stateButFull.map(r => r.name)
     console.log(`\n属于状态却完整继承:${names.join('、')}`)
-    // 称号、灵兽、师承的 mods 直接带入下一世;rebirth() 未重置这三项
+    // 灵兽/洞府/灵脉已改为归零(外物随皮囊散去)
+    expect(names).not.toContain('灵兽')
+    expect(names).not.toContain('洞府建筑')
+    expect(names).not.toContain('灵脉投资')
+    // 留下的三项各有理由:荣誉(称号)、道统(师承)、世界记忆(镇压与宿敌)
     expect(names).toContain('称号')
-    expect(names).toContain('灵兽')
     expect(names).toContain('师承')
   })
 })
@@ -128,10 +135,12 @@ describe('轮回审计 · 与数值膨胀共根', () => {
     const s = summarize()
     const names = s.compressing.map(r => r.name)
     console.log(`\n压缩成长空间的 ${names.length} 项:${names.join('、')}`)
-    // 道果、天赋、功法、洞府是主要压缩源
-    for (const n of ['道果', '先天之姿', '功法', '洞府建筑']) {
+    // 道果、天赋、功法(门类保留)是主要压缩源;洞府已归零,不再压缩
+    for (const n of ['道果', '先天之姿', '功法']) {
       expect(names).toContain(n)
     }
+    expect(names).not.toContain('洞府建筑')
+    expect(names).not.toContain('灵脉投资')
   })
 
   it('认知与成就不压缩成长空间——它们只让人「知道得更多」', () => {
@@ -145,26 +154,179 @@ describe('轮回审计 · 与数值膨胀共根', () => {
 })
 
 describe('轮回审计 · 灵脉投资', () => {
-  it('灵脉完全不重置,第二世起就带着投满的地脉出生', () => {
+  it('灵脉是外物:转世即清零,不再带着投满的地脉出生', () => {
     const row = HERITAGE.find(r => r.id === 'veins')!
-    expect(row.mode).toBe('full')
-    // 属于「状态」类(我拥有多少)却完整继承,与称号/灵兽/师承同一性质
+    expect(row.mode).toBe('reset')
     expect(row.kind).toBe('state')
-    expect(row.compressesGrowth).toBe(true)
+    expect(row.compressesGrowth).toBe(false)
     console.log(`\n灵脉:${row.detail}`)
   })
 
-  it('灵脉是有界项:满投即封顶,不同于道果的无界累积', () => {
-    // 第 2 世就能吃满,之后不再增长
-    expect(veinCultBonusAt(2)).toBe(veinCultBonusAt(100))
-    expect(veinCultBonusAt(0)).toBe(0)
-    console.log(`\n灵脉修速加成 +${(veinCultBonusAt(2) * 100).toFixed(0)}%(第2世即封顶,与第100世相同)`)
-  })
-
-  it('灵脉与天赋同为有界项,道果是唯一无界的那个', () => {
-    const bounded = [veinCultBonusAt(10) === veinCultBonusAt(1000), talentsAfterLives(10) === talentsAfterLives(1000)]
-    expect(bounded).toEqual([true, true])
+  it('跨世累积只剩有界的天赋与无界的道果两项', () => {
+    // 灵脉已归零,不再是跨世累积项;天赋有界(集齐即止),道果无界
+    expect(talentsAfterLives(10)).toBe(talentsAfterLives(1000))
     // 道果不然
     expect(daoFruitAfterLives(1000)).toBeGreaterThan(daoFruitAfterLives(10) * 90)
+  })
+})
+
+/**
+ * 继承清单的「最小完备」:凡有跨世去留的功能都要在 HERITAGE 里登记一行。
+ * 这份 id 清单随功能增长 —— 新加一个会跨世的系统(或改掉一项的去留)时,
+ * 必须同时回答「它跨世留不留」,而不是让它在代码里悄悄决定。
+ */
+describe('轮回审计 · 继承清单最小完备', () => {
+  const REQUIRED = [
+    'realm',
+    'equipment',
+    'pills',
+    'artifacts',
+    'materials',
+    'regions',
+    'buildings',
+    'gongfa',
+    'daoFruit',
+    'talents',
+    'insight',
+    'title',
+    'pet',
+    'mentor',
+    'veins',
+    'lore',
+    'quests',
+    'endgame',
+    'suppress',
+    'secretRealm',
+    'regionEvent',
+    'mortalWorld',
+    'fortuneMemory',
+    'bonds',
+    'trial',
+    'streak',
+    'linggen'
+  ]
+
+  it('每一个跨世系统都在清单里有一行', () => {
+    const ids = new Set(HERITAGE.map(r => r.id))
+    const missing = REQUIRED.filter(id => !ids.has(id))
+    expect(missing, `这些系统未登记跨世去留:${missing.join('、')}`).toEqual([])
+  })
+
+  /**
+   * 上一条靠**手写清单**,所以新加的状态字段会悄悄漏过(divination / breakthroughPrep /
+   * enlightenmentAt 就是这样漏了整整一轮)。这条改成从存档实际字段倒推:
+   * player.$state 的每一个键,都必须能指到清单里的某一行(或登记为无需登记的例外)。
+   */
+  const STATE_KEY_ROWS: Record<string, string[]> = {
+    age: ['realm'],
+    bond: ['bonds'],
+    breakthroughPrep: ['breakthroughPrep'],
+    dead: ['realm'],
+    divination: ['divination'],
+    enlightenmentAt: ['enlightenmentAt'],
+    eventChains: ['fortuneMemory'],
+    exp: ['realm'],
+    fortuneChoices: ['fortuneMemory'],
+    lastCaveEventDay: ['streak'],
+    lifespanBonusYears: ['realm'],
+    linggen: ['linggen'],
+    major: ['realm'],
+    mentor: ['mentor'],
+    name: ['name'],
+    nemeses: ['suppress'],
+    petId: ['pet'],
+    regionEvent: ['regionEvent'],
+    regionStats: ['regions'],
+    regionWins: ['regions'],
+    // 轮回对象是一整套(次数/道果/天赋/宿慧/履历/命题/契/道友),由下面几行共同覆盖
+    reincarnation: ['reincarnationCount', 'daoFruit', 'talents', 'insight', 'lives', 'vow', 'trial', 'bonds'],
+    secretRealm: ['secretRealm'],
+    sub: ['realm'],
+    suppressQualified: ['suppress'],
+    suppressedRegions: ['suppress'],
+    suppressedSince: ['suppress'],
+    titleId: ['title'],
+    winStreak: ['streak']
+  }
+
+  /** 存档里有、但确实不需要跨世登记的行(写清理由,不许留空) */
+  const NO_ROW_NEEDED: Record<string, string> = {
+    // 例:player.$state 里没有任何"纯运行时且无跨世意义"的字段;将来若出现,登记在此并写明理由
+  }
+
+  it('存档里的每个字段都登记了跨世去留 —— 从 $state 倒推,不靠手写清单', () => {
+    setActivePinia(createPinia())
+    const keys = Object.keys(usePlayerStore().$state).sort()
+    expect(keys.length, '取不到 player 存档字段,断言形同虚设').toBeGreaterThan(20)
+    const unmapped = keys.filter(k => !(k in STATE_KEY_ROWS) && !(k in NO_ROW_NEEDED))
+    expect(
+      unmapped,
+      `这些存档字段没有跨世去留的结论:${unmapped.join('、')} —— 要么补 HERITAGE 一行,要么在此写明为何不用登记`
+    ).toEqual([])
+  })
+
+  it('映射指向的清单行真实存在;手写清单与倒推清单不打架', () => {
+    const ids = new Set(HERITAGE.map(r => r.id))
+    for (const [key, rows] of Object.entries(STATE_KEY_ROWS)) {
+      expect(rows.length, `${key} 没有指向任何清单行`).toBeGreaterThan(0)
+      for (const id of rows) expect(ids.has(id), `${key} 指向了不存在的行 ${id}`).toBe(true)
+    }
+    // 手写清单里的每一行,也应至少被某个字段或另一行的 detail 用到 ——
+    // 只要求"手写与倒推互相认得出来",不要求一一对应(有些行是组合概念)
+    const referenced = new Set(Object.values(STATE_KEY_ROWS).flat())
+    const orphanRows = HERITAGE.filter(r => !referenced.has(r.id) && !REQUIRED.includes(r.id))
+    expect(orphanRows.map(r => r.id), '这些清单行既不在手写清单,也没有字段指向').toEqual([])
+  })
+
+  it('轮回结算的交割清单直接渲染这张表,不另写一份', () => {
+    const src = readFileSync(resolve(__dirname, '../components/character/ReincarnationDialog.vue'), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+    expect(src, '结算弹窗没有接上继承表,玩家看到的与代码交割会分叉').toContain('heritageGroups()')
+  })
+
+  it('外物一律归零:装备/法宝/丹药/材料/灵兽/洞府/灵脉/区域/本世/秘境/事件/契约', () => {
+    const byId = (id: string) => HERITAGE.find(r => r.id === id)!
+    for (const id of [
+      'equipment',
+      'artifacts',
+      'pills',
+      'materials',
+      'regions',
+      'buildings',
+      'veins',
+      'pet',
+      'secretRealm',
+      'regionEvent',
+      'mortalWorld',
+      'trial',
+      'streak',
+      'linggen'
+    ]) {
+      expect(byId(id).mode, `${byId(id).name} 是外物,应归零`).toBe('reset')
+    }
+  })
+
+  it('记忆/精神/灵魂一律留:认知/成就/道果/天赋/宿慧/称号/师承/道痕/世界记忆/机缘记忆', () => {
+    const byId = (id: string) => HERITAGE.find(r => r.id === id)!
+    for (const id of ['lore', 'quests', 'daoFruit', 'talents', 'insight', 'title', 'mentor', 'suppress', 'fortuneMemory']) {
+      expect(byId(id).mode, `${byId(id).name} 属记忆/精神/灵魂,应保留`).toBe('full')
+    }
+    // 功法只「半留」:门类是记忆,层数是修为进度
+    expect(byId('gongfa').mode).toBe('partial')
+    // 道友同理:关系归档入履历,人不留下
+    expect(byId('bonds').mode).toBe('partial')
+    // 终局同理:道途归还天地(本世之诺),道源与道痕随神魂不灭
+    expect(byId('endgame').mode).toBe('partial')
+  })
+
+  it('结算界面按去留分组时,清单一行不漏、一行不重(界面与代码同源)', () => {
+    const groups = heritageGroups()
+    expect(groups.map(g => g.mode)).toEqual(['full', 'partial', 'reset'])
+    const seen = groups.flatMap(g => g.rows.map(r => r.id))
+    expect(seen.length, '分组后条目总数应等于清单总数').toBe(HERITAGE.length)
+    expect(new Set(seen).size, '不得有条目被重复归组').toBe(HERITAGE.length)
+    for (const g of groups) expect(g.title, `${g.mode} 组缺界面用语`).toBeTruthy()
   })
 })

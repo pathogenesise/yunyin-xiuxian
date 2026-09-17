@@ -1,4 +1,4 @@
-/** 转世天赋池 —— 30 个,按品阶加权抽取 */
+/** 转世天赋池 —— 33 个,按品阶加权抽取 */
 import type { StatMods, TalentDef } from '@/types'
 
 function t(id: string, name: string, grade: TalentDef['grade'], desc: string, mods: StatMods): TalentDef {

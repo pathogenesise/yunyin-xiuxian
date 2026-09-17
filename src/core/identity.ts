@@ -11,6 +11,9 @@ import { useEndgameStore } from '@/stores/endgame'
 // ---------- 修行节点:跨世不灭的「首次」 ----------
 
 export const MILESTONE_DEFS: { id: string; name: string; desc: string }[] = [
+  { id: 'first_immortal', name: '飞升仙界', desc: '首次踏破人间界,飞升入仙' },
+  { id: 'first_god', name: '破界入神', desc: '首次自仙界踏入神界' },
+  { id: 'first_chaos', name: '归返混沌', desc: '首次踏入混沌海,重归大道本源' },
   { id: 'first_dao', name: '初立道途', desc: '于天穹之下立誓,择一道而行' },
   { id: 'first_world', name: '初破一界', desc: '首次踏破特殊规则世界' },
   { id: 'first_ni', name: '逆命破界', desc: '主流派核心尽封,仍以余技破界' },
@@ -55,9 +58,12 @@ const mode = <T>(xs: T[]): T | undefined => {
   return [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
 }
 
-/** 从道痕生成画像;样本不足(<5 则)返回 null */
+/** 画像成形所需的最少道痕数 —— 界面上的「道痕未满 N 则」读这里,不手写 */
+export const PROFILE_MIN_MARKS = 5
+
+/** 从道痕生成画像;样本不足(不足 PROFILE_MIN_MARKS 则)返回 null */
 export function cultivatorProfile(marks: DaoMark[]): CultivatorProfile | null {
-  if (marks.length < 5) return null
+  if (marks.length < PROFILE_MIN_MARKS) return null
   // 道途分布
   const daoCount = new Map<DaoPathId, number>()
   for (const m of marks) {
@@ -148,10 +154,6 @@ export const RECORD_DEFS: { id: string; name: string; unit: string; better: 'min
   { id: 'biggest_reward', name: '单程最厚之赏', unit: '道源', better: 'max' },
   { id: 'best_custom', name: '挑战书最高赏格', unit: '道源', better: 'max' }
 ]
-
-export function recordDef(id: string): (typeof RECORD_DEFS)[number] | undefined {
-  return RECORD_DEFS.find(r => r.id === id)
-}
 
 /** 破界纪录打点(远征/重写共用):最快、最险、最厚 */
 export function trackClearRecords(worldName: string, totalRounds: number, pactId: string | null, reward: number): void {

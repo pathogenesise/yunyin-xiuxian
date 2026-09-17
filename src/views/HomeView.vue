@@ -1,5 +1,11 @@
 <template>
   <div class="stagger-in space-y-4 px-4 pb-6 pt-4">
+    <!--
+      iOS 上「加进主屏幕」这件事得主动说一次:不说,玩家不会知道七天不打开就会丢档。
+      只在 iOS 且未安装时出现,「知道了」之后永不再露(设置页里还留着一份常驻的,随时可查)。
+    -->
+    <InstallToHomeNotice />
+
     <!-- 人物水墨主视觉 -->
     <div class="card-ink relative overflow-hidden px-4 pb-4 pt-5">
       <!-- 远山 -->
@@ -18,7 +24,7 @@
       </svg>
       <div class="relative z-10 flex items-start justify-between">
         <div class="min-w-0 flex-1">
-          <p class="text-[11px]" :class="player.lifespanRatio < 0.15 ? 'text-cinnabar' : 'text-ink-faint'">
+          <p class="text-[11px]" :class="player.lifespanRatio < LIFESPAN_WARN_RATIO ? 'text-cinnabar' : 'text-ink-faint'">
             {{ statusText }}
           </p>
           <!-- 今日天时:确定性环境,影响当日产出与渡劫 -->
@@ -37,9 +43,23 @@
       </div>
     </div>
 
+    <!-- Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页) -->
+    <div v-if="currentGoal" class="card-ink flex items-center gap-3 px-4 py-3">
+      <GameIcon name="scroll" :size="14" class="shrink-0 text-jade" />
+      <div class="min-w-0 flex-1">
+        <p class="flex items-baseline justify-between gap-2">
+          <span class="font-kai text-[13px] tracking-wider text-ink">{{ currentGoal.text }}</span>
+          <span v-if="currentGoal.progress !== undefined" class="shrink-0 text-[10px] text-ink-faint tabular">
+            {{ Math.round(currentGoal.progress * 100) }}%
+          </span>
+        </p>
+        <p v-if="currentGoal.hint" class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">{{ currentGoal.hint }}</p>
+      </div>
+    </div>
+
     <!-- 天界入口(真仙) -->
     <RouterLink
-      v-if="player.major >= 9"
+      v-if="player.major >= WORLD_BREAK_MAJOR"
       to="/celestial"
       class="card-ink flex items-center gap-3 border-cinnabar/40 px-4 py-3 active:scale-99"
     >
@@ -92,13 +112,13 @@
     >
       <span class="min-w-0 flex-1">
         <span class="block font-kai text-[14px] tracking-widest text-ink">灵脉投资</span>
-        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">引地脉入洞府,择一主脉而修</span>
+        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">引灵脉入洞府,择一主脉而修</span>
       </span>
       <span class="shrink-0 text-[12px] text-ink-faint">›</span>
     </button>
 
-    <!-- 灵脉弹窗:组件自带标题卡,弹窗标题留空避免重复 -->
-    <BaseModal :open="veinOpen" title="" wide @close="veinOpen = false">
+    <!-- 灵脉弹窗:组件自带标题卡,故不画标题;但对话框自己仍要有可访问名 -->
+    <BaseModal :open="veinOpen" title="" aria-label="灵脉" wide @close="veinOpen = false">
       <VeinInvestCard />
       <template #footer>
         <button class="btn-seal w-full" @click="veinOpen = false">收 起</button>
@@ -115,12 +135,16 @@
   import { useQuestsStore } from '@/stores/quests'
   import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
   import { VEIN_UNLOCK_MAJOR } from '@/data/constants'
+  import { LIFESPAN_WARN_RATIO } from '@/data/constants'
+  import { WORLD_BREAK_MAJOR } from '@/data/realms'
   import { todayWeather } from '@/core/weather'
+  import { generateCurrentGoal, type Goal } from '@/core/goal'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import VeinInvestCard from '@/components/dongfu/VeinInvestCard.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import CultivationOrb from '@/components/common/CultivationOrb.vue'
+  import InstallToHomeNotice from '@/components/common/InstallToHomeNotice.vue'
 
   const player = usePlayerStore()
   /** 灵脉投资弹窗 —— 卡片自洞府页移来,紧随洞府营造 */
@@ -128,6 +152,9 @@
   const adventure = useAdventureStore()
   const cultivation = useCultivationStore()
   const quests = useQuestsStore()
+
+  // Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页)
+  const currentGoal = computed<Goal | null>(() => generateCurrentGoal(player))
 
   const statusText = computed(() => {
     if (player.dead) return '陨落'

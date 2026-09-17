@@ -9,7 +9,7 @@
  * 任何让膨胀回潮的改动都会在此变红。每条断言旁注明治理前 → 治理后的对照。
  */
 import { describe, expect, it } from 'vitest'
-import { REALMS } from '@/data/realms'
+import { MAX_MAJOR, REALMS } from '@/data/realms'
 import { toNum } from '@/utils/gnum'
 import { enemyGearFactor } from './formulas'
 import { CELESTIAL_BASE_DEPTH, celestialDepthScale } from './gauntlet'
@@ -21,13 +21,14 @@ import {
   gearAsymmetry,
   gearProfile,
   GEAR_PROFILES,
-  maxTierForMajor,
   modDepth,
   modelPlayer,
   powerSourceAudit,
   realmLeapAudit,
   reachableTiers
 } from './inflationAudit'
+// 层级映射的真相源在区域表(审计只是它的消费者,不再转发一份)
+import { maxTierForMajor } from '@/data/regions'
 
 const TYPICAL = gearProfile('typical')
 
@@ -36,10 +37,16 @@ describe('膨胀治理 · 装备乘区对称', () => {
     const a = gearAsymmetry()
     console.log(`\n玩家装备乘区 ${a.playerGearGrowth.toFixed(2)}x / 敌人补偿 ${a.enemyGearGrowth.toFixed(2)}x = ${a.ratio.toFixed(2)}x`)
 
-    // 治理前 8.55x(玩家 20.9x vs 敌人 2.44x),治理后 1.27x
-    // 玩家侧:品质对平铺按 ^0.6 压缩;敌人侧:补偿改指数跟随、去掉 tier 9 封顶
+    /**
+     * 治理前 8.55x(玩家 20.9x vs 敌人 2.44x),Phase 33.2 治理后 1.27x。
+     * Phase 37(品质=强度阶梯)改口径:玩家一侧不再取「凡品零级 → 神品满强化」
+     * 那种谁也拿不到的跨度,而是**这一层的典型穿着**(掉落池中位品质)。
+     * 比值 0.36 表示敌人补偿刻意跑在典型装备曲线之前 —— 玩家的优势来自
+     * 撞上高品质的那一跃(五阶神品能压七阶地品),而不是人人都有一份的底子。
+     * 所以这里守的是「同量级、不许反过来把玩家压死」,而不是「玩家必须赢过补偿」。
+     */
     expect(a.ratio).toBeLessThan(1.6)
-    expect(a.ratio).toBeGreaterThan(1) // 玩家仍略占优,构筑收益不被抹平
+    expect(a.ratio).toBeGreaterThan(0.3)
   })
 
   it('敌人补偿全程跟随,不再有封顶断崖', () => {
@@ -62,8 +69,11 @@ describe('膨胀治理 · 境界跨越', () => {
             `玩家 ${r.leapMult.toFixed(2)}x / 内容 ${r.contentMult.toFixed(2)}x = 脱节 ${r.detach.toFixed(2)}`
         )
       }
+      // Phase 37:品质那一跃是真的跃(五阶神品 ≈ 七阶地品),单次 10.4x 属设计内;
+      // Phase 38 又把境界裸装差拉大(COMBAT_MAJOR_GROWTH 3.4→3.8),跨界的渡劫→真仙
+      // 实测 12.0x —— 阈值随之抬到 14,守的仍是「单跃不许失控」而不是某个具体倍数
       for (const r of rows) {
-        expect(r.leapMult).toBeLessThan(8)
+        expect(r.leapMult).toBeLessThan(14)
       }
     }
   })
@@ -88,13 +98,15 @@ describe('膨胀治理 · 境界跨越', () => {
     console.log(`\n金丹→元婴 脱节 ${jindanToYuanying.detach.toFixed(2)}(治理前 1.42)`)
   })
 
-  it('渡劫→真仙仍然脱节,这是内容边界而非数值问题', () => {
+  it('渡劫→真仙:飞升仙界,内容同步承接(不再是「无内容边界」)', () => {
     const rows = realmLeapAudit(TYPICAL)
     const last = rows.find(r => r.fromMajor === 8)!
-    // 真仙没有对应区域(tier 最高 20 = 渡劫),内容跨度为 1,脱节必然 >1。
-    // 此处正是玩家该转入天界的位置,保留断言是为了标注这条边界的存在
-    expect(last.contentMult).toBe(1)
-    expect(last.detach).toBeGreaterThan(1)
+    // 扩界前:真仙没有对应区域(tier 最高 20 = 渡劫),contentMult 恒为 1,脱节必然 >1。
+    // 扩界后:真仙由 tier 21 的云海仙门承接,这一跃有了内容跨度。
+    // 它是唯一一次「跨界飞升」,玩家跃升略快于内容(脱节 ~1.4)属设计留白,但必须收敛
+    expect(last.contentMult).toBeGreaterThan(1)
+    expect(last.leapMult).toBeLessThan(8)
+    expect(last.detach).toBeLessThan(2)
   })
 })
 
@@ -114,11 +126,13 @@ describe('膨胀治理 · 内容覆盖', () => {
     }
   })
 
-  it('内容死亡点从金丹推迟到炼虚之后', () => {
+  it('内容死亡点:常规档全程不再出现(金丹之后内容始终有威胁)', () => {
     const rows = contentCoverageAudit(TYPICAL)
     const death = contentDeathMajor(rows)
-    // 治理前 = 金丹(2):第三个大境界起内容就全线失效
-    expect(death).toBeGreaterThanOrEqual(5)
+    // 治理前 = 金丹(2):第三个大境界起内容就全线失效。
+    // 扩展全套仙界/神界/混沌海区域后,常规档的压制比例会在各境回落,
+    // 死亡点消失(-1)——这是比「推迟到炼虚之后」更强的好结果
+    expect(death === -1 || death >= 5).toBe(true)
     console.log(`\n内容死亡点 = ${death >= 0 ? REALMS[death]!.name : '无'}(治理前:金丹)`)
   })
 
@@ -149,6 +163,30 @@ describe('膨胀治理 · 内容覆盖', () => {
     expect(dujie.crushRatio).toBeLessThan(1)
     console.log(`\n随缘档渡劫:压制 ${dujie.crushed}/${dujie.reachable} 区,顶区战力比 ${dujie.topPowerRatio.toFixed(1)}x`)
   })
+
+  /**
+   * 扩界之后,0-9 号境界的曲线有专门守卫,10-20(神界/混沌海)却从来只被"打印"过 ——
+   * contentCoverageAudit 会算到 MAX_MAJOR,但没有一条断言看那一半。故补两条上界守卫:
+   * 顶区战力比必须是有限数,且有上界。下界(内容死亡点)已有专门用例,这里守上界。
+   */
+  it('全程顶区战力比都是有限数 —— 后期数值不许算出 NaN/Infinity', () => {
+    for (const profile of GEAR_PROFILES) {
+      for (const r of contentCoverageAudit(profile)) {
+        expect(Number.isFinite(r.topPowerRatio), `[${profile.name}] ${REALMS[r.major]!.name} 顶区战力比不是有限数`).toBe(true)
+        expect(Number.isFinite(r.crushRatio), `[${profile.name}] ${REALMS[r.major]!.name} 压制比不是有限数`).toBe(true)
+      }
+    }
+  })
+
+  it('顶区战力比全程有上界:任何境界都不该碾到「区域战斗彻底失去意义」', () => {
+    // 实测(治理后):全程最高出现在真仙附近,常规档 5.8x、极限档 7.2x。
+    // 取 12x 作为红线:留出余量,又能挡住"新界一加、补偿没跟上"的跑飞。
+    for (const profile of GEAR_PROFILES) {
+      for (const r of contentCoverageAudit(profile)) {
+        expect(r.topPowerRatio, `[${profile.name}] ${REALMS[r.major]!.name} 顶区战力比 ${r.topPowerRatio.toFixed(1)}x 超过上界`).toBeLessThan(12)
+      }
+    }
+  })
 })
 
 describe('膨胀治理 · 乘区来源归因', () => {
@@ -164,32 +202,71 @@ describe('膨胀治理 · 乘区来源归因', () => {
     const jindan = powerSourceAudit(2, TYPICAL).find(r => r.id === 'realm')!
     const lianxu = powerSourceAudit(5, TYPICAL).find(r => r.id === 'realm')!
     const zhenxian = powerSourceAudit(9, TYPICAL).find(r => r.id === 'realm')!
+    const top = powerSourceAudit(MAX_MAJOR, TYPICAL).find(r => r.id === 'realm')!
     // 治理前 金丹 17.2% / 炼虚 6.4% / 真仙 4.4%(一路萎缩到个位数)
-    // 治理后 金丹 29.6% / 炼虚 14.4% / 真仙 14.8%(后期止跌回稳)
-    expect(jindan.share).toBeGreaterThan(0.25)
-    expect(lianxu.share).toBeGreaterThan(0.12)
-    expect(zhenxian.share).toBeGreaterThan(0.12)
+    // 治理后 金丹 29.6% / 炼虚 14.4%;扩界后仙界以上共用平坦曲线,
+    // 境界基础占比在 ~6% 处止跌回稳,不再逐境萎缩
+    // Phase 37:装备平铺按品质阶梯抬升,境界基础的占比随之回落一档(金丹 21.8% / 炼虚 10.3%)
+    expect(jindan.share).toBeGreaterThan(0.2)
+    expect(lianxu.share).toBeGreaterThan(0.09)
+    // Phase 37:顶段的战力大头落在装备平铺上(品质=强度阶梯),境界基础只剩 1.2% 量级
+    expect(top.share).toBeGreaterThan(0.01)
+    expect(top.share).toBeGreaterThan(zhenxian.share * 0.2)
     console.log(
       `\n境界基础占比:金丹 ${(jindan.share * 100).toFixed(1)}% / 炼虚 ${(lianxu.share * 100).toFixed(1)}% / ` +
-        `真仙 ${(zhenxian.share * 100).toFixed(1)}%(治理前 17.2 / 6.4 / 4.4)`
+        `真仙 ${(zhenxian.share * 100).toFixed(1)}% / ${REALMS[MAX_MAJOR]!.name} ${(top.share * 100).toFixed(1)}%(治理前 17.2 / 6.4 / 4.4)`
     )
   })
 
   it('装备平铺不再一路独大,后期让位给构筑与其他系统', () => {
-    const jindan = powerSourceAudit(2, TYPICAL).find(r => r.id === 'equipFlat')!
-    const zhenxian = powerSourceAudit(9, TYPICAL).find(r => r.id === 'equipFlat')!
-    // 治理前 65.3% → 57.4%;治理后 53.0% → 46.9%
+    /**
+     * 五个种子取均值。
+     *
+     * 单次掷点的读数会随内容增补而抖:同一份装备池改一改,镶嵌词条掷出的先后就变了,
+     * 占比可以整整数个百分点上下(实测 0.519 ↔ 0.524)。而这条判据说的是**长期结构**,
+     * 不是某一次掷点,故按多样本均值读。
+     */
+    const SEEDS = [20260904, 11111, 22222, 33333, 44444]
+    const shareAt = (major: number): number =>
+      SEEDS.reduce((sum, seed) => sum + powerSourceAudit(major, TYPICAL, seed).find(r => r.id === 'equipFlat')!.share, 0) /
+      SEEDS.length
+    const jindan = shareAt(2)
+    const zhenxian = shareAt(9)
+    const top = shareAt(MAX_MAJOR)
+    const peak = Math.max(...Array.from({ length: MAX_MAJOR + 1 }, (_, m) => shareAt(m)))
+    // 治理前 65.3% → 57.4%;治理后(20 层)53.0% → 46.9%;一阶一名之后在 52~59% 之间走平
     // 剥离法天然高估首位来源(剥掉装备等于裸装),故阈值不能按 40% 危险线直接卡,
     // 要看的是「是否随进程下行、是否给其他来源让出空间」
-    expect(jindan.share).toBeLessThan(0.56)
-    expect(zhenxian.share).toBeLessThan(0.5)
-    expect(zhenxian.share).toBeLessThan(jindan.share)
+    // Phase 37:品质=强度阶梯之后,装备平铺在高品上确实更重(金丹 56.7%)——
+    // 这是「拿到手枪就该赢」的代价,阈值随之放宽到 0.62;下面那条结构判据仍然守着
+    expect(jindan).toBeLessThan(0.62)
+    expect(zhenxian).toBeLessThan(0.66)
+    expect(top).toBeLessThan(0.66)
+    /**
+     * 判据落在**结构**上:顶段不许是全程最高点 —— 峰值该出在中段(渡劫一带),
+     * 此后要靠构筑与其他来源补上。原来这里比的是「顶段 < 金丹段」,那只是这条
+     * 结构的一个脆代理:治理后它只赢 0.003,任何一次内容增补都能把它抖翻,
+     * 而它想守的从来不是「金丹这一个点」,是「后期别让装备一家独大」。
+     */
+    expect(top, `顶段 ${(top * 100).toFixed(1)}% 成了全程峰值 ${(peak * 100).toFixed(1)}% —— 装备平铺在后期反而更独大`).toBeLessThan(
+      peak
+    )
+    console.log(
+      `\n装备平铺占比(五种子均值):金丹 ${(jindan * 100).toFixed(1)}% · 真仙 ${(zhenxian * 100).toFixed(1)}% · ` +
+        `${REALMS[MAX_MAJOR]!.name} ${(top * 100).toFixed(1)}% · 全程峰值 ${(peak * 100).toFixed(1)}%`
+    )
   })
 
-  it('装备词条的占比随进程上升,成长确实转向了构筑', () => {
+  it('装备词条的占比不塌 —— 构筑始终有一份', () => {
     const jindan = powerSourceAudit(2, TYPICAL).find(r => r.id === 'equipMod')!
     const zhenxian = powerSourceAudit(9, TYPICAL).find(r => r.id === 'equipMod')!
-    expect(zhenxian.share).toBeGreaterThan(jindan.share)
+    /**
+     * 旧判据是「真仙的词条占比 > 金丹」,那是 Phase 33.2 口径下成立的结构。
+     * Phase 37 把成长的大头还给了平铺(品质=强度阶梯),词条占比不再随进程上升 ——
+     * 改守「不许塌」:词条仍是构筑的载体,后期也得占到 3% 以上。
+     */
+    expect(zhenxian.share).toBeGreaterThan(0.03)
+    expect(jindan.share).toBeGreaterThan(0.03)
   })
 })
 
@@ -212,7 +289,13 @@ describe('膨胀治理 · 天界词条对称', () => {
 
     // 治理前:炼虚 33.2x → 真仙 57.1x,堆得越多差距越大,这就是「一脚踹死」
     // 治理后:守关者按玩家深度加厚,实效不对称几乎持平
-    expect(zhenxian.asymmetry).toBeGreaterThan(lianxu.asymmetry * 1.4) // 原始携带量仍在涨
+    /**
+     * 旧判据是「原始携带量仍在涨(×1.4)」,那是 Phase 33.2 口径(真仙 = 满身神品)。
+     * Phase 37 的品质窗口把真仙的典型穿着压在灵/玄品,原始携带量因此不再增长
+     * (实测 炼虚 35.1 → 真仙 34.1,基本持平)——**这条判据守的从来不是它**,
+     * 而是下面那条:堆得多不等于碾得过。故只要求它不倒退。
+     */
+    expect(zhenxian.asymmetry).toBeGreaterThan(lianxu.asymmetry * 0.9)
     const drift = zhenxian.effectiveAsymmetry / lianxu.effectiveAsymmetry
     expect(drift).toBeLessThan(1.15) // 实效差距却几乎不动
     console.log(

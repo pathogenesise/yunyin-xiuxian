@@ -5,9 +5,23 @@
  */
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 
+/** 浏览器 chrome(地址栏 / PWA 标题栏)的颜色 —— 得跟页面底色走,暗色玩家不该看到亮米色衬底 */
+const THEME_CHROME = { light: '#F3EFE4', dark: '#211F1C' } as const
+
+function syncChromeColor(dark: boolean): void {
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.name = 'theme-color'
+    document.head.appendChild(meta)
+  }
+  meta.content = dark ? THEME_CHROME.dark : THEME_CHROME.light
+}
+
 export function applyTheme(theme: 'auto' | 'light' | 'dark'): void {
   const dark = theme === 'dark' || (theme === 'auto' && typeof globalThis.matchMedia === 'function' && globalThis.matchMedia(DARK_QUERY).matches)
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  syncChromeColor(dark)
 }
 
 type ThemeMode = 'auto' | 'light' | 'dark'

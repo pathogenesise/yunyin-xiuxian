@@ -52,11 +52,6 @@ export function rerollMortalWorld(): MortalWorld | null {
   return got?.report.world ?? null
 }
 
-/** 清空(重置存档时) */
-export function clearMortalWorld(): void {
-  useAdventureStore().setMortalWorld(null)
-}
-
 // ============ 本世路线的可达性 ============
 
 /**

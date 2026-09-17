@@ -8,10 +8,20 @@ import { mulberry32, RandomService } from '@/utils/random'
 import { celestialWorldDef } from '@/data/endgame'
 import { PACTS, pactDef } from '@/data/pacts'
 import { MUTATORS } from '@/data/mutators'
-import { MUTATION_FOES } from '@/data/endgame'
+import { EXPEDITION_GUARDIAN_LAYER, EXPEDITION_ROUTE_LAYERS, MUTATION_FOES } from '@/data/endgame'
 import { buildPlayerSnap } from './playerSnap'
 import { detectBuild } from './buildDetect'
-import { mergeRules, runGauntlet, worldFoeSnap, type GauntletReport } from './gauntlet'
+import {
+  celestialFoeCaliber,
+  celestialJudgement,
+  celestialJudgementLines,
+  mergeRules,
+  runGauntlet,
+  worldFoeSnap,
+  type GauntletReport
+} from './gauntlet'
+import { VOID_ANCHOR_TIER } from './worldGen'
+import { MAX_MAJOR } from '@/data/realms'
 import { resolveCombat, sampleWinRate } from './combat'
 import { modOf } from './statsCalc'
 import { SLAUGHTER_PER_WIN, SWORD_PER_WIN, slaughterSpeedBonus, stackedMods } from './daoDepth'
@@ -22,6 +32,7 @@ import { BUILD_PROFILES, buildSnap } from './buildSim'
 import { SIM_REFERENCE } from './celestialSim'
 import { usePlayerStore } from '@/stores/player'
 import { useEndgameStore, type WorldRunState } from '@/stores/endgame'
+import { gateDef } from '@/data/qimen'
 import { useUiStore } from '@/stores/ui'
 
 /** 单场战果 */
@@ -31,6 +42,14 @@ export interface StepOutcome {
   rewardDaoSource: number
   /** 远征终局时附全程战报(此刻 store 中的 run 已清空) */
   finalRows?: { foeName: string; win: boolean; rounds: number; hpLeftPct: number }[]
+  /** 敌人一侧的判定(道之理解 / 境界压制):终局时附上,输也要输得明白 */
+  judgementLines?: string[]
+}
+
+/** 本界对**此刻的你**的判定文案(战报与战前预估同源,见 gauntlet.celestialJudgementLines) */
+function judgementLinesOf(world: CelestialWorldDef): string[] {
+  const player = usePlayerStore()
+  return celestialJudgementLines(player.celestialStats.mods, player.major, world.anchorTier)
 }
 
 function chainRules(...list: (CombatRules | undefined)[]): CombatRules | undefined {
@@ -85,10 +104,32 @@ function runSnap(run: WorldRunState): CombatantSnap {
   }
 }
 
-/** 本场合并规则(道途 + 世界 + 契约 + 节点) */
-function runRules(world: CelestialWorldDef, run: WorldRunState, node?: WorldRouteNode): CombatRules | undefined {
+/** 择门所得的行军规则(未择门则为空 —— 审计基线与从前逐字相同) */
+function gateRulesOf(gateId: string | null | undefined): CombatRules | undefined {
+  return gateId ? gateDef(gateId)?.rules : undefined
+}
+
+/**
+ * 这一场按什么规则打(道途 + 世界 + 契约 + 所择之门 + 节点)。
+ *
+ * 对外可见:预估(forecastExpedition)与实战(fightStep)都走它,
+ * 故"所见即所打"这条契约可以被直接钉住 —— 两边各写一份规则,迟早对不上。
+ */
+export function expeditionRules(world: CelestialWorldDef, run: WorldRunState, node?: WorldRouteNode): CombatRules | undefined {
   const pact = run.pactId ? pactDef(run.pactId) : undefined
-  return chainRules(currentDaoRules(), world.rules, pactRules(pact), node?.rules)
+  return chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(run.gateId), node?.rules)
+}
+
+/**
+ * 给规则压上「携带气血」这一层 —— 实战与天机预览都走它。
+ *
+ * 远征是连着打的:上一场剩多少血就带进下一场(playerStartHpPct 是开局上限)。
+ * 故「所见即所打」的完整版不是「规则同源」,而是「**连血量也同源**」——
+ * 预览若只看规则、不看携带气血,就会在玩家越残的时候报得越乐观。
+ */
+export function withCarriedHp(rules: CombatRules | undefined, run: WorldRunState): CombatRules {
+  const startCap = rules?.playerStartHpPct ?? 1
+  return { ...(rules ?? {}), playerStartHpPct: Math.min(startCap, run.carriedHpPct) }
 }
 
 /** 远征总场数(入界 + 三层 + 界主) */
@@ -116,7 +157,8 @@ function settle(run: WorldRunState, world: CelestialWorldDef, cleared: boolean, 
   } else {
     ui.toast(`${world.name}将你逐出天门`, 'warn')
   }
-  recordMark(world.id, world.name, cleared, run.totalRounds, run.pactId)
+  // 所择之门记进道痕环境:忆战/重写要按当年的门重打这一趟
+  recordMark(world.id, world.name, cleared, run.totalRounds, run.pactId, run.gateId ? { gateId: run.gateId } : undefined)
   endgame.worldRun = null
   return reward
 }
@@ -125,12 +167,12 @@ function settle(run: WorldRunState, world: CelestialWorldDef, cleared: boolean, 
 function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: WorldFoeShape, node?: WorldRouteNode): StepOutcome {
   const endgame = useEndgameStore()
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const foe = worldFoeSnap(foeShape, ref)
-  const rules = runRules(world, run, node)
-  const startCap = rules?.playerStartHpPct ?? 1
-  const fightRules: CombatRules = { ...(rules ?? {}), playerStartHpPct: Math.min(startCap, run.carriedHpPct) }
+  // 参照与加厚口径由 gauntlet 统一给出:玩家按 celestialStats 出手,敌人就必须按同一份生成
+  const { ref, judgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, world.anchorTier)
+  const foe = worldFoeSnap(foeShape, ref, 1, judgement)
+  const baseRules = expeditionRules(world, run, node)
+  const startCap = baseRules?.playerStartHpPct ?? 1
+  const fightRules = withCarriedHp(baseRules, run)
   const result = resolveCombat(runSnap(run), foe, rng, fightRules)
 
   const row = { foeName: foe.name, win: result.win, rounds: result.rounds, hpLeftPct: result.playerHpPct }
@@ -145,21 +187,21 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
   if (!result.win) {
     endgame.worldRun = next
     settle(next, world, false, false)
-    return { type: 'lost', row, rewardDaoSource: 0, finalRows: next.rows }
+    return { type: 'lost', row, rewardDaoSource: 0, finalRows: next.rows, judgementLines: judgementLinesOf(world) }
   }
   if (pact?.special === 'endHp80' && result.playerHpPct < 0.8) {
     endgame.worldRun = next
     settle(next, world, false, true)
-    return { type: 'pactBroken', row, rewardDaoSource: 0, finalRows: next.rows }
+    return { type: 'pactBroken', row, rewardDaoSource: 0, finalRows: next.rows, judgementLines: judgementLinesOf(world) }
   }
   next.winStacks += 1
   if (node) next.bonus += node.bonus
 
-  const wasGuardian = run.layer === 3
+  const wasGuardian = run.layer === EXPEDITION_GUARDIAN_LAYER
   if (wasGuardian) {
     endgame.worldRun = next
     const reward = settle(next, world, true, false)
-    return { type: 'cleared', row, rewardDaoSource: reward, finalRows: next.rows }
+    return { type: 'cleared', row, rewardDaoSource: reward, finalRows: next.rows, judgementLines: judgementLinesOf(world) }
   }
   next.layer = node ? run.layer + 1 : 0
   endgame.worldRun = next
@@ -167,7 +209,7 @@ function fightStep(run: WorldRunState, world: CelestialWorldDef, foeShape: World
 }
 
 /** 启程:签契、扣道源、打入界战 */
-export function startWorldExpedition(worldId: string, pactId: string | null): StepOutcome | null {
+export function startWorldExpedition(worldId: string, pactId: string | null, gateId: string | null = null): StepOutcome | null {
   const endgame = useEndgameStore()
   const ui = useUiStore()
   const world = resolveWorld(worldId)
@@ -181,6 +223,7 @@ export function startWorldExpedition(worldId: string, pactId: string | null): St
     return null
   }
   const pact = pactId ? pactDef(pactId) : undefined
+  const gate = gateId ? gateDef(gateId) : undefined
   let sealedMods: StatMods | undefined
   if (pact?.special === 'sealCore') {
     const sealed = sealCoreMods()
@@ -194,10 +237,11 @@ export function startWorldExpedition(worldId: string, pactId: string | null): St
     ui.toast(`道源不足 ${world.entryCost}(天道熔炉可献祭闲置资财)`, 'warn')
     return null
   }
-  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact))
+  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(gate?.id))
   const run: WorldRunState = {
     worldId,
     pactId,
+    gateId: gate?.id ?? null,
     layer: 0,
     bonus: 0,
     rows: [],
@@ -207,14 +251,15 @@ export function startWorldExpedition(worldId: string, pactId: string | null): St
     sealedMods
   }
   if (pact) ui.toast(`你与天道立下「${pact.name}」`, 'info')
+  if (gate) ui.toast(`你自「${gate.fullName}」入界 —— ${gate.desc}`, 'info')
   return fightStep(run, world, world.foes[0]!)
 }
 
-/** 择路进层(layer 0..2) */
+/** 择路进层(layer 0..EXPEDITION_ROUTE_LAYERS-1) */
 export function chooseRouteNode(choice: 0 | 1): StepOutcome | null {
   const endgame = useEndgameStore()
   const run = endgame.worldRun
-  if (!run || run.layer < 0 || run.layer > 2) return null
+  if (!run || run.layer < 0 || run.layer >= EXPEDITION_ROUTE_LAYERS) return null
   const world = resolveWorld(run.worldId)
   if (!world) return null
   const node = world.routes[run.layer]?.[choice]
@@ -252,6 +297,8 @@ export interface FightPreview {
   /** 危险时间点与形势提示(信息,不是答案) */
   riskLines: string[]
   winText: string
+  /** 这一眼看到的胜算(0~1)—— 与实战同一个口径,含携带气血 */
+  rate: number
 }
 
 const RATE_WORDS = (rate: number): string => (rate >= 0.55 ? '常发' : rate >= 0.35 ? '频发' : '偶发')
@@ -264,22 +311,42 @@ const EFFECT_WORDS: Record<string, string> = {
   shield: '结盾'
 }
 
-/** 天机道:窥见一场未来之战(招式明细 + 胜算) */
-export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode): FightPreview | null {
+/**
+ * 天机道:窥见一场未来之战(招式明细 + 胜算)。
+ *
+ * 「所窥即所打」:算胜算用的规则必须与 fightStep 一模一样 —— 故走同一个
+ * withCarriedHp(**含携带气血**)。此前这里只取了 expeditionRules,
+ * 于是玩家越残,预览报得越乐观(实测:带六成气血时预览仍说「约有七成胜算」,
+ * 而按实战规则只有一成,是「凶多吉少」)。
+ * 随机源可注入,自检才能不掷运气地钉住这条口径。
+ */
+export function previewFight(
+  foeShape: WorldFoeShape,
+  node?: WorldRouteNode,
+  rand: RandomService = rng,
+  prep?: { worldId: string; pactId: string | null; gateId: string | null }
+): FightPreview | null {
   const endgame = useEndgameStore()
   if (endgame.daoPath !== 'fate') return null
   const run = endgame.worldRun
-  const world = run ? resolveWorld(run.worldId) : undefined
+  const world = run ? resolveWorld(run.worldId) : prep ? resolveWorld(prep.worldId) : undefined
+  if (!world) return null
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
-  const foe = worldFoeSnap(foeShape, ref)
+  const { ref, judgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, world.anchorTier)
+  const foe = worldFoeSnap(foeShape, ref, 1, judgement)
   const skillLines = foeShape.skills.map(sk => {
     const tag = sk.effect ? (EFFECT_WORDS[sk.effect] ?? sk.effect) : '重击'
     return `【${sk.name}】${tag} · ${RATE_WORDS(sk.rate)} · 威力 ${sk.mult.toFixed(1)} 倍`
   })
   if (foeShape.mods?.dodgeRate) skillLines.push(`身法诡谲,闪避约 ${Math.round(foeShape.mods.dodgeRate * 100)}%`)
-  const rules = world && run ? runRules(world, run, node) : currentDaoRules()
+  // 实战(在途 run)吃 expeditionRules;出发前(run=null,带 prep)按首战那份规则合成:
+  // 道途 × 世界 × 所择契约 × 所择之门 —— 「先算后战」算的就是那一场仗,不是另一场
+  const rules =
+    world && run
+      ? expeditionRules(world, run, node)
+      : prep && world
+        ? chainRules(currentDaoRules(), world.rules, pactRules(prep.pactId ? pactDef(prep.pactId) : undefined), gateRulesOf(prep.gateId), node?.rules)
+        : currentDaoRules()
   // 危险时点:限时 / 杀意渐涨 / 重击预警 / 生机稀薄
   const riskLines: string[] = []
   if (rules?.maxRounds !== undefined) riskLines.push(`天时仅 ${rules.maxRounds} 回合,拖延即败`)
@@ -288,9 +355,10 @@ export function previewFight(foeShape: WorldFoeShape, node?: WorldRouteNode): Fi
   if (heavy) riskLines.push(`【${heavy.name}】足以重创,留足气血以备不测`)
   if ((rules?.healMult ?? 1) < 0.7) riskLines.push('此地生机稀薄,回血难以为继')
   const snap = run ? runSnap(run) : buildPlayerSnap(true)
-  const rate = sampleWinRate(snap, foe, rng, 3, rules)
+  const fightRules = world && run ? withCarriedHp(rules, run) : rules
+  const rate = sampleWinRate(snap, foe, rand, 3, fightRules)
   const winText = rate >= 0.9 ? '胜算在握' : rate >= 0.6 ? '约有七成胜算' : rate >= 0.35 ? '五五之数,凶险参半' : '凶多吉少'
-  return { skillLines, riskLines, winText }
+  return { skillLines, riskLines, winText, rate }
 }
 
 // ---------- 天道变数 ----------
@@ -332,11 +400,11 @@ export function challengeMutation(mutatorIds: string[]): MutationResult | null {
   const muts = mutatorIds.map(id => MUTATORS.find(m => m.id === id)).filter(m => m !== undefined)
   const rules = chainRules(currentDaoRules(), ...muts.map(m => m!.rules))
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
+  // 变数连战不属于任何一界:它站在阶梯最深处(与变数天界的锚点同档)
+  const { ref, judgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, VOID_ANCHOR_TIER)
   const foes = []
   for (let i = 0; i < MUTATION_FIGHTS; i += 1) {
-    foes.push(worldFoeSnap(MUTATION_FOES[i % MUTATION_FOES.length]!, ref, Math.pow(MUTATION_ESCALATION, i)))
+    foes.push(worldFoeSnap(MUTATION_FOES[i % MUTATION_FOES.length]!, ref, Math.pow(MUTATION_ESCALATION, i), judgement))
   }
   const report = runGauntlet(buildPlayerSnap(true), foes, rules, 0.4, rng, { perWinPlayerMods: perWinMods() })
   let reward = 0
@@ -399,6 +467,8 @@ function voidHistory(): HistoryEntry[] {
 export interface ExpeditionForecast {
   /** 玩家当前构筑的整程胜算档 */
   difficulty: string
+  /** 敌人一侧的判定(道之理解 / 境界压制)—— 战前就该看得见,不然玩家只能靠猜 */
+  judgementLines: string[]
   /** 六大标准流派中可行的数目(≥35% 通率) */
   viableStyles: number
   /** 当前构筑相性(1~5 星) */
@@ -409,18 +479,19 @@ export interface ExpeditionForecast {
  * 整程预估:玩家构筑 + 所选契约,对该世界的线性连战做小样本推演。
  * 只给分档与星级,不给精确数字——信息归玩家,答案也归玩家
  */
-export function forecastExpedition(worldId: string, pactId: string | null): ExpeditionForecast | null {
+export function forecastExpedition(worldId: string, pactId: string | null, gateId: string | null = null): ExpeditionForecast | null {
   const world = resolveWorld(worldId)
   if (!world) return null
   const pact = pactId ? pactDef(pactId) : undefined
-  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact))
+  // 预估须与真打同源:择了门就把门也算进去,否则玩家看到的胜算与实战不符
+  const rules = chainRules(currentDaoRules(), world.rules, pactRules(pact), gateRulesOf(gateId))
   const opts = pact?.special === 'endHp80' ? { minHpAfterFight: 0.8 } : {}
   const seededRng = new RandomService(mulberry32(worldId.length * 1009 + (pactId?.length ?? 0) * 97 + world.name.length * 7))
 
   // 玩家构筑:含孤剑/逆命的快照修饰,敌人按玩家等比生成
   const player = usePlayerStore()
-  const stats = player.finalStats
-  const pRef = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
+  // 预估与实战同源:同一份参照、同一个加厚系数(见 celestialFoeCaliber 的注释)
+  const { ref: pRef, judgement: pJudgement } = celestialFoeCaliber(player.major, player.celestialStats.mods, world.anchorTier)
   let snap = buildPlayerSnap(true)
   if (pact?.special === 'soloArtifact') snap = { ...snap, artifacts: (snap.artifacts ?? []).slice(0, 1) }
   if (pact?.special === 'sealCore') {
@@ -428,23 +499,32 @@ export function forecastExpedition(worldId: string, pactId: string | null): Expe
     if (sealed) snap = { ...snap, mods: stackedMods(snap.mods, sealed, 1) }
   }
   const playerFoes: CombatantSnap[] = []
-  for (let i = 0; i < world.fights - 1; i += 1) playerFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, pRef))
-  playerFoes.push(worldFoeSnap(world.guardian, pRef))
+  for (let i = 0; i < world.fights - 1; i += 1) playerFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, pRef, 1, pJudgement))
+  playerFoes.push(worldFoeSnap(world.guardian, pRef, 1, pJudgement))
   let clears = 0
   for (let i = 0; i < 8; i += 1) {
     if (runGauntlet(snap, playerFoes, rules, world.healBetweenPct, seededRng, opts).cleared) clears += 1
   }
   const pRate = clears / 8
 
-  // 六大标准流派的可行数(标准模拟空间)
-  const simFoes: CombatantSnap[] = []
-  for (let i = 0; i < world.fights - 1; i += 1) simFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, SIM_REFERENCE))
-  simFoes.push(worldFoeSnap(world.guardian, SIM_REFERENCE))
+  /**
+   * 六大标准流派的可行数(标准模拟空间)。
+   *
+   * 参照取 SIM_REFERENCE —— 这一项比的是**构筑形状**(同一份三维下,哪些流派打得动),
+   * 不是绝对强度,故不走本界锚点。但判定要照实战口径算:厚构筑会被道之理解加厚,
+   * 少了它,厚流派在这一栏会被高估。
+   */
   let viableStyles = 0
   for (const profile of BUILD_PROFILES) {
+    const styleSnap = buildSnap(profile)
+    const styleJudgement = celestialJudgement(styleSnap.mods, MAX_MAJOR, world.anchorTier)
+    const simFoes: CombatantSnap[] = []
+    for (let i = 0; i < world.fights - 1; i += 1)
+      simFoes.push(worldFoeSnap(world.foes[i % world.foes.length]!, SIM_REFERENCE, 1, styleJudgement))
+    simFoes.push(worldFoeSnap(world.guardian, SIM_REFERENCE, 1, styleJudgement))
     let wins = 0
     for (let i = 0; i < 5; i += 1) {
-      if (runGauntlet(buildSnap(profile), simFoes, rules, world.healBetweenPct, seededRng, opts).cleared) wins += 1
+      if (runGauntlet(styleSnap, simFoes, rules, world.healBetweenPct, seededRng, opts).cleared) wins += 1
     }
     if (wins / 5 >= 0.4) viableStyles += 1
   }
@@ -452,6 +532,7 @@ export function forecastExpedition(worldId: string, pactId: string | null): Expe
   const starN = pRate >= 0.85 ? 5 : pRate >= 0.6 ? 4 : pRate >= 0.4 ? 3 : pRate >= 0.15 ? 2 : 1
   return {
     difficulty: pRate >= 0.85 ? '胜券在望' : pRate >= 0.6 ? '略占上风' : pRate >= 0.4 ? '胜负各半' : pRate >= 0.15 ? '凶险' : '九死一生',
+    judgementLines: celestialJudgementLines(player.celestialStats.mods, player.major, world.anchorTier),
     viableStyles,
     stars: '★'.repeat(starN) + '☆'.repeat(5 - starN)
   }

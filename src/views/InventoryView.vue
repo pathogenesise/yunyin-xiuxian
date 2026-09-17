@@ -5,13 +5,22 @@
 
     <!-- 装备:部位槽,点击唤起部位列表 -->
     <template v-if="tab === 'equip'">
+      <!-- 装备共鸣:机制是活的,玩家却看不见 —— 同组两件即共鸣,（2/2）亮起 -->
+      <div v-if="setRows.length" class="card-ink mt-3 px-4 py-2.5">
+        <p class="text-[10px] text-ink-faint">装备共鸣(同组两件即共鸣,机制不叠数值)</p>
+        <p v-for="s in setRows" :key="s.def.id" class="mt-1 flex items-baseline gap-2 text-[11px]">
+          <span class="font-kai" :class="s.active ? 'text-jade' : 'text-ink-soft'">{{ s.def.name }}</span>
+          <span class="tabular" :class="s.active ? 'text-jade' : 'text-ink-faint'">{{ s.count }}/{{ s.def.required }}</span>
+          <span class="min-w-0 text-[10px] leading-relaxed text-ink-faint">{{ s.def.effectDesc }}</span>
+        </p>
+      </div>
       <div class="mt-3 flex items-center justify-between px-1">
         <span class="text-[11px] text-ink-faint tabular">藏品 {{ inventory.bagItems.length }} · 器灵尘 {{ resources.dust }}</span>
         <span class="flex gap-3">
-          <button class="text-[11px] text-azure/90 active:opacity-60" @click="smartOpen = true">
+          <button class="-my-1.5 py-1.5 text-[11px] text-azure/90 active:opacity-60" @click="smartOpen = true">
             收纳{{ settings.smartKeep.enabled ? '·启' : '' }}
           </button>
-          <button class="text-[11px] text-cinnabar/80 active:opacity-60" @click="decomposeOpen = true">分解</button>
+          <button class="-my-1.5 py-1.5 text-[11px] text-cinnabar/80 active:opacity-60" @click="decomposeOpen = true">分解</button>
         </span>
       </div>
       <div class="mt-2 grid grid-cols-3 gap-2">
@@ -38,7 +47,7 @@
           </template>
         </button>
       </div>
-      <p class="mt-2 text-center text-[10px] text-ink-ghost">点击部位查看候选,行囊满时新掉落自动折作器灵尘</p>
+      <p class="mt-2 text-center text-[10px] text-ink-faint">点击部位查看候选,行囊满时新掉落自动折作器灵尘</p>
 
       <!-- 全部藏品(含佩戴中):部位槽之下的完整清单 -->
       <div v-if="allItems.length" class="mt-4">
@@ -48,7 +57,7 @@
           <EquipmentCard v-for="row in allItems" :key="row.item.uid" :item="row.item" :equipped="row.equipped" @open="openDetail" />
         </div>
       </div>
-      <p v-else class="mt-8 text-center text-[12px] text-ink-ghost">行囊空空,去历练中寻些机缘吧</p>
+      <p v-else class="mt-8 text-center text-[12px] text-ink-faint">行囊空空,去历练中寻些机缘吧</p>
     </template>
 
     <!-- 丹药 -->
@@ -111,7 +120,12 @@
     <template v-else>
       <p class="mt-3 px-1 text-[11px] text-ink-faint tabular">
         法宝位 {{ inventory.equippedArtifacts.length }}/{{ artifactSlots }}
-        <template v-if="artifactSlots < 2">· 元婴境开启第二法宝位</template>
+        <template v-if="artifactSlots < ARTIFACT_MAX_SLOTS">· {{ artifactUnlockRealm }}境开启第{{ cnNumber(ARTIFACT_MAX_SLOTS) }}法宝位</template>
+      </p>
+      <!-- 祭炼到底给什么:数值都从上界常数来,不在界面里再写一份 -->
+      <p class="mt-1 px-1 text-[10px] text-ink-ghost">
+        祭炼一重,被动与神通各强 {{ formatPercent(ARTIFACT_LEVEL_BONUS) }},至多 {{ cnNumber(ARTIFACT_MAX_LEVEL) }} 重 ——
+        顶到封顶的不再涨,卡片上标着
       </p>
       <div v-if="artifactRows.length" class="mt-2 space-y-2.5">
         <div v-for="row in artifactRows" :key="row.def.id" class="card-ink px-4 py-3">
@@ -119,11 +133,26 @@
             <GameIcon :name="row.def.icon" :size="18" :style="{ color: qualityDef(row.def.quality).color }" />
             <span class="font-kai text-[14px]" :style="{ color: qualityDef(row.def.quality).color }">{{ row.def.name }}</span>
             <QualityTag :quality="row.def.quality" />
-            <span class="ml-auto tabular text-[11px] text-gold-ink">{{ row.owned.level }} 阶</span>
+            <!-- 「重」而不是「阶」:阶是地界与装备层级的词,法宝这一头说的是祭炼了几重 -->
+            <span class="ml-auto tabular text-[11px] text-gold-ink">{{ artifactLevelLabel(row.owned.level) }}</span>
           </div>
           <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{{ row.def.desc }}</p>
           <p class="mt-1 text-[11px] text-azure">{{ passiveLines(row.def.id, row.owned.level).join(' · ') }}</p>
-          <p class="mt-1 text-[11px] text-violet-ink">神通「{{ row.def.active.name }}」:{{ row.def.active.desc }}</p>
+          <!--
+            神通说明按品阶与祭炼等级现算:效果随「品阶 × (1+0.08×重数)」走,
+            文案不能停在基线那一句
+            (见 data/artifacts.artifactActiveText —— 战斗与这句话读的是同一个函数)
+          -->
+          <p class="mt-1 text-[11px] text-violet-ink">
+            神通「{{ row.def.active.name }}」:{{ artifactActiveText(row.def, row.owned.level) }}
+          </p>
+          <!--
+            下一重给多少:按钮只报代价,玩家得自己按 ×1.08 心算 —— 而「值不值」
+            正是按下之前要想清楚的事(数值由 artifactNextLevelGain 算,含封顶提示)。
+          -->
+          <p v-if="nextGainText(row.def.id, row.owned.level)" class="mt-1 text-[10px] leading-relaxed text-ink-faint tabular">
+            下一重:{{ nextGainText(row.def.id, row.owned.level) }}
+          </p>
           <div class="mt-2.5 flex gap-2">
             <button
               class="btn-seal flex-1 !py-1.5 !text-[12px]"
@@ -133,7 +162,11 @@
               {{ row.equipped ? '收回法宝' : '祭炼随身' }}
             </button>
             <button v-if="row.upCost" class="btn-ghost flex-1 !py-1.5 !text-[12px] tabular" @click="upgradeArtifact(row.def.id)">
-              炼化(悟道{{ row.upCost.wudao }})
+              <!--
+                两种代价都要写出来:炼化既扣悟道点、也扣灵石(见 forge.artifactUpCost),
+                而按钮此前只报悟道 —— 玩家按标签算账,回头发现灵石也少了一大截。
+              -->
+              炼化(悟道 {{ row.upCost.wudao }} · 灵石 {{ formatGN(row.upCost.stone) }})
             </button>
           </div>
         </div>
@@ -141,7 +174,7 @@
       <p v-else class="mt-16 text-center text-[12px] text-ink-ghost">
         尚无法宝随身
         <br />
-        <span class="text-[11px]">法宝多出自奇遇与强敌之手</span>
+        <span class="text-[11px]">法宝多出自际遇与强敌之手</span>
       </p>
       <p v-if="player.petId" class="mt-4 text-center text-[11px] text-ink-faint">灵兽相伴,可前往「人物」页查看</p>
     </template>
@@ -164,6 +197,11 @@
           </div>
         </div>
         <p class="mt-3 text-[12px] leading-relaxed text-ink-soft">{{ currentPill.def.desc }}</p>
+        <!-- 效果与来路:丹药卡片此前只有风味与数量,服下去会怎样一个字都没说 -->
+        <p class="mt-2 whitespace-pre-line text-[12px] leading-relaxed text-azure">{{ pillFuncText(currentPill.def) }}</p>
+        <p v-if="pillMasteryText(currentPill.def.id)" class="mt-1 text-[11px] text-ink-faint">
+          {{ pillMasteryText(currentPill.def.id) }}
+        </p>
       </template>
       <template #footer>
         <button class="btn-seal w-full" @click="onUsePill()">服 用</button>
@@ -192,6 +230,18 @@
     <!-- 开炉炼丹 -->
     <BaseModal :open="craftOpen" title="开炉炼丹" wide @close="craftOpen = false">
       <p class="mb-2 text-[11px] text-ink-faint tabular">灵草 {{ resources.herb }} · 灵石 {{ formatGN(resources.spiritStone) }}</p>
+      <!-- 百工技艺:做得多就精。技艺一直在影响成丹,却从不显示 —— 玩家看不到自己在长 -->
+      <div v-if="skillRows.length" class="mb-2 rounded-md bg-paper-deep/60 px-3 py-2">
+        <p class="text-[10px] text-ink-faint">技艺(按道分,做得多就精)</p>
+        <div class="mt-1 space-y-0.5">
+          <p v-for="s in skillRows" :key="s.id" class="flex items-baseline gap-2 text-[11px]">
+            <span class="w-14 shrink-0 text-ink-faint">{{ s.daoName }}</span>
+            <span class="w-12 shrink-0 font-kai text-ink-soft">{{ s.name }}</span>
+            <span class="w-12 shrink-0" :class="s.stage === '生疏' ? 'text-ink-ghost' : 'text-jade'">{{ s.stage }}</span>
+            <span class="min-w-0 text-[10px] leading-relaxed text-ink-faint">{{ s.desc }}</span>
+          </p>
+        </div>
+      </div>
       <div v-if="recipes.length" class="max-h-64 space-y-2 overflow-y-auto">
         <div v-for="r in recipes" :key="r.def.id" class="card-ink px-3.5 py-2.5">
           <div class="flex items-center gap-3">
@@ -203,6 +253,8 @@
                 <span v-if="r.able.overReach > 0" class="text-[10px] text-cinnabar">越阶 {{ r.able.overReach }}</span>
               </p>
               <p class="text-[11px] text-ink-faint tabular">灵草×{{ r.cost.herb }} · 灵石 {{ formatGN(r.cost.stone) }}</p>
+              <!-- 炼出来是什么:方子清单此前只报代价与把握,不报成品 -->
+              <p class="text-[10px] leading-relaxed text-azure/80">{{ pillFuncText(r.def) }}</p>
             </div>
             <div class="shrink-0 text-right">
               <p class="tabular text-[13px]" :class="rateClass(r.able.successRate)">{{ formatPercent(r.able.successRate) }}</p>
@@ -239,37 +291,45 @@
               <template v-if="row.item.level > 0">+{{ row.item.level }}</template>
             </span>
             <span class="block text-[10px] text-ink-faint">
-              {{ qualityDef(row.item.quality).name }} · {{ row.item.tier }} 阶 · {{ row.item.affixes.length }} 词条
+              <!-- 条数带分母:这一件还剩多少条可涨,一眼看得出(上限来自品质表) -->
+              {{ qualityDef(row.item.quality).name }} · {{ row.item.tier }} 阶 · 词条
+              {{ row.item.affixes.length }}/{{ qualityDef(row.item.quality).affixes[1] }}
             </span>
           </button>
           <button v-if="row.equipped" class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="unequipSlot()">卸下</button>
           <button v-else class="btn-seal shrink-0 !px-2.5 !py-1 !text-[11px]" @click="equipItem(row.item.uid)">换上</button>
         </div>
       </div>
-      <p v-else class="py-8 text-center text-[12px] text-ink-ghost">此部位尚无藏品,去历练中寻些机缘吧</p>
+      <p v-else class="py-8 text-center text-[12px] text-ink-faint">此部位尚无藏品,去历练中寻些机缘吧</p>
       <p class="mt-2 text-center text-[10px] text-ink-ghost">点名称可查看详情与对比</p>
     </BaseModal>
 
     <!-- 一键分解:勾选品质(记忆勾选) -->
     <BaseModal :open="decomposeOpen" title="一键分解" @close="decomposeOpen = false">
-      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;此后拾取到所选品质的装备将自动回收为器灵尘,不再占行囊,已存入行囊的同类也会一并化作器灵尘。此规则优先于智能收纳。</p>
+      <p class="text-[11px] text-ink-faint">勾选要分解的品质,已佩戴与上锁的装备不受影响。勾选会被记住;开启智能收纳后,拾取到所选品质的装备将自动回收为器灵尘,不再占行囊;未开启智能收纳时,拾取照常入包,此勾选仅在下方「分 解」时作为筛选。行囊中已存的同类须点下方「分 解」方才化尘。</p>
       <div class="mt-2 space-y-1">
         <label
-          v-for="q in QUALITIES"
-          :key="q.id"
+          v-for="row in decomposeRows"
+          :key="row.rank"
           class="flex items-center gap-2.5 rounded-md px-2.5 py-1.5"
-          :class="settings.decomposeRanks.includes(q.rank) ? 'bg-paper-deep/80' : ''"
+          :class="settings.decomposeRanks.includes(row.rank) ? 'bg-paper-deep/80' : ''"
         >
           <input
             type="checkbox"
             class="h-4 w-4 accent-cinnabar"
-            :checked="settings.decomposeRanks.includes(q.rank)"
-            @change="toggleRank(q.rank)"
+            :checked="settings.decomposeRanks.includes(row.rank)"
+            @change="toggleRank(row.rank)"
           />
-          <span class="font-kai text-[13px]" :style="{ color: q.color }">{{ q.name }}</span>
-          <span class="ml-auto tabular text-[11px] text-ink-faint">现存 {{ decomposeCounts[q.rank] ?? 0 }} 件</span>
+          <span class="font-kai text-[13px]" :style="{ color: row.color }">{{ row.name }}</span>
+          <span class="ml-auto tabular text-[11px] text-ink-faint">
+            现存 {{ row.count }} 件
+            <template v-if="row.count > 0">· {{ row.text }}</template>
+          </span>
         </label>
       </div>
+      <p v-if="decomposeTotal > 0" class="mt-2 text-right text-[11px] text-cinnabar/90 tabular">
+        共 {{ decomposeTotal }} 件 → {{ batchYieldText(decomposePlanned) }}
+      </p>
       <template #footer>
         <button class="btn-seal w-full" :disabled="decomposeTotal === 0" @click="confirmDecompose">
           分 解{{ decomposeTotal > 0 ? `(${decomposeTotal} 件)` : '' }}
@@ -280,7 +340,10 @@
     <!-- 智能收纳弹窗入口共用分解弹窗下方 -->
     <BaseModal :open="smartOpen" title="智能收纳" @close="smartOpen = false">
       <p class="text-[11px] leading-relaxed text-ink-faint">
-        开启后,新掉落先过智能裁决:无缘之物直接化尘不入包;行囊满时,值得收藏的新件会挤掉包内与道无缘的旧物。识别不只看品质:流派核心件与组合技部件亦在收藏之列。
+        开启后,新掉落先过智能裁决:无缘之物直接化尘不入包;行囊满时,值得收藏的新件会挤掉包内最弱的无缘旧物(品质低的先走,同档看层级与词条)。识别不只看品质:流派核心词条、组合技部件、成套共鸣件、条条近满的词条都算值得留。
+      </p>
+      <p class="mt-1 text-[11px] leading-relaxed text-ink-ghost">
+        你强化过、重铸过、封存过词条的件,自动收纳一律不动 —— 要扔得你自己动手(单件分解,或勾选该品质的一键分解)。
       </p>
       <label class="mt-2 flex items-center justify-between py-1.5">
         <span class="text-[13px] text-ink-soft">启用智能收纳</span>
@@ -307,6 +370,14 @@
       <label class="flex items-center justify-between py-1.5">
         <span class="text-[12px] text-ink-soft">保留组合技部件(副体系词条)</span>
         <input v-model="settings.smartKeep.keepComboPiece" type="checkbox" class="h-4 w-4 accent-cinnabar" />
+      </label>
+      <label class="flex items-center justify-between py-1.5">
+        <span class="text-[12px] text-ink-soft">保留成套共鸣件(机制优先)</span>
+        <input v-model="settings.smartKeep.keepSetPiece" type="checkbox" class="h-4 w-4 accent-cinnabar" />
+      </label>
+      <label class="flex items-center justify-between py-1.5">
+        <span class="text-[12px] text-ink-soft">保留词条近满件</span>
+        <input v-model="settings.smartKeep.keepPerfectRolls" type="checkbox" class="h-4 w-4 accent-cinnabar" />
       </label>
       <template #footer>
         <!-- 一键清理二步确认:整包报废,按一下不该就此了结 -->
@@ -338,14 +409,37 @@
   import { useSettingsStore } from '@/stores/settings'
   import { qualityDef, QUALITIES } from '@/data/qualities'
   import { pillDef } from '@/data/pills'
-  import { artifactDef, ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
+  import { pillFuncText } from '@/ui/itemText'
+  import {
+    artifactActiveText,
+    artifactDef,
+    artifactLevelLabel,
+    artifactNextLevelGain,
+    artifactValue,
+    ARTIFACT_LEVEL_BONUS,
+    ARTIFACT_MAX_LEVEL,
+    ARTIFACT_MAX_SLOTS,
+    ARTIFACT_SLOT_UNLOCK_MAJOR,
+    artifactSlotsFor
+  } from '@/data/artifacts'
+  import { REALMS } from '@/data/realms'
   import { EQUIP_SLOT_NAMES, equipmentTemplate } from '@/data/equipment'
   import { BAG_CAPACITY } from '@/data/constants'
   import { usePill, availableRecipes, craftPill, pillCraftCost } from '@/core/pillService'
   import { craftability, type Craftability } from '@/core/craftability'
-  import { decomposeByRanks, decomposeEquipment, artifactUpCost, upgradeArtifact } from '@/core/forge'
+  import {
+    batchYieldText,
+    decomposeBatch,
+    decomposeByRanks,
+    decomposePreview,
+    artifactUpCost,
+    upgradeArtifact
+  } from '@/core/forge'
   import { keepVerdict } from '@/core/smartKeep'
-  import { formatGN, formatNum, formatPercent } from '@/utils/format'
+  import { equipSetDef, setCounts, type EquipSetDef } from '@/core/equipSet'
+  import { useLoreStore } from '@/stores/lore'
+  import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
+  import { cnNumber, formatGN, formatNum, formatPercent } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import type { AnyStatKey, EquipSlot, GNum, PillDef } from '@/types'
   import SectionTitle from '@/components/common/SectionTitle.vue'
@@ -360,6 +454,7 @@
   const player = usePlayerStore()
   const ui = useUiStore()
   const settings = useSettingsStore()
+  const lore = useLoreStore()
 
   type Tab = 'equip' | 'pill' | 'material' | 'artifact'
   const tab = ref<Tab>('equip')
@@ -374,6 +469,18 @@
   // ---- 装备:部位槽 + 部位候选列表 ----
   const SLOTS: EquipSlot[] = ['weapon', 'head', 'body', 'wrist', 'belt', 'boots', 'necklace', 'ring', 'talisman']
   const pickerSlot = ref<EquipSlot | null>(null)
+
+  /** 装备共鸣:已装备件里的同组计数(未满也列出来,让玩家知道差几件) */
+  const setRows = computed(() => {
+    const counts = setCounts(inventory.equippedItems)
+    return [...counts.entries()]
+      .map(([id, count]) => {
+        const def = equipSetDef(id)
+        return def ? { def, count, active: count >= def.required } : null
+      })
+      .filter((row): row is { def: EquipSetDef; count: number; active: boolean } => row !== null)
+      .sort((a, b) => Number(b.active) - Number(a.active) || b.count - a.count)
+  })
 
   const slotRows = computed(() =>
     SLOTS.map(slot => {
@@ -444,6 +551,14 @@
       .sort((a, b) => a.able.rank - b.able.rank)
   )
 
+  /** 技艺一览:名(DAO_NAMES 的道名 + 技艺名)、境地(skillStageName)、这项技艺管什么 */
+  const skillRows = computed(() =>
+    SKILLS.map(s => {
+      const lv = lore.skillLevel(s.id)
+      return { id: s.id, daoName: DAO_NAMES[s.dao], name: s.name, stage: skillStageName(lv), desc: s.desc }
+    })
+  )
+
   /** 把握度配色:七成以上放心开炉,三成以下是在赌 */
   function rateClass(rate: number): string {
     if (rate >= 0.7) return 'text-jade-ink'
@@ -497,15 +612,25 @@
     if (!pillRows.value.some(r => r.def?.id === id)) pillDetail.value = null
   }
 
-  const artifactSlots = computed(() => (player.major >= 3 ? 2 : 1))
+  const artifactSlots = computed(() => artifactSlotsFor(player.major))
+  /** 开第二法宝位的那一境的名字 —— 门槛挪动时文案跟着走,不手写「元婴」 */
+  const artifactUnlockRealm = computed(() => REALMS[ARTIFACT_SLOT_UNLOCK_MAJOR]?.name ?? '')
 
   const artifactRows = computed(() =>
-    inventory.artifacts.map(a => ({
-      owned: a,
-      def: artifactDef(a.defId)!,
-      upCost: artifactUpCost(a.defId),
-      equipped: inventory.equippedArtifacts.includes(a.defId)
-    }))
+    inventory.artifacts
+      .map(a => ({
+        owned: a,
+        def: artifactDef(a.defId)!,
+        upCost: artifactUpCost(a.defId),
+        equipped: inventory.equippedArtifacts.includes(a.defId)
+      }))
+      // 与行囊同一套排法:品质降序 → 祭炼高的在前(此前按入手先后排,越捡越乱)
+      .sort(
+        (a, b) =>
+          qualityDef(b.def.quality).rank - qualityDef(a.def.quality).rank ||
+          b.owned.level - a.owned.level ||
+          a.def.name.localeCompare(b.def.name)
+      )
   )
 
   function toggleArtifact(defId: string): void {
@@ -514,36 +639,35 @@
   }
 
   function batchDecompose(): void {
-    const n = decomposeByRanks(settings.decomposeRanks)
-    ui.toast(n > 0 ? `已分解 ${n} 件装备` : '无可分解之物', 'info')
+    // 总账那一条由服务自己报(逐件弹提示只会互相顶掉)
+    if (decomposeByRanks(settings.decomposeRanks) === 0) ui.toast('无可分解之物', 'info')
   }
 
   // ---- 一键分解弹窗 ----
   const decomposeOpen = ref(false)
 
-  /** 各品质档现存可分解件数(未锁定) */
-  const decomposeCounts = computed(() => {
-    const counts: Record<number, number> = {}
-    for (const it of inventory.bagItems) {
-      if (it.locked) continue
-      const rank = qualityDef(it.quality).rank
-      counts[rank] = (counts[rank] ?? 0) + 1
-    }
-    return counts
-  })
+  /** 各品质档的现存件数与分解返还(与服务同一套算法:弹窗上写多少就是真给多少) */
+  const decomposeRows = computed(() =>
+    QUALITIES.map(q => {
+      const got = decomposePreview([q.rank])
+      return { rank: q.rank, name: q.name, color: q.color, count: got.count, text: batchYieldText(got) }
+    })
+  )
 
-  const decomposeTotal = computed(() => settings.decomposeRanks.reduce((sum, rank) => sum + (decomposeCounts.value[rank] ?? 0), 0))
+  const decomposeTotal = computed(() =>
+    decomposeRows.value.filter(r => settings.decomposeRanks.includes(r.rank)).reduce((sum, r) => sum + r.count, 0)
+  )
+
+  /** 已勾选那几档的总账 */
+  const decomposePlanned = computed(() => decomposePreview(settings.decomposeRanks))
 
   function toggleRank(rank: number): void {
     const adding = !settings.decomposeRanks.includes(rank)
     settings.decomposeRanks = adding
       ? [...settings.decomposeRanks, rank].sort((a, b) => a - b)
       : settings.decomposeRanks.filter(r => r !== rank)
-    // 新勾选一档 = 宣告该档是废料:行囊内现存同类(未上锁)一并化尘,与"此后拾取自动回收"对齐
-    if (adding) {
-      const n = decomposeByRanks([rank])
-      if (n > 0) ui.toast(`行囊内 ${QUALITIES[rank]?.name ?? '该档'}×${n} 按新规则化作器灵尘`, 'info')
-    }
+    // 勾选只是「标记该档为废料」——行囊内现存同类不在此刻销毁,待玩家点「分 解」确认。
+    // (智能收纳开启后,拾取到该档才会自动回收——那是不占行囊的入包裁决,与行囊内已存之物无关;未开启则照常入包。)
   }
 
   function confirmDecompose(): void {
@@ -568,18 +692,73 @@
   function smartClean(): void {
     cleanConfirm.value = false
     const targets = inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep)
-    let n = 0
-    for (const it of targets) {
-      if (decomposeEquipment(it.uid)) n += 1
-    }
-    ui.toast(n > 0 ? `收纳毕:${n} 件无缘之物化作器灵尘` : '行囊中皆是有缘之物', 'info')
+    const got = decomposeBatch(targets)
+    ui.toast(got.count > 0 ? `收纳毕:${got.count} 件无缘之物化尘,${batchYieldText(got)}` : '行囊中皆是有缘之物', 'info')
     smartOpen.value = false
   }
 
   function passiveLines(defId: string, level: number): string[] {
     const def = artifactDef(defId)
     if (!def) return []
-    const mult = 1 + level * ARTIFACT_LEVEL_BONUS
-    return Object.entries(def.passive).map(([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent((v as number) * mult)}`)
+    // 与属性汇总(store/inventory)同源:卡片上写多少,身上加的就是多少
+    return Object.entries(artifactValue(def, level).passive).map(
+      ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`
+    )
+  }
+
+  /** 神通主体那个数说的是什么(用药名之外的话:威力 / 护盾 / 破解…) */
+  const ACTIVE_NOUNS: Record<string, string> = {
+    damage: '威力',
+    drain: '威力',
+    heal: '回复',
+    shield: '护盾',
+    weaken: '削弱',
+    sunder: '破甲',
+    purge: '挣脱'
+  }
+
+  /**
+   * 祭炼下一重的账:被动逐项 + 神通主体 + 吸命回补,到顶的标「已至上限」。
+   * 已达满重(artifactNextLevelGain 返回 null)时不显示这一行。
+   */
+  function nextGainText(defId: string, level: number): string {
+    const def = artifactDef(defId)
+    const gain = def ? artifactNextLevelGain(def, level) : null
+    if (!gain) return ''
+    const parts = gain.passive.map(
+      p => `${STAT_NAMES[p.key] ?? p.key} ${formatPercent(p.from)} → ${formatPercent(p.to)}`
+    )
+    if (gain.active) {
+      const noun = ACTIVE_NOUNS[def!.active.effect.type] ?? '效果'
+      /**
+       * 零重就顶到封顶的那几件(神鞭的破甲、神魔镜的回补…)再炼也不会更高,
+       * 写「50% → 50%(已至上限)」等于让人自己看出来 —— 直接说清只涨被动。
+       */
+      const alreadyCapped = gain.active.capped && Math.abs(gain.active.to - gain.active.from) < 1e-9
+      parts.push(
+        alreadyCapped
+          ? `神通${noun}已至上限(${formatPercent(gain.active.to)}),祭炼只涨被动`
+          : `神通${noun} ${formatPercent(gain.active.from)} → ${formatPercent(gain.active.to)}${gain.active.capped ? '(已至上限)' : ''}`
+      )
+    } else {
+      parts.push('神通不随祭炼变')
+    }
+    if (gain.heal) {
+      parts.push(`回补 ${formatPercent(gain.heal.from)} → ${formatPercent(gain.heal.to)}${gain.heal.capped ? '(已至上限)' : ''}`)
+    }
+    return parts.join(' · ')
+  }
+
+  /**
+   * 丹方读到几分熟 —— 与图鉴的「已得方/通晓」同一份状态(lore.recipeLore)。
+   * 无方之丹没有这一行:它本就炼不出来(见 ui/itemText.pillSourceText)。
+   */
+  function pillMasteryText(id: string): string {
+    const def = pillDef(id)
+    if (!def?.recipe) return ''
+    const m = lore.recipeMastery(id)
+    if (m <= 0) return '此方尚未到手 —— 去藏经阁翻书,或向师长讨教'
+    if (m >= 1) return '此方已通晓:火候节点烂熟于心'
+    return `此方已得,熟练 ${Math.round(m * 100)}% —— 多炼几炉便到通晓`
   }
 </script>

@@ -3,15 +3,32 @@
     <div v-if="inst && template && resolved">
       <div class="flex items-center gap-2">
         <QualityTag :quality="inst.quality" />
-        <span class="text-[11px] text-ink-faint">{{ EQUIP_SLOT_NAMES[template.slot] }} · {{ inst.tier }} 阶</span>
+        <!-- 界域 + 阶位:同一句「23 阶」在人间界与仙界完全不是一回事,故写清是哪一界 -->
+        <span class="text-[11px] text-ink-faint">
+          {{ EQUIP_SLOT_NAMES[template.slot] }} · {{ worldNameOfTier(inst.tier) }} · {{ inst.tier }} 阶
+        </span>
         <span v-if="inst.level > 0" class="text-[11px] text-gold-ink tabular">+{{ inst.level }}</span>
-        <button class="ml-auto text-ink-faint active:scale-90" @click="toggleLock">
+        <button
+          class="-m-1.5 flex min-h-[28px] min-w-[28px] items-center justify-center p-1.5 text-ink-faint active:scale-90"
+          :aria-label="inst.locked ? '解锁' : '锁定'"
+          @click="toggleLock"
+        >
           <GameIcon :name="inst.locked ? 'lock' : 'unlock'" :size="15" />
         </button>
       </div>
       <p class="mt-2 text-[12px] leading-relaxed text-ink-faint">{{ template.desc }}</p>
+      <!--
+        共鸣是机制而非数值,但装备卡片此前一个字都不提:玩家在「要不要换掉这件」时,
+        看不到它身上拴着一条会断的机制(见 core/equipSet)。
+      -->
+      <p v-if="setInfo" class="mt-1.5 text-[11px] leading-relaxed">
+        <span class="font-kai" :class="setInfo.active ? 'text-jade' : 'text-violet-ink'">
+          共鸣「{{ setInfo.def.name }}」{{ setInfo.count }}/{{ setInfo.def.required }}
+        </span>
+        <span class="ml-1 text-ink-faint">{{ setInfo.def.effectDesc }}</span>
+      </p>
       <div class="ink-divider my-3" />
-      <p v-if="compareTarget" class="mb-1.5 text-[10px] text-ink-ghost tabular">对比当前佩戴:「{{ compareTarget.name }}」(绿升红降)</p>
+      <p v-if="compareTarget" class="mb-1.5 text-[10px] text-ink-faint tabular">对比当前佩戴:「{{ compareTarget.name }}」(绿升红降)</p>
       <div class="space-y-1.5">
         <p v-for="row in flatRows" :key="row.label" class="flex justify-between text-[13px]">
           <span class="text-ink-soft">{{ row.label }}</span>
@@ -27,23 +44,61 @@
       </div>
       <template v-if="resolved.affixLines.length">
         <div class="ink-divider my-3" />
-        <p class="mb-1.5 font-kai text-[12px] tracking-[0.3em] text-ink-faint">词 条</p>
-        <div v-for="(line, i) in resolved.affixLines" :key="i" class="mb-1.5 rounded-md bg-violet-ink/7 px-3 py-1.5">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="font-kai text-[12px] text-violet-ink">「{{ line.name }}」</span>
-              <span class="ml-1 text-[12px] text-ink-soft">{{ line.desc }}</span>
-            </div>
+        <!--
+          条数上限按品质给(凡品 0~1 · 神品 6~9),这是玩家最该看见的一件事:
+          一件装备的"上限"就在它的品质里,而重铸可以重掷条数 —— 只有把它摊在明面上,
+          「要不要为这件洗下去」才算得清。
+        -->
+        <p class="mb-1.5 flex items-baseline justify-between font-kai text-[12px] tracking-[0.3em] text-ink-faint">
+          <span>词 条</span>
+          <span class="text-[10px] tracking-normal tabular">
+            {{ inst.affixes.length }} / {{ affixCap }} 条
+            <span class="ml-1 text-ink-ghost">({{ qualityName }}上限)</span>
+          </span>
+        </p>
+        <!--
+          词条一条一行:名目与稀有度在左、效果在右、**数值单独加粗**(见 resolveEquipStats
+          的 before/value/after)。一件神品能挂九条,所以这一列要能扫:
+          左边一列名目对齐、右边一列数字对齐,行与行之间不夹长度不一的句子。
+
+          分成九行之后,原来「一条一个色块」的排法会把整张卡片压塌 ——
+          色块摞起来,装备本身的层次反而看不见。改成整体一块底 + 行间细分隔线,
+          稀有度交给左侧那道色边(与名目同色):一眼看得出哪条是撞上的大运,
+          又不至于九块颜色抢戏。
+        -->
+        <ul class="overflow-hidden rounded-md bg-violet-ink/6">
+          <li
+            v-for="(line, i) in resolved.affixLines"
+            :key="line.id"
+            class="flex items-center gap-2 py-1.5 pl-2 pr-1.5"
+            :class="i > 0 ? 'border-t border-violet-ink/12' : ''"
+            :style="{ borderLeft: `2px solid ${AFFIX_RARITY_META[line.rarity].color}` }"
+          >
+            <span class="shrink-0 font-kai text-[12px]" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
+              「{{ line.name }}」
+            </span>
+            <span class="shrink-0 text-[9px] opacity-80" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
+              {{ AFFIX_RARITY_META[line.rarity].name }}
+            </span>
+            <span class="ml-auto min-w-0 text-right text-[11px] leading-snug text-ink-soft">
+              {{ line.before }}<span class="tabular font-medium text-ink">{{ line.value }}</span>{{ line.after }}
+            </span>
             <button
               v-if="canSealAffix(line.id)"
-              class="ml-2 shrink-0 rounded-md px-2 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
+              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
+              :aria-label="`封存词条${line.name}`"
               @click="doSealAffix(line.id)"
             >
               封存
             </button>
-            <span v-else-if="isAffixSealed(line.id)" class="ml-2 shrink-0 text-[10px] text-jade">已封存</span>
-          </div>
-        </div>
+            <span v-else-if="isAffixSealed(line.id)" class="shrink-0 text-jade" role="img" aria-label="这条词条已封存">
+              <GameIcon name="lock" :size="12" />
+            </span>
+          </li>
+        </ul>
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
+          排序:稀有度(传世 → 常见)→ 掷点;左侧色边即这一条的成色
+        </p>
       </template>
       <template v-if="buildPreview">
         <div class="ink-divider my-3" />
@@ -74,6 +129,13 @@
           <span class="tabular">器灵尘×{{ upCost.dust }} · 灵石 {{ formatGN(upCost.stone) }}</span>
         </p>
       </template>
+      <p v-if="salvage" class="mt-1 flex items-center justify-between text-[11px] text-ink-ghost">
+        <span>分解返还{{ inst.level > 0 ? '(含强化八成)' : '' }}</span>
+        <span class="tabular">
+          器灵尘×{{ salvage.dust }}
+          <template v-if="!isZero(salvage.stone)"> · 灵石 {{ formatGN(salvage.stone) }}</template>
+        </span>
+      </p>
       <!-- 修士实验室:反事实换装推演(真仙可用) -->
       <template v-if="canWhatIf">
         <div class="ink-divider my-3" />
@@ -100,7 +162,7 @@
           <p v-if="whatIf.modChanges.length" class="mt-1 text-[10px] text-azure tabular">
             主要变化:{{ whatIf.modChanges.map(c => `${c.label} ${c.delta > 0 ? '+' : ''}${Math.round(c.delta * 100)}%`).join(' · ') }}
           </p>
-          <p class="mt-0.5 text-[10px] text-ink-ghost">推演只述局面,不替你定夺。</p>
+          <p class="mt-0.5 text-[10px] text-ink-faint">推演只述局面,不替你定夺。</p>
         </template>
       </template>
     </div>
@@ -110,7 +172,7 @@
         <template v-if="reforgeCostVal || sealCostVal">
           <div class="flex gap-2 text-[11px]">
             <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-1" @click="doReforge">
-              重铸随机词条
+              重铸词条
               <span class="ml-1 tabular text-[10px] text-ink-faint">
                 {{ formatGN(reforgeCostVal.stone) }} · 尘×{{ reforgeCostVal.dust }}
               </span>
@@ -119,8 +181,15 @@
               封存一词 {{ formatGN(sealCostVal) }}
             </div>
           </div>
+          <!--
+            重铸到底做什么,得在按下之前说清:条数与数值一并重掷(封存的不动),
+            不限次数、成本只随「阶数」与「封存数」走 —— 与旧版"越洗越贵、上限十次"不同。
+          -->
+          <p v-if="reforgeCostVal" class="text-center text-[10px] leading-relaxed text-ink-faint">
+            重掷未封存的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,封存的不动 · 不限次数,成本随阶数与封存数走
+          </p>
           <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
-            重铸次数 {{ inst.reforgeCount ?? 0 }}/10 · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ Math.max(0, inst.affixes.length - 1) }}
+            已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ sealCapacity(inst) }}
           </p>
         </template>
         <div class="flex gap-2">
@@ -128,7 +197,12 @@
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
           <!-- 分解二步确认:一件淬养过的装备(强化/封存/重铸)误触垃圾桶不该直接没 -->
           <template v-if="decomposeArm !== inst?.uid">
-            <button class="btn-ghost px-3" :disabled="isEquipped || inst?.locked" @click="decomposeArm = inst?.uid ?? null">
+            <button
+              class="btn-ghost px-3"
+              :disabled="isEquipped || inst?.locked"
+              aria-label="分解这件装备"
+              @click="decomposeArm = inst?.uid ?? null"
+            >
               <GameIcon name="trash" :size="15" />
             </button>
           </template>
@@ -148,17 +222,21 @@
   import { useUiStore } from '@/stores/ui'
   import { useInventoryStore } from '@/stores/inventory'
   import { equipmentTemplate, EQUIP_SLOT_NAMES } from '@/data/equipment'
+  import { equipSetDef, setCounts } from '@/core/equipSet'
+  import { worldNameOfTier } from '@/core/formulas'
   import { resolveEquipStats } from '@/core/equipGen'
   import { decomposeEquipment, equipLevelCap, equipUpgradeCost, upgradeEquipment } from '@/core/forge'
+  import { salvageOf } from '@/core/salvage'
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
-  import { reforgeEquipment, reforgeCost, sealAffix, sealCost } from '@/core/reforge'
+  import { reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost } from '@/core/reforge'
+  import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
   import { formatGN, formatPercent } from '@/utils/format'
   import { isZero, sub } from '@/utils/gnum'
   import type { AnyStatKey, GNum } from '@/types'
-  import { STAT_NAMES } from '@/ui/statNames'
+  import { AFFIX_RARITY_META, STAT_NAMES } from '@/ui/statNames'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
@@ -172,10 +250,28 @@
   const resolved = computed(() => (inst.value ? resolveEquipStats(inst.value) : null))
   const isEquipped = computed(() => (inst.value && template.value ? inventory.equipped[template.value.slot] === inst.value.uid : false))
   const upCost = computed(() => (inst.value ? equipUpgradeCost(inst.value.uid) : null))
+  /** 分解返还:底材 + 强化投入的八成(练过的件拆了不至于血本无归,先把账摆出来) */
+  const salvage = computed(() => (inst.value ? salvageOf(inst.value) : null))
+
+  /**
+   * 这件装备所属的共鸣与其当前件数(只数已佩戴的 —— 共鸣看的是挂载,不是行囊)。
+   * 未佩戴时也照实显示「1/2」,让玩家在按下装备之前就看得见差几件。
+   */
+  const setInfo = computed(() => {
+    const setId = template.value?.set
+    if (!setId) return null
+    const def = equipSetDef(setId)
+    if (!def) return null
+    const count = setCounts(inventory.equippedItems).get(setId) ?? 0
+    return { def, count, active: count >= def.required }
+  })
 
   // ---- 重铸与封存 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))
   const sealCostVal = computed(() => (inst.value ? sealCost(inst.value) : null))
+  /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
+  const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
+  const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))
 
   function isAffixSealed(affixId: string): boolean {
     return (inst.value?.sealedAffixIds ?? []).includes(affixId)

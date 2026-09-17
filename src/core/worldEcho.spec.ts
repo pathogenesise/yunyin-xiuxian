@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE, emptyNemeses, recordLoss } from './worldMemory'
+import { ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE, recordLoss } from './worldMemory'
 import { memorialLine, MEMORIAL_CHANCE } from './suppress'
 import { usePlayerStore } from '@/stores/player'
 import type { NemesisRecord } from '@/types'
@@ -15,14 +15,14 @@ describe('宿敌残魂(ghost)', () => {
   })
 
   it('只有已雪耻的宿敌才有残魂形态', () => {
-    let list: NemesisRecord[] = emptyNemeses()
+    let list: NemesisRecord[] = []
     for (let i = 0; i < 3; i++) list = recordLoss(list, 'e_wolfking', '独角妖狼', 'qingyun', Date.now()).list
     // 未雪耻:无残魂
     expect(ghostOf(list, 'e_wolfking')).toBeNull()
   })
 
   it('雪耻后宿敌可化残魂,前缀与引导语完整', () => {
-    let list: NemesisRecord[] = emptyNemeses()
+    let list: NemesisRecord[] = []
     for (let i = 0; i < 3; i++) list = recordLoss(list, 'e_wolfking', '独角妖狼', 'qingyun', Date.now()).list
     const avenged = list.map(n => ({ ...n, avengedAt: Date.now() }))
     const ghost = ghostOf(avenged, 'e_wolfking')

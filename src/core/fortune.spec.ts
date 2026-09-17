@@ -2,7 +2,7 @@
  * Phase 31.0 S2:机缘 —— 低概率触发、带代价选择
  */
 import { describe, it, expect } from 'vitest'
-import { FORTUNE_EVENTS, fortuneEventDef } from '@/data/events'
+import { EVENTS, FORTUNE_EVENTS, eventDef } from '@/data/events'
 
 describe('机缘事件(fortune)', () => {
   it('机缘池非空且每个都有"取/弃"选择', () => {
@@ -14,8 +14,8 @@ describe('机缘事件(fortune)', () => {
     }
   })
 
-  it('机缘事件可查(def 回查)', () => {
-    const ev = fortuneEventDef(FORTUNE_EVENTS[0]!.id)
+  it('机缘事件可查(eventDef 同表回查 —— 弹窗靠它才打得开)', () => {
+    const ev = eventDef(FORTUNE_EVENTS[0]!.id)
     expect(ev?.id).toBe(FORTUNE_EVENTS[0]!.id)
   })
 
@@ -23,5 +23,13 @@ describe('机缘事件(fortune)', () => {
     // 概率常量在事件引擎内部,此处仅锁定数据不破坏
     const ids = new Set(FORTUNE_EVENTS.map(e => e.id))
     expect(ids.size).toBe(FORTUNE_EVENTS.length)
+  })
+
+  it('凡是能被 pickEventFor 选中的事件,eventDef 都查得到(否则弹窗开不了)', () => {
+    // 这条正是本轮补的漏洞:机缘 id 只登记在 FORTUNE_BY_ID,eventDef 只搜 EVENTS,
+    // 于是机缘被选中后 EventDialog 的 def 是 undefined —— 弹窗不开、自动结算也空转
+    for (const ev of [...FORTUNE_EVENTS, ...EVENTS]) {
+      expect(eventDef(ev.id), `${ev.id} 查不到,弹窗打不开`).toBeDefined()
+    }
   })
 })

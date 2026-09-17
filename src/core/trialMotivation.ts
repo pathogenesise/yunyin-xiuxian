@@ -193,7 +193,7 @@ export interface AxisCoverage {
  * 拉开 63.8pp。故契约不是纯罚款,它确实在战斗内部创造了取舍。
  *
  * 但 region/order/encounter/goal 四格确实一个都碰不到 ——
- * 四份契都只挂在 CombatRules 上,不改变探索路线、解锁顺序、
+ * 四份契都只挂在 CombatRules 上,不改变历练路线、解锁顺序、
  * 遭遇构成与本世目标。
  *
  * 注意:这里的 `build` 是静态标注,由 spec 用实测结果校验一致性;
@@ -204,7 +204,7 @@ export const AXIS_COVERAGE: AxisCoverage[] = LIFE_TRIALS.map(t => ({
   // record 与 node 是逆旅契本身带来的:履历一笔 + 立契这个决策点
   // build 由实测证实(见 spec 的一致性校验)
   axes: ['build', 'record', 'node'] as DecisionAxis[],
-  evidence: `rules = ${JSON.stringify(t.rules)};改变构筑排序,但只作用于 resolveCombat,不触碰探索、解锁、目标`
+  evidence: `rules = ${JSON.stringify(t.rules)};改变构筑排序,但只作用于 resolveCombat,不触碰历练、解锁、目标`
 }))
 
 /** 四份契合计覆盖到的决策维度 */
@@ -229,10 +229,10 @@ export function untouchedAxes(): DecisionAxis[] {
  *   StatMods / Economy / DaoFruit / Insight   不可动
  *
  * 这条边界允许相当大胆的内容 —— 「本世不得使用某类丹药」
- * 「本世只能带一件法宝」「本世探索路线受限」都改变玩法,
+ * 「本世只能带一件法宝」「本世历练路线受限」都改变玩法,
  * 却都不制造新的跨世成长闭环
  */
-export const MUTABLE_SPACE = ['CombatRules', '探索路线', '可用物品', '解锁顺序', '本世目标'] as const
+export const MUTABLE_SPACE = ['CombatRules', '历练路线', '可用物品', '解锁顺序', '本世目标'] as const
 export const IMMUTABLE_SPACE = ['StatMods', 'Economy(资源)', 'DaoFruit', 'Insight(宿慧)'] as const
 
 export { LIFE_TRIALS }

@@ -41,9 +41,9 @@
           <span class="text-cinnabar">{{ profile.weakWorld }}</span>
         </p>
       </div>
-      <p class="mt-1.5 text-[9px] text-ink-ghost">画像全部来自真实道痕统计,不可人工修饰。</p>
+      <p class="mt-1.5 text-[9px] text-ink-faint">画像全部来自真实道痕统计,不可人工修饰。</p>
     </div>
-    <p v-else class="card-ink px-4 py-6 text-center text-[11px] text-ink-ghost">道痕未满五则,画像尚不成形。</p>
+    <p v-else class="card-ink px-4 py-6 text-center text-[11px] text-ink-faint">道痕未满{{ cnNumber(PROFILE_MIN_MARKS) }}则,画像尚不成形。</p>
 
     <!-- 轮回录(Phase 32.5):第 N 世与第 1 世的实质区别 -->
     <SectionTitle title="轮回录" :hint="`宿慧 ${insight}`" />
@@ -91,7 +91,7 @@
           <span v-if="vowProg" class="tabular">({{ Math.floor(vowProg.cur) }} / {{ vowProg.need }})</span>
         </p>
       </div>
-      <p v-else class="mt-2 text-[11px] text-ink-ghost">这一世不曾为自己立题。兵解转世时,可择一题而行。</p>
+      <p v-else class="mt-2 text-[11px] text-ink-faint">这一世不曾为自己立题。兵解转世时,可择一题而行。</p>
     </div>
 
     <!-- 历世履历 -->
@@ -105,7 +105,7 @@
           <span class="ml-auto shrink-0 tabular text-[10px] text-gold-ink">宿慧 +{{ l.insight }}</span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-ghost">此为初世。你尚未死过一次,也就还没有什么可以回忆。</p>
+      <p v-else class="py-4 text-center text-[11px] text-ink-faint">此为初世。你尚未死过一次,也就还没有什么可以回忆。</p>
     </div>
 
     <!-- 修行节点 -->
@@ -118,7 +118,7 @@
           <p class="text-[10px] text-ink-faint">{{ row.desc }}</p>
         </div>
       </div>
-      <p v-else class="py-4 text-center text-[11px] text-ink-ghost">此录尚白。天界之行,自会留名。</p>
+      <p v-else class="py-4 text-center text-[11px] text-ink-faint">此录尚白。天界之行,自会留名。</p>
     </div>
 
     <!-- 征战录(Phase 30.9 S2):宿敌与雪耻 -->
@@ -133,10 +133,25 @@
           </span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-ghost">尚无宿敌。此录待你的血与道来填。</p>
+      <p v-else class="py-4 text-center text-[11px] text-ink-faint">尚无宿敌。此录待你的血与道来填。</p>
     </div>
 
     <!-- 行迹录(Phase 30.9 S3):事件余波 -->
+    <!-- 奇缘录(Phase 34.2):未了之缘,一世一世接下去 -->
+    <SectionTitle title="奇缘录" :hint="`未了之缘 ${unfinishedChains} 条`" />
+    <div class="card-ink divide-y divide-ink/6 px-4">
+      <template v-if="chainRows.length">
+        <p v-for="c in chainRows" :key="c.id" class="flex items-center gap-2 py-2 text-[12px]">
+          <span class="shrink-0 font-kai text-[13px]" :class="c.finished ? 'text-ink' : 'text-cinnabar'">{{ c.name }}</span>
+          <span class="min-w-0 truncate text-[10px] text-ink-faint">{{ c.hint }}</span>
+          <span class="ml-auto shrink-0 tabular text-[10px]" :class="c.finished ? 'text-jade' : 'text-ink-faint'">
+            {{ c.finished ? '已了' : `第 ${c.stage + 1}/${c.total} 程` }}
+          </span>
+        </p>
+      </template>
+      <p v-else class="py-4 text-center text-[11px] text-ink-faint">尚无未了之缘。缘起于路上,不在名录里。</p>
+    </div>
+
     <SectionTitle title="行迹录" :hint="`际遇回响 ${lossRows.length} 则`" />
     <div class="card-ink divide-y divide-ink/6 px-4">
       <template v-if="lossRows.length">
@@ -159,7 +174,7 @@
           <span class="shrink-0 text-[10px] text-ink-ghost">第{{ r.life }}世 · {{ r.note }}</span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-ghost">纪录待创。破界之时,自见分晓。</p>
+      <p v-else class="py-4 text-center text-[11px] text-ink-faint">纪录待创。破界之时,自见分晓。</p>
     </div>
   </div>
 </template>
@@ -170,13 +185,15 @@
   import { usePlayerStore } from '@/stores/player'
   import { useAdventureStore } from '@/stores/adventure'
   import { useLoreStore } from '@/stores/lore'
-  import { cultivatorProfile, MILESTONE_DEFS, milestoneDef, RECORD_DEFS } from '@/core/identity'
+  import { cnNumber } from '@/utils/format'
+  import { cultivatorProfile, MILESTONE_DEFS, milestoneDef, PROFILE_MIN_MARKS, RECORD_DEFS } from '@/core/identity'
   import { currentStage, totalInsight, vowProgress, vowResult } from '@/core/samsaraService'
   import { nextStageAfter } from '@/data/samsara'
   import { lifeThemeDef } from '@/data/lifeThemes'
   import { regionDef } from '@/data/regions'
   import { eventDef } from '@/data/events'
   import { isNemesis } from '@/core/worldMemory'
+  import { chainProgressRows } from '@/core/eventEngine'
   import { formatDate } from '@/utils/time'
   import SectionTitle from '@/components/common/SectionTitle.vue'
 
@@ -254,6 +271,10 @@
   )
 
   const profile = computed(() => cultivatorProfile(endgame.marks))
+
+  /** 奇缘录:只有起了头的缘才露面(往后的路不说破) */
+  const chainRows = computed(() => chainProgressRows())
+  const unfinishedChains = computed(() => chainRows.value.filter(c => !c.finished).length)
 
   const milestoneRows = computed(() =>
     [...endgame.milestones]

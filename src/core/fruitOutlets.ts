@@ -40,7 +40,7 @@ export interface ReachPath {
 const DIRECT: readonly ReachPath[] = [
   { key: 'cultivationSpeed', hops: 1, via: '修为累积速度' },
   { key: 'expGain', hops: 1, via: '修为获取量' },
-  { key: 'breakthroughRate', hops: 1, via: '突破成功率 → 失败重试次数' },
+  { key: 'breakthroughRate', hops: 1, via: '进阶成功率 → 失败重试次数' },
   { key: 'qiRegen', hops: 1, via: '灵气回复 → 突破前的等待' },
   { key: 'lifespanPct', hops: 1, via: '寿元 → 一世可用的修行时长' }
 ]
@@ -80,7 +80,7 @@ const VIA_RESOURCE: readonly { key: AnyStatKey; via: string }[] = [
   { key: 'luck', via: '幸运 → 掉落品质 → 装备 → 战力' },
   { key: 'dropRate', via: '掉落率 → 装备 → 战力' },
   { key: 'doubleDropRate', via: '双倍掉落 → 装备 → 战力' },
-  { key: 'eventLuck', via: '事件运 → 奇遇收益 → 资源 → 战力' },
+  { key: 'eventLuck', via: '事件运 → 际遇收益 → 资源 → 战力' },
   { key: 'spiritStoneGain', via: '灵石 → 灵脉/建筑/强化 → 速度与战力' },
   { key: 'alchemyYield', via: '丹药产出 → 属性与修为' },
   { key: 'forgeDiscount', via: '强化省耗 → 同等灵石换更多战力' },

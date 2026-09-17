@@ -94,6 +94,7 @@ export const CELESTIAL_WORLDS: CelestialWorldDef[] = [
     id: 'chiyan',
     name: '赤炎天',
     seal: '炎',
+    anchorTier: 22,
     desc: '天穹燃烧,雷火贯体。此界只问一件事:你扛得住几击?',
     ruleText: ['敌人攻击 +40%', '真伤横行,烈焰炙烤(治疗 -35%)', '回合上限骤减(拖字诀必败)'],
     rules: { enemyAtkMult: 1.4, maxRounds: 32, healMult: 0.65, enemyExtraMods: { critRate: 0.1 } },
@@ -171,6 +172,7 @@ export const CELESTIAL_WORLDS: CelestialWorldDef[] = [
     id: 'wanren',
     name: '万刃天',
     seal: '刃',
+    anchorTier: 25,
     desc: '亿万飞刃永不停歇。每一段锋芒,都是反击者的粮',
     ruleText: ['敌人皆为多段连击且血厚如山', '速攻在此撞墙', '受击反制收益极高'],
     rules: { enemyExtraMods: { critRate: 0.1 } },
@@ -249,6 +251,7 @@ export const CELESTIAL_WORLDS: CelestialWorldDef[] = [
     id: 'wusheng',
     name: '无生天',
     seal: '寂',
+    anchorTier: 29,
     desc: '此界拒绝生机。治疗近乎无效,唯有向死而生者能行',
     ruleText: ['治疗效率 -70%', '护盾上限减半', '敌人攻击 +15%'],
     rules: { healMult: 0.3, shieldCapRatio: 0.25, enemyAtkMult: 1.15, enemyExtraMods: { critRate: 0.1 } },
@@ -326,6 +329,7 @@ export const CELESTIAL_WORLDS: CelestialWorldDef[] = [
     id: 'wuxiang',
     name: '无相天',
     seal: '影',
+    anchorTier: 32,
     desc: '万物无相,出手落空。此界嘲笑一切依赖招式衔接的道',
     ruleText: ['敌人闪避极高', '敌人出手极快', '概率与稳定的对决'],
     rules: { enemyExtraMods: { critRate: 0.12 } },
@@ -412,6 +416,7 @@ export const TRIALS: TrialDef[] = [
     id: 'qisha',
     name: '七杀试炼',
     seal: '七',
+    anchorTier: 23,
     desc: '七场连战,不得换装,场场增强。记录你最快的杀伐',
     ruleText: ['连战 7 场,敌人逐场增强', '场间仅恢复三成气血', '追求最少总回合'],
     rules: {},
@@ -425,6 +430,7 @@ export const TRIALS: TrialDef[] = [
     id: 'yixian',
     name: '一线试炼',
     seal: '悬',
+    anchorTier: 26,
     desc: '开局气血仅余三成半。向死而生者的主场',
     ruleText: ['每场开局仅 35% 气血', '连战 4 场', '濒死者的证道之地'],
     rules: { playerStartHpPct: 0.35 },
@@ -438,6 +444,7 @@ export const TRIALS: TrialDef[] = [
     id: 'wuhui',
     name: '无回试炼',
     seal: '断',
+    anchorTier: 30,
     desc: '此地一切治疗无效。不靠回复,你还剩什么?',
     ruleText: ['治疗完全无效', '连战 5 场', '场间不恢复'],
     rules: { healMult: 0 },
@@ -491,3 +498,12 @@ export const FURNACE_STONE_DAO_SOURCE = 5
 
 /** 道源凝道果:数值成长唯一出口,受道果软上限约束 */
 export const DAO_SOURCE_PER_FRUIT = 100
+
+/**
+ * 远征行程:0 ~ ROUTE_LAYERS-1 为「重」层择路,ROUTE_LAYERS 为界主层。
+ *
+ * 层号就是规则本身(择路函数只认 0..2、界主判定认 3),故把它抽成常数:
+ * 界面上的「三重」、行程点列、以及越界守卫都读同一份,改行程不必四处找数字。
+ */
+export const EXPEDITION_ROUTE_LAYERS = 3
+export const EXPEDITION_GUARDIAN_LAYER = EXPEDITION_ROUTE_LAYERS

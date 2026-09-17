@@ -27,7 +27,6 @@ import {
   type DaoluDef,
   STAGE_GATES,
   daoluDef,
-  gateOf,
   stageIndex
 } from '@/data/daolu'
 import {
@@ -54,7 +53,7 @@ import {
 import { usePlayerStore } from '@/stores/player'
 import { useQuestsStore } from '@/stores/quests'
 import { useUiStore } from '@/stores/ui'
-import { rng } from '@/utils/random'
+import { rng, type RandomService } from '@/utils/random'
 
 /** 本世与某人的关系(存档结构) */
 export interface BondState {
@@ -283,7 +282,7 @@ export function archiveBond(): BondRecord | null {
   return { daoluId: b.daoluId, name: def?.name ?? b.daoluId, stage: b.stage, ending, shared: b.shared }
 }
 
-export { DAOLU, daoluDef, gateOf, stageIndex }
+export { DAOLU, daoluDef, stageIndex }
 
 // ============ 共同事件(Phase 33.9) ============
 
@@ -330,8 +329,12 @@ function weightFor(ev: BondEventDef, b: BondState): number {
  *
  * **不是随机抽取,而是情境筛选** —— 事件必须声明它属于哪一刻,
  * 声明为空的事件永远不会被提供(见 bondEvents.spec 的故障注入)
+ *
+ * 随机源可注入:生产用全局 rng,自检用带种子的 RandomService ——
+ * 「哪条路真的够得着」必须能被确定性地钉住,不然又会退化成
+ * 「功能写了但没人见过」(道侣陨落曾经就是这个病,见 RIL TASK-049)。
  */
-export function offerBondEvent(trigger: BondTrigger): BondEventDef | null {
+export function offerBondEvent(trigger: BondTrigger, rand: RandomService = rng): BondEventDef | null {
   const player = usePlayerStore()
   const b = player.bond
   if (!b || b.fallen || b.departed) return null
@@ -347,7 +350,7 @@ export function offerBondEvent(trigger: BondTrigger): BondEventDef | null {
     player.setBond({ ...b, opportunities: b.opportunities + 1 })
     return null
   }
-  const picked = rng.weighted(pool, e => weightFor(e, b))
+  const picked = rand.weighted(pool, e => weightFor(e, b))
   player.setBond({ ...b, opportunities: b.opportunities + 1, pendingEventId: picked.id })
   useUiStore().toast(`${currentDaolu()?.name ?? '她'}似乎有话要说`, 'info')
   return picked
@@ -371,9 +374,21 @@ export interface ChoiceResult {
   text: string
   /** 她是否因此离开 */
   left: boolean
+  /** 她是否因此殒落(只有「共命之险」那条路会走到这里) */
+  perished?: boolean
   /** 三维实际变化,供界面显示「她的反应」而非裸数字 */
   reaction: 'closer' | 'neutral' | 'strained' | 'broken'
 }
+
+/**
+ * 共命之险的门槛:信任与契合都够深,才谈得上「一起蹚过去」。
+ *
+ * 这不是随机判定 —— 死不死取决于你俩此前攒下了什么,而且玩家看得见:
+ * 选项 label 里已写明「她未必撑得住」,另有两条不会死人的路可选。
+ * 这是本项目对「不可逆后果」的一贯口径:可以重,但必须是你选的、且事先说清。
+ */
+export const PERIL_SAFE_TRUST = 55
+export const PERIL_SAFE_ACCORD = 45
 
 /**
  * 玩家做出选择。
@@ -408,6 +423,16 @@ export function chooseBondEvent(eventId: string, choiceId: string): ChoiceResult
   if (ch.crossesTaboo) sparkIntent('crossed')
 
   const after = player.bond!
+  // 共命之险:关系够深则同生,不够则她殒落(唯一会死人的一条路,且玩家事先被 warning 过)
+  if (ch.peril && !(after.trust >= PERIL_SAFE_TRUST && after.accord >= PERIL_SAFE_ACCORD)) {
+    fall()
+    return {
+      text: `${out.text}——可你回头时,劫云里已经没有第二个人了。`,
+      left: false,
+      perished: true,
+      reaction: 'broken'
+    }
+  }
   let left = false
   // 她离开:选项直接导致,或信任与契合双双崩塌
   if (out.leaves || (after.trust < 15 && after.accord < 20)) {
@@ -426,11 +451,6 @@ export function chooseBondEvent(eventId: string, choiceId: string): ChoiceResult
     player.setBond({ ...after, departed: true })
   }
   return { text: out.text, left, reaction }
-}
-
-/** 她是否已离开(离开后关系冻结,但履历仍记这一段) */
-export function hasDeparted(): boolean {
-  return currentBond()?.departed === true
 }
 
 // ============ 她自己的意图(Phase 34.1) ============
@@ -478,6 +498,15 @@ export function speakIntent(): BondIntent | null {
   const b = player.bond
   const def = currentDaolu()
   if (!b || !def || !b.intent) return null
+  /**
+   * 她已经在等你回应了 —— 不重复开口。
+   *
+   * 少了这一问的后果实测过:willSpeak 只看酝酿度,而 speakIntent 由
+   * maybeEncounter 在**每一场战斗**里调用(历练战斗间隔 12 秒),于是酝酿度一旦过线,
+   * 同一句话会每十几秒 toast 一次、「已开口」次数一路涨到几十 —— 玩家体感是
+   * 「这句话触发概率怎么这么高」,其实是一次都没被回应。
+   */
+  if (b.intentPending) return null
   if (!willSpeak(b.intent, def.temper)) return null
   const next: BondIntent = { ...b.intent, raised: b.intent.raised + 1 }
   player.setBond({ ...b, intent: next, intentPending: true })

@@ -15,7 +15,8 @@
     <template v-else>
       <!-- 抬头 -->
       <div class="card-ink flex items-center justify-between gap-2 px-4 py-3">
-        <button class="text-left text-[12px] text-ink-faint" @click="router.back()">← 天界</button>
+        <!-- 同洞府:标签写着「天界」,冷启动时也得真的去天界,而不是退出游戏 -->
+        <button class="-my-1.5 py-1.5 text-left text-[12px] text-ink-faint" @click="goBack(router, { name: 'celestial' })">← 天界</button>
         <p class="font-kai text-[15px] tracking-[0.3em] text-ink">器 魂</p>
         <div class="text-right">
           <span class="block text-[10px] leading-tight text-ink-ghost">道源</span>
@@ -25,17 +26,16 @@
 
       <!-- 何谓器魂 -->
       <section>
-        <SectionTitle title="何谓器魂" hint="凡器承不住天道,只余形意" />
+        <SectionTitle title="何谓器魂" hint="形销而意存,多一条路数" />
         <div class="card-ink mt-2 px-4 py-3">
           <p class="text-[11px] leading-relaxed text-ink-faint">
-            凡人的法器到了天界本就承不住:天道压顶,数值被尽数抹平,只余形意。 那点形意便是
+            凡人的法器到了天界,锋芒会被天道磨去几分,却并非抹平 —— 它记得这件法器是何路数,那份记忆便是
             <span class="text-gold-ink">器魂</span>
-            ——它记得这件法器是何路数,却记不得它有多锋利。 故而在天界,九件神品与三件精品若路数相同,并无分别;
-            <span class="text-cinnabar">欲更强,只能改路数,不能堆数值。</span>
+            。器魂**叠加**在你身上:攻防血这些基础属性照常作数,器魂是在其上多给一条路数。
           </p>
           <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
             以凡器入炉,形销而意存,得器魂一缕。神魂只容 {{ SOUL_SLOTS }} 缕——取舍便是构筑。
-            <span class="text-ink-ghost">不凝器魂者,身上法器的词条由天道径直压平,压得更狠;凝了是主动掌控形意,略胜一筹。</span>
+            <span class="text-ink-faint">至于堆叠本身,天道自有应对:构筑越厚,守关者的道之理解越深;境界未及此界者,还会被境界压制。</span>
           </p>
         </div>
       </section>
@@ -55,7 +55,13 @@
                 {{ soulSeal(endgame.activeSouls[i - 1]!) }}
               </span>
               <span class="mt-1 text-[10px] leading-tight text-ink-soft">{{ soulLabel(endgame.activeSouls[i - 1]!) }}</span>
-              <button class="mt-1 text-[10px] text-ink-faint underline" @click="removeSoul(endgame.activeSouls[i - 1]!.uid)">卸下</button>
+              <!-- 纯文字按钮只有字体那 15px 高;补成内联块给拇指一个 30px 的靶面 -->
+              <button
+                class="mt-1 inline-block px-2 py-2 text-[10px] text-ink-faint underline"
+                @click="removeSoul(endgame.activeSouls[i - 1]!.uid)"
+              >
+                卸下
+              </button>
             </template>
             <span v-else class="text-[10px] text-ink-ghost">空</span>
           </div>
@@ -166,6 +172,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import { goBack } from '@/router/goBack'
   import { formatNum } from '@/utils/format'
   import { STAT_NAMES } from '@/ui/statNames'
   import type { AnyStatKey } from '@/types'

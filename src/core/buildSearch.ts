@@ -67,7 +67,7 @@ export function randomBuild(rng: RandomService, idx: number): RandomBuild {
   const atk = gn(BASE.attack * sa)
   const def = gn(BASE.defense * sd)
   const hp = gn(BASE.maxHp * sh)
-  const art = rng.chance(0.7) ? rng.pick(ARTIFACTS.filter(a => a.minTier <= 12)) : null
+  const art = rng.chance(0.7) ? rng.pick(ARTIFACTS.filter(a => a.fromTier <= 12)) : null
   return {
     idx,
     mods,

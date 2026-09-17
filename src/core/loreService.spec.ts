@@ -15,6 +15,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { PILLS } from '@/data/pills'
 import { recipeCraft } from '@/data/crafting'
+import { MAX_MAJOR } from '@/data/realms'
 import { bearableRank } from './craftability'
 import { NEW_RECIPE_START, STUDY_REACH_OVER, seedLoreIfNeeded, studiableRecipes, studyTick } from './loreService'
 import { useLoreStore } from '@/stores/lore'
@@ -68,7 +69,7 @@ describe('藏经阁候选(纯函数)', () => {
 
   it('无死内容:每一张可炼丹方都终有翻到之日', () => {
     const reachable = new Set<string>()
-    for (let major = 0; major <= 9; major += 1) {
+    for (let major = 0; major <= MAX_MAJOR; major += 1) {
       for (const p of studiableRecipes(major, NOTHING_KNOWN)) reachable.add(p.id)
     }
     const dead = CRAFTABLE.filter(p => !reachable.has(p.id)).map(p => `${p.name}(${p.id})`)

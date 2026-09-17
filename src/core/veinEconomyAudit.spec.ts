@@ -1,8 +1,17 @@
 /* eslint-disable no-console -- Phase 30.5 灵脉与重铸经济审计 */
 import { describe, expect, it } from 'vitest'
-import { VEIN_MAIN_CAPACITY, VEIN_POINT_STONE, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY } from '@/data/constants'
+import {
+  REFORGE_SEAL_LOAD,
+  STONE_TIER_GROWTH,
+  VEIN_MAIN_CAPACITY,
+  VEIN_POINT_STONE,
+  VEIN_SIDE_CAP,
+  VEIN_TOTAL_CAPACITY
+} from '@/data/constants'
 import { VEINS } from '@/data/veins'
+import { reforgeCost } from './reforge'
 import { stoneByTier } from './formulas'
+import type { EquipmentInstance } from '@/types'
 
 /**
  * Phase 30.5:灵脉投资与重铸成本经济审计
@@ -117,106 +126,85 @@ describe('Phase 30.5:灵脉投资终局审计', () => {
   })
 })
 
-describe('Phase 30.5:装备重铸成本审计', () => {
-  it('重铸成本设计:固定成本,未实现递增(需补充)', () => {
-    console.log('\n—— Phase 30.5 装备重铸成本审计 ——')
-    console.log('  当前重铸设计:')
-    console.log('    - 封存词条:锁定1条核心词条,其他词条可重铸')
-    console.log('    - 重铸成本:固定成本(未按次数递增)')
-    console.log('    - 风险:封存+重铸循环可能允许无限洗完美装')
+describe('Phase 30.5:装备重铸成本审计(机制已实现,行为验证)', () => {
+  const base: EquipmentInstance = {
+    uid: 'u1',
+    templateId: 'w_zhuqing',
+    quality: 'mortal',
+    tier: 3,
+    level: 0,
+    affixes: [
+      { id: 'atk1', roll: 0.5 },
+      { id: 'def1', roll: 0.5 }
+    ],
+    reforgeCount: 0
+  }
+  const stoneOf = (c: { m: number; e: number }): number => c.m * Math.pow(10, c.e)
 
-    console.log('\n  需要补充的机制:')
-    console.log('    1. 重铸次数递增成本:第1次低廉,后续指数增长')
-    console.log('    2. 品质越高重铸成本越高:良品<精品<极品<神品')
-    console.log('    3. 封存词条越稀有成本越高:普通<稀有<史诗<传说')
-    console.log('    4. 重铸重置条件:装备升阶时重置重铸次数')
-
-    // 当前实现未包含递增成本,标记为待实现
-    expect(true, '重铸成本递增机制待实现').toBe(true)
+  /**
+   * 重铸成本在 36 轮改过一次口径:旧版是「品质倍率 × 1.5^次数,上限 10 次」,
+   * 现在只与**阶数**与**封存数**挂钩、且不限次数(见 data/constants 的注释)。
+   * 于是这里的判据也跟着换:不再验"越洗越贵",而是验"成本只看那两件事、且洗不封顶"。
+   */
+  it('品质与重铸成本无关:同一件洗到第几次、什么品质,都是同一个价', () => {
+    const c0 = reforgeCost({ ...base, reforgeCount: 0, quality: 'mortal' })!
+    const c99 = reforgeCost({ ...base, reforgeCount: 99, quality: 'divine' })!
+    expect(stoneOf(c99.stone)).toBeCloseTo(stoneOf(c0.stone), 6)
+    expect(c99.dust).toBe(c0.dust)
   })
 
-  it('装备完美度计算:评估重铸收益上限', () => {
-    console.log('\n  装备完美度评估(示例):')
-    console.log('    - 6词条装备,封存1条核心词条(如 攻击+15%)')
-    console.log('    - 剩余5条可重铸,目标:全部洗成有用词条')
-    console.log('    - 假设有用词条占比40%,5条全中概率: (0.4)^5 ≈ 1.0%')
-    console.log('    - 期望重铸次数: 1/0.01 = 100次')
-
-    const usefulRate = 0.4
-    const rerollSlots = 5
-    const perfectProb = Math.pow(usefulRate, rerollSlots)
-    const expectedRerolls = 1 / perfectProb
-
-    console.log(`\n  如果重铸成本递增不够陡峭:`)
-    console.log(`    - 玩家可能愿意重铸 ${Math.round(expectedRerolls)} 次`)
-    console.log(`    - 装备随机性消失,掉落失去意义`)
-
-    expect(expectedRerolls, '期望重铸次数应显著').toBeGreaterThan(50)
+  it('不限次数:洗到第两百次仍可重铸(次数只作记录,不进公式)', () => {
+    expect(reforgeCost({ ...base, reforgeCount: 200 }), '不该再有次数上限').not.toBeNull()
   })
 
-  it('重铸成本建议:指数递增+品质系数', () => {
-    console.log('\n  重铸成本建议公式:')
-    console.log('    baseCost = 灵石基础(按层级)')
-    console.log('    qualityMult = [良1.0, 精1.5, 极2.5, 神5.0]')
-    console.log('    rerollMult = 1.5 ^ rerollCount (指数递增)')
-    console.log('    lockedRarityMult = [普1.0, 稀1.5, 史2.0, 传3.0]')
-    console.log('    finalCost = baseCost × qualityMult × rerollMult × lockedRarityMult')
+  it('成本随封存数线性上浮:每封存一条 +REFORGE_SEAL_LOAD', () => {
+    const one = reforgeCost({ ...base, affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }], sealedAffixIds: ['atk1'] })!
+    const two = reforgeCost({ ...base, affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }], sealedAffixIds: ['atk1', 'def1'] })!
+    expect(stoneOf(two.stone) / stoneOf(one.stone)).toBeCloseTo((1 + 2 * REFORGE_SEAL_LOAD) / (1 + REFORGE_SEAL_LOAD), 6)
+  })
 
-    console.log('\n  示例:极品装备,封存史诗词条,第10次重铸:')
-    const base = 1000
-    const quality = 2.5
-    const reroll = Math.pow(1.5, 10)
-    const locked = 2.0
-    const final = base * quality * reroll * locked
-    console.log(`    ${base} × ${quality} × ${reroll.toFixed(2)} × ${locked} = ${final.toFixed(0)} 灵石`)
+  it('层阶越高,重铸越贵(与掉落同轴 stoneByTier)', () => {
+    const t3 = reforgeCost({ ...base, tier: 3 })!
+    const t10 = reforgeCost({ ...base, tier: 10 })!
+    expect(stoneOf(t10.stone) / stoneOf(t3.stone)).toBeCloseTo(Math.pow(STONE_TIER_GROWTH, 7), 4)
+  })
 
-    console.log('\n  效果:')
-    console.log('    - 前几次重铸便宜(微调空间)')
-    console.log('    - 10次后成本暴涨(阻止暴力洗完美)')
-    console.log('    - 高品质+稀有词条成本更高(珍贵装备重铸谨慎)')
-
-    expect(final, '高次数重铸成本应显著').toBeGreaterThan(base * 50)
+  it('「暴力洗完美」的刹车换到了别处:高阶层 + 封存溢价,而不是次数', () => {
+    // 同一件封了三条的 20 阶装备,单次重铸要比 3 阶未封存的贵出几个数量级 ——
+    // 玩家想一直洗下去,付的是"这件有多高阶、我保住了几条"的钱
+    const cheap = stoneOf(reforgeCost({ ...base, tier: 3 })!.stone)
+    const dear = stoneOf(
+      reforgeCost({
+        ...base,
+        tier: 20,
+        affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }, { id: 'crit1', roll: 0.5 }, { id: 'luck1', roll: 0.5 }],
+        sealedAffixIds: ['atk1', 'def1', 'hp1']
+      })!.stone
+    )
+    console.log(`\n  3 阶未封存 ${cheap.toExponential(2)} → 20 阶封存三条 ${dear.toExponential(2)}(×${(dear / cheap).toFixed(0)})`)
+    expect(dear / cheap).toBeGreaterThan(1000)
   })
 })
 
-describe('Phase 30.5:灵石Sink效能审计', () => {
-  it('后期灵石消耗渠道统计', () => {
-    console.log('\n—— Phase 30.5 灵石Sink效能审计 ——')
-    console.log('  当前灵石消耗渠道:')
-    console.log('    1. 灵脉投资(长期):100点×层级成本')
-    console.log('    2. 装备重铸(高频):每次重铸×递增系数(待实现)')
-    console.log('    3. 洞府建筑升级(中期):固定总量有上限')
-    console.log('    4. 商店购买(低频):丹药/材料/图鉴')
-
-    console.log('\n  待补充渠道(你提议的Phase 30.X):')
-    console.log('    5. 区域经营(长期):镇压区域→投入灵石→提高收益')
-    console.log('    6. 天道熔炉(终局):凡界资源→道源→真仙规则')
-
-    console.log('\n  效能评估:')
-    console.log('    - 灵脉投资:总消耗有上限(100点投满即止)')
-    console.log('    - 装备重铸:高频但单次成本需足够高')
-    console.log('    - 区域经营:需设置软上限+递减,避免新雪球')
-
-    expect(true, '灵石Sink渠道已初步建立').toBe(true)
-  })
-
-  it('灵石过剩问题是否解决:需实测验证', () => {
-    console.log('\n  Phase 30.2-30.3 已实现:')
-    console.log('    ✓ 灵脉投资框架(veinService.ts)')
-    console.log('    ✓ 装备重铸基础(reforge.ts,成本递增待补充)')
-    console.log('    ✓ 战力评星(powerRating.ts,五维描述性评级)')
-
-    console.log('\n  Phase 30.5 审计发现:')
-    console.log('    ⚠ 灵脉容量100点形成取舍(主70+副30约束)')
-    console.log('    ⚠ 重铸成本递增机制缺失(当前固定成本)')
-    console.log('    ⚠ 需要长期实测:中后期玩家灵石是否仍过剩')
-
-    console.log('\n  建议补充(按优先级):')
-    console.log('    1. 补充重铸成本递增公式(reforge.ts)')
-    console.log('    2. UI展示重铸次数+下次成本(EquipmentDetailDialog.vue)')
-    console.log('    3. 实测中后期经济(模拟器or真实游玩)')
-    console.log('    4. 考虑区域经营系统(Phase 30.6候选)')
-
-    expect(true, '审计完成,待补充实现').toBe(true)
+describe('Phase 30.5:灵石 Sink 渠道', () => {
+  it('灵脉投资与装备重铸都是真实的灵石去向(不再有待实现项)', () => {
+    const veinFull = stoneByTier(3, VEIN_POINT_STONE).m * Math.pow(10, stoneByTier(3, VEIN_POINT_STONE).e) * VEIN_MAIN_CAPACITY
+    const eq: EquipmentInstance = {
+      uid: 'u2',
+      templateId: 'w_zhuqing',
+      quality: 'excellent',
+      tier: 3,
+      level: 0,
+      affixes: [
+        { id: 'atk1', roll: 0.5 },
+        { id: 'def1', roll: 0.5 }
+      ],
+      reforgeCount: 9
+    }
+    const reforge = reforgeCost(eq)!
+    const reforgeStone = reforge.stone.m * Math.pow(10, reforge.stone.e)
+    console.log(`\n  投满主脉(金丹)≈ ${veinFull.toExponential(2)} 灵石;重铸一次(金丹精品)≈ ${reforgeStone.toExponential(2)} 灵石`)
+    expect(veinFull).toBeGreaterThan(0)
+    expect(reforgeStone).toBeGreaterThan(0)
   })
 })

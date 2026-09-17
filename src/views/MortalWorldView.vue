@@ -23,7 +23,7 @@
             :fill-opacity="unlocked(p.nodeId) ? 0.85 : 0.35"
           />
         </svg>
-        <p class="mt-0.5 text-center text-[10px] text-ink-ghost">高处境深 · 远处路长 · 点大处事多</p>
+        <p class="mt-0.5 text-center text-[10px] text-ink-faint">高处境深 · 远处路长 · 点大处事多</p>
       </div>
 
       <SectionTitle title="本世地界" hint="这一世的路,按段而行" />
@@ -70,8 +70,8 @@
         <p class="font-kai text-[13px] tracking-widest text-ink-soft">此界从何而来</p>
         <p class="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
           你睁眼时,天地已成此形。所历地界、途中缓急、镇守之物皆随此世而定,
-          <span class="text-ink-soft">这一世之内不会再变</span>
-          。
+          <!-- 标点跟着前一句走:单独成行会在窄屏上被折成孤零零一个句号 -->
+          <span class="text-ink-soft">这一世之内不会再变。</span>
         </p>
         <p class="mt-1 text-[11px] leading-relaxed text-ink-faint">
           唯有

@@ -1,4 +1,4 @@
-/** 功法库 —— 主修 12 / 辅修 13 / 秘术 8 */
+/** 功法库 —— 63 部:主修 27 / 辅修 22 / 秘术 14,每境都有新东西可参 */
 import type { GongfaDef, GongfaType, QualityId, StatMods } from '@/types'
 
 function g(
@@ -161,6 +161,39 @@ export const GONGFA: GongfaDef[] = [
     { cultivationSpeed: 0.04, attackPct: 0.015, defensePct: 0.015 },
     { element: 'chaos', skill: { name: '混沌一击', mult: 2.8, rate: 0.25 } }
   ),
+  g(
+    'm_dujie',
+    '九霄渡劫经',
+    'main',
+    'heaven',
+    8,
+    '引九霄雷气淬身,劫数亦成道基',
+    { cultivationSpeed: 0.3, attackPct: 0.16, tribulationResist: 0.18 },
+    { cultivationSpeed: 0.04, attackPct: 0.018 },
+    { element: 'thunder', skill: { name: '九霄雷劫', mult: 3.0, rate: 0.26 } }
+  ),
+  g(
+    'm_taixu',
+    '太虚炼神篇',
+    'main',
+    'profound',
+    5,
+    '炼神返虚,虚室生白 —— 神全则形不敝',
+    { cultivationSpeed: 0.2, defensePct: 0.12, qiRegen: 0.1 },
+    { cultivationSpeed: 0.03, defensePct: 0.014 },
+    { skill: { name: '炼神返虚', mult: 2.4, rate: 0.24 } }
+  ),
+  g(
+    'm_wuliang',
+    '无量寿光经',
+    'main',
+    'heaven',
+    7,
+    '取无量寿之意,光所照处,寿与道同长',
+    { cultivationSpeed: 0.32, maxHpPct: 0.2, lifespanPct: 0.08 },
+    { cultivationSpeed: 0.04, maxHpPct: 0.02, lifespanPct: 0.01 },
+    { element: 'light', skill: { name: '无量寿光', mult: 2.9, rate: 0.25 } }
+  ),
   // ---- 辅修功法 ----
   g('s_tuna', '龟灵吐纳术', 'sub', 'mortal', 0, '一吐一纳,绵绵不绝', { cultivationSpeed: 0.06 }, { cultivationSpeed: 0.012 }),
   g(
@@ -265,6 +298,26 @@ export const GONGFA: GongfaDef[] = [
     { shieldOnStart: 0.06, shieldPower: 0.08 },
     { shieldOnStart: 0.01, shieldPower: 0.015 }
   ),
+  g(
+    's_xingshen',
+    '形神合一诀',
+    'sub',
+    'heaven',
+    6,
+    '身与道合,伤处自弥 —— 形神从此不再两分',
+    { maxHpPct: 0.2, defensePct: 0.12, regenPerRound: 0.012 },
+    { maxHpPct: 0.022, defensePct: 0.014 }
+  ),
+  g(
+    's_puti',
+    '菩提明镜功',
+    'sub',
+    'heaven',
+    7,
+    '心如明镜台,时时勤拂拭 —— 悟得快,劫也渡得稳',
+    { expGain: 0.12, breakthroughRate: 0.02, luck: 0.06 },
+    { expGain: 0.018, breakthroughRate: 0.003, luck: 0.008 }
+  ),
   // ---- 秘术 ----
   g('x_tianyan', '天眼通', 'secret', 'excellent', 2, '开天眼,窥机缘', { luck: 0.06, eventLuck: 0.08 }, { luck: 0.02, eventLuck: 0.03 }),
   g(
@@ -327,6 +380,272 @@ export const GONGFA: GongfaDef[] = [
     '我命由我不由天',
     { luck: 0.1, breakthroughRate: 0.05, lifespanPct: 0.1 },
     { luck: 0.03, breakthroughRate: 0.012, lifespanPct: 0.03 }
+  ),
+  g(
+    'x_jiuxiao',
+    '九霄劫印',
+    'secret',
+    'heaven',
+    8,
+    '把九重雷劫缩成一枚印 —— 劫来则印出,以劫淬身',
+    { tribulationResist: 0.2, damageReduction: 0.06, breakthroughRate: 0.03 },
+    { tribulationResist: 0.05, breakthroughRate: 0.008 }
+  ),
+  // ---- 仙界及以上(准入境界 9-20)----
+  g(
+    'm_yuxu',
+    '御虚仙典',
+    'main',
+    'immortal',
+    9,
+    '御虚而行,仙光护体,一步一重天',
+    { cultivationSpeed: 0.34, attackPct: 0.16, defensePct: 0.14, maxHpPct: 0.14 },
+    { cultivationSpeed: 0.045, attackPct: 0.018, defensePct: 0.016 },
+    { element: 'wind', skill: { name: '御虚仙光', mult: 3.0, rate: 0.26 } }
+  ),
+  g(
+    's_xianling',
+    '仙灵淬体术',
+    'sub',
+    'immortal',
+    10,
+    '以仙灵之气淬炼肉身,脱胎换骨',
+    { maxHpPct: 0.18, defensePct: 0.14, regenPerRound: 0.012 },
+    { maxHpPct: 0.022, defensePct: 0.015 }
+  ),
+  g(
+    'x_xianji',
+    '仙机通玄',
+    'secret',
+    'immortal',
+    11,
+    '仙机在握,福祸先知',
+    { luck: 0.12, eventLuck: 0.16, dropRate: 0.12 },
+    { luck: 0.035, eventLuck: 0.045, dropRate: 0.03 }
+  ),
+  g(
+    'x_taiyi',
+    '太乙金华',
+    'secret',
+    'immortal',
+    12,
+    '回光守中,神气合于一处',
+    { cultivationSpeed: 0.3, qiRegen: 0.2 },
+    { cultivationSpeed: 0.06, qiRegen: 0.04 }
+  ),
+  g(
+    'm_daluo',
+    '大罗天章',
+    'main',
+    'immortal',
+    13,
+    '大罗天上,万法归真',
+    { attackPct: 0.26, maxHpPct: 0.2, damageReduction: 0.08 },
+    { attackPct: 0.028, maxHpPct: 0.02 }
+  ),
+  g(
+    'm_shenxiao',
+    '神霄九变',
+    'main',
+    'divine',
+    14,
+    '九变通神,雷动九天',
+    { cultivationSpeed: 0.4, attackPct: 0.2, defensePct: 0.16, maxHpPct: 0.16 },
+    { cultivationSpeed: 0.05, attackPct: 0.022, defensePct: 0.017 },
+    { element: 'thunder', skill: { name: '神霄神雷', mult: 3.4, rate: 0.26 } }
+  ),
+  g(
+    's_shenjiang',
+    '神将兵符',
+    'sub',
+    'divine',
+    15,
+    '执神兵以行天罚,进退皆合军律',
+    { attackPct: 0.26, defensePct: 0.22, critRate: 0.04 },
+    { attackPct: 0.028, defensePct: 0.022 }
+  ),
+  g(
+    's_shenlianti',
+    '神炼不灭身',
+    'sub',
+    'divine',
+    16,
+    '神火炼体,身成不灭',
+    { damageReduction: 0.1, maxHpPct: 0.2, lowHpReduction: 0.4 },
+    { damageReduction: 0.022, maxHpPct: 0.024 }
+  ),
+  g(
+    'm_hunyuan',
+    '混元无极经',
+    'main',
+    'divine',
+    18,
+    '混元一体,无极而生,万法归一',
+    { cultivationSpeed: 0.5, attackPct: 0.24, defensePct: 0.22, maxHpPct: 0.22 },
+    { cultivationSpeed: 0.06, attackPct: 0.025, defensePct: 0.021 },
+    { element: 'chaos', skill: { name: '混元一炁', mult: 3.8, rate: 0.28 } }
+  ),
+  g(
+    's_hundunti',
+    '混沌体术',
+    'sub',
+    'divine',
+    19,
+    '以混沌之气淬体,身与道同,不增不减',
+    { maxHpPct: 0.24, defensePct: 0.2, damageReduction: 0.08 },
+    { maxHpPct: 0.026, defensePct: 0.018 }
+  ),
+  g(
+    'x_shenji',
+    '神机衍数',
+    'secret',
+    'divine',
+    17,
+    '推演天机,行止皆在算中',
+    { luck: 0.12, dropRate: 0.12, explorationSpeed: 0.12 },
+    { luck: 0.035, dropRate: 0.03, explorationSpeed: 0.03 }
+  ),
+  g(
+    'x_daoyin',
+    '道音玄章',
+    'secret',
+    'divine',
+    20,
+    '大道之音不绝于耳,闻之者道基自厚',
+    { cultivationSpeed: 0.32, breakthroughRate: 0.05, luck: 0.08 },
+    { cultivationSpeed: 0.09, breakthroughRate: 0.015 }
+  ),
+  // 仙界其余四境各补一部 —— 此前 10-13 境的人只有一件本境功法可参,
+  // 「主修只此一部、辅修只此一部」的时候,参悟这件事就没有选择可言。
+  g(
+    's_xianguang',
+    '仙光护体诀',
+    'sub',
+    'immortal',
+    9,
+    '仙光绕身三尺,刀兵未至先折其锋',
+    { shieldOnStart: 0.1, shieldPower: 0.12, damageReduction: 0.05 },
+    { shieldOnStart: 0.016, shieldPower: 0.02 }
+  ),
+  g(
+    'm_xuanxian',
+    '玄仙御气经',
+    'main',
+    'immortal',
+    10,
+    '御气而行,一息千里 —— 玄仙之「玄」,玄在气机不竭',
+    { cultivationSpeed: 0.36, qiRegen: 0.18, defensePct: 0.14 },
+    { cultivationSpeed: 0.045, defensePct: 0.015 },
+    { skill: { name: '玄仙一气', mult: 3.1, rate: 0.26 } }
+  ),
+  g(
+    'm_jinque',
+    '金阙玉章',
+    'main',
+    'immortal',
+    11,
+    '玉京金阙之上刻着的章句,读之如读万剑之诀',
+    { attackPct: 0.2, defensePct: 0.16, critRate: 0.02 },
+    { attackPct: 0.022, defensePct: 0.016 },
+    { element: 'metal', skill: { name: '金阙剑气', mult: 3.2, rate: 0.26 } }
+  ),
+  g(
+    'm_taiyijiu',
+    '太乙救苦经',
+    'main',
+    'immortal',
+    12,
+    '太乙救苦,一诵经则伤者自起',
+    { maxHpPct: 0.22, regenPerRound: 0.018, damageReduction: 0.06 },
+    { maxHpPct: 0.022, damageReduction: 0.012 },
+    { element: 'light', skill: { name: '太乙金光', mult: 3.0, rate: 0.25 } }
+  ),
+  g(
+    's_luotian',
+    '罗天星辰诀',
+    'sub',
+    'immortal',
+    13,
+    '罗天星海尽在诀中,星君所执即我执',
+    { accuracy: 0.06, critRate: 0.04, critDamage: 0.2 },
+    { critRate: 0.005, critDamage: 0.02 }
+  ),
+  // 神界四境
+  g(
+    'x_miaogushe',
+    '藐姑射神章',
+    'secret',
+    'divine',
+    14,
+    '藐姑射之山有神人居焉,不食五谷,吸风饮露',
+    { damageReduction: 0.1, maxHpPct: 0.16, dodgeRate: 0.04 },
+    { damageReduction: 0.02, maxHpPct: 0.022 }
+  ),
+  g(
+    'm_tianguan',
+    '天关神兵诀',
+    'main',
+    'divine',
+    15,
+    '神兵列于天关,进退皆合军律',
+    { attackPct: 0.24, defensePct: 0.2, armorPen: 0.06 },
+    { attackPct: 0.026, defensePct: 0.02 },
+    { element: 'metal', skill: { name: '天关神兵', mult: 3.5, rate: 0.27 } }
+  ),
+  g(
+    'm_shenwang',
+    '神王御极经',
+    'main',
+    'divine',
+    16,
+    '神域之主,御极临下,言出法随',
+    { attackPct: 0.26, maxHpPct: 0.22, executeDamage: 0.1 },
+    { attackPct: 0.028, maxHpPct: 0.022 },
+    { skill: { name: '神王御极', mult: 3.6, rate: 0.27 } }
+  ),
+  g(
+    'm_shendi',
+    '神帝临尘章',
+    'main',
+    'divine',
+    17,
+    '神帝临尘,众神俯首 —— 一念即法度',
+    { attackPct: 0.28, speed: 0.08, stunRate: 0.04 },
+    { attackPct: 0.03, speed: 0.008 },
+    { skill: { name: '神帝临尘', mult: 3.7, rate: 0.28 } }
+  ),
+  // 混沌海三境
+  g(
+    's_zhenling',
+    '真灵不昧诀',
+    'sub',
+    'divine',
+    18,
+    '混沌初开,一点真灵不昧;守着它,万劫不迷',
+    { cultivationSpeed: 0.34, breakthroughRate: 0.05, luck: 0.08 },
+    { cultivationSpeed: 0.045, breakthroughRate: 0.012 }
+  ),
+  g(
+    'm_shenmo',
+    '神魔开天经',
+    'main',
+    'divine',
+    19,
+    '神魔一体,以身开界 —— 打的是命,换的是界',
+    { attackPct: 0.3, maxHpPct: 0.24, lifesteal: 0.03 },
+    { attackPct: 0.03, maxHpPct: 0.022 },
+    { element: 'chaos', skill: { name: '开天一击', mult: 3.9, rate: 0.28 } }
+  ),
+  g(
+    'm_daozu',
+    '道祖本源经',
+    'main',
+    'divine',
+    20,
+    '道生一,一生万 —— 这部经从头到尾只讲一个字',
+    { cultivationSpeed: 0.44, attackPct: 0.26, defensePct: 0.24, maxHpPct: 0.24 },
+    { cultivationSpeed: 0.055, attackPct: 0.026, defensePct: 0.022 },
+    { element: 'chaos', skill: { name: '本源一炁', mult: 4.0, rate: 0.29 } }
   )
 ]
 

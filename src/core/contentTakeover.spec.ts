@@ -192,7 +192,7 @@ describe('内容接管 · 故障注入:行为必须真的变了', () => {
     console.log(`\n注入标签后取到 INJECTED_TAG,而非 REGIONS 的 ${original.eventTags.join('、')}`)
   })
 
-  it('端到端:实际跑一次探索,遭遇的敌人必须来自节点', () => {
+  it('端到端:实际跑一次历练,遭遇的敌人必须来自节点', () => {
     // 前面几条测的是 placeContent 自己。这一条真的跑 startExploration
     // + tickExploration,从战报里读实际遭遇的敌人 id ——
     // 若 runBattle 仍读 region.enemies,这里会立刻变红

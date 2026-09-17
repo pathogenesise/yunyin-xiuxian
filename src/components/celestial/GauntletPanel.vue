@@ -23,7 +23,7 @@
     <div v-if="row" class="card-ink px-3 py-2.5">
       <div class="flex items-center justify-between gap-2 text-[11px]">
         <span class="min-w-0 truncate font-kai text-ink">{{ playerName }}</span>
-        <span class="shrink-0 text-[10px] text-ink-ghost">第 {{ current + 1 }} 战 · {{ row.rounds }} 回合</span>
+        <span class="shrink-0 text-[10px] text-ink-faint">第 {{ current + 1 }} 战 · {{ row.rounds }} 回合</span>
         <span class="min-w-0 truncate text-right font-kai text-cinnabar">{{ row.foeName }}</span>
       </div>
       <div class="mt-1.5 flex items-center gap-2">

@@ -48,7 +48,8 @@
         <input v-model="agreed" type="checkbox" class="h-4 w-4 accent-cinnabar" />
         <span class="text-[12px] text-ink-soft">
           我已阅读并同意
-          <button class="text-azure" @click.prevent="privacyOpen = true">《隐私政策》</button>
+          <!-- 行内按钮的命中区只有 17px;补成内联块给拇指一个 30px 的靶面 -->
+          <button class="inline-block py-1.5 text-azure" @click.prevent="privacyOpen = true">《隐私政策》</button>
         </span>
       </label>
       <template #footer>

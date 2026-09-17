@@ -1,24 +1,36 @@
 /**
- * 历练服务 —— 探索会话 / 遭遇循环 / 战斗与事件调度
+ * 历练服务 —— 历练会话 / 遭遇循环 / 战斗与事件调度
  */
-import type { AdventureSession, ExploreMode } from '@/types'
+import type { AdventureSession, CombatRules, ExploreMode, FoeOrigin, RegionDef } from '@/types'
 import { rng } from '@/utils/random'
 import { add, gnZero } from '@/utils/gnum'
+import { formatGN } from '@/utils/format'
 import { enemyDef } from '@/data/enemies'
 import { regionDef, REGIONS } from '@/data/regions'
-import { EVENT_AUTO_RESOLVE_SECONDS, EXPLORE_BATTLE_INTERVAL, EXPLORE_EVENT_CHANCE, EXPLORE_MODES } from '@/data/constants'
-import { makeEnemySnap, resolveCombat } from './combat'
+import {
+  EVENT_AUTO_RESOLVE_SECONDS,
+  EXPLORE_BATTLE_INTERVAL,
+  EXPLORE_BOSS_AFTER_WINS,
+  EXPLORE_EVENT_CHANCE,
+  EXPLORE_MODES
+} from '@/data/constants'
+import { mansionEventLuck } from './astronomy'
+import type { StatMods } from '@/types'
+import { makeEnemySnap, mortalFoeOriginFromParts, resolveCombat } from './combat'
+import { petDef } from '@/data/pets'
+import type { RegionEventId } from './regionEvent'
 import { mergeRules } from './gauntlet'
 import { lifeTrialRules } from './lifeTrialService'
 import { buildPlayerSnap } from './playerSnap'
 import { currentDaoRules } from './endgameService'
 import { afterWin } from './loot'
 import { autoResolveEvent, pickEventFor } from './eventEngine'
+import { eventTierDef, eventTierOf } from './eventTier'
 import { modOf } from './statsCalc'
 import { track } from './progress'
-import { stoneByTier } from './formulas'
 import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
+import type { LastBattleView } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useUiStore } from '@/stores/ui'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
@@ -27,7 +39,7 @@ import { personalityEffects } from './petPersonality'
 // 连胜与宿敌各有一个 recordLoss,一个管连胜清空、一个管宿敌(败北阈值):
 // 前者来自 Phase 28 前期玩法(earlyGameService),后者来自世界记忆(worldMemory),
 // 这里都走别名,免得互相遮蔽
-import { recordWin as recordStreakWin, recordLoss as recordStreakLoss } from './earlyGameService'
+import { recordWin as recordStreakWin, recordLoss as recordStreakLoss, isRetreating } from './earlyGameService'
 import { currentRegionEvent, regionEventDef, rollRegionEvent } from './regionEvent'
 import { noteEnemy } from './loreService'
 import { noteTaboo } from './samsaraService'
@@ -62,6 +74,11 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   const ui = useUiStore()
   const region = regionDef(regionId)
   if (!region || player.dead) return false
+  // Phase 28 闭关禁令:闭关期间不得外出历练(与 startRetreat 的互斥守卫配对,双向互斥)
+  if (isRetreating()) {
+    ui.toast('你正在闭关静修,心无旁骛,暂勿外出历练', 'warn')
+    return false
+  }
   // 拒绝必须让玩家看见 —— 静默 return false 在界面上等同于「点了没反应」
   if (adventure.session) {
     ui.toast('你正在历练途中,先了结眼下这一程', 'warn')
@@ -76,7 +93,7 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   const now = Date.now()
   const modeDef = EXPLORE_MODES[mode]
   const speed = 1 + modOf(player.finalStats.mods, 'explorationSpeed')
-  // Phase 31 S4:灵兽性格影响探索时长(慢稳更久)
+  // Phase 31 S4:灵兽性格影响历练时长(慢稳更久)
   const petEff = personalityEffects(player.petId)
   const durationSec = Math.round(modeDef.durationSec * petEff.exploreDurMult)
   const session: AdventureSession = {
@@ -119,13 +136,101 @@ export function stopExploration(reason: 'manual' | 'defeat' | 'complete'): void 
   if (s.wins + s.losses >= 3 || reason === 'complete') {
     track('explores')
   }
+  // 总结带上这一趟的实际所得(会话账目即 afterWin 的真实入账):只说胜场与际遇,
+  // 玩家还得自己去翻行囊才知道赚没赚
+  const haul = `得灵石 ${formatGN(s.stoneGain)}、修为 ${formatGN(s.expGain)}${
+    s.itemGain > 0 ? `、拾获 ${s.itemGain} 件` : ''
+  }`
   if (reason === 'complete') {
-    ui.toast(`此行${region?.name ?? ''}历练圆满,胜 ${s.wins} 场,际遇 ${s.events} 次`, 'success')
+    ui.toast(`此行${region?.name ?? ''}历练圆满,胜 ${s.wins} 场,际遇 ${s.events} 次;${haul}`, 'success')
   } else if (reason === 'defeat') {
-    ui.toast('你身负重伤,不得不中断历练归来疗伤', 'warn')
+    ui.toast(`你身负重伤,不得不中断历练归来疗伤;此行${haul}`, 'warn')
   } else {
-    ui.toast('你收拾行囊,提前结束了这次历练', 'info')
+    ui.toast(`你收拾行囊,提前结束了这次历练;此行${haul}`, 'info')
   }
+}
+
+/**
+ * 战斗危险因子 —— 在线/离线唯一实现(HYP-015:同源,禁内联复刻)。
+ *   base        = 历练模式倍率(normal 1 / deep 1.45 / risky 2.1)
+ *   地域差值    = 1 + (region.danger - 1) × 0.05(层级越险,敌越强)
+ *   灵兽性格    = petEff.dangerMult(好战 1.15 更高,谨慎 0.95 更低)
+ *   区域事件    = regEventDanger(妖潮更险),无事件为 1
+ * 四者相乘。离线曾漏后两项 —— 灵兽「好战/谨慎」与妖潮离线毫无作用。
+ */
+export function dangerFactorFor(
+  modeDangerMult: number,
+  regionDanger: number,
+  petDangerMult: number,
+  eventDanger: number
+): number {
+  return modeDangerMult * (1 + (regionDanger - 1) * 0.05) * petDangerMult * eventDanger
+}
+
+/**
+ * 这一场敌人的加成**逐项摊开** —— 与 dangerFactorFor 同一批输入、同一份乘法,
+ * 只是把「危地」这个笼统的数还给它的四项来源:出行方式 / 地界凶险 / 灵兽之性 / 区域事件。
+ *
+ * 总数未必等于玩家在界面上一眼看懂的东西:一个 ×1.45 的「深入探寻」与
+ * 一个 ×1.45 的「妖潮」是两件事,前者能改(换寻常游历),后者只能等。
+ */
+export function explorationFoeDanger(o: {
+  tier: number
+  mode: ExploreMode
+  regionDanger: number
+  petId: string | null
+  eventId: RegionEventId | null
+}): { total: number; origin: FoeOrigin } {
+  const modeMult = EXPLORE_MODES[o.mode].dangerMult
+  const pet = personalityEffects(o.petId)
+  const evDef = o.eventId ? regionEventDef(o.eventId) : undefined
+  const eventMult = evDef?.dangerMult ?? 1
+  const total = dangerFactorFor(modeMult, o.regionDanger, pet.dangerMult, eventMult)
+  const petName = o.petId ? petDef(o.petId)?.name : undefined
+  const origin = mortalFoeOriginFromParts(o.tier, [
+    { label: EXPLORE_MODES[o.mode].name, ratio: modeMult },
+    { label: '地界凶险', ratio: 1 + (o.regionDanger - 1) * 0.05 },
+    { label: petName ? `${petName}之性` : '灵兽之性', ratio: pet.dangerMult },
+    { label: evDef?.name ?? '区域事件', ratio: eventMult }
+  ])
+  return { total, origin }
+}
+
+/**
+ * 选地卡片上的一行敌情 —— 只含**与出行方式无关**的部分:
+ * 层级补偿(这一层该有的装备水平)与地界凶险(含当前的区域事件)。
+ * 出行方式与灵兽之性等到出行那一刻再摊开(那时玩家才做得了选择)。
+ */
+export function regionFoeOrigin(region: RegionDef): FoeOrigin {
+  const ev = currentRegionEvent(region.id)
+  const evDef = ev ? regionEventDef(ev.eventId) : undefined
+  return mortalFoeOriginFromParts(region.tier, [
+    { label: '地界凶险', ratio: 1 + (region.danger - 1) * 0.05 },
+    { label: evDef?.name ?? '区域事件', ratio: evDef?.dangerMult ?? 1 }
+  ])
+}
+
+/**
+ * 历练战斗规则 —— 在线/离线唯一实现(与 dangerFactorFor 同一条判据:HYP-015,
+ * 同一件事两处算法必漏一处,抽成一个函数)。道途规则 × 本世逆旅契。
+ * 从前只有在线合并逆旅契,离线结算(普通战/boss战)只带 currentDaoRules,
+ * 「孤行/疾行/残躯/逆锋」四契的加难在本世最大的时段(离线挂机)里完全不生效。
+ */
+export function explorationRules(): CombatRules | undefined {
+  return mergeRules(currentDaoRules(), lifeTrialRules())
+}
+
+/**
+ * 距挑战区域之主还差几胜 —— 界面提示与 runBattle 的首领判定共用这一个函数。
+ *
+ * 从前门槛 10 只写在 runBattle 里,战斗页因此说不出"还差几胜";
+ * 若界面自己再写一个 10,调门槛的那一刻提示就会开始撒谎。
+ *
+ * @returns null = 此地之主已被击败(不再有首领);0 = 下一战即是首领
+ */
+export function winsUntilRegionBoss(wins: number, cleared: boolean): number | null {
+  if (cleared) return null
+  return Math.max(0, EXPLORE_BOSS_AFTER_WINS - wins)
 }
 
 /** 战斗遭遇(含首领判定) */
@@ -140,8 +245,8 @@ function runBattle(now: number): void {
   const modeDef = EXPLORE_MODES[s.mode]
 
   const notCleared = !adventure.cleared.includes(region.id)
-  // 每积累 10 胜,方有资格挑战区域之主(避免开局撞见首领)
-  const bossDue = notCleared && s.wins >= 10
+  // 每积累 EXPLORE_BOSS_AFTER_WINS 胜,方有资格挑战区域之主(避免开局撞见首领)
+  const bossDue = winsUntilRegionBoss(s.wins, !notCleared) === 0
   // 敌群与首领取自**本世路线节点**,不是 REGIONS ——
   // 同一处地界放进不同世界,遇到的就该是不同的东西
   const content = placeContent(region.id)
@@ -158,16 +263,20 @@ function runBattle(now: number): void {
   }
 
   // Phase 31 S4:灵兽性格修正危险(好战更高,谨慎更低)
-  const petEff = personalityEffects(player.petId)
-  // Phase 31 A2:区域事件修正危险(妖潮更险)
   const regEv = currentRegionEvent(region.id)
-  const regEventDanger = regEv ? (regionEventDef(regEv.eventId)?.dangerMult ?? 1) : 1
-  const dangerFactor = modeDef.dangerMult * (1 + (region.danger - 1) * 0.05) * petEff.dangerMult * regEventDanger
+  // 危险因子与它的来源说明书一次算出来:两处各乘一遍,迟早有一个悄悄变了
+  const { total: dangerFactor, origin: foeOrigin } = explorationFoeDanger({
+    tier: region.tier,
+    mode: s.mode,
+    regionDanger: region.danger,
+    petId: player.petId,
+    eventId: regEv?.eventId ?? null
+  })
   const pSnap = buildPlayerSnap()
-  const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor)
+  const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor, foeOrigin)
   // 道途在世,一切战斗皆循此规则
   // 逆旅契:本世签下的契对每一场历练战斗生效(道果的非效率出口)
-  const result = resolveCombat(pSnap, eSnap, rng, mergeRules(currentDaoRules(), lifeTrialRules()))
+  const result = resolveCombat(pSnap, eSnap, rng, explorationRules())
   // Phase 32.5:「独行」之誓看的是有没有真的祭出法宝,不是有没有法宝在身
   if (useInventoryStore().equippedArtifacts.length > 0) noteTaboo('artifact')
 
@@ -178,14 +287,15 @@ function runBattle(now: number): void {
   } else {
     offerBondEvent('nearDeath')
   }
-  adventure.recordBattle({
+  const view: LastBattleView = {
     enemyName: ghost ? ghostTitle(ghost) : eDef.name,
     enemyIcon: eDef.icon,
     enemyId: eDef.id,
     isBoss: Boolean(eDef.isBoss),
     result,
     at: now
-  })
+  }
+  adventure.recordBattle(view)
   track('battles')
   // Phase 32.5:交过手才谈得上认识它 —— 这份认知随神魂转世不灭
   noteEnemy(eDef.id, result.win)
@@ -197,11 +307,16 @@ function runBattle(now: number): void {
     // Phase 31 A2:区域事件掉落修正(妖潮/古墓/商队更丰)
     const regReward = regEv ? (regionEventDef(regEv.eventId)?.rewardMult ?? 1) : 1
     const drops = afterWin(region, modeDef.rewardMult * regReward, Boolean(eDef.isBoss))
+    // 战报带上这一场的掉落明细:线上一向只数件数、把 lines 丢掉,玩家看不到自己得了什么
+    adventure.recordBattle({ ...view, loot: drops.lines })
+    // 会话账目直接取 afterWin 的**真实入账**(灵石/修为/实物件数),
+    // 不再自己按 stoneByTier 另算一份 —— 那份漏了福缘、区域事件与首领倍率,与行囊对不上
     adventure.setSession({
       ...s,
       wins: s.wins + 1,
-      stoneGain: add(s.stoneGain, stoneByTier(region.tier, 10 * modeDef.rewardMult)),
-      itemGain: s.itemGain + drops.lines.length,
+      stoneGain: add(s.stoneGain, drops.stone),
+      expGain: add(s.expGain, drops.exp),
+      itemGain: s.itemGain + drops.items,
       nextBattleAt: nextBattleTime(now)
     })
     if (eDef.isBoss) {
@@ -210,13 +325,15 @@ function runBattle(now: number): void {
     }
 
     // Phase 30: 更新区域统计并判定镇压
-    const damageTakenPct = result.win ? 1 - result.playerHpPct : 1.0
-    const player = usePlayerStore()
+    const damageTakenPct = 1 - result.playerHpPct
     const ui = useUiStore()
     player.updateRegionStats(region.id, result.win, result.rounds, damageTakenPct)
     player.recordRegionWin(region.id)
+    // 取得镇压资格即永久:「镇压过就不必再镇压」。
+    // 首次达成时自动转为收益态;此后收不收收益由玩家自行开关(见 AdventureView 的切换)。
     const suppressed = checkSuppression(player, region.id)
-    if (suppressed) {
+    if (suppressed && !player.suppressQualified.includes(region.id)) {
+      player.markSuppressQualified(region.id)
       player.suppressRegion(region.id)
       ui.toast(`你已彻底镇压${region.name},此地将自动产出资源`, 'rare')
     }
@@ -320,7 +437,18 @@ function nextBattleTime(now: number): number {
   return now + (EXPLORE_BATTLE_INTERVAL * 1000) / speed
 }
 
-/** 每 Tick 推进探索(由引擎调用) */
+/**
+ * 一次遭遇里出际遇的概率 —— **在线 Tick 与离线结算共用这一份口径**。
+ *
+ * 从前两边各写一遍:在线加自身福缘,离线也加自身福缘;星象接进来时只改了在线,
+ * 于是同一天同一地,离线挂机算出的事件数比在线少一成。故抽成一处,
+ * 让"所见即所算"有地方可钉(见 astronomy.spec 的在线/离线同源一条)。
+ */
+export function exploreEventChance(regionId: string, mods: StatMods): number {
+  return EXPLORE_EVENT_CHANCE * (1 + modOf(mods, 'eventLuck') + mansionEventLuck(regionId))
+}
+
+/** 每 Tick 推进历练(由引擎调用) */
 export function tickExploration(now: number): void {
   const adventure = useAdventureStore()
   const player = usePlayerStore()
@@ -347,12 +475,21 @@ export function tickExploration(now: number): void {
   if (now >= s.nextBattleAt) {
     const region = regionDef(s.regionId)
     if (!region) return
-    const eventLuck = modOf(player.finalStats.mods, 'eventLuck')
-    if (rng.chance(EXPLORE_EVENT_CHANCE * (1 + eventLuck))) {
+    if (rng.chance(exploreEventChance(region.id, player.finalStats.mods))) {
       // 事件标签同样走本世内容
       const ev = pickEventFor({ ...region, eventTags: [...placeContent(region.id).eventTags] })
       if (ev) {
         adventure.setPendingEvent(ev.id, now)
+        /**
+         * 三档各报各的名。
+         *
+         * 弹窗是从「际遇」这个入口弹出来的,机缘与奇缘若不吭声,玩家看到的
+         * 就只是又一次寻常遭遇 —— 千分之几的稀有度在体感上等于零。
+         * 档名与颜色取自 core/eventTier,不在这里另写一份判据。
+         */
+        const tier = eventTierDef(eventTierOf(ev.id))
+        if (tier.id === 'jiyuan') useUiStore().toast(`千载难逢 —— 机缘「${ev.title}」`, 'rare')
+        else if (tier.id === 'qiyuan') useUiStore().toast(`缘分再续 —— 「${ev.title}」`, 'info')
         return
       }
     }

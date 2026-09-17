@@ -4,7 +4,9 @@ import { computed, ref } from 'vue'
 import type { CelestialWorldDef, DaoMark, DaoPathId, StatMods } from '@/types'
 import { persistConfig } from '@/utils/storage'
 import { mergeMods } from '@/core/statsCalc'
+import { EXPEDITION_GUARDIAN_LAYER, celestialWorldDef } from '@/data/endgame'
 import { SOUL_SLOTS, soulMods as soulModsOf, type SoulInstance } from '@/data/souls'
+import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecordOf, asStringArray } from '@/utils/saveShape'
 
 export interface TrialRecord {
   clears: number
@@ -16,6 +18,8 @@ export interface TrialRecord {
 export interface WorldRunState {
   worldId: string
   pactId: string | null
+  /** 奇门遁甲:此趟入界所择之门(未择为 null;见 data/qimen) */
+  gateId?: string | null
   /** 0..2 = 待选该层路线;3 = 待战界主 */
   layer: number
   /** 沿途节点累计的额外道源 */
@@ -60,6 +64,60 @@ export const useEndgameStore = defineStore(
     const souls = ref<SoulInstance[]>([])
     const equippedSouls = ref<string[]>([])
     const soulTutorialSeen = ref(false)
+
+    /**
+     * 存档修复:道痕/器魂/纪录表被写坏会让天界页在渲染期抛错。
+     * (activeSouls 已有一层防御读取,但那是补丁;这里把形状一次修平)
+     */
+    function sanitize(): void {
+      daoPath.value = typeof daoPath.value === 'string' ? daoPath.value : null
+      daoSource.value = asFiniteNumber(daoSource.value, 0, 0)
+      worldClears.value = asNumberRecord(worldClears.value, 0)
+      trialRecords.value = asRecordOf<TrialRecord>(
+        trialRecords.value,
+        r => !!r && typeof r === 'object' && Number.isFinite((r as TrialRecord).clears)
+      )
+      marks.value = asArray<DaoMark>(marks.value, [], m => !!m && typeof (m as DaoMark).targetId === 'string')
+      worldRun.value = asObjectOrNull<WorldRunState>(worldRun.value)
+      /**
+       * 远征进行时同样是活状态(每一场都读 layer/carriedHpPct/winStacks):
+       * layer 越界会跳到不存在的层,carriedHpPct 越界会把开局算成 NaN 或无敌。
+       * 认不得的世界直接作废 —— 让它重新起程,比带着坏状态打下去安全。
+       */
+      if (worldRun.value) {
+        const run = worldRun.value
+        const worldOk = !!celestialWorldDef(run.worldId) || run.worldId === 'void'
+        if (!worldOk) {
+          worldRun.value = null
+        } else {
+          worldRun.value = {
+            ...run,
+            pactId: typeof run.pactId === 'string' ? run.pactId : null,
+            gateId: typeof run.gateId === 'string' ? run.gateId : null,
+            layer: Math.min(EXPEDITION_GUARDIAN_LAYER, Math.max(0, Math.floor(asFiniteNumber(run.layer, 0, 0)))),
+            bonus: Math.floor(asFiniteNumber(run.bonus, 0, 0)),
+            rows: asArray<WorldRunState['rows'][number]>(run.rows, [], r => !!r && typeof (r as { foeName?: unknown }).foeName === 'string'),
+            carriedHpPct: Math.min(1, asFiniteNumber(run.carriedHpPct, 1, 0.05)),
+            totalRounds: Math.floor(asFiniteNumber(run.totalRounds, 0, 0)),
+            winStacks: Math.floor(asFiniteNumber(run.winStacks, 0, 0))
+          }
+        }
+      }
+      voidWorld.value = asObjectOrNull<CelestialWorldDef>(voidWorld.value)
+      dailyDoneDay.value =
+        typeof dailyDoneDay.value === 'number' && Number.isFinite(dailyDoneDay.value) ? dailyDoneDay.value : null
+      milestones.value = asArray<{ id: string; life: number; at: number }>(
+        milestones.value,
+        [],
+        m => !!m && typeof (m as { id?: unknown }).id === 'string'
+      )
+      records.value = asRecordOf<{ value: number; life: number; note: string }>(
+        records.value,
+        r => !!r && typeof r === 'object' && Number.isFinite((r as { value?: unknown }).value as number)
+      )
+      souls.value = asArray<SoulInstance>(souls.value, [], s => !!s && typeof (s as SoulInstance).uid === 'string')
+      equippedSouls.value = asStringArray(equippedSouls.value)
+    }
 
     /** 已装配器魂(过滤掉已不存在的 uid) */
     const activeSouls = computed<SoulInstance[]>(() => {
@@ -201,7 +259,8 @@ export const useEndgameStore = defineStore(
       markDailyDone,
       addMilestone,
       updateRecord,
-      onRebirth
+      onRebirth,
+      sanitize
     }
   },
   { persist: persistConfig('endgame') }

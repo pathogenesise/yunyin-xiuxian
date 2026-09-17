@@ -16,7 +16,7 @@
           class="w-full rounded-md border border-ink/20 bg-paper-deep/60 px-3 py-2 font-kai text-[15px] tracking-widest text-ink outline-none focus:border-cinnabar/50"
           placeholder="取一个道号"
         />
-        <button class="btn-ghost shrink-0 !px-3" @click="randomName">
+        <button class="btn-ghost shrink-0 !px-3" aria-label="随机取一个道号" @click="randomName">
           <GameIcon name="refresh" :size="15" />
         </button>
       </div>
@@ -28,7 +28,7 @@
         <p class="font-kai text-[13px] tracking-[0.3em] text-ink-faint">灵 根</p>
         <span class="font-kai text-[15px] tracking-widest text-cinnabar">{{ profile.gradeName }}</span>
       </div>
-      <div :key="rerollsLeft" class="stagger-in mt-4 flex justify-center gap-3">
+      <div :key="rollSeq" class="stagger-in mt-4 flex justify-center gap-3">
         <div v-for="root in profile.roots" :key="root.element" class="flex flex-col items-center gap-1.5">
           <span
             class="grid h-12 w-12 place-items-center rounded-full border-2 font-kai text-lg animate-breathe"
@@ -41,16 +41,19 @@
       </div>
       <p class="mt-4 text-center text-[12px] text-ink-faint">
         修行倍率
-        <span :key="rerollsLeft" class="tabular text-[14px] text-ink animate-ink-pop">×{{ profile.growthMult.toFixed(2) }}</span>
+        <span :key="rollSeq" class="tabular text-[14px] text-ink animate-ink-pop">×{{ profile.growthMult.toFixed(2) }}</span>
       </p>
       <!-- 天然牌面(Phase 32.2):重掷时要权衡的不止倍率,还有这一世哪条路走得顺 -->
-      <div v-if="tendencies.length" :key="`tend-${rerollsLeft}`" class="stagger-in mt-3 space-y-1.5 border-t border-ink/10 pt-3">
+      <div v-if="tendencies.length" :key="`tend-${rollSeq}`" class="stagger-in mt-3 space-y-1.5 border-t border-ink/10 pt-3">
         <p v-for="t in tendencies" :key="t.element" class="flex gap-2 text-[11px] leading-relaxed text-ink-soft">
           <span class="shrink-0 font-kai" :style="{ color: ELEMENTS[t.element].color }">{{ ELEMENTS[t.element].char }}</span>
           <span>{{ t.text }}</span>
         </p>
       </div>
-      <button class="btn-ghost mt-4 w-full" :disabled="starting || rerollsLeft <= 0" @click="reroll">逆天改命(余 {{ rerollsLeft }} 次)</button>
+      <button class="btn-ghost mt-4 w-full" :disabled="starting" @click="reroll">{{ rerollLabel }}</button>
+      <p v-if="unlimitedReroll" class="mt-2 text-center text-[11px] text-ink-faint">
+        不满意就一直改,改到掷中你认的那副牌为止
+      </p>
     </div>
 
     <div class="grow" />
@@ -96,6 +99,13 @@
   if (!game.createProfile) game.setCreateProfile(rollLinggen(rng))
   const profile = computed(() => game.createProfile!)
   const rerollsLeft = computed(() => game.createRerolls)
+  /** 不限次建号:按钮不显示余量,也不会有「刷不动了」的一天 */
+  const unlimitedReroll = computed(() => rerollsLeft.value === null)
+  const rerollLabel = computed(() =>
+    rerollsLeft.value === null ? '逆天改命' : `逆天改命(余 ${rerollsLeft.value} 次)`
+  )
+  /** 重掷序号:额度不再是动画的开关,重放掷牌动画要另有一个只增不减的计数器 */
+  const rollSeq = ref(0)
   const revealRef = ref<InstanceType<typeof SpiritRootReveal> | null>(null)
   /** 鉴定动画进行中(约 2.6s):防连点导致重复建号、重复发新手馈赠 */
   const starting = ref(false)
@@ -105,10 +115,11 @@
 
   function reroll(): void {
     // 鉴定动画进行中禁止重掷:begin 已按当时的 profile 建号,
-    // 此刻重掷既改不了已成真身的灵根,又白扣一次「逆天改命」
+    // 此刻重掷改不了已成真身的灵根,只会让展出的牌和角色对不上
     if (starting.value) return
     if (!game.spendCreateReroll()) return
     game.setCreateProfile(rollLinggen(rng))
+    rollSeq.value += 1
   }
 
   function randomName(): void {

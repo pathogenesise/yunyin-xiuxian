@@ -18,7 +18,7 @@ import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
 import { daoFruitGain } from './formulas'
 import { effectiveDaoFruit } from './statsCalc'
 import { DAO_FRUIT_COMBAT_BONUS } from '@/data/constants'
-import { MAX_MAJOR } from '@/data/realms'
+import { REBIRTH_REFERENCE_MAJOR } from '@/data/realms'
 import { fullHoursToReach, optimalRebirthPoint } from './rebirthRoi'
 
 // ---------------- A 案:道果阶数追平耗时 ----------------
@@ -38,7 +38,7 @@ export function requiredFruitGrowth(floor = 0.5): number {
   for (let iter = 0; iter < 60; iter += 1) {
     const k = (low + high) / 2
     let ok = true
-    for (let m = lo; m <= MAX_MAJOR; m += 1) {
+    for (let m = lo; m <= REBIRTH_REFERENCE_MAJOR; m += 1) {
       const fruit = daoFruitGain(lo, 9) * Math.pow(k, m - lo)
       if (fruit / fullHoursToReach(m + 1) < optEff * floor) {
         ok = false
@@ -68,7 +68,7 @@ export function exponentialFruitTable(growth: number): ExponentialFruitRow[] {
   const lo = MANUAL_REBIRTH_MIN_MAJOR
   const base = daoFruitGain(lo, 9)
   const out: ExponentialFruitRow[] = []
-  for (let m = lo; m <= MAX_MAJOR; m += 1) {
+  for (let m = lo; m <= REBIRTH_REFERENCE_MAJOR; m += 1) {
     const current = daoFruitGain(m, 9)
     const proposed = base * Math.pow(growth, m - lo)
     out.push({
@@ -107,7 +107,7 @@ export interface CompensationRow {
 export function compensationTable(target = 0.5): CompensationRow[] {
   const optEff = optimalRebirthPoint().efficiency
   const out: CompensationRow[] = []
-  for (let m = MANUAL_REBIRTH_MIN_MAJOR; m <= MAX_MAJOR; m += 1) {
+  for (let m = MANUAL_REBIRTH_MIN_MAJOR; m <= REBIRTH_REFERENCE_MAJOR; m += 1) {
     const fruit = daoFruitGain(m, 9)
     const hours = fullHoursToReach(m + 1)
     const needed = Math.max(0, optEff * target * hours - fruit)
@@ -124,5 +124,5 @@ export function compensationTable(target = 0.5): CompensationRow[] {
  * 返回的是可作为停世点的境界数(金丹之上每一境都得有自己的独特回报)
  */
 export function distinctRouteCount(): number {
-  return MAX_MAJOR - MANUAL_REBIRTH_MIN_MAJOR + 1
+  return REBIRTH_REFERENCE_MAJOR - MANUAL_REBIRTH_MIN_MAJOR + 1
 }

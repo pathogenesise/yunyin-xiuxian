@@ -15,9 +15,9 @@
 import { describe, expect, it } from 'vitest'
 import { CONTENT_GATES, disqualified, qualifiedRewards, reachabilityTable } from './contentGateAudit'
 import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
-import { MAX_MAJOR } from '@/data/realms'
+import { REALMS, WORLD_BREAK_MAJOR } from '@/data/realms'
 
-const NAMES = ['炼气', '筑基', '金丹', '元婴', '化神', '炼虚', '合体', '大乘', '渡劫', '真仙']
+const NAMES = REALMS.map(r => r.name)
 
 describe('内容可达性 · 门槛全貌', () => {
   it('逐类内容的真实门槛与金丹可达度', () => {
@@ -44,11 +44,13 @@ describe('内容可达性 · 门槛全貌', () => {
 })
 
 describe('内容可达性 · 被证伪的候选', () => {
-  it('灵兽:无任何境界门槛,金丹前就能集齐', () => {
+  it('灵兽:入门灵兽无门槛,神兽须行至神界', () => {
     const pet = CONTENT_GATES.find(g => g.id === 'pet')!
-    expect(pet.kind).toBe('none')
-    expect(pet.reachableByGoldRebirth).toBe(true)
-    expect(pet.qualifies).toBe(false)
+    const row = reachabilityTable().find(r => r.gate.id === 'pet')!
+    expect(pet.kind).toBe('trigger')
+    expect(pet.reachableByGoldRebirth).toBe(false)
+    expect(pet.qualifies).toBe(true)
+    expect(row.goldShare!).toBeLessThan(1) // 神兽不在金丹可达范围内
     console.log(`\n灵兽:${pet.evidence}`)
   })
 
@@ -60,19 +62,20 @@ describe('内容可达性 · 被证伪的候选', () => {
     console.log(`\n师承:${mentor.evidence}`)
   })
 
-  it('奇遇事件:51 个里只有 2 个带门槛,不足以支撑一条路线', () => {
+  it('奇遇事件:绝大多数无门槛,少数高阶奇遇需深修', () => {
     const ev = CONTENT_GATES.find(g => g.id === 'event')!
     const row = reachabilityTable().find(r => r.gate.id === 'event')!
     expect(ev.qualifies).toBe(false)
-    // 金丹可触发绝大多数事件
-    expect(row.goldShare!).toBeGreaterThan(0.95)
-    console.log(`\n事件:金丹可触发 ${(row.goldShare! * 100).toFixed(0)}%,仅 ${row.deepOnly} 个需要深修`)
+    // 金丹可触发绝大多数事件;仙界及以上新增的奇遇带 minRealm,但仍不足以支撑一条路线
+    expect(row.goldShare!).toBeGreaterThan(0.8)
+    console.log(`\n事件:金丹可触发 ${(row.goldShare! * 100).toFixed(0)}%,有 ${row.deepOnly} 个需要深修`)
   })
 
   it('这三项若包装成深修回报,只是换一种方式制造假选择', () => {
     const bad = disqualified().map(g => g.name)
-    expect(bad).toContain('灵兽')
     expect(bad).toContain('师承')
+    // 灵兽曾与师承并列;扩界后神兽成为神界专属,已从「被证伪」转入「有资格」一列
+    expect(bad).not.toContain('灵兽')
     console.log(`\n被证伪:${bad.join('、')}——它们都在金丹的可达范围内`)
   })
 })
@@ -104,16 +107,16 @@ describe('内容可达性 · 有资格的候选', () => {
 
   it('天界与道痕:唯一要求满级的内容,无任何替代入口', () => {
     const g = CONTENT_GATES.find(x => x.id === 'celestial')!
-    expect(g.minMajor).toBe(MAX_MAJOR)
+    expect(g.minMajor).toBe(WORLD_BREAK_MAJOR)
     expect(g.bypass).toBe('无')
     expect(g.qualifies).toBe(true)
   })
 })
 
 describe('内容可达性 · 结论', () => {
-  it('有资格作深修独有回报的只有四类', () => {
+  it('有资格作深修独有回报的有五类', () => {
     const ok = qualifiedRewards().map(g => g.name)
-    expect(ok).toHaveLength(4)
+    expect(ok).toHaveLength(5)
     console.log(`\n合格:${ok.join('、')}`)
     console.log(`不合格:${disqualified().map(g => g.name).join('、')}`)
   })

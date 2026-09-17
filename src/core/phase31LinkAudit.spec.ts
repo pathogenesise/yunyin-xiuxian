@@ -17,6 +17,9 @@ import { weatherDef } from './weather'
 import { SECRET_REALMS } from './secretRealm'
 import { PETS } from '@/data/pets'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { equipSetDef, type EquipSetDef } from './equipSet'
 
 describe('联动审计 · ①师承非职业', () => {
   it('四种师承词条方向不同(非同一维度叠加)', () => {
@@ -60,23 +63,50 @@ describe('联动审计 · ③秘境区别于特殊世界', () => {
     }
   })
 
-  it('秘境入口代价小(40~80),远低于特殊世界(道源大额)', () => {
+  it('秘境入口代价是灵石(基础 40~80,按层级折算),与终局的道源经济分开', () => {
     for (const s of SECRET_REALMS) {
-      expect(s.entryCost).toBeLessThan(100)
+      // Phase 34.9:原稿写的是「元婴门槛 + 道源代价」——道源真仙才有,元婴付不出,
+      // 等于进不去。现按既定的 minMajor 取灵石代价(见 data/secretRealms 的 ⚠ 注)
+      // Phase 34.10:产品口径「都做」→ 分两阶:凡境(minMajor 3,灵石)与天界(minMajor 9,道源)
+      if (s.gate === 'mortal') {
+        expect('stone' in s.cost).toBe(true)
+        expect(s.minMajor).toBeGreaterThanOrEqual(3)
+      } else {
+        expect('daoSource' in s.cost).toBe(true)
+        expect(s.minMajor).toBeGreaterThanOrEqual(9)
+      }
     }
     expect(SECRET_REALMS.length).toBeGreaterThanOrEqual(3)
   })
 })
 
 describe('联动审计 · ④共鸣非最优套装化', () => {
-  it('套装装备仅少数(铁壁 3 件/星斗 2 件),散件仍是大头', () => {
+  it('套装装备仅占少数,散件仍是大头', () => {
     const setCount = EQUIPMENT_TEMPLATES.filter(t => t.set).length
-    // 50 件模板中,套装件 ≤ 10(散件空间保持)
-    expect(setCount).toBeLessThanOrEqual(10)
+    // 判据是「比例」而非某个历史数字:扩界后模板池从 50 增到 77,
+    // 套装件(铁壁3/星斗2 + 三界各 3)随之增加,但散件仍须占绝对多数
+    const ratio = setCount / EQUIPMENT_TEMPLATES.length
+    expect(ratio, `套装件占比 ${(ratio * 100).toFixed(0)}% 偏高`).toBeLessThanOrEqual(0.25)
+    expect(setCount).toBeLessThanOrEqual(15)
   })
 
   it('共鸣触发条件宽松(2 件即可),不强制 6 件收集', () => {
     expect(EQUIPMENT_TEMPLATES.filter(t => t.set).length).toBeGreaterThan(0)
+  })
+
+  it('每种机制钩子都在 playerSnap 有物化点 —— 声明必须兑现(星斗/仙甲/混沌 RE: TASK-137)', () => {
+    // 历史暗伤:astral 三套声明「开战护盾+5%」、UI 显示「共鸣」,战斗却零消费
+    // (ironwall 有 ironwallBrace 物化点)。声明即承诺,判据拿着 playerSnap 源码
+    // 与共鸣定义对账:每一类钩子,源码里都必须写着同一钩子名的物化点。
+    const src = readFileSync(resolve(__dirname, './playerSnap.ts'), 'utf8')
+    const hooks = [...new Set(EQUIPMENT_TEMPLATES.map(t => (t.set ? equipSetDef(t.set)?.hook : undefined)).filter(Boolean))] as EquipSetDef['hook'][]
+    expect(hooks.length).toBeGreaterThanOrEqual(2)
+    for (const hook of hooks) {
+      expect(
+        src.includes(`'${hook}'`),
+        `playerSnap 未物化共鸣钩子 \`${hook}\` —— 套装声明了效果,战斗却不会兑现`
+      ).toBe(true)
+    }
   })
 })
 
@@ -100,7 +130,7 @@ describe('联动审计 · ⑥联动矩阵(每系统 ≥2 个真实关系)', () =
    * 师承 ── 功法分支(词条并入) · 机缘(剑痕→剑修) · 人物页(叙事评价)
    * 机缘 ── 师承 · 灵兽(认主) · 功法(gongfa 掉落)
    * 秘境 ── 流派(规则) · 装备(战利品) · 天时(环境)
-   * 灵兽 ── 秘境? (未连)  => 审计标记:灵兽仅连 探索/路线
+   * 灵兽 ── 秘境? (未连)  => 审计标记:灵兽仅连 历练/路线
    * 共鸣 ── 战斗(铁壁/星斗钩子) · 流派(词条)
    * 天时 ── 区域事件(雷鸣→雷灵) · 秘境(环境) · 修炼
    * 区域事件 ── 掉落 · 危险 · 事件率

@@ -13,7 +13,39 @@ import { describe, it, expect } from 'vitest'
 import { LORE_MAX, LORE_STAGE_NAMES, MATERIALS, materialDef } from '@/data/materials'
 import { GONGFA_BRANCHES, gongfaBranchDef } from '@/data/gongfaBranches'
 import { gongfaDef } from '@/data/gongfa'
-import { BRANCH_STAGE_MAX, BRANCH_STAGE_NAMES, branchStage, describeBranch, describeMaterial } from './codex'
+import {
+  ARTIFACT_STAGE_MAX,
+  ARTIFACT_STAGE_NAMES,
+  BRANCH_STAGE_MAX,
+  BRANCH_STAGE_NAMES,
+  EQUIP_STAGE_MAX,
+  EQUIP_STAGE_NAMES,
+  PILL_NO_RECIPE_HINT,
+  PILL_STAGE_MAX,
+  PILL_STAGE_NAMES,
+  artifactStage,
+  branchStage,
+  describeArtifact,
+  describeBranch,
+  describeEquipment,
+  describeMaterial,
+  describePill,
+  type EquipSeen,
+  equipStage,
+  pillStage
+} from './codex'
+import {
+  ARTIFACT_LEVEL_BONUS,
+  ARTIFACT_MAX_LEVEL,
+  ARTIFACTS,
+  artifactDef,
+  artifactQualityMult
+} from '@/data/artifacts'
+import { EQUIPMENT_TEMPLATES, equipmentTemplate } from '@/data/equipment'
+import { PILLS } from '@/data/pills'
+import { qualityDef } from '@/data/qualities'
+import type { QualityId } from '@/types'
+import { formatPercent } from '@/utils/format'
 
 const qingzhi = materialDef('mat_qingzhi')!
 const chiyan = materialDef('mat_chiyan')!
@@ -134,6 +166,113 @@ describe('悟道录:未见 / 已见 / 已择', () => {
       expect(gongfaDef(b.gongfaId), `${b.name} 指向不存在的功法 ${b.gongfaId}`).toBeDefined()
       expect(describeBranch(b, 1).meta, `${b.name} 在悟道录里没有出处`).not.toBe('')
       expect(gongfaBranchDef(b.id), `${b.name} 的 id 查不回自身`).toBeDefined()
+    }
+  })
+})
+
+/**
+ * 用具三类的收录深度 —— 与灵材谱同规:不回写一份「第几层」,而是按已有状态分层揭示。
+ *
+ * 装备看「见过的成色」(lore.equipLore,记最好的一件),法宝看祭炼重数(背包),
+ * 丹方看掌握度(lore.recipeLore)。三条梯子各自的顶都要给得出下一步该做什么,
+ * 到顶则闭嘴;而无方之丹要明说自己没有方子 —— 那是玩家一辈子也推不动的那一档。
+ */
+describe('图鉴 · 用具三类的收录深度', () => {
+  it('装备:没见过就没收录;见过一件即入门;上手一档由玩家推进;天品看运气', () => {
+    const t = equipmentTemplate('w_xuantie')!
+    expect(equipStage(undefined, false)).toBe(0)
+    // 旧档:收录过但没有成色记录 —— 仍算入目,只是记不下最好的一件
+    expect(equipStage(undefined, true)).toBe(1)
+    const seen = (quality: QualityId, tier: number): EquipSeen => ({ q: qualityDef(quality).rank, t: tier })
+    expect(equipStage(seen('mortal', 30), true)).toBe(1)
+    // 第二档不看成色,看「你有没有亲手用过它」——强化或装备过即算
+    expect(equipStage({ ...seen('mortal', 30), u: 1 }, true)).toBe(2)
+    expect(equipStage({ ...seen('excellent', 12), u: 1 }, true)).toBe(2)
+    expect(equipStage(seen('heaven', 12), true)).toBe(3)
+    expect(describeEquipment(t, seen('heaven', 18), true).desc).toContain('见过最好的:天品 · 18 阶')
+    expect(describeEquipment(t, undefined, true).badge).toBe('')
+    expect(describeEquipment(t, seen('heaven', 18), true).stageName).toBe(EQUIP_STAGE_NAMES[EQUIP_STAGE_MAX])
+  })
+
+  it('装备:到顶才给「极」字,未到顶都给得出还差什么', () => {
+    const t = equipmentTemplate('w_zhuqing')!
+    const top = describeEquipment(t, { q: qualityDef('divine').rank, t: 32 }, true)
+    expect(top.badge).toBe('极')
+    expect(top.hint, '到顶了还催人上进就是噪音').toBe('')
+    const cases: { stage: number; seen?: EquipSeen; collected: boolean }[] = [
+      { stage: 0, collected: false },
+      { stage: 1, seen: { q: qualityDef('mortal').rank, t: 3 }, collected: true },
+      { stage: 2, seen: { q: qualityDef('excellent').rank, t: 5, u: 1 }, collected: true }
+    ]
+    for (const { stage, seen, collected } of cases) {
+      const e = describeEquipment(t, seen, collected)
+      expect(e.stage).toBe(stage)
+      expect(e.hint, `第 ${stage} 层没有给出下一步`).not.toBe('')
+    }
+  })
+
+  it('法宝:祭炼重数决定深度,到九重封顶;功用行给的是本人那一份', () => {
+    const fuchen = artifactDef('af_xuanxu')!
+    expect(artifactStage(0, false)).toBe(0)
+    expect(artifactStage(0, true)).toBe(1)
+    expect(artifactStage(3, true)).toBe(2)
+    expect(artifactStage(ARTIFACT_MAX_LEVEL, true)).toBe(ARTIFACT_STAGE_MAX)
+    const mid = describeArtifact(fuchen, 3, true)
+    expect(mid.foot.value).toBe(`3/${ARTIFACT_MAX_LEVEL} 重`)
+    /**
+     * 吸命伤害的基线是 230%,乘上它自己的品阶(玄虚拂尘是灵品),再按祭炼三重
+     * ×(1+0.08×3)—— 图鉴给的必须是这一份,不是表里那行基线数字。
+     */
+    const scaled = 2.3 * artifactQualityMult(fuchen.quality) * (1 + 3 * ARTIFACT_LEVEL_BONUS)
+    expect(mid.desc, '图鉴里的数得按玩家自己的品阶与祭炼重数算').toContain(formatPercent(scaled))
+    expect(describeArtifact(fuchen, ARTIFACT_MAX_LEVEL, true).badge).toBe('满')
+    expect(describeArtifact(fuchen, ARTIFACT_MAX_LEVEL, true).hint).toBe('')
+  })
+
+  it('丹方:已录 → 已得方 → 通晓;无方之丹到「已录」即顶并说明缘由', () => {
+    const craftable = PILLS.find(p => p.recipe)!
+    expect(pillStage(craftable, false, 0)).toBe(0)
+    expect(pillStage(craftable, true, 0)).toBe(1)
+    expect(pillStage(craftable, true, 0.4)).toBe(2)
+    expect(pillStage(craftable, true, 1)).toBe(PILL_STAGE_MAX)
+
+    const drop = PILLS.find(p => !p.recipe)!
+    expect(pillStage(drop, true, 1), '无方之丹没有「得方」这一档').toBe(1)
+    const e = describePill(drop, true, 1)
+    expect(e.hint, '无方之丹要明说自己无方').toBe(PILL_NO_RECIPE_HINT)
+    expect(e.badge).toBe('')
+    expect(e.foot.value).toBe('偶得')
+  })
+
+  it('丹方:掌握度写进脚注,未到手与通晓各自给一句话', () => {
+    const craftable = PILLS.find(p => p.recipe)!
+    expect(describePill(craftable, true, 0.42).foot.value).toBe('42%')
+    expect(describePill(craftable, true, 0).hint).toContain('方子还没到手')
+    const top = describePill(craftable, true, 1)
+    expect(top.stageName).toBe(PILL_STAGE_NAMES[PILL_STAGE_MAX])
+    expect(top.badge).toBe('通')
+    expect(top.hint).toBe('')
+  })
+
+  it('三张梯子的层数与名目一一对得上(界面拿 stageName 直接显示)', () => {
+    expect(EQUIP_STAGE_NAMES.length).toBe(EQUIP_STAGE_MAX + 1)
+    expect(ARTIFACT_STAGE_NAMES.length).toBe(ARTIFACT_STAGE_MAX + 1)
+    expect(PILL_STAGE_NAMES.length).toBe(PILL_STAGE_MAX + 1)
+  })
+
+  it('未收录的条目不会凭空有深度,但正文照样写得出来', () => {
+    for (const t of EQUIPMENT_TEMPLATES) {
+      const e = describeEquipment(t, undefined, false)
+      expect(e.stage).toBe(0)
+      expect(e.desc, '未收录也要留着风味与功用,收录之后才有对比').not.toBe('')
+    }
+    for (const a of ARTIFACTS) {
+      expect(describeArtifact(a, 0, false).stage).toBe(0)
+      expect(describeArtifact(a, 0, false).desc).not.toBe('')
+    }
+    for (const p of PILLS) {
+      expect(describePill(p, false, 0).stage).toBe(0)
+      expect(describePill(p, false, 0).desc).not.toBe('')
     }
   })
 })

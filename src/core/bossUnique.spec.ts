@@ -17,8 +17,11 @@ import { describe, expect, it } from 'vitest'
 import { ROUTE_SHAPES, generateMortalWorld, pickBoss } from './mortalWorldGen'
 import { mulberry32, RandomService } from '@/utils/random'
 import { ENEMIES, enemyDef } from '@/data/enemies'
+import { MORTAL_TIER_MAX } from '@/data/regions'
 
-const BOSS_COUNT = ENEMIES.filter(e => e.archetype !== undefined).length
+// 凡界路线只用得上人间界的首领(见 mortalWorldGen 的池过滤),
+// 故轮换率的分母也是「人间界首领数」,不是全库(含仙界以上)的首领数
+const BOSS_COUNT = ENEMIES.filter(e => e.archetype !== undefined && e.tier <= MORTAL_TIER_MAX).length
 const MAX_SEGMENTS = Math.max(...ROUTE_SHAPES.map(s => s.tiers.length))
 
 describe('首领唯一性 · 同一世界内不得重复', () => {

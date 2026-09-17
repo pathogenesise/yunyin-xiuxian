@@ -24,10 +24,18 @@ import { ELEMENTS } from '@/data/linggen'
 import { LORE_MAX, LORE_STAGE_NAMES, MATERIALS, type MaterialDef } from '@/data/materials'
 import { GONGFA_BRANCHES, canEnlighten, type GongfaBranchDef } from '@/data/gongfaBranches'
 import { GONGFA_TYPE_NAMES, gongfaDef } from '@/data/gongfa'
-import { qualityDef } from '@/data/qualities'
+import { QUALITIES, qualityDef } from '@/data/qualities'
+import { ARTIFACTS, ARTIFACT_MAX_LEVEL } from '@/data/artifacts'
+import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
+import { PILLS } from '@/data/pills'
+import type { ArtifactDef, EquipmentTemplate, PillDef } from '@/types'
+import { useInventoryStore } from '@/stores/inventory'
 import { useLoreStore } from '@/stores/lore'
 import { useCultivationStore } from '@/stores/cultivation'
+import { useQuestsStore } from '@/stores/quests'
+import type { CollectionCategory } from '@/stores/quests'
 import { modsText } from './statNames'
+import { artifactFuncText, artifactMetaText, equipFuncText, equipMetaText, pillFuncText, pillMetaText } from './itemText'
 
 /** 图鉴条目 —— 收藏图鉴九类共用的呈现形状 */
 export interface CodexEntry {
@@ -55,7 +63,27 @@ export interface CodexCat {
   name: string
   /** 标题右侧的计数。各类层级口径不同,在此写死成人话而非 have/total */
   hint: string
+  /**
+   * 这一册的东西**从哪来**。
+   *
+   * 未收录的条目在界面上只是一片「???」—— 玩家看得出还差多少,却不知道去哪儿找。
+   * 故每册带一句来源说明,由 codexSource.spec 对着真实的 collect 调用点核:
+   * 说「历练掉落」,就得真有一处在历练里 collect('equip')。
+   */
+  source: string
   entries: CodexEntry[]
+}
+
+/** 七类收藏册的来源说明(灵材谱与悟道录在各自构造函数里另给) */
+export const CODEX_SOURCES: Record<CollectionCategory, string> = {
+  equip: '来源:历练掉落 —— 强敌与首领更易出',
+  gongfa: '来源:藏经阁参悟 —— 用功法残页逐部撞见',
+  // 三处:掉落(loot)、炼丹(pillService)、际遇赠丹(eventEngine)—— 由 codexSource.spec 对着 collect 点核
+  pill: '来源:三处 —— 历练掉落、丹房照方炼出,际遇里也有人赠',
+  artifact: '来源:历练掉落 —— 高阶地界才出得上品',
+  pet: '来源:历练际遇 —— 结缘而非猎取',
+  event: '来源:历练际遇与奇缘 —— 走到哪,遇见什么',
+  talent: '来源:转世择姿 —— 每一世选一个'
 }
 
 // ============ 灵材谱 ============
@@ -123,7 +151,13 @@ export function materialCodex(): CodexCat {
   )
   const known = entries.filter(e => e.stage >= 1).length
   const mastered = entries.filter(e => e.stage >= LORE_MAX).length
-  return { key: 'material', name: '灵材谱', hint: `已辨识 ${known}/${MATERIALS.length} · 通晓 ${mastered}`, entries }
+  return {
+    key: 'material',
+    name: '灵材谱',
+    hint: `已辨识 ${known}/${MATERIALS.length} · 通晓 ${mastered}`,
+    source: '来源:采集、掉落,以及真把它用进一炉丹',
+    entries
+  }
 }
 
 // ============ 悟道录 ============
@@ -183,5 +217,248 @@ export function branchCodex(): CodexCat {
   )
   const seen = entries.filter(e => e.stage >= 1).length
   const picked = entries.filter(e => e.stage >= BRANCH_STAGE_MAX).length
-  return { key: 'branch', name: '悟道录', hint: `已见 ${seen}/${GONGFA_BRANCHES.length} · 已择 ${picked}`, entries }
+  return {
+    key: 'branch',
+    name: '悟道录',
+    hint: `已见 ${seen}/${GONGFA_BRANCHES.length} · 已择 ${picked}`,
+    source: '来源:把一部功法修至圆满,再择一条道走下去',
+    entries
+  }
+}
+
+// ============ 用具三类:收录深度 ============
+//
+// 装备图鉴 / 法宝谱 / 丹方录此前只有「收没收录」两态:一个 id 进过表,格子就亮着,
+// 从此再没有下文。可这三样东西的深度本来就存在别处 —— 装备见过的成色、法宝祭炼到
+// 几重、丹方读到几分熟 —— 那些数一直在参与结算,只是没在图鉴里露面。
+//
+// 与灵材谱同一套做法:**不回写一份新状态去记「第几层」**,而是按已有的状态分层揭示,
+// 并各附一句「还差什么」。这样旧存档立刻就有得看,也不会出现两处记录互相分叉。
+//
+// 三处深度取自:装备见闻(lore.equipLore)、法宝祭炼重数(inventory.artifacts)、
+// 丹方掌握度(lore.recipeLore)。
+
+/**
+ * 装备收录深度:0 未录 / 1 已入目 / 2 曾上手 / 3 见过天品
+ *
+ * 「曾上手」这一档是拿**玩家自己能决定的事**换来的(强化一件、或把它装上身),
+ * 而第三档仍是运气(撞见天品以上的成色)。原先的第二档是「见过精品」——
+ * 对低阶模板要等运气,玩家在图鉴里干看着,推不动它。
+ */
+export const EQUIP_STAGE_NAMES = ['未录', '已入目', '曾上手', '见过天品'] as const
+export const EQUIP_STAGE_MAX = 3
+
+/** 分档的品质由此而来 —— 不写魔数,改品质表时这里跟着走 */
+const EQUIP_STAGE3_RANK = qualityDef('heaven').rank
+
+const EQUIP_HINTS = [
+  '尚未见过此物 —— 多在地界里走动。',
+  '见过形制了 —— 强化一件、或把它装上身,才算上手。',
+  '用过了 —— 再往上就看运气:见一件天品以上的成色。',
+  ''
+] as const
+
+/** 见闻记录:该模板见过的最高品质档、最高层级,以及是否亲手用过(u) */
+export interface EquipSeen {
+  /** 最高品质 rank */
+  q: number
+  /** 最高层级 */
+  t: number
+  /** 是否亲手用过(强化过或装备过):1 = 用过 */
+  u?: number
+}
+
+/** 某件装备在「见过什么成色」上走到哪一层 */
+export function equipStage(seen: EquipSeen | undefined, collected: boolean): number {
+  if (!seen) return collected ? 1 : 0
+  if (seen.q >= EQUIP_STAGE3_RANK) return 3
+  if (seen.u) return 2
+  return 1
+}
+
+/**
+ * 装备图鉴条目:风味 + 功用 + 亲眼见过的最好成色。
+ *
+ * 平铺数值随掉落层级折算,所以「见过什么成色」是这个模板唯一说得清的深度 ——
+ * 它同时回答了「这东西上限在哪」与「我刷的地界够不够高」。
+ */
+export function describeEquipment(def: EquipmentTemplate, seen: EquipSeen | undefined, collected: boolean): CodexEntry {
+  const stage = equipStage(seen, collected)
+  const lines = [def.desc, equipFuncText(def)].filter(Boolean)
+  if (stage >= 1 && seen) {
+    lines.push(`见过最好的:${qualityOfRank(seen.q).name} · ${seen.t} 阶`)
+  }
+  return {
+    id: def.id,
+    name: def.name,
+    desc: lines.join('\n'),
+    meta: equipMetaText(def),
+    stage,
+    stageName: EQUIP_STAGE_NAMES[stage]!,
+    badge: stage >= EQUIP_STAGE_MAX ? '极' : '',
+    hint: EQUIP_HINTS[stage]!,
+    foot: { label: '收录时间', value: '' }
+  }
+}
+
+/** 品质 rank → 品质定义(见闻只存了 rank;回头要查名字) */
+function qualityOfRank(rank: number) {
+  const r = Math.max(0, Math.min(8, Math.floor(rank || 0)))
+  return QUALITIES.find(q => q.rank === r) ?? QUALITIES[0]!
+}
+
+/** 法宝收录深度:0 未录 / 1 已录 / 2 曾祭炼 / 3 祭炼圆满 */
+export const ARTIFACT_STAGE_NAMES = ['未录', '已录', '曾祭炼', '祭炼圆满'] as const
+export const ARTIFACT_STAGE_MAX = 3
+
+const ARTIFACT_HINTS = [
+  '尚未见过此宝 —— 高阶地界才出得上品。',
+  '录在册上了,还没拿它炼过一重 —— 祭炼过后,被动与神通各强八分。',
+  '炼过几重了 —— 炼到九重,才算把它用透。',
+  ''
+] as const
+
+/** 某件法宝走到哪一层(等级取自玩家自己的那一件) */
+export function artifactStage(level: number, collected: boolean): number {
+  const lv = Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))
+  if (lv >= ARTIFACT_MAX_LEVEL) return 3
+  if (lv >= 1) return 2
+  return collected ? 1 : 0
+}
+
+/** 法宝谱条目:风味 + 功用(按本人祭炼等级) */
+export function describeArtifact(def: ArtifactDef, level: number, collected: boolean): CodexEntry {
+  const stage = artifactStage(level, collected)
+  return {
+    id: def.id,
+    name: def.name,
+    desc: [def.desc, artifactFuncText(def, level)].filter(Boolean).join('\n'),
+    meta: artifactMetaText(def),
+    color: qualityDef(def.quality).color,
+    stage,
+    stageName: ARTIFACT_STAGE_NAMES[stage]!,
+    badge: stage >= ARTIFACT_STAGE_MAX ? '满' : '',
+    hint: ARTIFACT_HINTS[stage]!,
+    foot: { label: '祭炼', value: `${Math.max(0, Math.min(ARTIFACT_MAX_LEVEL, Math.floor(level || 0)))}/${ARTIFACT_MAX_LEVEL} 重` }
+  }
+}
+
+/** 丹方录收录深度:0 未录 / 1 已录 / 2 已得方 / 3 通晓 */
+export const PILL_STAGE_NAMES = ['未录', '已录', '已得方', '通晓'] as const
+export const PILL_STAGE_MAX = 3
+
+const PILL_HINTS = [
+  '尚未见过此丹。',
+  '见过成品,方子还没到手。',
+  '方子在手,开炉炼熟它。',
+  ''
+] as const
+
+/** 无方之丹(只掉不炼)的收尾话:免得玩家满世界找一本不存在的方子 */
+export const PILL_NO_RECIPE_HINT = '此丹本无方 —— 只在历练与际遇里偶得,炼不出来。'
+
+/**
+ * 某味丹走到哪一层。
+ * 无方之丹到「已录」即顶(阶段名照给,但上限只有 1)—— 界面上用 hint 说明缘由。
+ */
+export function pillStage(def: PillDef, collected: boolean, mastery: number): number {
+  if (!collected) return 0
+  if (!def.recipe) return 1
+  const m = Math.max(0, Math.min(1, mastery))
+  if (m >= 1) return 3
+  if (m > 0) return 2
+  return 1
+}
+
+/** 丹方录条目:风味 + 服之如何 + 来路 */
+export function describePill(def: PillDef, collected: boolean, mastery: number): CodexEntry {
+  const stage = pillStage(def, collected, mastery)
+  const cap = def.recipe ? PILL_STAGE_MAX : 1
+  const top = stage >= cap
+  return {
+    id: def.id,
+    name: def.name,
+    desc: [def.desc, pillFuncText(def)].filter(Boolean).join('\n'),
+    meta: pillMetaText(def),
+    color: qualityDef(def.quality).color,
+    stage,
+    stageName: PILL_STAGE_NAMES[stage]!,
+    badge: top && stage >= PILL_STAGE_MAX ? '通' : '',
+    hint: top ? (def.recipe ? '' : PILL_NO_RECIPE_HINT) : PILL_HINTS[stage]!,
+    foot: def.recipe ? { label: '丹方掌握', value: `${Math.round(Math.max(0, Math.min(1, mastery)) * 100)}%` } : { label: '来路', value: '偶得' }
+  }
+}
+
+export function equipCodex(): CodexCat {
+  const lore = useLoreStore()
+  const quests = useQuestsStore()
+  const owned = new Set(quests.collections.equip)
+  const entries = EQUIPMENT_TEMPLATES.map(def => ({
+    ...describeEquipment(def, lore.equipSeen(def.id), owned.has(def.id)),
+    foot: { label: '收录时间', value: collectedTimeText(quests.collectedAt[`equip:${def.id}`]) }
+  })).sort((a, b) => b.stage - a.stage)
+  const seen = entries.filter(e => e.stage >= 1).length
+  const best = entries.filter(e => e.stage >= EQUIP_STAGE_MAX).length
+  return {
+    key: 'equip',
+    name: '装备图鉴',
+    hint: `已入目 ${seen}/${EQUIPMENT_TEMPLATES.length} · 见过天品 ${best}`,
+    source: CODEX_SOURCES.equip,
+    entries
+  }
+}
+
+export function artifactCodex(): CodexCat {
+  const inventory = useInventoryStore()
+  const quests = useQuestsStore()
+  const owned = new Set(quests.collections.artifact)
+  const levelOf = new Map(inventory.artifacts.map(a => [a.defId, a.level]))
+  const entries = ARTIFACTS.map(def => ({
+    ...describeArtifact(def, levelOf.get(def.id) ?? 0, owned.has(def.id)),
+    foot: { label: '收录时间', value: collectedTimeText(quests.collectedAt[`artifact:${def.id}`]) }
+  })).sort((a, b) => b.stage - a.stage)
+  const seen = entries.filter(e => e.stage >= 1).length
+  const full = entries.filter(e => e.stage >= ARTIFACT_STAGE_MAX).length
+  return {
+    key: 'artifact',
+    name: '法宝谱',
+    hint: `已录 ${seen}/${ARTIFACTS.length} · 祭炼圆满 ${full}`,
+    source: CODEX_SOURCES.artifact,
+    entries
+  }
+}
+
+export function pillCodex(): CodexCat {
+  const lore = useLoreStore()
+  const quests = useQuestsStore()
+  const owned = new Set(quests.collections.pill)
+  const entries = PILLS.map(def => ({
+    ...describePill(def, owned.has(def.id), lore.recipeMastery(def.id)),
+    foot: { label: '收录时间', value: collectedTimeText(quests.collectedAt[`pill:${def.id}`]) }
+  })).sort((a, b) => b.stage - a.stage)
+  const seen = entries.filter(e => e.stage >= 1).length
+  const known = entries.filter(e => e.stage >= 2).length
+  const mastered = entries.filter(e => e.stage >= PILL_STAGE_MAX).length
+  return {
+    key: 'pill',
+    name: '丹方录',
+    hint: `已录 ${seen}/${PILLS.length} · 得方 ${known} · 通晓 ${mastered}`,
+    source: CODEX_SOURCES.pill,
+    entries
+  }
+}
+
+/**
+ * 收录时刻的人话。旧档里已收录的条目没有记录 —— 照实说「早年收录」,
+ * 而不是编一个时间或显示 1970。
+ */
+export function collectedTimeText(ts: number | undefined): string {
+  if (ts === undefined || !Number.isFinite(ts)) return '早年收录,未记时日'
+  return new Date(ts).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }

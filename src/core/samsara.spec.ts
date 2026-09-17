@@ -357,6 +357,8 @@ describe('敌人认知的逐层揭示(describeEnemy)', () => {
     const v = describeEnemy(boss, ENEMY_LORE_MAX)
     expect(v.phases.length).toBe(boss.phases?.length ?? 0)
     expect(v.archetype).not.toBeNull()
+    // 机制家族名与印同时揭示(取自 bossArchetypes 的唯一一张家族表)
+    expect(v.archetypeLabel, '洞悉首领却给不出机制家族名').toContain('型 ·')
     expect(v.hint).toBeNull()
   })
 
@@ -369,7 +371,10 @@ describe('敌人认知的逐层揭示(describeEnemy)', () => {
     for (const def of ENEMIES) {
       const v = describeEnemy(def, ENEMY_LORE_MAX)
       expect(v.frame.length + v.skills.length, `${def.id} 洞悉了却无话可说`).toBeGreaterThan(0)
-      if (def.isBoss) expect(v.archetype, `${def.id} 是首领却无本相`).not.toBeNull()
+      if (def.isBoss) {
+        expect(v.archetype, `${def.id} 是首领却无本相`).not.toBeNull()
+        expect(v.archetypeLabel, `${def.id} 是首领却无机制家族名`).not.toBeNull()
+      }
     }
   })
 

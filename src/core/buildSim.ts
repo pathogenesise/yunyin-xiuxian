@@ -6,7 +6,7 @@
 import type { CombatantSnap, StatMods } from '@/types'
 import { gn } from '@/utils/gnum'
 import { mulberry32, RandomService } from '@/utils/random'
-import { ARTIFACT_LEVEL_BONUS, artifactDef } from '@/data/artifacts'
+import { artifactDef, artifactValue } from '@/data/artifacts'
 import { tribulationDef, TRIBULATIONS, type TribulationKind } from '@/data/tribulations'
 import { resolveCombat } from './combat'
 import { traceTribulation } from './tribulationDecision'
@@ -84,19 +84,16 @@ export const BUILD_PROFILES: BuildProfile[] = [
   }
 ]
 
-/** 组装流派战斗快照(法宝被动按等级并入词条;与真实玩家同走 mergeMods 递减) */
+/**
+ * 组装流派战斗快照(法宝被动按等级并入词条;与真实玩家同走 mergeMods 递减)。
+ *
+ * 六派的法宝都取自头十二阶 —— 那一档按 data/artifacts 的阶梯全是凡品,即**基线口径**,
+ * 故品阶那一层不会扰动这套对照实验(量到的仍是构筑之间的差别)。
+ */
 export function buildSnap(profile: BuildProfile): CombatantSnap {
   const art = artifactDef(profile.artifactId)
   let mods: StatMods = { ...profile.mods }
-  if (art) {
-    const mult = 1 + ARTIFACT_LEVEL * ARTIFACT_LEVEL_BONUS
-    const passive: StatMods = {}
-    for (const k in art.passive) {
-      const key = k as keyof StatMods
-      passive[key] = (art.passive[key] ?? 0) * mult
-    }
-    mods = mergeMods([profile.mods, passive])
-  }
+  if (art) mods = mergeMods([profile.mods, artifactValue(art, ARTIFACT_LEVEL).passive])
   return {
     name: profile.name,
     icon: 'user',

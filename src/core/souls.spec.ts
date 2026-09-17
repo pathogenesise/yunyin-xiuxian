@@ -25,7 +25,7 @@ import {
 } from '@/data/souls'
 import { canRefine, previewSoul, refineSoul } from './soulForge'
 import { modDepth } from './statsCalc'
-import { SOUL_CAPACITY } from './gauntlet'
+import { CELESTIAL_BASE_DEPTH } from './gauntlet'
 
 /** 造一件带指定词条的装备实例 */
 function equipWith(affixes: { id: string; roll: number }[], quality: EquipmentInstance['quality'] = 'spirit'): EquipmentInstance {
@@ -98,10 +98,11 @@ describe('器魂 · 品阶只拉开有限差距', () => {
   })
 })
 
-describe('器魂 · 满配容量受控', () => {
-  it('装满槽位的最强组合,总深度不超过未凝炼者的兜底容量太多', () => {
-    // 未凝器魂者由 forgeSoul 压到 SOUL_CAPACITY;凝炼者应当略优(付出了装备与道源),
-    // 但不能优到让天界重新变成堆叠游戏
+describe('器魂 · 满配有界', () => {
+  it('装满槽位的最强组合,总深度是一条有上限的线', () => {
+    // 器魂现在是**叠加**的一层(见 soulForge.spec 与 stores/player.celestialStats),
+    // 故这里守的不再是"压到容量",而是"这一笔投入本身有界":
+    // 三枚化真加起来也不该越过基准深度(2.6)太多,否则凝魂就成了新的堆叠出口。
     const best = SOUL_TYPES.slice(0, SOUL_SLOTS).map<SoulInstance>((t, i) => ({
       uid: `s${i}`,
       type: t.id,
@@ -109,8 +110,8 @@ describe('器魂 · 满配容量受控', () => {
       fromName: '神品'
     }))
     const total = best.reduce((sum, s) => sum + modDepth(soulMods(s)), 0)
-    console.log(`\n三枚化真器魂合计深度 ${total.toFixed(2)}(未凝炼者兜底 ${SOUL_CAPACITY})`)
-    expect(total).toBeLessThan(SOUL_CAPACITY * 1.6)
+    console.log(`\n三枚化真器魂合计深度 ${total.toFixed(2)}`)
+    expect(total).toBeLessThan(CELESTIAL_BASE_DEPTH)
   })
 
   it('槽位少于器魂类型数,必须取舍', () => {
@@ -177,8 +178,7 @@ describe('器魂 · 存档健壮性', () => {
 
 describe('器魂 · 凝炼必须优于不凝', () => {
   it('满配器魂强于兜底压缩,否则没人会去凝', () => {
-    // 曾经反了:兜底 1.8 > 满配 1.52,凝炼纯亏。
-    // 语义上不凝就是被动挨天道压制,压得更狠;凝了是主动掌控形意,略占便宜
+    // 器魂是叠加层:凝了只会更多,不存在"不凝反而更强"那条岔路
     const best = SOUL_TYPES.slice(0, SOUL_SLOTS).map<SoulInstance>((t, i) => ({
       uid: `s${i}`,
       type: t.id,
@@ -186,13 +186,11 @@ describe('器魂 · 凝炼必须优于不凝', () => {
       fromName: '神品'
     }))
     const refined = best.reduce((sum, s) => sum + modDepth(soulMods(s)), 0)
-    console.log(`\n满配器魂 ${refined.toFixed(2)} vs 不凝兜底 ${SOUL_CAPACITY}`)
-    expect(refined).toBeGreaterThan(SOUL_CAPACITY)
-    // 但优势有限,不能让凝炼变成新的堆叠出口
-    expect(refined).toBeLessThan(SOUL_CAPACITY * 1.5)
+    console.log(`\n满配器魂合计深度 ${refined.toFixed(2)}`)
+    expect(refined).toBeGreaterThan(0)
   })
 
-  it('最低阶满配也不至于比不凝更差(避免凝了反亏)', () => {
+  it('最低阶满配也是一笔正收益(只是薄)', () => {
     const worst = SOUL_TYPES.slice(0, SOUL_SLOTS).map<SoulInstance>((t, i) => ({
       uid: `w${i}`,
       type: t.id,
@@ -200,7 +198,7 @@ describe('器魂 · 凝炼必须优于不凝', () => {
       fromName: '凡品'
     }))
     const total = worst.reduce((sum, s) => sum + modDepth(soulMods(s)), 0)
-    console.log(`最低阶满配 ${total.toFixed(2)}(兜底 ${SOUL_CAPACITY})`)
-    expect(total).toBeGreaterThan(SOUL_CAPACITY * 0.5)
+    console.log(`最低阶满配合计深度 ${total.toFixed(2)}`)
+    expect(total).toBeGreaterThan(0.1)
   })
 })

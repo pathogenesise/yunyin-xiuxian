@@ -22,6 +22,7 @@
  */
 import { ref } from 'vue'
 import { persistConfig } from '@/utils/storage'
+import { asArray } from '@/utils/saveShape'
 import { defineStore } from 'pinia'
 
 export type InteractionKind = 'modal' | 'notify' | 'ambient'
@@ -113,7 +114,29 @@ export const usePacingTelemetry = defineStore(
       events.value = []
     }
 
-    return { events, enabled, record, buildReport, clear }
+    /**
+     * 读档修形 —— 遥测也落盘,坏档同样是坏档。
+     *
+     * 此前这个 store 没有 sanitize,而 record() 会直接 events.value.slice(-119):
+     * 分片被写坏(null / 数组里塞 null)时,任何一次互动事件记录都会抛错。
+     * 漂成非法项的历史记录对密度报告没有价值,故只留形状完整的那些。
+     */
+    function sanitize(): void {
+      events.value = asArray<InteractionEvent>(events.value, [], e => {
+        const it = e as Partial<InteractionEvent> | null
+        return (
+          !!it &&
+          typeof it.type === 'string' &&
+          typeof it.label === 'string' &&
+          (it.kind === 'modal' || it.kind === 'notify' || it.kind === 'ambient') &&
+          typeof it.at === 'number' &&
+          Number.isFinite(it.at)
+        )
+      })
+      if (typeof enabled.value !== 'boolean') enabled.value = true
+    }
+
+    return { events, enabled, record, buildReport, clear, sanitize }
   },
   { persist: persistConfig('pacing') }
 )

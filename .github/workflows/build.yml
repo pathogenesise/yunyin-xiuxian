@@ -1,17 +1,90 @@
 name: 构建多平台程序 (Electron & Android)
 
+# 只在推 tag(v1.2.3)时触发。
+#
+# 原先是挂在 main 的每次 push 上:提交一次就跑一遍两平台构建,并且把同一版本的
+# Release 资产「先删后传」—— 于是每个提交都会留下一个 release,谁也没法从发布页
+# 看出哪一次才是真正的发版。改成 tag 触发后,发版成了一个显式动作
+# (`git push origin v1.2.3`);main 上的每次提交仍由 deploy.yml 过同一道闸
+# (类型检查 + ESLint + 单测),闸门没丢,只是不再顺手发版。
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '.github/**'
+    tags:
+      - 'v*.*.*'
+
+# 同一个 tag 只留一条流水线。两个 run 同时进 release job,会在同一个 tag 下
+# 「先删旧资产、再传新资产」,互相删掉对方刚传的文件,Release 里就会缺东西。
+# 用 cancel-in-progress: false 而不是 true —— 取消进行中的 run,有可能正好
+# 砍在「已删完、还没传完」的窗口里,留下一个资产不全的 Release。
+# (失败后重跑用 Actions 页面的 Re-run:同一个 tag 的 run 串行,不会互相踩。)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  # 0. 版本闸门:tag 必须与 package.json 是同一个版本
+  #
+  # 两处版本号各有各的用处 —— tag 决定 Release 挂在哪个名下,package.json 决定
+  # APK 的 versionName/versionCode(android/app/build.gradle 从它读)。两者对不上,
+  # 就会出现「Release 页写着 v1.34.0、装到手机上却是 1.33.0」,玩家的升级提示与
+  # 实际版本对不起来。宁可在这里红掉,也不要发出一个自相矛盾的版本。
+  guard:
+    name: 版本闸门
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: 校验 tag 与 package.json 版本一致
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PKG="v$(node -p "require('./package.json').version")"
+          echo "tag = $TAG · package.json = $PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag($TAG)与 package.json 的版本($PKG)不一致 —— 先把 package.json 的版本提上去再打 tag"
+            exit 1
+          fi
+
+  # 浏览器自检 —— 排版/触达区/对比度/焦点/弹窗语义/离屏回放那一整套判据。
+  #
+  # 从前它只活在"谁记得在本地跑一次"里:scripts/ 没有任何工作流引用,
+  # 于是每一个发出去的 APK/安装包都没有 UI 层面的门。
+  # 这里单起一个 job:所有构建都 needs 它 —— 判据红,构建与发布都停在这。
+  ui-check:
+    name: 浏览器自检(排版与交互)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: 安装 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: 安装依赖
+        run: bun install --frozen-lockfile
+      - name: 构建产物(自检量的是 dist)
+        run: bun run build
+      # playwright 锁在 devDependencies 里(版本真源 = bun.lock,不再手抄进命令)。
+      # 它没有 postinstall:bun install 只带 ~19MB 的 JS 本体,占地的浏览器二进制
+      # 只由下面这一句按需下,落在 ~/.cache/ms-playwright —— 故给缓存,别每次重下。
+      - name: 缓存浏览器
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: 装浏览器
+        run: bunx playwright install --with-deps chromium
+      - name: 排版与交互自检
+        run: bun scripts/layout-check.mjs
+      # Service Worker 只认安全上下文,故离线自检另起一个本地静态服务量同一份产物:
+      # 断网可重开、旧缓存会被清、发版能接管(见 scripts/offline-check.mjs)。
+      - name: 离线/发版接管自检
+        run: bun scripts/offline-check.mjs
+
   # 1. 构建 Electron 客户端
   build-electron:
     name: 构建 Electron (${{ matrix.os }})
+    needs: [guard, ui-check]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -20,14 +93,21 @@ jobs:
           - os: windows-latest
             platform: win
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
+      # 过闸才继续:lint/类型检查/单测任意一条红,构建与发布都停在这
+      - name: 静态检查 + 单元测试
+        run: |
+          bun install --frozen-lockfile
+          bun run check
+          bun run test
+
       - name: 缓存 Electron Builder
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/AppData/Local/electron/Cache
@@ -37,15 +117,13 @@ jobs:
             electron-${{ runner.os }}-
 
       - name: 构建 Electron
-        run: |
-          bun install
-          bun run build:electron --${{ matrix.platform }}
+        run: bun run build:electron --${{ matrix.platform }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 【关键点】上传 zip 产物
       - name: 上传 Electron 安装包
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: electron-${{ matrix.platform }}
           path: |
@@ -54,34 +132,57 @@ jobs:
   # 2. 构建 Android APK
   build-android:
     name: 构建 Android APK
+    needs: [guard, ui-check]
     runs-on: ubuntu-latest
+    # 签名口令走 Secrets 注入(不落在仓库文件里)。
+    #
+    # 为什么先落 env 再判空:step 级 if 里拿不到 secrets 上下文(GitHub 只放
+    # github/needs/strategy/matrix/job/runner/env/vars/steps/inputs),写成
+    # `secrets.X == ''` 会让整份工作流文件判为非法 —— 不是这条判断失效,而是这一份
+    # 从此一次都不跑:每次 push 只留一条 0 秒、零作业的失败记录,连 tag 触发都不认。
+    env:
+      KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+      KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: 静态检查 + 单元测试
+        run: |
+          bun install --frozen-lockfile
+          bun run check
+          bun run test
+
       - name: 配置 Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '21'
       - name: 配置 Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       # 使用官方 Gradle Action（内置智能缓存）
       - name: 配置 Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: false
 
       - name: 构建前端
-        run: |
-          bun install
-          bun run build
+        run: bun run build
 
       - name: 同步 Capacitor
         run: bunx cap sync android
+
+      # 没配 secret 时 gradle 会静默产出「未签名 APK」——那种包手机根本装不上。
+      # 与其让 CI 绿着吐一个废包,不如红着把话说明白:下面是硬闸门。
+      - name: 校验签名 Secret 已配置
+        if: env.KEYSTORE_STORE_PASSWORD == '' || env.KEYSTORE_KEY_PASSWORD == ''
+        run: |
+          echo "::error::未配置 KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD —— 请在仓库 Settings → Secrets and variables → Actions 添加这两个 secret(值 = android/release.keystore 的原口令)"
+          exit 1
 
       - name: 构建 APK (Release)
         working-directory: android
@@ -90,19 +191,19 @@ jobs:
           ./gradlew assembleRelease --build-cache
 
       - name: 上传 APK 产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-apk
           path: android/app/build/outputs/apk/release/*.apk
 
   # 3. 发布 Release
   release:
-    needs: [build-electron, build-android]
+    needs: [guard, build-electron, build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 安装 Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -110,13 +211,13 @@ jobs:
 
       - name: 获取版本号
         id: get_version
-        run: |
-          VERSION=$(bun -e "console.log(require('./package.json').version)")
-          echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
+        # tag 即版本(闸门已确认它与 package.json 一致),不再从 package.json 反推 ——
+        # 触发这次运行的就是某个 tag,Release 理应挂在那个 tag 上
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
       # 1. 下载时，不使用 merge-multiple，防止覆盖冲突
       - name: 下载构建产物
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ./raw-assets
 
@@ -150,7 +251,7 @@ jobs:
 
       # 4. 上传新文件
       - name: 创建 GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
           name: Release ${{ steps.get_version.outputs.VERSION }}

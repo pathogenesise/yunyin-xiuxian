@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, formatGN, formatPercent } from './format'
+import { cnNumber, formatCountdown, formatDuration, formatGN, formatPercent } from './format'
 import { gn, powN } from './gnum'
 
 describe('数值格式化', () => {
@@ -33,6 +33,37 @@ describe('数值格式化', () => {
     expect(formatDuration(65)).toBe('1分5秒')
     expect(formatDuration(3660)).toBe('1小时1分')
     expect(formatDuration(90000)).toBe('1天1小时')
+  })
+
+  /**
+   * 倒计时的存在理由只有一个:**每一秒的文本宽度必须一样**。
+   * 状态胶囊是 nowrap 的,倒数文本一涨一缩,整排胶囊就会被推来推去
+   * (玩家原话:「状态信息总在抖」)。故这里按「宽度」断言,不按字符串花样。
+   */
+  it('倒计时定宽:同一量级内每秒宽度不变', () => {
+    const w = (s: string): number => s.length
+    // 同一分钟量级内逐秒走一遍,宽度必须恒定(9→10 秒、59→60 秒这些跳档点在内)
+    const widths = new Set<number>()
+    for (let s = 1; s <= 59 * 60; s += 1) widths.add(w(formatCountdown(s)))
+    expect([...widths].length, `分秒量级内的宽度有 ${[...widths].join('/')} 种`).toBe(1)
+    // 小时量级同理
+    const hourWidths = new Set<number>()
+    for (let s = 3600; s <= 24 * 3600 - 1; s += 137) hourWidths.add(w(formatCountdown(s)))
+    expect([...hourWidths].length).toBe(1)
+    // 天量级同理
+    const dayWidths = new Set<number>()
+    for (let s = 86400; s <= 9 * 86400; s += 601) dayWidths.add(w(formatCountdown(s)))
+    expect([...dayWidths].length).toBe(1)
+  })
+
+  it('倒计时读得出、且与 formatDuration 同一个意思', () => {
+    expect(formatCountdown(7)).toBe('00分07秒')
+    expect(formatCountdown(65)).toBe('01分05秒')
+    expect(formatCountdown(3660)).toBe('01时01分')
+    expect(formatCountdown(90000)).toBe('1天01时')
+    // 非法值与 formatDuration 一致地给占位
+    expect(formatCountdown(NaN)).toBe('--')
+    expect(formatCountdown(-5)).toBe('00分00秒')
   })
 
   it('百分比', () => {
@@ -74,5 +105,35 @@ describe('数值格式化', () => {
     expect(formatPercent(-0.00001)).toBe('0%')
     expect(formatPercent(-0.005)).toBe('-0.5%')
     expect(formatPercent(0.125)).toBe('12.5%')
+  })
+})
+
+describe('汉字数字(页面上的数量从来源数出来)', () => {
+  it('一位数与十位', () => {
+    expect(cnNumber(0)).toBe('零')
+    expect(cnNumber(4)).toBe('四')
+    expect(cnNumber(8)).toBe('八')
+    expect(cnNumber(10)).toBe('十')
+    expect(cnNumber(12)).toBe('十二')
+    expect(cnNumber(14)).toBe('十四')
+    expect(cnNumber(20)).toBe('二十')
+    expect(cnNumber(21)).toBe('二十一')
+    expect(cnNumber(64)).toBe('六十四')
+  })
+
+  it('百千位与内零', () => {
+    expect(cnNumber(100)).toBe('一百')
+    expect(cnNumber(101)).toBe('一百零一')
+    expect(cnNumber(110)).toBe('一百一十')
+    expect(cnNumber(999)).toBe('九百九十九')
+    expect(cnNumber(1000)).toBe('一千')
+    expect(cnNumber(1005)).toBe('一千零五')
+    expect(cnNumber(1050)).toBe('一千零五十')
+  })
+
+  it('超出范围原样返回(此处的数字本就不该写成汉字)', () => {
+    expect(cnNumber(10000)).toBe('10000')
+    expect(cnNumber(-1)).toBe('-1')
+    expect(cnNumber(1.5)).toBe('1.5')
   })
 })

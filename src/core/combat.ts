@@ -1,7 +1,18 @@
 /**
  * 自动战斗解算 —— 预先解算完整战报,UI 负责按节奏播放
  */
-import type { CombatantSnap, CombatLogEntry, CombatResult, CombatRules, CombatSideStats, EnemyDef, GNum, StatMods } from '@/types'
+import type {
+  CombatantSnap,
+  CombatLogEntry,
+  CombatResult,
+  CombatRules,
+  CombatSideStats,
+  EnemyDef,
+  FoeOrigin,
+  FoeOriginPart,
+  GNum,
+  StatMods
+} from '@/types'
 import type { RandomService } from '@/utils/random'
 import { add, gnZero, mulN, ratio, subClamp, gnMin, gnMax, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
@@ -19,7 +30,7 @@ import {
   COMBAT_DEF_BASE,
   COMBAT_HP_BASE
 } from '@/data/constants'
-import { ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
+import { artifactValue } from '@/data/artifacts'
 import { modOf } from './statsCalc'
 import { enemyGearFactor, powerScale } from './formulas'
 
@@ -31,6 +42,8 @@ interface Fighter {
   weaken: number
   /** 攻势渐涨系数(长生印规则下敌方递增) */
   atkRamp: number
+  /** 破甲:本场余下回合里防御按此比例下降(0~0.5) */
+  defSunder: number
   /** 组合技已触发次数(每场限量) */
   comboUses: number
   stats: CombatSideStats
@@ -56,14 +69,58 @@ function emptyStats(): CombatSideStats {
   }
 }
 
-/** 依据敌人模板与区域层级构建敌方快照 */
-export function makeEnemySnap(def: EnemyDef, tier: number, dangerMult: number): CombatantSnap {
+/**
+ * 凡界敌人的加成来源 —— 与天界的判定同一条纪律:生成方写明,战后分析照读。
+ *
+ * 两件事相乘:层级补偿(敌人按这一层的装备水平补齐)与危地
+ * (出行方式 × 地界凶险 × 灵兽之性 × 区域事件,由调用方先乘成一个数)。
+ * 知道得更细的调用方(历练)可以传入更细的 origin,把「危地」摊成它的四项来源。
+ */
+export function mortalFoeOrigin(tier: number, dangerMult: number): FoeOrigin {
+  return mortalFoeOriginFromParts(tier, [{ label: '危地', ratio: dangerMult }])
+}
+
+/**
+ * 按**已经摊开**的几件事组装来源:层级补偿排在最前(它不是玩家的选择,却是最大的一项),
+ * 其余各项由调用方按自己知道的粒度给。总倍率一律由各项相乘得出 ——
+ * 手写一个总数再手写一份明细,两者迟早对不上,而这类对不上没人看得出来。
+ */
+export function mortalFoeOriginFromParts(tier: number, situation: readonly FoeOriginPart[]): FoeOrigin {
+  const gear = enemyGearFactor(tier)
+  const parts: FoeOriginPart[] = []
+  if (gear !== 1) parts.push({ label: '层级补偿', ratio: gear })
+  for (const p of situation) if (p.ratio !== 1) parts.push({ ...p })
+  const ratio = parts.reduce((acc, p) => acc * p.ratio, 1)
+  return {
+    label: parts.map(p => p.label).join(' · '),
+    ratio,
+    damageBonus: 0,
+    damageReduction: 0,
+    parts,
+    // 报了病因也要给方向:加成全在敌人那一侧的三维上,解法自然也在自己这一侧。
+    // 反向的账(敌人比这一层该有的还薄)也照实说 —— 占了便宜却不说,玩家会以为自己看错了
+    note:
+      parts.length === 0
+        ? '此敌没有额外加成 —— 你遇到的就是它自己。'
+        : ratio > 1
+          ? '加成的都是敌人的三维:把自己的三围补到这一层该有的样子,或换更浅的出行方式,它自会收窄。'
+          : '此敌比这一层该有的还薄 —— 这一场你占着便宜。'
+  }
+}
+
+/**
+ * 依据敌人模板与区域层级构建敌方快照。
+ * `origin` 是这只敌人加成的**来源说明书**:不传则按实际乘过的两件事自动拆开,
+ * 知道得更细的调用方(历练)传进来的是摊开到四项的那一份。
+ */
+export function makeEnemySnap(def: EnemyDef, tier: number, dangerMult: number, origin?: FoeOrigin): CombatantSnap {
   const scale = powerScale(tier)
   const gear = enemyGearFactor(tier) * dangerMult
   return {
     name: def.name,
     icon: def.icon,
     isPlayer: false,
+    origin: origin ?? mortalFoeOrigin(tier, dangerMult),
     attack: mulN(scale, COMBAT_ATK_BASE * def.atkMult * gear),
     defense: mulN(scale, COMBAT_DEF_BASE * def.defMult * gear),
     maxHp: mulN(scale, COMBAT_HP_BASE * def.hpMult * gear),
@@ -120,16 +177,18 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     stunned: false,
     weaken: 0,
     atkRamp: 1,
+    defSunder: 0,
     comboUses: 0,
     stats: emptyStats()
   }
-  const e: Fighter = {
+ const e: Fighter = {
     snap: eEff,
     hp: { ...eEff.maxHp },
     shield: gnZero(),
     stunned: false,
     weaken: 0,
     atkRamp: 1,
+    defSunder: 0,
     comboUses: 0,
     stats: emptyStats()
   }
@@ -138,6 +197,26 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
   const hpPct = (f: Fighter): number => Math.max(0, Math.min(1, ratio(f.hp, f.snap.maxHp)))
   const push = (t: CombatLogEntry['t'], side: CombatLogEntry['side'], text: string, dmg?: GNum): void => {
     log.push({ t, side, text, dmg: dmg ? formatGN(dmg) : undefined, php: hpPct(p), ehp: hpPct(e) })
+  }
+
+  /**
+   * 震慑落地前的最后一道门:受方若带着「净念」法宝,有机会当场挣脱。
+   *
+   * 三个落点(词条 stunRate、法宝震慑、敌人神通震慑)都走这里 —— 一处漏了,
+   * 净念就变成「只挡某一种摄魂」的半成品,而玩家从界面上看不出差别。
+   * 挣脱概率取自受方自己的法宝,与出手的一方无关。
+   */
+  const tryStun = (target: Fighter): boolean => {
+    const owned = (target.snap.artifacts ?? []).find(o => o.def.active.effect.type === 'purge')
+    // 上限 0.9 写在 data/artifacts 里:留一丝「摄魂也不是吃素的」——再高也不该等于免疫
+    if (owned && rng.chance(artifactValue(owned.def, owned.level).active.amount)) {
+      target.stats.artifactProcs += 1
+      const who = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
+      push('proc', target.snap.isPlayer ? 'p' : 'e', `${who}的【${owned.def.name}】灵光一照,摄魂之力散于无形。`)
+      return false
+    }
+    target.stunned = true
+    return true
   }
 
   /** 护体灵光有极限:护盾总量不超过最大生命的一定比例(默认一半,可被世界规则覆盖) */
@@ -215,8 +294,16 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     const tName = target.snap.isPlayer ? '你' : `【${target.snap.name}】`
     const side = attacker.snap.isPlayer ? 'p' : 'e'
 
-    // 闪避判定
-    if (rng.chance(modOf(tMods, 'dodgeRate'))) {
+    /*
+     * 闪避判定 —— 命中先抵掉一部分闪避。
+     *
+     * 闪避型首领的幻境一度是**无解**的:蜃楼幻境 55%、冰魄化身 50%,
+     * 玩家没有命中这个属性,只能眼看一半的出手落空,而战后分析还会明说
+     * 「N 次出手落空,连击与暴击难以衔接」。故这里让攻击方的命中按百分点
+     * 相减(不为负)——堆命中的代价是一整条词条位,换的是「打得中」。
+     */
+    const dodge = Math.max(0, modOf(tMods, 'dodgeRate') - modOf(aMods, 'accuracy'))
+    if (rng.chance(dodge)) {
       target.stats.dodges += 1
       attacker.stats.missedHits += 1
       push('dodge', side, `${aName}施展${label},却被${tName}身形一晃避开。`)
@@ -239,7 +326,8 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
       attacker.stats.crits += 1
     }
 
-    const red = mitigation(target.snap.defense, attacker.snap.attack, modOf(aMods, 'armorPen'))
+    const effDefense = target.defSunder > 0 ? mulN(target.snap.defense, Math.max(0.2, 1 - target.defSunder)) : target.snap.defense
+    const red = mitigation(effDefense, attacker.snap.attack, modOf(aMods, 'armorPen'))
     // 真伤:无视护盾与一切减伤词条(防御减免仍计一半)
     let taken: number
     if (opts.pierce) {
@@ -308,8 +396,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     }
     // 震慑
     if (!isZero(target.hp) && rng.chance(modOf(aMods, 'stunRate'))) {
-      target.stunned = true
-      push('proc', side, `${tName}被震得气血翻涌,一时难以动弹!`)
+      if (tryStun(target)) push('proc', side, `${tName}被震得气血翻涌,一时难以动弹!`)
     }
   }
 
@@ -327,22 +414,39 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     for (const owned of self.snap.artifacts ?? []) {
       if (isZero(foe.hp)) return
       const art = owned.def
+      const eff = art.active.effect
+      // 净念是随身被动,由 tryStun 在受慑的那一刻接管 —— 不走「每 N 回合出手」的节拍
+      if (eff.type === 'purge') continue
       if (round % art.active.interval !== 0) continue
       self.stats.artifactProcs += 1
-      const levelMult = 1 + owned.level * ARTIFACT_LEVEL_BONUS
-      const eff = art.active.effect
+      // 数值取自 artifactValue —— 界面上的神通说明读的是同一个函数,不会各说各话
+      const values = artifactValue(art, owned.level).active
       if (eff.type === 'damage') {
-        const dmgAmt = mulN(self.snap.attack, eff.mult * levelMult)
+        const dmgAmt = mulN(self.snap.attack, values.amount)
         applyDamage(self, foe, dmgAmt)
         push('proc', side, `${name}的【${art.name}】自行出手——${art.active.name}!`, dmgAmt)
+      } else if (eff.type === 'drain') {
+        // 吸命:伤害与回复是同一件事的两面 —— 打出多少,按比例补回自身
+        const dmgAmt = mulN(self.snap.attack, values.amount)
+        applyDamage(self, foe, dmgAmt)
+        const returned = mulN(dmgAmt, values.heal ?? 0)
+        healSelf(self, returned)
+        push('proc', side, `${name}的【${art.name}】吸取敌手精血——${art.active.name}!`, dmgAmt)
       } else if (eff.type === 'shield') {
-        gainShield(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
+        gainShield(self, mulN(self.snap.maxHp, values.amount))
         push('shield', side, `【${art.name}】灵光大盛,护盾加身。`)
       } else if (eff.type === 'heal') {
-        healSelf(self, mulN(self.snap.maxHp, eff.pctMaxHp * levelMult))
+        healSelf(self, mulN(self.snap.maxHp, values.amount))
         push('heal', side, `【${art.name}】洒下灵光,${name}伤势恢复。`)
+      } else if (eff.type === 'stun') {
+        if (tryStun(foe)) {
+          push('proc', side, `【${art.name}】摄住${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的心神,那一手没能出。`)
+        }
+      } else if (eff.type === 'sunder') {
+        foe.defSunder = Math.max(foe.defSunder, values.amount)
+        push('proc', side, `【${art.name}】${art.active.name},${foe.snap.isPlayer ? '你的' : `【${foe.snap.name}】的`}护体被撕开一道口子。`)
       } else {
-        foe.weaken = Math.min(0.5, eff.pct * levelMult)
+        foe.weaken = values.amount
         push('proc', side, `【${art.name}】发威,${foe.snap.isPlayer ? '你' : `【${foe.snap.name}】`}的攻势被削弱了。`)
       }
     }
@@ -378,7 +482,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
           strike(self, foe, mult * 0.45, label, round, { isSkill: true, skipFollowups: true })
         }
       } else if (effect === 'stun' && rng.chance(0.5)) {
-        foe.stunned = true
+        tryStun(foe)
       } else if (effect === 'drain') {
         healSelf(self, mulN(self.snap.maxHp, 0.06))
       } else if (effect === 'shield') {
@@ -390,7 +494,10 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
   }
 
   let rounds = 0
-  const pFirst = 1 + modOf(pEff.mods, 'speed') >= eEff.speed
+  // 先手判定:一条阈值,不是连续收益 —— 两个数都要留着给战后分析(见 CombatResult.firstMove)
+  const pSpeed = 1 + modOf(pEff.mods, 'speed')
+  const eSpeed = eEff.speed
+  const pFirst = pSpeed >= eSpeed
   const perRounds = rules?.perRounds
   // Phase 30.7: Boss 阶段系统 + 机制家族
   let phaseIdx = -1
@@ -459,7 +566,17 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     win = false
     push('lose', 'sys', `鏖战多时仍未能建功,【${eSnap.name}】遁走,你无功而返。`)
   }
-  return { win, log, rounds, playerHpPct: hpPct(p), stats: { player: p.stats, enemy: e.stats } }
+  return {
+    win,
+    log,
+    rounds,
+    playerHpPct: hpPct(p),
+    // 敌人加成的来源随战报带走 —— 战后分析不必回头去猜这一场是怎么变难的
+    foeOrigin: eSnap.origin,
+    // 先手判定如实带出:这是条阈值(见 CombatResult.firstMove 的注释),战后分析据此讲清「差多少」
+    firstMove: { playerFirst: pFirst, playerSpeed: pSpeed, enemySpeed: eSpeed },
+    stats: { player: p.stats, enemy: e.stats }
+  }
 }
 
 /** 战力估算用:双方快照的简化胜率(离线结算取样) */

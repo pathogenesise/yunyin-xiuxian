@@ -27,6 +27,8 @@
     <template v-else>
       <section v-for="cat in collectionCats" :key="cat.key">
         <SectionTitle :title="cat.name" :hint="cat.hint" />
+        <!-- 未收录的条目只是一片「???」—— 得告诉玩家去哪儿找,否则这一册只能干瞪眼 -->
+        <p class="mt-1 text-[10px] text-ink-ghost">{{ cat.source }}</p>
         <div class="card-ink mt-2 flex flex-wrap gap-1.5 px-3.5 py-3">
           <template v-for="entry in cat.entries" :key="entry.id">
             <button
@@ -38,11 +40,11 @@
               {{ entry.name }}
               <span v-if="entry.badge" class="text-[9px] opacity-70">{{ entry.badge }}</span>
             </button>
-            <span v-else class="chip-ink border-ink/15 text-ink-ghost" title="尚未收录">???</span>
+            <span v-else class="chip-ink border-ink/15 text-ink-ghost" :title="`尚未收录 · ${cat.source}`">???</span>
           </template>
         </div>
       </section>
-      <p class="text-center text-[10px] text-ink-ghost">点已收录的条目可看详情 —— 灵材与悟道另分深浅,愈用愈明</p>
+      <p class="text-center text-[10px] text-ink-faint">点已收录的条目可看详情 —— 灵材与悟道另分深浅,愈用愈明</p>
     </template>
 
     <!-- 图鉴详情 -->
@@ -74,15 +76,25 @@
   import { useQuestsStore } from '@/stores/quests'
   import type { CollectionCategory } from '@/stores/quests'
   import { ACHIEVEMENTS } from '@/data/achievements'
-  import { EQUIPMENT_TEMPLATES, EQUIP_SLOT_NAMES } from '@/data/equipment'
   import { GONGFA } from '@/data/gongfa'
-  import { PILLS } from '@/data/pills'
-  import { ARTIFACTS } from '@/data/artifacts'
   import { PETS } from '@/data/pets'
   import { EVENTS } from '@/data/events'
+  import { chainOfEvent } from '@/data/chains'
   import { TALENTS, TALENT_GRADE_COLORS } from '@/data/talents'
   import { qualityDef } from '@/data/qualities'
-  import { branchCodex, materialCodex, type CodexCat, type CodexEntry } from '@/ui/codex'
+  import {
+    CODEX_SOURCES,
+    artifactCodex,
+    branchCodex,
+    collectedTimeText,
+    equipCodex,
+    materialCodex,
+    pillCodex,
+    type CodexCat,
+    type CodexEntry
+  } from '@/ui/codex'
+  import { gongfaFuncText, gongfaMetaText } from '@/ui/itemText'
+  import { achievementDirection } from '@/ui/achievementHint'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -110,7 +122,8 @@
         id: a.id,
         done,
         name: done ? a.name : '???',
-        desc: done ? a.desc : '尚未达成 —— 成时自见'
+        // 名字成时自现,但方向要给:六十多个「???」不给方向,这一页就是白纸
+        desc: done ? a.desc : `尚未达成 · 方向:${achievementDirection(a.cond)}`
       }
     }).sort((a, b) => Number(b.done) - Number(a.done))
   )
@@ -137,21 +150,10 @@
         stageName: '',
         badge: '',
         hint: '',
-        foot: { label: '收录时间', value: collectedTime(quests.collectedAt[`${key}:${d.id}`]) }
+        foot: { label: '收录时间', value: collectedTimeText(quests.collectedAt[`${key}:${d.id}`]) }
       }))
       .sort((a, b) => b.stage - a.stage)
-    return { key, name, hint: `${ownedIds.length}/${defs.length}`, entries }
-  }
-
-  function collectedTime(ts: number | undefined): string {
-    if (ts === undefined) return '早年收录,未记时日'
-    return new Date(ts).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return { key, name, hint: `${ownedIds.length}/${defs.length}`, source: CODEX_SOURCES[key], entries }
   }
 
   /**
@@ -163,43 +165,25 @@
   const collectionCats = computed<CodexCat[]>(() => {
     const c = quests.collections
     return [
-      makeCat(
-        'equip',
-        '装备图鉴',
-        c.equip,
-        EQUIPMENT_TEMPLATES.map(t => ({
-          id: t.id,
-          name: t.name,
-          desc: t.desc,
-          meta: `${EQUIP_SLOT_NAMES[t.slot]} · ${t.minTier} 阶起现世`
-        }))
-      ),
+      // 装备/法宝/丹药三类走带深浅的派生视图(见 ui/codex:收录深度一节),
+      // 其余四类仍是「收没收录」两态,故共用 makeCat
+      equipCodex(),
       makeCat(
         'gongfa',
         '功法阁',
         c.gongfa,
-        GONGFA.map(g => ({ id: g.id, name: g.name, desc: g.desc, meta: qualityDef(g.quality).name, color: qualityDef(g.quality).color }))
-      ),
-      branchCodex(),
-      makeCat(
-        'pill',
-        '丹方录',
-        c.pill,
-        PILLS.map(p => ({ id: p.id, name: p.name, desc: p.desc, meta: qualityDef(p.quality).name, color: qualityDef(p.quality).color }))
-      ),
-      materialCodex(),
-      makeCat(
-        'artifact',
-        '法宝谱',
-        c.artifact,
-        ARTIFACTS.map(a => ({
-          id: a.id,
-          name: a.name,
-          desc: a.desc,
-          meta: `${qualityDef(a.quality).name} · 神通「${a.active.name}」`,
-          color: qualityDef(a.quality).color
+        GONGFA.map(g => ({
+          id: g.id,
+          name: g.name,
+          desc: [g.desc, gongfaFuncText(g)].filter(Boolean).join('\n'),
+          meta: gongfaMetaText(g),
+          color: qualityDef(g.quality).color
         }))
       ),
+      branchCodex(),
+      pillCodex(),
+      materialCodex(),
+      artifactCodex(),
       makeCat(
         'pet',
         '灵兽册',
@@ -210,7 +194,14 @@
         'event',
         '见闻志',
         c.event,
-        EVENTS.map(e => ({ id: e.id, name: e.title, desc: e.text, meta: '历练际遇' }))
+        // 奇缘的阶段事件与普通际遇同表,但在见闻志里得各归各的名 ——
+        // 一律写成「历练际遇」,玩家会以为那条缘也能在随便哪个地界撞见
+        EVENTS.map(e => ({
+          id: e.id,
+          name: e.title,
+          desc: e.text,
+          meta: chainOfEvent(e.id) ? '奇缘' : '历练际遇'
+        }))
       ),
       makeCat(
         'talent',

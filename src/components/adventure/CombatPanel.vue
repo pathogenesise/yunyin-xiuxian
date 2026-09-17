@@ -7,10 +7,22 @@
           {{ region?.name }}
           <span class="text-[11px] text-ink-faint">· {{ modeName }}</span>
         </p>
-        <span class="tabular text-[12px] text-ink-soft">余 {{ formatDuration(timeLeft) }}</span>
+        <!-- 每秒在走的倒计时同样要定宽:与状态面板同一类抖动,修就修干净 -->
+        <span class="tabular text-[12px] text-ink-soft">
+          余 <span class="countdown-slot">{{ formatCountdown(timeLeft) }}</span>
+        </span>
       </div>
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         胜 {{ session?.wins ?? 0 }} 场 · 际遇 {{ session?.events ?? 0 }} 次 · 拾获 {{ session?.itemGain ?? 0 }} 件
+      </p>
+      <!-- 本次所得:石头与修为此前只在挂机总结里出现,在线历练中玩家看不到这一趟赚了什么 -->
+      <p v-if="gains" class="mt-0.5 text-[10px] text-ink-faint tabular">
+        本次所得 · 灵石 <span class="text-gold-ink">+{{ gains.stone }}</span> · 修为
+        <span class="text-jade">+{{ gains.exp }}</span>
+      </p>
+      <!-- 目标感:未靖的地界,打完十胜就该遇首领;不给提示的话玩家不知道还要打多久 -->
+      <p v-if="bossHint" class="mt-0.5 text-[10px]" :class="bossSoon ? 'text-cinnabar' : 'text-gold-ink'">
+        {{ bossHint }}
       </p>
     </div>
 
@@ -18,35 +30,52 @@
     <div class="card-ink relative overflow-hidden px-4 py-4">
       <!-- 敌方 -->
       <div class="relative" :class="[shakeCls.e, defeated === 'e' ? 'foe-defeated' : '']">
-        <div class="flex items-center gap-2">
+        <!-- 图标与首行文字顶部对齐:名字+标签换行时,图标不该跟着往下沉 -->
+        <div class="flex items-start gap-2">
           <span
-            class="grid h-10 w-10 place-items-center rounded-full border"
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-full border"
             :class="battle?.isBoss ? 'border-cinnabar/70 text-cinnabar bg-cinnabar/5' : 'border-ink/25 text-ink-soft bg-ink/4'"
           >
             <GameIcon :name="battle?.enemyIcon ?? 'paw'" :size="18" />
           </span>
-          <div class="grow">
-            <p class="flex items-center gap-1.5 font-kai text-[14px] text-ink">
-              <template v-if="battle">{{ battle.enemyName }}</template>
+          <div class="min-w-0 grow">
+            <!--
+              名字 + 适配星级一行,**标签另起一行**。
+
+              从前名字、首领/宿敌、特性、星级全挤在同一行 nowrap 的 flex 里:
+              名字最长 9 字(「残魂·堕落冰魄仙子」)、特性最多 3 个,窄屏上名字被挤成两行、
+              标签压在一起。标签数量不定,让它跟名字抢宽度就永远会有下一档挤法 ——
+              干脆分层:第一行只答「这是谁、我打它多合适」,第二行只答「它有什么路数」。
+            -->
+            <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-kai text-[14px] text-ink">
+              <template v-if="battle">
+                <span data-foe-name class="whitespace-nowrap">{{ battle.enemyName }}</span>
+              </template>
               <template v-else>
-                搜寻猎物中
+                <span class="whitespace-nowrap">搜寻猎物中</span>
                 <span class="ink-dots text-ink-faint">
                   <span />
                   <span />
                   <span />
                 </span>
               </template>
-              <span v-if="battle?.isBoss" class="chip-ink border-cinnabar/60 text-[9px] text-cinnabar">首领</span>
-              <span v-if="isNemesisFoe" class="chip-ink border-cinnabar/80 bg-cinnabar/10 text-[9px] text-cinnabar">宿敌</span>
-              <span v-for="t in shownTraits" :key="t" class="chip-ink border-violet-ink/50 text-[9px] text-violet-ink">
-                {{ TRAIT_NAMES[t] }}
-              </span>
               <span
                 v-if="foeAdaptation"
-                class="ml-auto text-[10px] font-normal text-gold-ink tabular"
+                class="ml-auto shrink-0 text-[10px] font-normal text-gold-ink tabular"
                 :title="foeAdaptation.reasons.join(';')"
               >
                 {{ starsText(foeAdaptation.stars) }}
+              </span>
+            </p>
+            <!-- 标签行:首领 / 宿敌 / 敌人路数(特性)—— 有几个就排几个,放不下就在这一行里换行 -->
+            <p
+              v-if="battle && (battle.isBoss || isNemesisFoe || shownTraits.length)"
+              class="mt-1 flex flex-wrap items-center gap-1.5"
+            >
+              <span v-if="battle.isBoss" class="chip-ink border-cinnabar/60 text-[9px] text-cinnabar">首领</span>
+              <span v-if="isNemesisFoe" class="chip-ink border-cinnabar/80 bg-cinnabar/10 text-[9px] text-cinnabar">宿敌</span>
+              <span v-for="t in shownTraits" :key="t" class="chip-ink border-violet-ink/50 text-[9px] text-violet-ink">
+                {{ TRAIT_NAMES[t] }}
               </span>
             </p>
             <ProgressBar :value="ehp" color="var(--color-cinnabar)" :height="6" class="mt-1" />
@@ -71,7 +100,19 @@
           跳过播放 »
         </button>
         <div ref="logBox" class="h-48 space-y-1 overflow-y-auto rounded-md bg-ink/4 px-3 py-2">
-          <p v-for="(entry, i) in displayed" :key="i" class="text-[12px] leading-relaxed" :class="KIND_COLOR[entry.t]">
+          <!--
+            data-battle-log 挂在**行**上(不是外面那层框):自检要数「这场到底出了几行」,
+            而框里还有一行占位文案「山风掠过,四下无声……」—— 挂在框上会把它一起数进去。
+            为什么要数行而不是数关键词:暴击那行只写「会心一击」,一击定胜负的战斗
+            五个关键词一个不沾,曾被误判成「回放没出内容」。
+          -->
+          <p
+            v-for="(entry, i) in displayed"
+            :key="i"
+            data-battle-log
+            class="text-[12px] leading-relaxed"
+            :class="KIND_COLOR[entry.t]"
+          >
             {{ entry.text }}
             <span v-if="entry.dmg" class="tabular" :class="entry.t === 'crit' ? 'text-cinnabar' : ''">{{ entry.dmg }}</span>
           </p>
@@ -102,12 +143,30 @@
       <!-- 战斗后统计 + 分析入口 -->
       <p v-if="battleSummary" class="mt-2 flex items-center justify-center gap-2 text-center text-[10px] text-ink-faint tabular">
         {{ battleSummary }}
-        <button v-if="lore" class="text-violet-ink active:opacity-60" @click="showLore = !showLore">
+        <!--
+          行内文字的按钮也得有 28px 触达区(见 layout-check 的判据):
+          它们此前只有一个字高(实测 15px),拇指点不着 —— 用 min-h 撑起来,
+          再用负外边距把这多出来的高度抵掉,视觉密度不变。
+        -->
+        <button
+          v-if="lore"
+          class="-my-2 inline-flex min-h-[28px] items-center px-1 text-violet-ink active:opacity-60"
+          @click="showLore = !showLore"
+        >
           {{ showLore ? '收起所知' : '此物所知 »' }}
         </button>
-        <button v-if="analysis" class="text-azure active:opacity-60" @click="showAnalysis = !showAnalysis">
+        <button
+          v-if="analysis"
+          class="-my-2 inline-flex min-h-[28px] items-center px-1 text-azure active:opacity-60"
+          @click="showAnalysis = !showAnalysis"
+        >
           {{ showAnalysis ? '收起分析' : '战斗分析 »' }}
         </button>
+      </p>
+      <!-- 本战拾获明细:战报里原本只进件数,「得了什么」全靠猜 -->
+      <p v-if="battleLoot.length" class="mt-1 text-center text-[10px] leading-relaxed text-ink-faint">
+        <span class="text-gold-ink">本战所得</span>
+        {{ battleLoot.join(' · ') }}
       </p>
       <!-- 此物所知(Phase 32.5:交手越多,战前看得越清楚) -->
       <div v-if="showLore && lore" class="mt-2 rounded-md bg-ink/4 px-3 py-2.5">
@@ -128,7 +187,12 @@
         <p v-for="ph in lore.phases" :key="ph.at" class="mt-1 text-[11px] leading-relaxed text-cinnabar">
           · {{ ph.at }}时{{ ph.label }}
         </p>
-        <p v-if="lore.archetype" class="mt-1.5 text-[11px] leading-relaxed text-gold-ink">{{ lore.archetype }}</p>
+        <p v-if="lore.archetype" class="mt-1.5 text-[11px] leading-relaxed text-gold-ink">
+          <span v-if="lore.archetypeLabel" class="mr-1 rounded bg-gold-ink/12 px-1 py-0.5 text-[10px]">
+            {{ lore.archetypeLabel }}
+          </span>
+          {{ lore.archetype }}
+        </p>
         <p v-if="lore.hint" class="mt-1.5 text-[10px] text-ink-ghost">{{ lore.hint }}</p>
       </div>
       <!-- 战斗分析(战败自动展开;硬核数据供研究) -->
@@ -163,9 +227,9 @@
   import { useAdventureStore } from '@/stores/adventure'
   import { usePlayerStore } from '@/stores/player'
   import { useSettingsStore } from '@/stores/settings'
-  import { stopExploration } from '@/core/exploration'
+  import { stopExploration, winsUntilRegionBoss } from '@/core/exploration'
   import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES } from '@/data/constants'
-  import { formatDuration } from '@/utils/format'
+  import { formatCountdown, formatGN } from '@/utils/format'
   import { useNow } from '@/composables/useNow'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, enemyTraits, starsText, TRAIT_NAMES, type RegionEcology } from '@/core/buildAdvisor'
@@ -199,6 +263,30 @@
   const battle = computed(() => adventure.lastBattle)
   const timeLeft = computed(() => (session.value ? Math.max(0, (session.value.endsAt - now.value) / 1000) : 0))
   const modeName = computed(() => (session.value ? EXPLORE_MODES[session.value.mode].name : ''))
+
+  /** 本次历练已得(灵石/修为)—— 取自会话里如实累计的入账数,不是期望值 */
+  const gains = computed(() => {
+    const s = session.value
+    if (!s) return null
+    return { stone: formatGN(s.stoneGain), exp: formatGN(s.expGain) }
+  })
+
+  /** 距区域之主还差几胜(已靖的地界不再提示) */
+  const bossIn = computed(() => {
+    const s = session.value
+    const r = region.value
+    if (!s || !r) return null
+    return winsUntilRegionBoss(s.wins, adventure.cleared.includes(r.id))
+  })
+  const bossSoon = computed(() => bossIn.value !== null && bossIn.value <= 0)
+  const bossHint = computed(() => {
+    const n = bossIn.value
+    if (n === null) return null
+    return n > 0 ? `距此地之主还差 ${n} 胜` : '此地之主将现 —— 下一战即是首领'
+  })
+
+  /** 本战拾获明细(旧存档/旧战报没有这一栏 → 空数组) */
+  const battleLoot = computed(() => battle.value?.loot ?? [])
 
   /** 当前敌人的机制特性标签 */
   const foeTraits = computed(() => {
@@ -244,7 +332,9 @@
     const b = battle.value
     if (!b) return null
     const r = b.result
-    return `此战 ${r.rounds} 回合 · 战后气血 ${Math.round(r.playerHpPct * 100)}% · ${r.win ? '胜' : '负'}`
+    // 结语只多四个字,却是每个玩家每场都会读到的一行:抢先 / 被抢先
+    const first = r.firstMove ? (r.firstMove.playerFirst ? ' · 抢先' : ' · 被抢先') : ''
+    return `此战 ${r.rounds} 回合 · 战后气血 ${Math.round(r.playerHpPct * 100)}% · ${r.win ? '胜' : '负'}${first}`
   })
 
   // ---- 战斗分析(第三层信息) ----

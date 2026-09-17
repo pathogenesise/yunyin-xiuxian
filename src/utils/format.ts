@@ -82,8 +82,66 @@ export function formatDuration(totalSec: number): string {
   return `${s}秒`
 }
 
+/**
+ * 倒计时 —— 与 formatDuration 同义,但**逐位定宽**。
+ *
+ * 状态面板里的每一枚状态胶囊都在倒计时,而 formatDuration 的宽度会随数值变:
+ * 「9分59秒」(6 字)下一秒变「10分0秒」,再下一秒变「10分1秒」——
+ * 胶囊是 nowrap 的,宽度一涨一缩,同一行里后面的胶囊整排跟着左右跳,
+ * 于是玩家看到的就是「状态信息一直在抖」。
+ *
+ * 定宽的做法:分钟/秒一律补零到两位,不足一分钟也写「00分SS秒」,
+ * 于是**同一量级内**每一秒的文本宽度完全相同(逐位替换,不换行不回流)。
+ * 数字本身另由 .tabular(tabular-nums)保证等宽,两者合起来才真的不动。
+ */
+export function formatCountdown(totalSec: number): string {
+  if (!Number.isFinite(totalSec)) return NOT_AVAILABLE
+  const sec = Math.max(0, Math.floor(totalSec))
+  const pad2 = (n: number): string => String(n).padStart(2, '0')
+  const d = Math.floor(sec / 86400)
+  const h = Math.floor((sec % 86400) / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  if (d > 0) return `${d}天${pad2(h)}时`
+  if (h > 0) return `${pad2(h)}时${pad2(m)}分`
+  return `${pad2(m)}分${pad2(s)}秒`
+}
+
 /** 寿元年数展示 */
 export function formatYears(y: number): string {
   if (y >= 10000) return formatNum(Math.floor(y)) + '载'
   return `${Math.floor(y)}载`
+}
+
+/**
+ * 小数字 → 汉字(4 → 四,21 → 二十一)。
+ *
+ * 用途只有一个:**页面上写「四界二十一境」「六十四卦」这类数量时,数字得从来源数出来**,
+ * 而不是手打。手打的数字在内容增长那天就变成谎话(加了第 5 个界域,文案还写四界),
+ * 且没有任何地方会因此报错。
+ *
+ * 只做到 9999:此范围之外说明这个数字不该以汉字出现,原样返回阿拉伯数字更诚实。
+ */
+export function cnNumber(n: number): string {
+  if (!Number.isInteger(n) || n < 0 || n > 9999) return String(n)
+  const DIGITS = '零一二三四五六七八九'
+  const UNITS = ['', '十', '百', '千']
+  if (n < 10) return DIGITS[n]!
+  const str = String(n)
+  const len = str.length
+  let out = ''
+  let pendingZero = false
+  for (let i = 0; i < len; i++) {
+    const digit = Number(str[i])
+    if (digit === 0) {
+      pendingZero = true
+      continue
+    }
+    if (pendingZero && out) out += DIGITS[0]
+    pendingZero = false
+    // 十、十二、十四……前导的「一」不成词
+    if (!(len === 2 && i === 0 && digit === 1)) out += DIGITS[digit]
+    out += UNITS[len - 1 - i]
+  }
+  return out
 }

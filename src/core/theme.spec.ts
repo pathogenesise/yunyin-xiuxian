@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { applyTheme, initTheme } from './theme'
 
-/** 最小 document stub(theme.ts 只用 documentElement.dataset) */
+/** 最小 document stub(theme.ts 用 documentElement.dataset + meta[name=theme-color]) */
 const docEl = {
   _theme: '',
   dataset: {} as Record<string, string>,
@@ -15,6 +15,15 @@ const docEl = {
   removeAttribute(k: string) {
     delete this.dataset[k]
   }
+}
+
+/** 捕获的 theme-color meta:querySelector 返回既有元素(无则走 createElement 新建同一元素) */
+const metaEl = { name: '', content: '' }
+const docStub = {
+  documentElement: docEl,
+  querySelector: () => metaEl,
+  createElement: () => metaEl,
+  head: { appendChild: () => {} }
 }
 
 type Listener = () => void
@@ -47,8 +56,9 @@ const mockMatchMedia = (initialDark: boolean) => {
 
 describe('theme', () => {
   beforeEach(() => {
-    vi.stubGlobal('document', { documentElement: docEl })
+    vi.stubGlobal('document', docStub)
     docEl.removeAttribute('data-theme')
+    metaEl.content = ''
   })
 
   afterEach(() => {
@@ -60,6 +70,13 @@ describe('theme', () => {
     expect(docEl.dataset.theme).toBe('dark')
     applyTheme('light')
     expect(docEl.dataset.theme).toBe('light')
+  })
+
+  it('theme-color 随主题切换在亮暗两色间同步', () => {
+    applyTheme('dark')
+    expect(metaEl.content).toBe('#211F1C')
+    applyTheme('light')
+    expect(metaEl.content).toBe('#F3EFE4')
   })
 
   it('auto 跟随系统深浅', () => {

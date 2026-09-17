@@ -91,7 +91,7 @@ describe('动机 · 决策维度覆盖', () => {
     console.log(`\n标注 build=${claimsBuild} · 实测全部改变排序=${actuallyReshapes},一致`)
   })
 
-  it('但探索、顺序、遭遇、目标四格一个都没碰到', () => {
+  it('但历练、顺序、遭遇、目标四格一个都没碰到', () => {
     const untouched = untouchedAxes()
     console.log('\n未被任何契触及的决策维度:')
     for (const a of untouched) console.log(`  ${AXIS_NAMES[a]}`)
@@ -102,7 +102,7 @@ describe('动机 · 决策维度覆盖', () => {
     expect(untouched).toContain('goal')
     console.log(
       `\n${untouched.length} / ${Object.keys(AXIS_NAMES).length} 个维度未被触及 ——` +
-        `\n契约不改变探索路线、不改变解锁顺序、不引入新敌人、不改变本世目标`
+        `\n契约不改变历练路线、不改变解锁顺序、不引入新敌人、不改变本世目标`
     )
   })
 
@@ -117,7 +117,7 @@ describe('动机 · 决策维度覆盖', () => {
       '\n契约不是纯罚款:它真的让玩家需要换打法(首尾构筑最大拉开 63.8pp)。' +
         '\n但改变只发生在战斗内部,一世的结构没变 ——' +
         '\n同样的区域、同样的顺序、同样的目标。' +
-        '\n故要提高动机,该扩的是玩法面(探索/物品/顺序/目标),不是补奖励'
+        '\n故要提高动机,该扩的是玩法面(历练/物品/顺序/目标),不是补奖励'
     )
   })
 })
@@ -129,14 +129,14 @@ describe('动机 · 架构边界', () => {
   })
 
   it('这条边界允许大胆内容而不制造新闭环', () => {
-    // 「本世不得使用某类丹药」「只能带一件法宝」「探索路线受限」
+    // 「本世不得使用某类丹药」「只能带一件法宝」「历练路线受限」
     // 都在可动空间内,都改变玩法,都不产生跨世成长
     expect(MUTABLE_SPACE).toContain('可用物品')
-    expect(MUTABLE_SPACE).toContain('探索路线')
+    expect(MUTABLE_SPACE).toContain('历练路线')
     expect(IMMUTABLE_SPACE).toContain('DaoFruit')
     expect(IMMUTABLE_SPACE).toContain('Insight(宿慧)')
     console.log(
-      '\n下一批契可以动的:限制可用丹药/法宝、限定探索路线、' +
+      '\n下一批契可以动的:限制可用丹药/法宝、限定历练路线、' +
         '\n改变解锁顺序、给本世换一个目标 —— 都改玩法,都不进成长经济'
     )
   })

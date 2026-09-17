@@ -19,10 +19,22 @@ import { PILLS } from '@/data/pills'
 import { GONGFA } from '@/data/gongfa'
 import { REGIONS } from '@/data/regions'
 import { EVENTS } from '@/data/events'
+import { chainOfEvent } from '@/data/chains'
 import { PETS } from '@/data/pets'
 import { MENTORS } from '@/data/mentors'
-import { MAX_MAJOR } from '@/data/realms'
+import { WORLD_BREAK_MAJOR } from '@/data/realms'
+import { qualityDef } from '@/data/qualities'
 import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
+
+/**
+ * 区域随机池里的事件 —— **不含奇缘阶段**。
+ *
+ * 奇缘阶段与普通事件同表(引擎的需要),但它不属于任何地界、也不进随机池
+ * (见 eventEngine.regionEventPoolFor)。故谈「事件内容的门槛」时不能把它算进来:
+ * 高界的缘门槛再高,也不影响「金丹能不能走到事件这条线」——
+ * 那是两套系统,混在一起算会把这条判据变成一个随内容量浮动的数。
+ */
+const POOL_EVENTS = EVENTS.filter(e => chainOfEvent(e.id) === null)
 
 /** 门槛的三种性质——它们可能完全不同 */
 export type GateKind =
@@ -67,12 +79,14 @@ export const CONTENT_GATES: ContentGate[] = [
   {
     id: 'pet',
     name: '灵兽',
-    kind: 'none',
-    minMajor: 0,
-    evidence: 'PetDef 无境界字段;两个发放事件(ev_wounded_beast / ft_beast_pledge)均无 minRealm,标签 general/forest',
-    reachableByGoldRebirth: true,
-    bypass: '青云山麓即可触发,金丹前就能集齐',
-    qualifies: false
+    kind: 'trigger',
+    minMajor: 14,
+    evidence:
+      'PetDef 无境界字段;入门 8 只由无门槛事件发放(ev_wounded_beast / ft_beast_pledge),' +
+      '4 只神兽由神界/混沌海事件(id 指名、带 minRealm)发放',
+    reachableByGoldRebirth: false,
+    bypass: '入门灵兽金丹前即可集齐;神兽须行至神界及以上,无绕过路径',
+    qualifies: true
   },
   {
     id: 'mentor',
@@ -116,10 +130,12 @@ export const CONTENT_GATES: ContentGate[] = [
   },
   {
     id: 'event',
-    name: '奇遇事件',
+    name: '际遇事件',
     kind: 'trigger',
     minMajor: 3,
-    evidence: `EVENTS ${EVENTS.length} 个中仅 ${EVENTS.filter(e => e.minRealm !== undefined).length} 个带 minRealm(心魔叩关/问道石)`,
+    evidence:
+      `随机池 ${POOL_EVENTS.length} 个事件中 ${POOL_EVENTS.filter(e => e.minRealm !== undefined).length} 个带 minRealm` +
+      `(入门 2 个 · 仙界及以上 7 个),其余无门槛;另有奇缘阶段不计入(不分地界)`,
     reachableByGoldRebirth: false,
     bypass: '绝大多数事件无门槛;仅问道石(元婴)真正需要深修',
     qualifies: false
@@ -128,8 +144,8 @@ export const CONTENT_GATES: ContentGate[] = [
     id: 'celestial',
     name: '天界与道痕',
     kind: 'acquire',
-    minMajor: MAX_MAJOR,
-    evidence: 'endgameUnlocked() 要求 major >= MAX_MAJOR(真仙),无任何替代入口',
+    minMajor: WORLD_BREAK_MAJOR,
+    evidence: 'endgameUnlocked() 要求 major >= WORLD_BREAK_MAJOR(真仙,仙界门槛),无任何替代入口',
     reachableByGoldRebirth: false,
     bypass: '无',
     qualifies: true
@@ -154,9 +170,10 @@ export function reachabilityTable(): ReachabilityRow[] {
     // 功法可预支一境,故金丹实际能学到 minRealm <= GOLD+1
     gongfa: { total: GONGFA.length, gold: GONGFA.filter(g => g.minRealm <= GOLD + 1).length },
     region: { total: REGIONS.length, gold: REGIONS.filter(r => r.minRealm <= GOLD).length },
-    pet: { total: PETS.length, gold: PETS.length },
+    // 入门灵兽(天品及以下)无门槛;神品/仙品神兽由神界及以上事件发放
+    pet: { total: PETS.length, gold: PETS.filter(p => qualityDef(p.quality).rank <= 6).length },
     mentor: { total: MENTORS.length, gold: MENTORS.length },
-    event: { total: EVENTS.length, gold: EVENTS.filter(e => (e.minRealm ?? 0) <= GOLD).length }
+    event: { total: POOL_EVENTS.length, gold: POOL_EVENTS.filter(e => (e.minRealm ?? 0) <= GOLD).length }
   }
   return CONTENT_GATES.map(gate => {
     const c = counts[gate.id]

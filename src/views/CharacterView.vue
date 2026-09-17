@@ -8,21 +8,36 @@
       </div>
       <div class="ink-divider my-3" />
       <!-- 灵根 -->
-      <div class="flex items-center gap-3">
-        <span class="font-kai text-[12px] tracking-widest text-ink-faint">灵根</span>
-        <span class="font-kai text-[13px] text-cinnabar">{{ player.linggen?.gradeName }}</span>
-        <div class="flex gap-1.5">
+      <!--
+        灵根名必须 nowrap 且不参与收缩:窄屏上「杂灵根」曾被两侧
+        (灵根圆环 + ×倍率)挤到只剩 24px 宽,一个字一行竖排下来。
+        改成一整行可换行:挤不下时让 ×倍率 落到下一行,而不是把名字压扁。
+      -->
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span class="shrink-0 font-kai text-[12px] tracking-widest text-ink-faint">灵根</span>
+        <span class="shrink-0 whitespace-nowrap font-kai text-[13px] text-cinnabar">{{ player.linggen?.gradeName }}</span>
+        <div class="flex shrink-0 gap-1.5">
           <span
             v-for="root in player.linggen?.roots ?? []"
             :key="root.element"
-            class="grid h-6 w-6 place-items-center rounded-full border text-[11px] font-kai"
-            :style="{ borderColor: ELEMENTS[root.element].color, color: ELEMENTS[root.element].color }"
+            class="flex flex-col items-center"
             :title="`资质 ${root.aptitude}`"
           >
-            {{ ELEMENTS[root.element].char }}
+            <span
+              class="grid h-6 w-6 place-items-center rounded-full border text-[11px] font-kai"
+              :style="{ borderColor: ELEMENTS[root.element].color, color: ELEMENTS[root.element].color }"
+            >
+              {{ ELEMENTS[root.element].char }}
+            </span>
+            <!-- 资质直接亮在圆环下,不再只藏 hover —— 手机上看得到才谈得上权衡 -->
+            <span class="mt-0.5 text-[9px] leading-none tabular" :style="{ color: ELEMENTS[root.element].color }">
+              {{ root.aptitude }}
+            </span>
           </span>
         </div>
-        <span class="ml-auto text-[11px] text-ink-faint tabular">×{{ player.linggen?.growthMult.toFixed(2) }}</span>
+        <span class="ml-auto shrink-0 whitespace-nowrap text-[11px] text-ink-faint tabular">
+          ×{{ player.linggen?.growthMult.toFixed(2) }}
+        </span>
       </div>
       <!-- 天然牌面(Phase 32.2):转世发下的这张牌决定路好不好走,而非走得多快 -->
       <div v-if="tendencies.length" class="mt-2 space-y-1">
@@ -53,13 +68,48 @@
         </div>
         <div v-if="modRows.length" class="ink-divider my-2.5" />
         <div class="grid grid-cols-2 gap-x-4 gap-y-1">
-          <p v-for="row in modRows" :key="row.label" class="flex justify-between text-[11px]">
-            <span class="text-ink-faint">{{ row.label }}</span>
+          <!-- 每行可点:玩家问的从来不只是「多少」,还有「从哪来」 -->
+          <button
+            v-for="row in modRows"
+            :key="row.label"
+            class="-my-1 flex justify-between py-1.5 text-left text-[11px] active:opacity-60"
+            @click="toggleBreakdown(row.key)"
+          >
+            <span class="text-ink-faint">
+              {{ row.label }}
+              <span v-if="row.capped" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
+            </span>
             <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
               {{ row.value > 0 ? '+' : '' }}{{ formatPercent(row.value) }}
             </span>
+          </button>
+        </div>
+        <p v-if="modRows.length" class="mt-1 text-[9px] text-ink-faint">点一行看它从哪来</p>
+        <!--
+          进阶成功率的名字容易过度承诺:它只进小进阶那一次掷点,大关走天劫推演。
+          有这一项时才提示 —— 没有这项的玩家不需要知道这个边界。
+        -->
+        <p v-if="hasAdvanceRate" class="mt-0.5 text-[9px] leading-relaxed text-ink-ghost">
+          进阶成功率只作用于小进阶;大关须渡天劫,看的是劫型与四维准备度(护持/恢复/抗性/爆发)。
+        </p>
+        <div v-if="breakdownRows.length" class="mt-1.5 rounded-md bg-paper-deep/60 px-2.5 py-2">
+          <p class="text-[10px] text-ink-soft">{{ STAT_NAMES[breakdownKey!] }} · 来源明细</p>
+          <p v-for="c in breakdownRows" :key="c.name" class="mt-0.5 flex justify-between text-[10px]">
+            <span class="text-ink-faint">
+              {{ c.name }}
+              <span v-if="c.onTop" class="ml-1 text-[9px] text-cinnabar/80">另乘</span>
+            </span>
+            <span class="tabular" :class="c.value > 0 ? 'text-azure' : 'text-cinnabar'">
+              {{ c.value > 0 ? '+' : '' }}{{ formatPercent(c.value) }}
+            </span>
+          </p>
+          <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
+            明细之和就是上面那个数;标「另乘」的不并入百分比,而是单独乘在攻防血上。
           </p>
         </div>
+        <p v-if="softCappedNotes.length" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">
+          标「软」者已达软上限:{{ softCappedNotes.join('、') }}。极限堆叠到此后收益递减,不是面板被削。
+        </p>
       </div>
     </section>
 
@@ -142,6 +192,15 @@
       <span class="text-[11px] text-ink-soft">展卷 →</span>
     </RouterLink>
 
+    <!-- 界域志:与修仙录同级 —— 一部写你,一部写这条路从哪来 -->
+    <RouterLink to="/codex" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
+      <span class="min-w-0 grow">
+        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">界域志</span>
+        <span class="block truncate text-[10px] text-ink-faint tabular">{{ cnNumber(WORLDS.length) }}界{{ cnNumber(REALMS.length) }}境 · 每一境的来路与典籍</span>
+      </span>
+      <span class="text-[11px] text-ink-soft">查阅 →</span>
+    </RouterLink>
+
     <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-99" @click="rebirthOpen = true">
       <span class="min-w-0 grow">
         <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">轮 回</span>
@@ -166,7 +225,7 @@
         <p v-if="identity.roots.fortunes.length" class="text-[11px] text-ink-faint">
           机缘印记:{{ identity.roots.fortunes.map(f => f.title).join(' · ') }}
         </p>
-        <p class="text-[10px] leading-relaxed text-ink-ghost">画像基于真实选择归纳——你玩成了什么样,它便描述什么。</p>
+        <p class="text-[10px] leading-relaxed text-ink-faint">画像基于真实选择归纳——你玩成了什么样,它便描述什么。</p>
       </div>
       <template #footer>
         <button class="btn-seal w-full" @click="identityOpen = false">收 卷</button>
@@ -179,7 +238,11 @@
         <span class="text-ink-soft">
           道果
           <span class="ml-1 text-[10px] text-violet-ink">【永久积累】</span>
-          <span class="block text-[10px] text-ink-faint">每枚:修行 +3%,道躯 +1.5%;转世保留</span>
+          <span class="block text-[10px] text-ink-faint">
+            每枚:修行 +{{ Math.round(DAO_FRUIT_CULT_BONUS * 100) }}%,道躯 +{{
+              Math.round(DAO_FRUIT_COMBAT_BONUS * 100)
+            }}%;转世保留
+          </span>
         </span>
         <span class="tabular font-kai text-[15px] text-cinnabar">{{ player.reincarnation.daoFruit }}</span>
       </p>
@@ -188,7 +251,7 @@
         有效收益
         <span class="text-gold-ink">{{ fruitInfo.effective.toFixed(0) }} 枚</span>
         (边际渐减)·
-        {{ fruitInfo.total > 0 ? `当前修行 +${Math.round(fruitInfo.effective * 3)}%` : '' }}
+        {{ fruitInfo.total > 0 ? `当前修行 +${Math.round(fruitInfo.effective * DAO_FRUIT_CULT_BONUS * 100)}%` : '' }}
       </p>
       <!-- 逆旅契:道果的第一个消费出口。花道果换一世逆境,回报只有履历 -->
       <p class="mt-2 flex items-center justify-between text-[12px]">
@@ -199,21 +262,37 @@
             {{ signedTrial ? `此生已立「${signedTrial.name}」·${signedTrial.ruleText}` : '以道果换一世逆境,所得唯有履历一笔' }}
           </span>
         </span>
-        <button v-if="!signedTrial" class="shrink-0 text-[12px] text-gold-ink underline underline-offset-2 active:text-cinnabar" @click="trialOpen = true">立契</button>
+        <!-- 拇指够得着:纯文字按钮只有 18px 高,补成 30px(弹窗里的可点元素同样受 28px 那条约束) -->
+        <button
+          v-if="!signedTrial"
+          class="shrink-0 self-center -my-1.5 px-2 py-1.5 text-[12px] text-gold-ink underline underline-offset-2 active:text-cinnabar"
+          @click="trialOpen = true"
+        >
+          立契
+        </button>
         <span v-else class="shrink-0 font-kai text-[15px] text-cinnabar">{{ signedTrial.seal }}</span>
       </p>
 
-      <div class="mt-2 flex flex-wrap gap-1.5">
-        <span
-          v-for="t in ownedTalents"
-          :key="t!.id"
-          class="chip-ink border-current"
-          :style="{ color: TALENT_GRADE_COLORS[t!.grade] }"
-          :title="t!.desc"
-        >
-          {{ t!.name }}
-        </span>
-        <span v-if="!ownedTalents.length" class="text-[11px] text-ink-ghost">转世后可觉醒先天之姿</span>
+      <div class="mt-2">
+        <div class="flex flex-wrap gap-1.5">
+          <!-- 天赋效果不再只藏 hover:点一下芯片,下面展开一行说明(手机上看得见才算数) -->
+          <button
+            v-for="t in ownedTalents"
+            :key="t!.id"
+            class="chip-ink border-current bg-transparent text-left"
+            :style="{ color: TALENT_GRADE_COLORS[t!.grade] }"
+            :title="t!.desc"
+            :aria-expanded="talentTap === t!.id"
+            @click="talentTap = talentTap === t!.id ? null : t!.id"
+          >
+            {{ t!.name }}
+          </button>
+          <span v-if="!ownedTalents.length" class="text-[11px] text-ink-ghost">转世后可觉醒先天之姿</span>
+        </div>
+        <p v-if="talentTap && tappedTalent" class="mt-1.5 text-[10px] leading-relaxed text-ink-faint">
+          <span :style="{ color: TALENT_GRADE_COLORS[tappedTalent.grade] }">{{ tappedTalent.name }}</span>
+          ：{{ tappedTalent.desc }}
+        </p>
       </div>
       <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">兵解转世保留道果 / 天赋 / 法宝,功法折半,余者归尘。金丹境方可自行兵解。</p>
       <template #footer>
@@ -270,6 +349,7 @@
           </p>
         </div>
         <p class="mt-2 text-[11px] text-ink-faint">共历 {{ bond.shared }} 次</p>
+        <p v-if="responseLine" class="mt-1 text-[11px] text-ink-faint">她开的口,你历次回应:{{ responseLine }}</p>
 
         <p class="mt-3 text-[11px] leading-relaxed text-ink-soft">她所求:{{ bondDef.pursuit }}</p>
         <p class="mt-0.5 text-[11px] leading-relaxed text-ink-faint">她不越的线:{{ bondDef.taboo }}</p>
@@ -283,6 +363,8 @@
           <div class="mt-4 border-t border-ink/10 pt-3">
             <p class="text-[12px] leading-relaxed text-gold-ink">{{ herIntent.line }}</p>
             <p class="mt-1 text-[10px] text-ink-faint">她所求:{{ herIntent.wish }}</p>
+            <!-- 意图由经历催生,不是凭空的:把「因何而起」摆出来 -->
+            <p v-if="herIntentSparks" class="text-[10px] text-ink-ghost">因何而起:{{ herIntentSparks }}</p>
             <div class="mt-2.5 flex gap-2">
               <button
                 v-for="r in INTENT_CHOICES"
@@ -300,6 +382,7 @@
         <template v-if="pendingEvent && !bond.fallen && !bond.departed">
           <div class="mt-4 border-t border-ink/10 pt-3">
             <p class="font-kai text-[13px] tracking-widest text-ink">{{ pendingEvent.title }}</p>
+            <p class="text-[10px] text-ink-ghost">因何而来:{{ pendingEventTriggers }}</p>
             <p class="mt-1 text-[11px] leading-relaxed text-ink-soft">{{ pendingEvent.text }}</p>
             <p class="mt-1.5 text-[11px] text-azure">{{ pendingEvent.herWish }}</p>
             <p class="text-[10px] text-ink-faint">{{ pendingEvent.herLimit }}</p>
@@ -309,9 +392,11 @@
                 v-for="ch in pendingEvent.choices"
                 :key="ch.id"
                 class="card-ink w-full px-3 py-2 text-left text-[12px] text-ink-soft active:scale-99"
+                :class="{ '!border-cinnabar/50 text-cinnabar': ch.peril, '!border-gold-ink/40': ch.risky && !ch.peril }"
                 @click="pickChoice(ch.id)"
               >
                 {{ ch.label }}
+                <span v-if="ch.peril" class="ml-1 text-[10px] text-cinnabar/80">〔共命之险〕</span>
               </button>
             </div>
           </div>
@@ -396,18 +481,22 @@
   import { GONGFA } from '@/data/gongfa'
   import { PILLS } from '@/data/pills'
   import { ARTIFACTS } from '@/data/artifacts'
+  import { REALMS, WORLDS } from '@/data/realms'
   import { EVENTS } from '@/data/events'
   import { prepareReincarnation, MANUAL_REBIRTH_MIN_MAJOR } from '@/core/reincarnation'
   import { detectBuild } from '@/core/buildDetect'
   import { useLoadoutsStore } from '@/stores/loadouts'
-  import { modOf } from '@/core/statsCalc'
+  import { isSoftCapped, modOf } from '@/core/statsCalc'
+  import { DAO_FRUIT_COMBAT_BONUS, DAO_FRUIT_CULT_BONUS, SOFT_CAPS } from '@/data/constants'
+  import { RESPONSE_NAMES, SPARK_NAMES } from '@/data/bondIntent'
+  import { TRIGGER_NAMES } from '@/data/bondEvents'
   import { fruitMarginalInfo } from '@/core/resourceGuidance'
   import { branchCodex, materialCodex } from '@/ui/codex'
   import { mentorVerdict, mentorChoices } from '@/core/mentorService'
   import { mentorHint } from '@/core/fortuneChain'
   import { buildIdentity } from '@/core/identityService'
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
-  import { formatGN, formatPercent } from '@/utils/format'
+  import { cnNumber, formatGN, formatPercent } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
   import { STAT_NAMES } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
@@ -434,13 +523,48 @@
     'critDamage',
     'damageBonus',
     'damageReduction',
+    'dodgeRate',
+    'accuracy',
+    'shieldOnStart',
     'luck',
     'explorationSpeed',
     'dropRate'
   ]
 
   const modRows = computed(() =>
-    MOD_KEYS.map(k => ({ label: STAT_NAMES[k], value: modOf(stats.value.mods, k) })).filter(x => x.value !== 0)
+    MOD_KEYS.map(k => ({
+      key: k,
+      label: STAT_NAMES[k],
+      value: modOf(stats.value.mods, k),
+      capped: isSoftCapped(stats.value.mods, k)
+    })).filter(x => x.value !== 0)
+  )
+
+  /** 面板上是否需要那句「进阶成功率只作用于小进阶」的边界说明 */
+  const hasAdvanceRate = computed(() => modOf(stats.value.mods, 'breakthroughRate') !== 0)
+
+  /** 来源明细:点哪一行看哪一行 —— 数据来自 finalStats.breakdown,不在界面里另算 */
+  const breakdownKey = ref<AnyStatKey | null>(null)
+  const breakdownRows = computed(() => {
+    const key = breakdownKey.value
+    if (!key) return []
+    return stats.value.breakdown
+      .map(r => ({ name: r.name, value: r.mods[key] ?? 0, onTop: r.onTop === true }))
+      .filter(c => c.value !== 0)
+  })
+
+  function toggleBreakdown(key: AnyStatKey): void {
+    breakdownKey.value = breakdownKey.value === key ? null : key
+  }
+
+  /**
+   * 软上限从来不是暗改:越过之后超出部分按折扣计入,
+   * 折扣率取自 SOFT_CAPS 本体,不在这里手抄"折半"(各键并非同一个数)
+   */
+  const softCappedNotes = computed(() =>
+    modRows.value
+      .filter(r => r.capped)
+      .map(r => `${r.label}(超出按 ${Math.round((SOFT_CAPS[r.key]?.diminish ?? 1) * 100)}% 计入)`)
   )
 
   const build = computed(() => detectBuild(stats.value.mods))
@@ -475,6 +599,12 @@
 
   // ---- 轮回 ----
   const rebirthOpen = ref(false)
+  /** 天赋芯片点按展开(移动端无 hover,效果说明内联显示);关弹窗复位 */
+  const talentTap = ref<string | null>(null)
+  const tappedTalent = computed(() => (talentTap.value ? talentDef(talentTap.value) : undefined))
+  watch(rebirthOpen, open => {
+    if (!open) talentTap.value = null
+  })
   const bondDialog = ref(false)
   const bond = computed(() => player.bond)
   const bondDef = computed(() => (bond.value ? (daoluDef(bond.value.daoluId) ?? null) : null))
@@ -496,6 +626,10 @@
    * 现在事件在历练途中就已发生,弹窗只是去看它
    */
   const pendingEvent = computed(() => pendingBondEvent())
+  /** 这件事因何而来(触发名取自 bondEvents,不在视图里手写) */
+  const pendingEventTriggers = computed(() =>
+    (pendingEvent.value?.triggers ?? []).map(t => TRIGGER_NAMES[t]).filter(Boolean).join('、')
+  )
   const lastEventText = ref('')
   const herLine = computed(() => (pendingEvent.value ? herStance(pendingEvent.value) : null))
   watch(bondDialog, open => {
@@ -509,6 +643,16 @@
 
   /** 她主动提出的事(34.1);三种回应,忽略不等于回绝 */
   const herIntent = computed(() => pendingIntent())
+  /** 这份心意因何而起(经历名取自 bondIntent) */
+  const herIntentSparks = computed(() => {
+    const sparks = herIntent.value?.sparks ?? []
+    return [...new Set(sparks)].map(s => SPARK_NAMES[s]).join('、')
+  })
+  /** 她记得你怎么答的 —— 回应名取自 bondIntent,视图不另写一份 */
+  const responseLine = computed(() => {
+    const rs = bond.value?.intent?.responses ?? []
+    return rs.length ? rs.map(r => RESPONSE_NAMES[r]).join(' · ') : ''
+  })
   const INTENT_CHOICES = [
     { id: 'accept' as const, label: '与她同去' },
     { id: 'refuse' as const, label: '婉言谢绝' },

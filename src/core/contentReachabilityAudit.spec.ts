@@ -31,7 +31,14 @@ import { MATERIALS } from '@/data/materials'
 import { ENEMIES } from '@/data/enemies'
 import { REGIONS } from '@/data/regions'
 import { GONGFA } from '@/data/gongfa'
-import { REALMS, MAX_MAJOR } from '@/data/realms'
+import { EVENTS, FORTUNE_EVENTS } from '@/data/events'
+import { ARTIFACTS } from '@/data/artifacts'
+import { artifactDef } from '@/data/artifacts'
+import { buffDef } from '@/data/buffs'
+import { petDef } from '@/data/pets'
+import { gongfaDef } from '@/data/gongfa'
+import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
+import { REALMS, MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { DAO_NAMES, SKILL_IDS, recipeCraft, skillDef, type SkillDef, type SkillId } from '@/data/crafting'
 import { ELEMENT_AFFINITY } from '@/data/linggenAffinity'
 import { gn } from '@/utils/gnum'
@@ -95,6 +102,154 @@ describe('内容可达性 · 敌人', () => {
     const defined = new Set(ENEMIES.map(e => e.id))
     const dangling = [...new Set(REGIONS.flatMap(r => [...r.enemies, r.boss]))].filter(id => !defined.has(id))
     expect(dangling).toEqual([])
+  })
+})
+
+describe('内容可达性 · 区域解锁链', () => {
+  it('从青云山麓出发,每一处区域都能沿 requireCleared 链走到', () => {
+    // 根节点:无前置
+    const roots = REGIONS.filter(r => !r.requireCleared)
+    expect(roots.map(r => r.id)).toEqual(['qingyun'])
+
+    const reached = new Set<string>(['qingyun'])
+    let grew = true
+    while (grew) {
+      grew = false
+      for (const r of REGIONS) {
+        if (reached.has(r.id)) continue
+        if (r.requireCleared && reached.has(r.requireCleared)) {
+          reached.add(r.id)
+          grew = true
+        }
+      }
+    }
+    const unreachable = REGIONS.filter(r => !reached.has(r.id)).map(r => `${r.name}(${r.id})`)
+    expect(unreachable).toEqual([])
+    expect(reached.size).toBe(REGIONS.length)
+  })
+
+  it('前置区域必须真实存在,且链上层级与境界门槛单调不回退', () => {
+    const byId = new Map(REGIONS.map(r => [r.id, r]))
+    for (const r of REGIONS) {
+      if (!r.requireCleared) continue
+      const prev = byId.get(r.requireCleared)
+      expect(prev, `${r.id} 的前置 ${r.requireCleared} 不存在`).toBeDefined()
+      // 同层第二处地界与正区同 tier(同难度带),故只要求不回退
+      expect(r.tier, `${r.id} 层级低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.tier)
+      expect(r.minRealm, `${r.id} 境界门槛低于前置 ${prev!.id}`).toBeGreaterThanOrEqual(prev!.minRealm)
+    }
+  })
+})
+
+describe('内容可达性 · 事件点名发放的灵兽', () => {
+  /**
+   * once 事件一旦触发即被标记为「已见」,此后再不出现。
+   * 若点名发放的灵兽只是概率分支,运气差的一份存档就永久少一只神兽 ——
+   * 这不是稀有,是死内容。要么事件可重复,要么该选项必得。
+   */
+  it('一次性事件不得把点名灵兽放在概率分支里', () => {
+    for (const ev of EVENTS) {
+      if (!ev.once) continue
+      for (const ch of ev.choices) {
+        const grantsNamedPet = ch.outcomes.some(o => o.effects.some(e => e.type === 'pet' && e.id))
+        if (!grantsNamedPet) continue
+        expect(ch.outcomes.length, `${ev.id} 是 once 事件,却把点名灵兽放在概率分支里`).toBe(1)
+      }
+    }
+  })
+
+  it('点名灵兽终有获得路径:存在可重复(或必得)的发放事件', () => {
+    const grantable = new Set<string>()
+    for (const ev of EVENTS) {
+      for (const ch of ev.choices) {
+        for (const o of ch.outcomes) {
+          for (const e of o.effects) {
+            if (e.type !== 'pet' || !e.id) continue
+            const guaranteed = ch.outcomes.length === 1 || !ev.once
+            if (guaranteed) grantable.add(e.id)
+          }
+        }
+      }
+    }
+    // 扩界新增的四只神兽都必须有可重复/必得的来源
+    for (const id of ['pet_yinglong', 'pet_qilin', 'pet_kunpeng', 'pet_taotie']) {
+      expect(grantable.has(id), `${id} 没有任何可重复或必得的发放路径`).toBe(true)
+    }
+  })
+})
+
+describe('内容可达性 · 法宝与装备模板', () => {
+  /** 掉落池按「fromTier ≤ 当前层级」过滤,故 fromTier 一旦高于最高区域层级,该件永不掉落 */
+  const MAX_REGION_TIER = Math.max(...REGIONS.map(r => r.tier))
+
+  it('每一件法宝都有可达的掉落层级', () => {
+    for (const a of ARTIFACTS) {
+      expect(a.fromTier, `法宝「${a.name}」fromTier=${a.fromTier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
+        MAX_REGION_TIER
+      )
+    }
+  })
+
+  it('每一件装备模板都有可达的掉落层级', () => {
+    for (const t of EQUIPMENT_TEMPLATES) {
+      expect(t.tier, `装备「${t.name}」tier=${t.tier} 高于最高区域层级 ${MAX_REGION_TIER},永不掉落`).toBeLessThanOrEqual(
+        MAX_REGION_TIER
+      )
+    }
+  })
+})
+
+describe('内容可达性 · 事件效果的引用完整性', () => {
+  /**
+   * 事件里点名发的东西若 id 写错,引擎不会报错 —— 它会静默改成「灵草 +10」之类的兜底。
+   * 玩家看到的是一句对不上的文案,数据里没有任何红。这条把每个点名的 id 都对一遍。
+   */
+  const ALL_EVENTS = [...EVENTS, ...FORTUNE_EVENTS]
+
+  it('事件点名的丹药/增益/灵兽/法宝/功法都真实存在', () => {
+    for (const ev of ALL_EVENTS) {
+      for (const ch of ev.choices) {
+        for (const o of ch.outcomes) {
+          for (const e of o.effects) {
+            if (e.type === 'pill' && e.id) expect(pillDef(e.id), `${ev.id}「${ev.title}」指向不存在的丹药 ${e.id}`).toBeDefined()
+            if (e.type === 'buff') expect(buffDef(e.id), `${ev.id}「${ev.title}」指向不存在的增益 ${e.id}`).toBeDefined()
+            if (e.type === 'pet' && e.id) expect(petDef(e.id), `${ev.id}「${ev.title}」指向不存在的灵兽 ${e.id}`).toBeDefined()
+            if (e.type === 'artifact' && e.id)
+              expect(artifactDef(e.id), `${ev.id}「${ev.title}」指向不存在的法宝 ${e.id}`).toBeDefined()
+            if (e.type === 'gongfa' && e.id) expect(gongfaDef(e.id), `${ev.id}「${ev.title}」指向不存在的功法 ${e.id}`).toBeDefined()
+          }
+        }
+      }
+    }
+  })
+})
+
+describe('内容可达性 · 高界丹药真能开炉', () => {
+  /**
+   * 丹药价值审计只算「该值多少」,没验过新界的方子能不能真的开出一炉。
+   * 方子清单缺料、rank 越界、材料池为空 —— 这些都在真开一炉时才现形。
+   */
+  it('仙界及以上每一张可炼丹方都能开炉(不因缺方/缺料中止)', () => {
+    setActivePinia(createPinia())
+    seedLoreIfNeeded()
+    const lore = useLoreStore()
+    const resources = useResourcesStore()
+    const player = usePlayerStore()
+    player.major = MAX_MAJOR
+    resources.addSmall('herb', 10_000_000)
+    // 高界丹方的灵石开销按层级折算(1.9^tier 量级),远高于元婴期的直觉数
+    resources.addStone(gn(1e40))
+
+    const highCraft = PILLS.filter(p => p.recipe && p.minRealm >= WORLD_BREAK_MAJOR)
+    expect(highCraft.length, '新界没有任何可炼丹方').toBeGreaterThan(0)
+
+    for (const p of highCraft) {
+      lore.addRecipeMastery(p.id, 1) // 先得方
+      // 技艺拉满,排除「练不出」的干扰 —— 这里只验流程不因缺料/越界而中止
+      for (const s of Object.keys(recipeCraft(p)!.skills) as SkillId[]) lore.addSkillExp(s, 50_000)
+      const out = craftPill(p.id)
+      expect(out.aborted, `${p.name} 开炉被中止(缺方或缺料)`).toBeFalsy()
+    }
   })
 })
 

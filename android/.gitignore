@@ -53,9 +53,12 @@ captures/
 .idea/navEditor.xml
 
 # Keystore files
-# 本项目的签名密钥随仓库分发,以便 CI 直接产出可安装的签名 APK。
-# release.keystore 与 keystore.properties 因此不在忽略之列。
-/key
+# 本项目的签名私钥文件(release.keystore)随仓库分发(历史遗留,无法从 git 历史移除,
+# 且它是公开部分)。签名**口令**绝不在仓库内:CI 由 GitHub Secrets 注入
+# KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD;本地出包临时 export 即可。
+# 因此 keystore.properties 不含口令,可随仓库分发,但禁止往里面加口令。
+# 本地若想放一份带口令的覆盖,请用 keystore.local.properties(见 build.gradle 的约定)。
+keystore.local.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild

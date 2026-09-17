@@ -23,7 +23,7 @@
  */
 import type { CombatRules, CombatantSnap, EnemyDef, StatMods } from '@/types'
 import { mulberry32, RandomService } from '@/utils/random'
-import { REGIONS } from '@/data/regions'
+import { MORTAL_REGIONS, MORTAL_TIER_MAX } from '@/data/regions'
 import { ENEMIES, enemyDef } from '@/data/enemies'
 import { EVENTS } from '@/data/events'
 import { MUTATORS } from '@/data/mutators'
@@ -160,8 +160,12 @@ function bossDanger(index: number): number {
   return 1 + index * 0.05
 }
 
-const BOSSES: EnemyDef[] = ENEMIES.filter(e => e.archetype !== undefined)
-const MOBS: EnemyDef[] = ENEMIES.filter(e => e.archetype === undefined)
+/**
+ * 凡界路线的敌人池只取人间界层级 —— 仙界/神界/混沌海的敌手不该出现在本世凡界路线里。
+ * 层级上限用 MORTAL_TIER_MAX(20),与 MORTAL_REGIONS 同源。
+ */
+const BOSSES: EnemyDef[] = ENEMIES.filter(e => e.archetype !== undefined && e.tier <= MORTAL_TIER_MAX)
+const MOBS: EnemyDef[] = ENEMIES.filter(e => e.archetype === undefined && e.tier <= MORTAL_TIER_MAX)
 const ALL_EVENT_TAGS: string[] = [...new Set(EVENTS.flatMap(e => e.tags))]
 
 /**
@@ -232,11 +236,11 @@ export function generateMortalWorld(seed: number): MortalWorld {
   // 资源偏向提前抽取,避免被后续 rng 消耗挤到同一取值(上一轮记下的弱点)
   const bias = BIASES[rng.int(0, BIASES.length - 1)]!
 
-  // 地界组合:从 20 处里选 tiers.length 处
-  const picked: typeof REGIONS = []
+  // 地界组合:从人间界 20 处里选 tiers.length 处
+  const picked: typeof MORTAL_REGIONS = []
   const usedRegion = new Set<string>()
   while (picked.length < tiers.length) {
-    const r = REGIONS[rng.int(0, REGIONS.length - 1)]!
+    const r = MORTAL_REGIONS[rng.int(0, MORTAL_REGIONS.length - 1)]!
     if (usedRegion.has(r.id)) continue
     usedRegion.add(r.id)
     picked.push(r)
@@ -528,12 +532,12 @@ export interface MaterialCapacity {
 }
 
 export function materialCapacity(): MaterialCapacity {
-  // 以最长骨架计 C(20, n)
+  // 以最长骨架计 C(人间界区域数, n)
   const maxLen = Math.max(...ROUTE_SHAPES.map(s2 => s2.tiers.length))
   let combos = 1
-  for (let i = 0; i < maxLen; i += 1) combos = (combos * (REGIONS.length - i)) / (i + 1)
+  for (let i = 0; i < maxLen; i += 1) combos = (combos * (MORTAL_REGIONS.length - i)) / (i + 1)
   return {
-    regions: REGIONS.length,
+    regions: MORTAL_REGIONS.length,
     mobs: MOBS.length,
     bosses: BOSSES.length,
     archetypes: new Set(BOSSES.map(b => b.archetype!)).size,

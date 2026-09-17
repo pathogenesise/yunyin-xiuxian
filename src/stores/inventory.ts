@@ -6,8 +6,10 @@ import { add, gnZero } from '@/utils/gnum'
 import { persistConfig } from '@/utils/storage'
 import { resolveEquipStats } from '@/core/equipGen'
 import { mergeMods } from '@/core/statsCalc'
-import { artifactDef, ARTIFACT_LEVEL_BONUS } from '@/data/artifacts'
+import { useLoreStore } from '@/stores/lore'
+import { artifactDef, artifactValue } from '@/data/artifacts'
 import { BAG_CAPACITY } from '@/data/constants'
+import { asArray, asNumberRecord, asRecord, asStringArray } from '@/utils/saveShape'
 
 export const useInventoryStore = defineStore(
   'inventory',
@@ -18,6 +20,15 @@ export const useInventoryStore = defineStore(
     const artifacts = ref<ArtifactOwned[]>([])
     /** 已祭炼的法宝(元婴起可佩两件) */
     const equippedArtifacts = ref<string[]>([])
+
+    /** 存档修复:行囊/丹药/法宝被写坏时,装备合计与图鉴会在渲染期抛错 */
+    function sanitize(): void {
+      items.value = asArray<EquipmentInstance>(items.value, [], it => !!it && typeof (it as EquipmentInstance).uid === 'string')
+      equipped.value = asRecord<string>(equipped.value)
+      pills.value = asNumberRecord(pills.value, 0)
+      artifacts.value = asArray<ArtifactOwned>(artifacts.value, [], a => !!a && typeof (a as ArtifactOwned).defId === 'string')
+      equippedArtifacts.value = asStringArray(equippedArtifacts.value)
+    }
 
     const equippedUids = computed(() => new Set(Object.values(equipped.value).filter(Boolean) as string[]))
 
@@ -45,13 +56,8 @@ export const useInventoryStore = defineStore(
       for (const art of currentArtifacts.value) {
         const def = artifactDef(art.defId)
         if (!def) continue
-        const scaled: StatMods = {}
-        const mult = 1 + art.level * ARTIFACT_LEVEL_BONUS
-        for (const k in def.passive) {
-          const key = k as keyof StatMods
-          scaled[key] = (def.passive[key] ?? 0) * mult
-        }
-        sources.push(scaled)
+        // 被动按「品阶 × 祭炼」放大 —— 与背包卡片、图鉴、战斗读同一份(artifactValue)
+        sources.push(artifactValue(def, art.level).passive)
       }
       return mergeMods(sources)
     })
@@ -88,6 +94,9 @@ export const useInventoryStore = defineStore(
 
     function equip(uid: string, slot: EquipSlot): void {
       equipped.value = { ...equipped.value, [slot]: uid }
+      // 「亲手用过」记在图鉴的见闻里:收录深度因此有一档由玩家自己推进(见 ui/codex)
+      const inst = findItem(uid)
+      if (inst) useLoreStore().noteEquipUsed(inst.templateId)
     }
 
     function unequip(slot: EquipSlot): void {
@@ -159,7 +168,8 @@ export const useInventoryStore = defineStore(
       spendPill,
       addArtifact,
       levelUpArtifact,
-      toggleArtifact
+      toggleArtifact,
+      sanitize
     }
   },
   { persist: persistConfig('inventory') }

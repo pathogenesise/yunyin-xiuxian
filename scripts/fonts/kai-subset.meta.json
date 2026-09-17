@@ -1,0 +1,13 @@
+{
+  "source": "霞鹜文楷 GB 屏幕阅读版 LXGW WenKai GB Screen",
+  "version": "v1.522",
+  "url": "https://github.com/lxgw/LxgwWenKai-Screen/releases/download/v1.522/LXGWWenKaiGBScreen.ttf",
+  "master_sha256": "23ec023913e1851925eb94462c4b0ccd1d78bb89533745aaa8cc682ccd339dc0",
+  "license": "SIL OFL 1.1 —— 全文见 public/fonts/OFL.txt",
+  "requested_chars": 6942,
+  "subset_chars": 6940,
+  "delegated_to_system": "▬▸▾◈✧",
+  "subset_sha256": "6e5a2061b3921f31bccb5d1dfcf666d8de4508d99495a254d9d39dbd608338c7",
+  "subset_bytes": 1825872,
+  "generated_by": "scripts/fonts/build-kai-font.py"
+}

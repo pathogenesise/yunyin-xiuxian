@@ -14,7 +14,7 @@ import { enemyTraits, regionEcology } from './buildAdvisor'
  * ② 阶段机制多样性 - 阶段变化的类型应多样化
  * ③ 阶段变化强度 - 阶段改变的机制参数应有显著差异
  * ④ Boss 生态一致性 - archetype 与技能/mod 机制匹配
- * ⑤ Boss 机制指纹 - 20 个 Boss 的机制组合应独特
+ * ⑤ Boss 机制指纹 - 各位 Boss 的机制组合应多数独特(数量随区域表增长)
  *
  * 注: 战斗胜率模拟依赖玩家属性与 Boss 的数值对齐(游戏内随境界同步增长),
  * 测试无法模拟装备/功法成长,故审计聚焦机制配置本身。
@@ -129,7 +129,7 @@ describe('Phase 30.8: Boss 阶段与机制有效性审计', () => {
     expect(mismatches.length, 'Boss archetype 应与机制一致').toBe(0)
   })
 
-  it('⑤ Boss 机制指纹: 20 个 Boss 的机制组合至少有 60% 独特', () => {
+  it('⑤ Boss 机制指纹: 各 Boss 的机制组合至少有 60% 独特', () => {
     const fingerprints = new Map<string, number>()
     for (const boss of ALL_BOSSES) {
       const fp = bossFingerprint(boss)

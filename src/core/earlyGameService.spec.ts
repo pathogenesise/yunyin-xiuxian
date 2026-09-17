@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
-import { gn, toNum } from '@/utils/gnum'
+import { useCultivationStore } from '@/stores/cultivation'
+import { useAdventureStore } from '@/stores/adventure'
+import { gn, gnZero, toNum } from '@/utils/gnum'
+import { todayLocalNum } from '@/utils/time'
 import {
   dismissCaveEvent,
   dismissEnlightenment,
@@ -14,7 +17,10 @@ import {
   recordLoss,
   prepareBreakthrough,
   breakthroughPrepState,
-  consumeBreakthroughPrep
+  consumeBreakthroughPrep,
+  startRetreat,
+  isRetreating,
+  getRetreatRemainingSec
 } from './earlyGameService'
 import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
 
@@ -25,7 +31,7 @@ describe('洞府巡游(Phase 28)', () => {
 
   it('当日已巡游后不再触发', () => {
     const player = usePlayerStore()
-    const today = Math.floor(Date.now() / 86400000)
+    const today = todayLocalNum()
     player.markCaveEventToday(today)
     expect(mayTriggerCaveEvent()).toBeNull()
   })
@@ -36,7 +42,7 @@ describe('洞府巡游(Phase 28)', () => {
     expect(ev).not.toBeNull()
     expect(getCurrentCaveEvent()).not.toBeNull()
 
-    const today = Math.floor(Date.now() / 86400000)
+    const today = todayLocalNum()
     dismissCaveEvent()
     // 模块态清空
     expect(getCurrentCaveEvent()).toBeNull()
@@ -60,6 +66,29 @@ describe('悟道顿悟(Phase 28)', () => {
 
     dismissEnlightenment()
     expect(getCurrentEnlightenment()).toBeNull()
+    vi.restoreAllMocks()
+  })
+
+  it('冷却随档:重开页面刷不出顿悟(Phase 34.6)', () => {
+    // 顿悟给悟道点(真货币),冷却若挂模块,刷新一次就等于清掉 5 分钟闸门
+    vi.spyOn(Math, 'random').mockReturnValue(0.001)
+    mayTriggerEnlightenment()
+    const player = usePlayerStore()
+    const firstAt = player.enlightenmentAt
+    expect(firstAt, '触发后应记下时刻').toBeGreaterThan(0)
+
+    // 写盘取的就是这份 $state —— 冷却必须在这里面
+    const persisted = JSON.parse(JSON.stringify(player.$state)) as { enlightenmentAt?: number }
+    expect(persisted.enlightenmentAt).toBe(firstAt)
+
+    // 模拟刷新:新进程 + 把写盘的档灌回去,再试一次 —— 冷却未过,不该再给
+    setActivePinia(createPinia())
+    const reloaded = usePlayerStore()
+    reloaded.$patch({ enlightenmentAt: persisted.enlightenmentAt as never })
+    dismissEnlightenment()
+    mayTriggerEnlightenment()
+    expect(getCurrentEnlightenment(), '刷新后冷却被清掉了,可以刷顿悟').toBeNull()
+    expect(reloaded.enlightenmentAt).toBe(firstAt)
     vi.restoreAllMocks()
   })
 })
@@ -107,7 +136,7 @@ describe('连胜(Phase 28 · 曾经无调用方,TASK-022 接线后)', () => {
 describe('突破准备(Phase 28 · TASK-023 接线后)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    consumeBreakthroughPrep() // 清掉上个用例残留的准备态(模块级单例)
+    consumeBreakthroughPrep() // 兜底清态;准备态自 Phase 34.6 起随 pinia 隔离
   })
 
   it('静坐调息:开始为坐定态,3 分钟完转为就绪,+8% 一次性可取', () => {
@@ -155,6 +184,37 @@ describe('突破准备(Phase 28 · TASK-023 接线后)', () => {
     expect(prepareBreakthrough('pill')).toBe(false)
     expect(breakthroughPrepState().ready).toBe(false)
   })
+
+  it('付费的一次性加成存进档:刷新页面不吞玩家的 80 灵石(Phase 34.6)', () => {
+    const resources = useResourcesStore()
+    resources.addStone(gn(100))
+    expect(prepareBreakthrough('pill')).toBe(true)
+
+    // ① 状态在 store 上 —— 存档写盘取的就是这份 $state
+    const persisted = JSON.parse(JSON.stringify(usePlayerStore().$state)) as { breakthroughPrep?: unknown }
+    expect(persisted.breakthroughPrep, '准备态没进 store,刷新必丢').toBeTruthy()
+
+    // ② 重开一局(新 pinia = 重新载入进程),把写盘的那份灌回来 → 加成仍在
+    setActivePinia(createPinia())
+    const reloaded = usePlayerStore()
+    reloaded.$patch({ breakthroughPrep: persisted.breakthroughPrep as never })
+    const s = breakthroughPrepState()
+    expect(s.ready).toBe(true)
+    expect(s.bonus).toBeCloseTo(BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'pill')!.bonusRate)
+    // ③ 仍是一次性的:取过即空
+    expect(consumeBreakthroughPrep()).toBeCloseTo(0.05)
+    expect(breakthroughPrepState().ready).toBe(false)
+  })
+
+  it('转世不带突破准备:新的一世要重新备(与卦同理)', () => {
+    const resources = useResourcesStore()
+    resources.addStone(gn(100))
+    prepareBreakthrough('pill')
+    const player = usePlayerStore()
+    expect(player.breakthroughPrep).not.toBeNull()
+    player.rebirth(player.linggen!)
+    expect(player.breakthroughPrep).toBeNull()
+  })
 })
 
 describe('突破准备数据源(BREAKTHROUGH_PREP_OPTIONS · TASK-029 接线后)', () => {
@@ -200,18 +260,16 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
     setActivePinia(createPinia())
   })
 
-  // 隔离约束:earlyGameService 是模块级单例态,顿悟的 5 分钟冷却与遗留事件会跨用例泄漏。
-  // 因此把所有"不应触发"用例排在前面(它们统一把假时钟钉在"本文件前期真实触发点 +600s",
-  // 稳定越过冷却,只测衰减);唯一一个"应触发"用例(会写入 lastEnlightenmentTime)排最后。
-  // useFakeTimers 与 Date.now 交互下,lastEnlightenmentTime 只会被真正触发的那次写入,
-  // 前面的用例看到的一直是"早期真实时间触发点",彼此互不污染。
+  // 顿悟的 5 分钟冷却 Phase 34.6 起存在 player store(随档),不再跨用例泄漏 ——
+  // 每个用例一个新 pinia 即天然隔离,这几条不必再按触发/不触发排序。
+  // (遗留的 enlightenmentEvent 仍是模块态:它只是"当下的弹窗",重开即无,不影响频次。)
   it('真仙后顿悟完全退出(衰减 0)', () => {
     const player = usePlayerStore()
     player.major = 5
     const realNow = Date.now()
     vi.useFakeTimers()
     try {
-      vi.setSystemTime(realNow + 600_000) // 越过 5 分钟模块级冷却,只测衰减
+      vi.setSystemTime(realNow + 600_000) // 越过 5 分钟冷却(新档该栏为 0),只测衰减
       vi.spyOn(Math, 'random').mockReturnValue(0.001) // 即使随机数最小也不该触发
       mayTriggerEnlightenment()
       expect(getCurrentEnlightenment()).toBeNull()
@@ -247,14 +305,14 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
   it('金丹巡游存在感 0.25:掷败则今日让位(不反复重掷)', () => {
     const player = usePlayerStore()
     player.major = 2
-    const today = Math.floor(Date.now() / 86400000)
+    const today = todayLocalNum()
     vi.spyOn(Math, 'random').mockReturnValue(0.9) // 0.9 > 0.25 → 今日让位
     expect(mayTriggerCaveEvent()).toBeNull()
     expect(player.lastCaveEventDay).toBe(today)
     vi.restoreAllMocks()
   })
 
-  // 最后一个顿悟用例:低随机数在金丹仍可触发(0.08×0.35 之上),写入 lastEnlightenmentTime
+  // 低随机数在金丹仍可触发(0.08×0.35 之上);触发会写入 store 的顿悟冷却
   it('低随机数在金丹仍可触发(0.08×0.35 之上)', () => {
     const player = usePlayerStore()
     player.major = 2
@@ -277,5 +335,56 @@ describe('前期事件衰减(EARLY_EVENT_DECAY · TASK-028 接线后)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1) // 0.1 ≤ 0.25 → 触发
     expect(mayTriggerCaveEvent()).not.toBeNull()
     vi.restoreAllMocks()
+  })
+})
+
+describe('闭关(Phase 28 · 接线后:buff 注册/互斥守卫/buff 到期)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('startRetreat 注册 5 分钟闭关 buff,isRetreating 为真,剩余 300 秒', () => {
+    expect(startRetreat()).toBe(true)
+    const cult = useCultivationStore()
+    expect(cult.hasBuff('retreat')).toBe(true)
+    expect(isRetreating()).toBe(true)
+    expect(getRetreatRemainingSec()).toBe(300)
+  })
+
+  it('已在闭关时再次调用幂等返回 false,不刷新时长', () => {
+    startRetreat()
+    const cult = useCultivationStore()
+    const endsAtBefore = cult.buffs.find(b => b.defId === 'retreat')!.endsAt
+    expect(startRetreat()).toBe(false)
+    expect(cult.buffs.find(b => b.defId === 'retreat')!.endsAt).toBe(endsAtBefore)
+  })
+
+  it('历练途中不可闭关(互斥守卫,拒绝原因显式而非静默)', () => {
+    const now = Date.now()
+    useAdventureStore().setSession({
+      regionId: 'qingyun',
+      mode: 'normal',
+      startedAt: now,
+      endsAt: now + 60000,
+      nextBattleAt: now + 1000,
+      wins: 0,
+      losses: 0,
+      events: 0,
+      stoneGain: gnZero(),
+      expGain: gnZero(),
+      itemGain: 0
+    })
+    expect(startRetreat()).toBe(false)
+    expect(useCultivationStore().hasBuff('retreat')).toBe(false)
+  })
+
+  it('闭关 buff 到期后 isRetreating 转假、剩余秒数归零(持久化 buff 为唯一真相源)', () => {
+    startRetreat()
+    const cult = useCultivationStore()
+    // 模拟 5 分钟流逝:pruneBuffs 正是 engine 每帧清理过期 buff 的那一步
+    expect(cult.pruneBuffs(Date.now() + 301_000)).toBe(true)
+    expect(cult.hasBuff('retreat')).toBe(false)
+    expect(isRetreating()).toBe(false)
+    expect(getRetreatRemainingSec()).toBe(0)
   })
 })

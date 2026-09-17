@@ -27,7 +27,8 @@
 
       <p class="flex justify-between text-[13px]">
         <span class="text-ink-soft">剩余</span>
-        <span class="tabular text-ink">{{ formatDuration(remainSec) }}</span>
+        <!-- 剩余每秒在走:定宽(见 utils/format.formatCountdown),否则这一行的数字一直在跳 -->
+        <span class="countdown-slot tabular">{{ formatCountdown(remainSec) }}</span>
       </p>
       <p class="mt-1 flex justify-between text-[13px]">
         <span class="text-ink-soft">全程</span>
@@ -45,7 +46,7 @@
   import { useNow } from '@/composables/useNow'
   import { buffDef } from '@/data/buffs'
   import { STAT_NAMES } from '@/ui/statNames'
-  import { formatDuration, formatPercent } from '@/utils/format'
+  import { formatCountdown, formatDuration, formatPercent } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
   import BaseModal from '@/components/common/BaseModal.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'

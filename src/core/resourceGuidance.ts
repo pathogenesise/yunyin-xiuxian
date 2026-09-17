@@ -9,6 +9,7 @@
  *       首次教学/软上限白话。全部为展示层与一次性标记。
  */
 import { useEndgameStore } from '@/stores/endgame'
+import { WORLD_BREAK_MAJOR } from '@/data/realms'
 import { usePlayerStore } from '@/stores/player'
 import { DAO_FRUIT_CULT_BONUS, DAO_FRUIT_SOFT_EXP } from '@/data/constants'
 
@@ -89,7 +90,7 @@ export function shouldShowEndgameTutorial(): boolean {
   const endgame = useEndgameStore()
   if (endgame.endgameTutorialSeen) return false
   // 触发条件:未见过教学,且已登真仙(随天界解锁)
-  return usePlayerStore().major >= 9
+  return usePlayerStore().major >= WORLD_BREAK_MAJOR
 }
 
 export function markEndgameTutorialSeen(): void {
@@ -105,12 +106,6 @@ export function shouldShowFruitTutorial(): boolean {
 
 export function markFruitTutorialSeen(): void {
   useEndgameStore().daoFruitTutorialSeen = true
-}
-
-/** 首次获得道源(用于 S6 埋点判断:提示"道源能干什么") */
-export function firstDaoSourceHint(now: number): void {
-  // 道源>0 且从未提示过:无害,只做埋点;提示融合在获得 toast 里
-  void now
 }
 
 // ---------- S6 行为埋点(轻量) ----------

@@ -3,16 +3,27 @@
  */
 import { mulberry32, rng } from '@/utils/random'
 import { formatPercent } from '@/utils/format'
-import { realmDef, realmLabel } from '@/data/realms'
+import { realmDef, realmLabel, worldOf, isWorldEntry } from '@/data/realms'
 import { BT_FAIL_EXP_LOSS, BT_QI_COST_RATIO } from '@/data/constants'
 import { breakthroughBaseRate, clampRate } from './formulas'
 import { modOf } from './statsCalc'
-import { rollTribulation, sustainScore, guardScore, waveDamage, tribulationWaves, currentTribulationRelief } from './tribulationDecision'
+import {
+  rollTribulation,
+  sustainScore,
+  guardScore,
+  waveDamage,
+  tribulationWaves,
+  currentTribulationRelief,
+  currentStatGuard,
+  NO_STAT_GUARD,
+  type TribStatGuard
+} from './tribulationDecision'
 import { todayWeather } from './weather'
 import { tribulationDef, TRIBULATIONS, type TribulationKind } from '@/data/tribulations'
 import { NO_RELIEF, type TribulationRelief } from '@/data/linggenAffinity'
 import { reliefFelt } from './linggenAffinity'
 import { track, trackRealm, checkStateAchievements } from './progress'
+import { recordMilestone } from './identity'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useCultivationStore } from '@/stores/cultivation'
@@ -53,7 +64,9 @@ export function tribulationSuccessRate(
   targetMajor: number,
   mods: StatMods,
   kind?: TribulationKind,
-  relief: TribulationRelief = NO_RELIEF
+  relief: TribulationRelief = NO_RELIEF,
+  /** 三维折算(防御→抗性 / 气血→水位);审计口径默认不传 = 只看词条,读数偏保守 */
+  stat: TribStatGuard = NO_STAT_GUARD
 ): number {
   const kinds = kind ? [tribulationDef(kind)] : TRIBULATIONS
   const rand = mulberry32(0x5eed)
@@ -63,9 +76,10 @@ export function tribulationSuccessRate(
   for (const def of kinds) {
     const regen = sustainScore(mods, def, relief)
     for (let s = 0; s < TRIB_SAMPLE; s += 1) {
-      let hpLeft = 1 + guardScore(mods, def, relief)
+      let hpLeft = 1 + guardScore(mods, def, relief) + stat.guard
       for (let w = 1; w <= waves; w += 1) {
-        hpLeft = hpLeft - waveDamage(def, mods, targetMajor, w, hpLeft, relief) * (0.85 + rand() * 0.3) + regen
+        hpLeft =
+          hpLeft - waveDamage(def, mods, targetMajor, w, hpLeft, relief, 1, stat) * (0.85 + rand() * 0.3) + regen
         if (hpLeft <= 0) break
       }
       if (hpLeft > 0) survived += 1
@@ -81,7 +95,15 @@ export function breakthroughInfo(): BreakthroughInfo {
   const isMajor = player.isMajorStep
   const nextMajor = isMajor ? player.major + 1 : player.major
   const nextSub = isMajor ? 0 : player.sub + 1
-  const needTribulation = isMajor && realmDef(nextMajor).tribulation && player.major < nextMajor
+  /**
+   * 大关皆劫 —— 这张表里不再有"无劫大关"。
+   *
+   * 从前境界数据上挂着一枚 `tribulation` 开关,真仙是唯一的 false(旧设计当它是
+   * 飞升之赏)。那条例外让三件事说不清:进阶成功率的作用域、三个跨界入口
+   * (真仙/神人/混沌真灵)的规矩不一样、"大关未必渡劫"这条规则玩家猜不到。
+   * 现在只剩一条规则:小进阶掷点,大关渡劫 —— 想要无劫的路,得先有本事免劫。
+   */
+  const needTribulation = isMajor
   const qiCost = Math.floor(player.qiCapValue * BT_QI_COST_RATIO)
   const mods = player.finalStats.mods
   // Phase 28 突破准备:就绪的静坐/丹药加成并入展示率(消费在 attemptBreakthrough,一次性)
@@ -129,12 +151,15 @@ function runTribulation(targetMajor: number): { survived: boolean; log: string[]
   const tDef = tribulationDef(kind)
   const relief = currentTribulationRelief(kind)
   const weatherMult = todayWeather().tribulationMult
+  // 三维折算与预览同源(currentTribulationPlan 走同一个 helper):血厚防高者硬抗一部分
+  const stat = currentStatGuard()
   const regen = sustainScore(mods, tDef, relief)
-  let hpLeft = 1 + guardScore(mods, tDef, relief)
+  let hpLeft = 1 + guardScore(mods, tDef, relief) + stat.guard
   const log: string[] = [`乌云压顶,${realmDef(targetMajor).name}劫将至——${tDef.name}之劫,共 ${waves} 道!`]
   if (reliefFelt(relief)) log.push('你体内灵根与此劫气机隐隐相应,自有一线生路。')
   for (let w = 1; w <= waves; w += 1) {
-    hpLeft = hpLeft - waveDamage(tDef, mods, targetMajor, w, hpLeft, relief, weatherMult) * rng.float(0.85, 1.15) + regen
+    hpLeft =
+      hpLeft - waveDamage(tDef, mods, targetMajor, w, hpLeft, relief, weatherMult, stat) * rng.float(0.85, 1.15) + regen
     if (hpLeft <= 0) {
       log.push(`第 ${w} 道天雷轰然落下,你护体灵光崩碎,重伤坠地……`)
       return { survived: false, log }
@@ -166,7 +191,8 @@ export function attemptBreakthrough(): BreakthroughView | null {
     const result = runTribulation(player.major + 1)
     success = result.survived
     tribulationLog = result.log
-    track('tribulations')
+    // 「渡过」才算渡过:失败不计数(否则连败三次自动解锁 a_trib3 劫后余生)
+    if (success) track('tribulations')
   } else {
     // 无劫突破消费掉就绪的准备加成(info.rate 已并入,见 breakthroughInfo peek)
     consumeBreakthroughPrep()
@@ -182,13 +208,25 @@ export function attemptBreakthrough(): BreakthroughView | null {
     checkStateAchievements()
     playSfx('breakthrough')
     const realm = player.realm
+    // 跨界飞升:渡劫→真仙入仙界,大罗→神人入神界,神帝→混沌真灵入混沌海。
+    // 这三步是全流程仅有的「换一片天」,给独立叙事与跨世节点(人间界入口不算)
+    const crossedWorld = info.isMajor && player.major > 0 && isWorldEntry(player.major)
+    const world = crossedWorld ? worldOf(player.major) : null
+    if (world) recordMilestone(`first_${world.id}`)
+    const baseMessage = `境界跃迁,天地翻覆。${realm.desc}。寿元增至 ${player.lifespanMax} 载。`
+    // 大关进阶时附上这一境的出处(可解释性:境界名不是随手堆的字)
+    const loreLine = `——「${realm.basis}」${realm.lore}`
     view = {
       success: true,
       fromLabel,
       toLabel: player.realmName,
       isMajor: info.isMajor,
       tribulationLog,
-      message: info.isMajor ? `境界跃迁,天地翻覆。${realm.desc}。寿元增至 ${player.lifespanMax} 载。` : '灵台清明,经脉拓宽,修为更上一层。'
+      message: !info.isMajor
+        ? '灵台清明,经脉拓宽,修为更上一层。'
+        : world
+          ? `天地改换,山河重立。你踏入${world.name}——${world.desc}。${realm.desc},寿元增至 ${player.lifespanMax} 载。${loreLine}`
+          : `${baseMessage}${loreLine}`
     }
   } else {
     const mods = player.finalStats.mods

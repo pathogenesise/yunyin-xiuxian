@@ -58,9 +58,6 @@ export interface CaveEvent {
   expiresAt: number
 }
 
-/** 灵兽陪行功能类型 */
-export type BeastCompanionType = 'event' | 'safety' | 'loot'
-
 /** 突破准备选项 */
 export interface BreakthroughPrepOption {
   id: string
@@ -123,6 +120,15 @@ export type SpecialKey =
   | 'executeDamage'
   | 'regenPerRound'
   | 'dodgeRate'
+  /**
+   * 命中:抵掉目标的闪避(两个百分点直接相减,不会把闪避压成负数)。
+   *
+   * 补它的理由与「净念」同源:闪避型首领(蜃楼之主幻境 55%、冰魄化身 50%、
+   * 大罗化身 48%……)此前是**无解**的 —— 玩家没有命中这个属性,面对幻影
+   * 只能靠运气,而战后分析照样会说「N 次出手落空,连击与暴击难以衔接」。
+   * 报得出病因、给不出药,就是内容缺口。
+   */
+  | 'accuracy'
   | 'lowHpReduction'
   | 'breakRefund'
   | 'doubleDropRate'
@@ -148,6 +154,21 @@ export interface FinalStats {
   maxHp: GNum
   power: GNum
   mods: StatMods
+  /**
+   * 属性来源明细 —— 面板上「这个数从哪来」读它,不另算一遍。
+   *
+   * onTop 的那几条(道果)不并入百分比,而是单独乘在攻防血/修炼上:
+   * 故面板展示时要说清「另乘」,否则明细之和会对不上玩家看到的值。
+   */
+  breakdown: StatSourceRow[]
+}
+
+/** 一条属性来源:谁给的、给了多少 */
+export interface StatSourceRow {
+  name: string
+  mods: StatMods
+  /** true = 不在百分比里相加,而是另行乘算(目前只有道果) */
+  onTop?: boolean
 }
 
 // ============ 品质 ============
@@ -162,6 +183,15 @@ export interface QualityDef {
   mult: number
   /** 词条数量范围 */
   affixes: [number, number]
+  /**
+   * 现世层级窗口 —— 这一档品质只在 [fromTier, toTier] 这段内容里**正常**掉落。
+   *
+   * 行业里叫「物品等级带」:稀有度不是纯运气,而是内容深度的函数 ——
+   * 神品该从神界/混沌海长出来,不是青云山麓抽奖抽到的。
+   * 窗口外仍留一线(QUALITY_OUT_OF_BAND),给际遇与图鉴留门,但那是万分之几。
+   */
+  fromTier: number
+  toTier: number
   /** 掉落权重 */
   weight: number
   /** css 颜色变量名 */
@@ -181,8 +211,14 @@ export interface EquipmentTemplate {
   base: Partial<Record<'attack' | 'defense' | 'maxHp', number>>
   /** 模板固有百分比属性 */
   fixedMods?: StatMods
-  /** 出现的最低掉落层级 */
-  minTier: number
+  /**
+   * 本件所属的层级 —— **一阶一名**:名字负责区分,数字只让人看得更快。
+   *
+   * 掉落池按它取(见 core/equipGen.templatesAtTier):13 阶的地界只出 13 阶之物,
+   * 所以「星辰冠」永远只可能是 8 阶,看到名字就知道是哪一阶的东西。
+   * (法宝的 fromTier 是另一回事:那一头仍是「从这一阶起可现世」的累积池。)
+   */
+  tier: number
   /** Phase 31.0 S5:装备套装/共鸣组(同组多件触发机制效果,非数值堆叠) */
   set?: string
 }
@@ -226,6 +262,8 @@ export interface EquipmentInstance {
   reforgeCount?: number
   /** 已封存的词条 id(重铸时不会被替换) */
   sealedAffixIds?: string[]
+  /** 累计强化投入(分解时按八成返还;老档无此账,按标价补算) */
+  invested?: { dust: number; stone: GNum }
 }
 
 // ============ 法宝 ============
@@ -234,17 +272,54 @@ export type ArtifactEffect =
   | { type: 'shield'; pctMaxHp: number }
   | { type: 'heal'; pctMaxHp: number }
   | { type: 'weaken'; pct: number }
+  /**
+   * 震慑:打断敌人下一手(跳过它的这一次行动)。
+   *
+   * 与「削弱」不同 —— 削弱是接下来几回合的攻势打折扣,震慑是**这一手根本不出**。
+   * 在高界尤其要紧:敌手的一次大招被掐掉,往往比少吃几成伤害更值。
+   */
+  | { type: 'stun' }
+  /**
+   * 破甲:撕开敌人的护体,其防御在**本场余下回合**里按比例下降。
+   *
+   * 与削弱(压其攻势)相对:一个是让它打不动你,一个是让你打得动它。
+   * 对高防敌手(天界那些护体厚重的)尤其值。
+   */
+  | { type: 'sunder'; pct: number }
+  /**
+   * 净念:防身型 —— 每当自身要被震慑,以 pct 的概率当场挣脱,那一手照出。
+   *
+   * 前面那些效果说的都是「我怎么打你」,这是第一件「我扛得住你的阴招」。
+   * 补它的理由不是对称好看,而是此前**玩家对震慑毫无还手之力**:十三种敌人
+   * 会摄魂(音波 / 魅惑 / 石化凝视 / 九霄神雷……),中了就是白丢一回合,而战后
+   * 分析只会说一句「N 个回合被震慑打断,节奏尽失」—— 说了病因,却没有一味药。
+   * 故它是随身被动:不受 interval 的节拍约束(数据里 interval 记 1,即常在)。
+   */
+  | { type: 'purge'; pct: number }
+  /**
+   * 吸命:造成伤害,并把其中 healPct 回补自身。
+   *
+   * 与「打出伤害」+「回复生命」分开写不同:它的回复**挂在伤害上** ——
+   * 打得越狠,回得越多。于是高界法宝里终于有了一件同时管输出与续航的,
+   * 而不必让两个法宝位去凑一件事(位只有两个,凑它就是放弃另一种手艺)。
+   */
+  | { type: 'drain'; mult: number; healPct: number }
 
 export interface ArtifactDef {
   id: string
   name: string
+  /** 风味一句。与下面的数值一样,写的是「凡品零重基线」的口径(见 data/artifacts.artifactValue) */
   desc: string
   icon: string
+  /** 品阶:既定掉落权重,也定数值倍率 —— 两处的口径都在 data/artifacts */
   quality: QualityId
-  minTier: number
+  /** 从这一阶起可现世(累积池:更高阶的地界也掉得出它) */
+  fromTier: number
+  /** 被动。表里写的是**凡品零重基线**,品阶与祭炼两条放大由 artifactValue 施加 */
   passive: StatMods
   active: {
     name: string
+    /** 神通文案(同样是凡品零重基线:玩家看到的是 artifactActiveText 现算的那一份) */
     desc: string
     /** 每隔几回合自动触发 */
     interval: number
@@ -284,10 +359,22 @@ export interface PillDef {
   quality: QualityId
   kind: 'instant' | 'buff'
   instant?: {
-    /** 按当前突破需求百分比给予修为(高品质丹药) */
-    expReqPct?: number
+    /**
+     * 等效闭关秒数 —— 修为丹的药力单位(Phase 39)。
+     *
+     * 结算口径:修为 += 服丹者当下的修炼速度 × 本秒数,再封顶到「不满一层」
+     * (见 core/pillService 与 INSTANT_EXP_LAYER_CAP)。
+     *
+     * 从前这里是 `expReqPct`(按当前一层需求的百分比给修为)。那个口径看着"自平衡",
+     * 实则把**指数增长的需求墙**整段搬给了玩家:同一枚金丹期的丹留到混沌海服用,
+     * 药力跟着需求一起涨到万亿倍,而它的成本仍冻结在金丹期 —— 于是后面的境界壁垒、
+     * 破界的艰难,全都能靠囤丹抹平。改按"一段写死的闭关时长"结算之后,
+     * 丹药在任何境界值多少都是常量,囤到高境界只会显得它更弱(这是对的)。
+     */
+    expSecs?: number
     /** 固定修为点数(低品质丹药,与境界无关) */
     expFixed?: number
+    /** 灵气回满比例(上限的五成/十成)—— 容量与回速同阶,折成时间近乎恒定,故保留百分比 */
     qiPct?: number
     lifespanYears?: number
     wudao?: number
@@ -316,15 +403,29 @@ export interface BuffInstance {
 }
 
 // ============ 境界 ============
+/** 界域 —— 人间界 / 仙界 / 神界 / 混沌海 */
+export type WorldId = 'mortal' | 'immortal' | 'god' | 'chaos'
+
 export interface RealmDef {
   id: string
   name: string
+  /** 所属界域 */
+  world: WorldId
   lifespanYears: number
-  /** 大境界突破是否需渡天劫 */
-  tribulation: boolean
   /** 该境界主题描述 */
   desc: string
+  /**
+   * 可解释性:这一境的命名出处与承接理由。
+   * 依次说明它取自哪一路数(内丹术 / 道教仙阶 / 佛教 / 道家宇宙论 / 网文常用),
+   * 以及它为何排在上一境之后 —— 境界名不是随手堆的字。
+   */
+  lore: string
+  /** 出处类别(便于审计与检索) */
+  basis: RealmBasis
 }
+
+/** 境界命名的主要出处类别 */
+export type RealmBasis = '内丹' | '佛道' | '道教仙阶' | '网文' | '道家本源'
 
 // ============ 敌人 ============
 export interface EnemySkill {
@@ -403,7 +504,14 @@ export type EventCond = { type: 'realm'; min: number } | { type: 'stone'; tierAm
 
 export type EventEffect =
   | { type: 'stone'; tierAmount: number }
-  | { type: 'exp'; reqPct: number }
+  /**
+   * 修为奖励 —— **等效闭关秒数**(Phase 39:与丹药、一场遭遇同一把尺子)。
+   *
+   * 从前这里是 reqPct(当前一层需求的百分比):一层耗时每境 ×3.65,
+   * 于是同一次际遇的价值随境界指数上涨 —— 真仙期一次际遇抵十几个时辰闭关。
+   * 现在写死成一段时长(60~240 秒),它认的是玩家的修速,不认那道墙。
+   */
+  | { type: 'exp'; secs: number }
   | { type: 'material'; id: 'herb' | 'ore' | 'page' | 'dust' | 'wudao'; amount: number }
   | { type: 'equipment'; minQualityRank?: number }
   | { type: 'pill'; id?: string; count: number }
@@ -426,6 +534,8 @@ export interface EventChoice {
   cond?: EventCond
   outcomes: EventOutcome[]
   isDefault?: boolean
+  /** 选了此项,所属奇缘就此断掉(后续几程不会再出现);仅对奇缘阶段事件有意义 */
+  endsChain?: boolean
 }
 
 /** 区域兴衰状态(Phase 30.9 S1):混乱 → 稳定 → 繁盛 */
@@ -488,9 +598,7 @@ export interface EventDef {
 }
 
 // ============ 资源 ============
-export type BigResourceId = 'spiritStone'
 export type SmallResourceId = 'wudao' | 'herb' | 'ore' | 'page' | 'dust'
-export type ResourceId = BigResourceId | SmallResourceId
 
 // ============ 洞府建筑 ============
 export type BuildingId = 'mansion' | 'array' | 'alchemy' | 'forge' | 'field' | 'library' | 'beast'
@@ -528,6 +636,9 @@ export interface TitleDef {
   mods: StatMods
 }
 
+/** 灵兽性格 —— 定义在此处(petPersonality 行为表与 PETS 数据同源,不再各写一份联合类型) */
+export type PetPersonality = 'greedy' | 'steady' | 'fierce' | 'cautious'
+
 export interface PetDef {
   id: string
   name: string
@@ -535,8 +646,8 @@ export interface PetDef {
   icon: string
   quality: QualityId
   mods: StatMods
-  /** Phase 31.0 S4:灵兽性格(贪宝/慢稳/好战/谨慎),影响探索行为倾向 */
-  personality: 'greedy' | 'steady' | 'fierce' | 'cautious'
+  /** Phase 31.0 S4:灵兽性格(贪宝/慢稳/好战/谨慎),影响历练行为倾向 */
+  personality: PetPersonality
 }
 
 // ============ 成就 / 任务 ============
@@ -602,10 +713,51 @@ export interface CombatSkill {
   effect?: string
 }
 
+/**
+ * 敌人加成来源里的一项 —— 「哪件事,把它乘大了多少倍」。
+ * 只列真正乘过的项(×1 的不列:没做的事不必占字数)。
+ */
+export interface FoeOriginPart {
+  /** 来源名,如「层级补偿」「危地」「道之理解」 */
+  label: string
+  /** 三维倍率 */
+  ratio: number
+}
+
+/**
+ * 敌人身上的额外加成**从哪来** —— 由生成方写明,战后分析照读。
+ *
+ * 敌人的三维里从来不只是「它自己」:凡界有层级补偿与危地,天界有道之理解与境界压制。
+ * 这些乘区若只在数值里生效、不给出来源,玩家遇到「怎么忽然变强了」就只能猜 ——
+ * 既不知道该削哪一项,也不知道该往哪一境走。故生成方**必须**把它写下来
+ * (makeEnemySnap / worldFoeSnap 各有一份),战斗结果带着它走,分析面板照着讲。
+ */
+export interface FoeOrigin {
+  /** 一句话来源名,如「层级补偿」「道之理解 / 境界压制」 */
+  label: string
+  /** 三维总倍率(≥1;1 表示这只敌人没有额外加成) */
+  ratio: number
+  /** 敌人增伤(0 = 无) */
+  damageBonus: number
+  /** 敌人减伤(0 = 无) */
+  damageReduction: number
+  /** 拆开讲:每一项来源各自的倍率 */
+  parts: FoeOriginPart[]
+  /** 这是什么、该怎么办 —— 界面读它,不再另编一套说法 */
+  note: string
+}
+
 export interface CombatantSnap {
   name: string
   icon: string
   isPlayer: boolean
+  /**
+   * 这只敌人身上的**额外加成来自哪里** —— 由生成方写明,供战后分析归因。
+   *
+   * 敌人的三维里从来不只是「它自己」:凡界有层级补偿与危地,天界有道之理解与境界压制。
+   * 这些乘区若只在数值里生效、不给出来源,玩家遇到「怎么忽然变强了」就只能猜。
+   */
+  origin?: FoeOrigin
   attack: GNum
   defense: GNum
   maxHp: GNum
@@ -662,6 +814,16 @@ export interface CombatResult {
   log: CombatLogEntry[]
   rounds: number
   playerHpPct: number
+  /** 敌人的加成来源(玩家侧没有:它就是玩家自己)—— 战后分析据此把账算清 */
+  foeOrigin?: FoeOrigin
+  /**
+   * 先手判定 —— 谁先出手,以及那次判定用的两个数。
+   *
+   * 这是一条**阈值**判定(1 + 先手判定修正 ≥ 对手速度),不是连续收益:
+   * 差一点就是完全没抢先。故把两个数如实记下来,交给战后分析讲清楚
+   * 「你差多少」,而不是让玩家对着「出手速度 +6%」猜自己为什么还是后手。
+   */
+  firstMove?: { playerFirst: boolean; playerSpeed: number; enemySpeed: number }
   /** 战斗遥测(旧存档可能缺失) */
   stats?: { player: CombatSideStats; enemy: CombatSideStats }
 }
@@ -738,6 +900,11 @@ export interface CelestialWorldDef {
   id: string
   name: string
   seal: string
+  /**
+   * 本界锚点层级 —— 敌人按这条层级曲线的绝对三维定标(见 core/gauntlet.celestialAnchor)。
+   * 它同时是「这一界该有的境界」:未及者受境界压制,已过者自然是压着打。
+   */
+  anchorTier: number
   desc: string
   ruleText: string[]
   rules: CombatRules
@@ -780,6 +947,8 @@ export interface TrialDef {
   id: string
   name: string
   seal: string
+  /** 同 CelestialWorldDef.anchorTier:本试炼的锚点层级 */
+  anchorTier: number
   desc: string
   ruleText: string[]
   rules: CombatRules
@@ -808,6 +977,8 @@ export interface MarkReplay {
 export interface MarkContext {
   worldId?: string
   mutatorIds?: string[]
+  /** 当年入界所择之门(奇门遁甲;旧档缺失即未择门) */
+  gateId?: string
 }
 
 /** 道痕:一世修行的终局履历 */
@@ -837,9 +1008,13 @@ export interface OfflineSummary {
   capped: boolean
   exp: GNum
   stone: GNum
+  /** 灵气回充量(受上限约束,故记实际差额) */
+  qi: number
   herb: number
   ore: number
   wudao: number
+  /** 离线期间流逝的寿元(年)—— 是代价,不是收益,但玩家该知道 */
+  ageYears: number
   battles: number
   wins: number
   events: number
