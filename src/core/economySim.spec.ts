@@ -10,10 +10,10 @@ import { maxTierForMajor } from '@/data/regions'
  *
  * - **人间界(0~8)**:模型在此校准(建筑还在长、掉落按人间界层级),健康不变量按原样守 ——
  *   灵石不窒息也不失意义、灵草买得起丹、器灵尘自给、无死资源。
- * - **界外十二境(9~20)**:同一套公式,但**出口大半不在模型里**(建筑早已封顶,
- *   玄铁/残页/器灵尘真正的去向是天道熔炉 → 道源)。故这一段只守「读数有定义、
- *   层级跟随区域表、修为比值不漂移」,外加把整张表打出来;健康不变量等出口模型补齐
- *   再上(见 ISS-210)。
+ * - **界外十二境(9~20)**:出口是**天道熔炉**(材料/灵石 → 道源 → 道果),现已入模型(ISS-210 结清)。
+ *   这一段守「结构」:每样材料都有非零出口、道源流存在且只在界外、层级跟随区域表、修为比值不漂移;
+ *   并把「材料换道源的速率远超终局节奏」这条**已知失衡**当成断言钉住(ISS-214)——
+ *   它是一处真实的定价问题,不是读数噪声,故不假装健康、也不藏起来。
  */
 describe('经济闭环审计(Phase 19 · Phase 40 补界外与修为)', () => {
   const eras = fullEconomyAudit()
@@ -31,7 +31,12 @@ describe('经济闭环审计(Phase 19 · Phase 40 补界外与修为)', () => {
     expect(eras.length).toBe(MAX_MAJOR + 1)
     expect(mortal.length, '人间界应有 0~8 共九境').toBe(9)
     expect(outer.length, '界外应有 9~20 共十二境').toBe(12)
-    for (const era of eras) expect(era.flows.length, `第${era.major}境缺流`).toBe(7)
+    for (const era of eras) {
+      expect(era.flows.length, `第${era.major}境缺流`).toBe(era.major >= 9 ? 8 : 7)
+    }
+    // 道源流只在界外出现 —— 人间界还没有熔炉可开
+    for (const era of mortal) expect(era.flows.some(f => f.resource === 'daoSource')).toBe(false)
+    for (const era of outer) expect(era.flows.some(f => f.resource === 'daoSource')).toBe(true)
   })
 
   it('修为是一条流,且收支比不随境界漂移(Phase 39 修出的性质)', () => {
@@ -117,15 +122,37 @@ describe('经济闭环审计(Phase 19 · Phase 40 补界外与修为)', () => {
     expect(chronicallyIdle.length, `长期闲置资源: ${chronicallyIdle.join(',')}`).toBeLessThanOrEqual(1)
   })
 
-  it('界外闲置读数单独打出来 —— 那是「出口没进模型」,不是判定', () => {
-    const idle: string[] = []
+  it('界外:每样材料都有非零出口(熔炉),不再出现 ∞ 与死资源', () => {
     for (const era of outer) {
       for (const f of era.flows) {
-        if (f.verdict !== '健康') idle.push(`第${era.major}境:${f.resource}${f.verdict}(×${f.ratio === Infinity ? '∞' : f.ratio.toFixed(0)})`)
+        expect(f.sinkPerHour, `第${era.major}境 ${f.resource} 没有出口`).toBeGreaterThan(0)
       }
+      // 悟道点是唯一例外 —— 它的真出口(功法进修 / 法宝炼化)没进模型,故必须自报口径
+      const wudao = era.flows.find(f => f.resource === 'wudao')!
+      expect(wudao.note, `第${era.major}境悟道流的出口没进模型,却不自报口径`).toContain('待补')
     }
-    console.log(`\n  [界外读数,待补出口模型 · ISS-210] ${idle.join(' · ')}`)
-    expect(idle.length, '界外一点问题都没有?那说明出口模型已经补上了,该把这段判据升级成健康不变量').toBeGreaterThan(0)
+  })
+
+  /**
+   * 已知失衡(ISS-214):界外把材料/灵石熔成道源的速率,远超「每境凝一枚道果」的终局节奏。
+   *
+   * 这是建模之后**露出来**的真实问题,不是模型误差:灵石收入按 1.9^层级 涨,
+   * 而灵石熔铸价与道果价(100 道源)冻结在真仙量级 —— 到混沌海,一场战斗的灵石
+   * 就能换出一枚以上道果。断言它,是为了让"哪天有人把熔炉/道果重定价"这件事
+   * 有一个明确的红灯位置,而不是靠谁想起来去翻表。
+   */
+  it('已知失衡:界外的道源产出远超终局节奏(ISS-214)', () => {
+    const rows = outer.map(era => {
+      const dao = era.flows.find(f => f.resource === 'daoSource')!
+      return { major: era.major, ratio: dao.ratio }
+    })
+    console.log(`\n  [界外道源] 产出 ÷ 「每境一枚道果」的节奏:`)
+    for (const r of rows) console.log(`    第${r.major}境 ×${r.ratio.toExponential(1)}`)
+    for (const r of rows) {
+      expect(r.ratio, `第${r.major}境道源产出`).toBeGreaterThan(1)
+    }
+    // 至少有一境高到三位数以上:这说明"道果在该段几乎免费",需要一次定价决策
+    expect(Math.max(...rows.map(r => r.ratio)), '道源不再过剩了?那这条失衡账该销掉').toBeGreaterThan(100)
   })
 
   it('灵气结构健康:回满不超过 30 分钟(判据守 0~9 境,界外读数见 ISS-212)', () => {

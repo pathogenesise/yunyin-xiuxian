@@ -27,7 +27,14 @@ import { BUILDINGS } from '@/data/buildings'
 import { PILLS } from '@/data/pills'
 import { qualityDef } from '@/data/qualities'
 import { MAX_MAJOR } from '@/data/realms'
+import { WORLD_BREAK_MAJOR } from '@/data/realms'
 import { maxTierForMajor } from '@/data/regions'
+import {
+  DAO_SOURCE_PER_FRUIT,
+  FURNACE_RATES,
+  FURNACE_STONE_DAO_SOURCE,
+  FURNACE_STONE_TIER_AMOUNT
+} from '@/data/endgame'
 import {
   COMPREHEND_PAGE_COST,
   DECOMPOSE_DUST,
@@ -42,6 +49,9 @@ import { generateEquipment } from './equipGen'
 import { secondsForMajor } from './progressionSim'
 import { tripExpSecsPerHour, winsPerHour } from './expIncome'
 
+/** 灵石熔铸按哪一层的价格折算(与 endgameService.furnaceStoneCost 同一处口径) */
+const FURNACE_STONE_TIER = 20
+
 // ---- 挂机行为假设 ----
 const UPGRADES_PER_HOUR = 3
 const CRAFTS_PER_HOUR = 2
@@ -50,7 +60,7 @@ const REAL_TIME_FACTOR = 2 // 真实体感 ≈ 纯修炼估算 ×2
 /** 沉没成本摊销的最小时长:早期时期极短,玩家实际用数小时慢慢补齐建筑 */
 const MIN_AMORTIZE_HOURS = 2
 
-export type AuditResource = 'stone' | 'herb' | 'ore' | 'page' | 'dust' | 'wudao' | 'exp'
+export type AuditResource = 'stone' | 'herb' | 'ore' | 'page' | 'dust' | 'wudao' | 'exp' | 'daoSource'
 
 export interface ResourceFlow {
   resource: AuditResource
@@ -58,6 +68,14 @@ export interface ResourceFlow {
   sinkPerHour: number
   ratio: number
   verdict: '瓶颈' | '健康' | '过剩' | '闲置'
+  /**
+   * 这条读数的口径附注 —— 只在"模型没把握"时出现。
+   *
+   * 审计的红线是"不许把没模型的地方算成健康,也不许算成事故":
+   * 界外的悟道点就是这种情形(它的真出口是功法进修与法宝炼化,本模型没算全),
+   * 于是这一栏明说「出口待补」,而不是让 ratio 报一个吓人的闲置数。
+   */
+  note?: string
 }
 
 export interface EraAudit {
@@ -152,9 +170,56 @@ export function auditEra(major: number): EraAudit {
    */
   const expSinkHour = secondsForMajor(major, 0) / eraHours
 
-  const make = (resource: AuditResource, income: number, sink: number): ResourceFlow => {
+  /**
+   * 界外的出口:天道熔炉。
+   *
+   * 人间界的四样材料都有别的去处(建筑、炼丹、参悟、强化),界外没有 ——
+   * 建筑早封顶、玄铁的消耗项归零,于是审计在这里读出 ∞ 与「闲置十万倍」。
+   * 那不是"材料没用",是**模型缺了出口**:终局的玄铁/残页/灵草/器灵尘(以及灵石)
+   * 都投进天道熔炉换道源,道源再凝道果(终局唯一的数值出口)。
+   *
+   * 这里的建模口径(与终局玩法同源,数字全部取自 data/endgame):
+   *   潜力 = Σ 各材料产出 ÷ 该材料的熔铸率 + 灵石产出 ÷ 灵石熔铸价 × 每次道源数
+   *   需求 = 每境凝一枚道果(DAO_SOURCE_PER_FRUIT / 本境时长)
+   * 于是比值回答的是「材料够不够撑起终局节奏」,而不是玩家实际熔了多少 ——
+   * 需求取的是**下限**(远征与试炼的入场开销另需道源),故这个比值是上界。
+   */
+  const furnace = ((): { potential: number; demand: number } | null => {
+    if (major < WORLD_BREAK_MAJOR) return null
+    const byResource: Partial<Record<AuditResource, number>> = {
+      ore: oreIncome,
+      page: pageIncome,
+      herb: herbIncome,
+      dust: dustIncome
+    }
+    let potential = 0
+    for (const rate of FURNACE_RATES) {
+      const income = byResource[rate.resource as AuditResource]
+      if (income) potential += income / rate.per
+    }
+    // 灵石熔铸:一份灵石(按第 20 层折算)换 FURNACE_STONE_DAO_SOURCE 缕道源
+    const stonePerDao = toNum(stoneByTier(FURNACE_STONE_TIER, FURNACE_STONE_TIER_AMOUNT))
+    if (stonePerDao > 0) potential += (stoneIncome / stonePerDao) * FURNACE_STONE_DAO_SOURCE
+    return { potential, demand: DAO_SOURCE_PER_FRUIT / Math.max(eraHours, 1) }
+  })()
+
+  /**
+   * 界外的材料按「有什么投什么」分摊熔炉需求:每样材料的有效出口
+   * = 自己的道源潜力 × (需求 / 总潜力)。故四者与道源流的比值是同一个数 ——
+   * 它说的正是「材料总量是终局需求的几倍」。
+   */
+  const furnaceShare = furnace && furnace.potential > 0 ? Math.min(1, furnace.demand / furnace.potential) : 0
+
+  const make = (resource: AuditResource, income: number, sink: number, note?: string): ResourceFlow => {
     const ratio = sink > 0 ? income / sink : Infinity
-    return { resource, incomePerHour: income, sinkPerHour: sink, ratio, verdict: verdictOf(ratio) }
+    return { resource, incomePerHour: income, sinkPerHour: sink, ratio, verdict: verdictOf(ratio), note }
+  }
+
+  /** 界外:这几样材料的出口改认熔炉(人间界照旧走各自的去处) */
+  const withFurnace = (resource: AuditResource, income: number, baseSink: number): ResourceFlow => {
+    if (!furnace) return make(resource, income, baseSink)
+    const rate = FURNACE_RATES.find(r => r.resource === resource)!
+    return make(resource, income, (income / rate.per) * furnaceShare)
   }
 
   return {
@@ -163,12 +228,20 @@ export function auditEra(major: number): EraAudit {
     eraHours,
     flows: [
       make('stone', stoneIncome, stoneSinkHour),
-      make('herb', herbIncome, herbSinkHour),
-      make('ore', oreIncome, oreSinkEra / amortizeHours),
-      make('page', pageIncome, pageSinkEra / amortizeHours),
-      make('dust', dustIncome, dustSinkHour),
-      make('wudao', wudaoIncome, wudaoSinkEra / amortizeHours),
-      make('exp', expIncome, expSinkHour)
+      withFurnace('herb', herbIncome, herbSinkHour),
+      withFurnace('ore', oreIncome, oreSinkEra / amortizeHours),
+      withFurnace('page', pageIncome, pageSinkEra / amortizeHours),
+      withFurnace('dust', dustIncome, dustSinkHour),
+      make(
+        'wudao',
+        wudaoIncome,
+        wudaoSinkEra / amortizeHours,
+        furnace ? '界外出口(功法进修 / 法宝炼化)未入模型 —— 读数待补' : undefined
+      ),
+      make('exp', expIncome, expSinkHour),
+      ...(furnace
+        ? [make('daoSource', furnace.potential, furnace.demand)]
+        : [])
     ]
   }
 }
