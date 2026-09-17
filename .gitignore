@@ -16,7 +16,10 @@ dist
 dist-ssr
 dist-electron
 pkg
-# docs/ 下手写设计文档应入库;只忽略未来的生成物
+# docs/ 默认不入库(本机审计文档,原规则);pplmx 的设计稿目录单独放行。
+# 合并 pplmx 时这里曾被整体放开,本机的 曲线审计.md / 审计规范.md 会被 git add -A 卷进去
+docs/*
+!docs/superpowers/
 docs/generated/
 *.local
 
