@@ -70,7 +70,8 @@
       "dist-electron/**/*",
       "dist/**/*",
       "public/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**"
     ],
     "directories": {
       "output": "pkg"

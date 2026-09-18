@@ -83,7 +83,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 【关键点】上传 zip 产物
+      # 两个附加产物,都从这一次构建里取,不另开作业:
+      # · 增量包 yunyin-<ver>-win-update.zip:只含 resources/app(dist / dist-electron / public /
+      #   package.json),约 4MB。已装过完整包的玩家解压到安装目录(与 云隐修仙录.exe 同级)覆盖
+      #   即可,不必再下 130MB 的运行时。前提是 Electron 运行时版本没变 —— 升 electron 依赖的
+      #   那一版,发布说明里要提醒玩家下完整包。
+      # · Web 包 yunyin-<ver>-web.zip:dist/ 的内容,解压即站点根,给自建站的人。
+      # bsdtar 是 Windows 自带的(System32\tar.exe),-a 按 .zip 后缀选格式。用 bash 是为了
+      # 与本地验证用的命令逐字相同。
+      - name: 打增量包与 Web 包
+        shell: bash
+        run: |
+          VER=$(bun -e "console.log(require('./package.json').version)")
+          TAR=/c/Windows/System32/tar.exe
+          "$TAR" -a -cf "pkg/yunyin-$VER-win-update.zip" -C pkg/win-unpacked resources/app
+          "$TAR" -a -cf "pkg/yunyin-$VER-web.zip" -C dist $(cd dist && ls -A)
+          ls -la pkg/*.zip
+
+      # 【关键点】上传 zip 产物(完整包 + 增量包 + Web 包)
       - name: 上传 Electron 安装包
         uses: actions/upload-artifact@v7
         with:

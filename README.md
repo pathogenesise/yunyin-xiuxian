@@ -95,7 +95,9 @@ bun run build:apk
 
 - **Web / PWA**：直接部署 `dist/`（或走下方 Docker 镜像），移动浏览器打开即玩，可「添加到主屏幕」；Service Worker 会缓存静态资源，**首次在线打开后，断网重开也能进游戏**（发版更新仍即时生效，不卡旧版本）。**iOS 上请务必「添加到主屏幕」**：Safari 会在网页七天没被打开后清掉它的本地数据（存档与离线缓存一起没），而已安装的 Web App 不受这条规则约束——游戏检测到这种情况会在主页提示一次，设置页里也常驻可查。
 - **Android**：CI 会把签好的 APK 作为 `android-apk` 产物上传；本地出包在 `android/app/build/outputs/apk/release/yunyin-<版本号>.apk`。把 APK 传到手机后点击安装（系统会提示允许安装未知来源应用，放行即可；覆盖安装需签名一致——自己构建的包与官方签名不同，需先卸载旧版）。
-- **Windows 桌面（Electron）**：`pkg/yunyin-<版本号>-win.zip`，解压后运行其中的 `云隐修仙录.exe`；杀毒软件若误报，是未签名 exe 的通病，可加入白名单。
+- **Windows 桌面（Electron）**：首次安装下 `yunyin-<版本号>-win.zip`（约 130 MB，含运行时），解压后运行其中的 `云隐修仙录.exe`；杀毒软件若误报，是未签名 exe 的通病，可加入白名单。
+  **已装过的玩家升级只需增量包** `yunyin-<版本号>-win-update.zip`（约 4 MB）：解压到安装目录（与 `云隐修仙录.exe` 同级）覆盖即可。若某版发布说明注明「Electron 运行时已升级」，则需重新下完整包。
+- **自建站**：`yunyin-<版本号>-web.zip` 就是 `dist/` 的内容，解压后整个目录扔给任意静态服务器即可（也可走下方 Docker 镜像）。
 
 推送到 `main` 会经 GitHub Actions 走同一道闸：类型检查、ESLint、单元测试全绿后才部署 Web/PWA 到 Pages、推送 Docker 镜像。
 
