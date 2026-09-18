@@ -1,0 +1,37 @@
+name: PR 校验
+
+# 外部贡献走 PR:这一道就是规则集里「合并前必须通过的状态检查」。
+# 与 deploy.yml 对 main 的闸门同一套(类型检查 + ESLint + 单测 + 构建),
+# 只是提前到合并之前 —— 红了就合不进去,而不是合进去之后 Pages 部署才红。
+on:
+  pull_request:
+    branches: [main]
+
+# 同一个 PR 连续推送时,只保留最新一次运行
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # 作业名就是规则集里引用的状态检查名,改名须同步改规则集
+    name: PR 校验
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: 安装 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: 安装依赖
+        run: bun install --frozen-lockfile
+      - name: 类型检查 + ESLint
+        run: bun run check
+      - name: 单元测试
+        run: bun run test
+      - name: 生产构建
+        run: bun run build
