@@ -5,12 +5,13 @@
  * 用法:
  *   bun run build
  *   bunx playwright install chromium  # playwright 已是 devDependency;浏览器缓存在 ~/.cache/ms-playwright
- *   bun scripts/layout-check.mjs      # 加 --shots 顺带存图到 /tmp/layout-shots
+ *   node scripts/layout-check.mjs     # 加 --shots 顺带存图到 /tmp/layout-shots
  *
- * 它同时在 CI 里跑(见 .github/workflows/deploy.yml 与 build.yml 的 ui-check job):
- * 每个 main 提交与每个发版 tag 都过这一关 —— 判据红则不发布。
+ * 只作本地工具,不在 CI 里跑(2026-09-18 起从 deploy.yml / build.yml 摘掉:整套要十来分钟,
+ * 且靠时机的判据在 runner 上时红时绿,曾连续挡住 Pages 部署与发版)。
+ * Windows 上请用 node 而不是 bun 启动:Bun 起不来 Chromium 的调试管道(进程能拉起、握手不完成)。
  * playwright 写在 devDependencies 里(锁版本):它没有 postinstall,bun install 只带
- * JS 本体;真正占地的浏览器二进制由上面那句按需下,CI 另给它做缓存。
+ * JS 本体;真正占地的浏览器二进制由上面那句按需下。
  *
  * 它做这些事:
  *   一 走完真实建号流程(同意隐私 → 命名 → 踏入仙途),拿到一份真存档;

@@ -53,13 +53,12 @@ captures/
 .idea/navEditor.xml
 
 # Keystore files
-# release.keystore 与历史里的口令自 2026-09-02 起已公开(fd3bc59),这是既成事实。
-# 注意:keystore 文件装的是**私钥**(口令加密),不是公开部分 —— 配上历史里的口令
-# 即可提取私钥,所以这把密钥应视为已泄露;换新密钥与否是产品决策,此处不改事实。
-# 签名口令绝不再进仓库:CI 由 GitHub Secrets 注入
-# KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD;本地出包临时 export 即可。
-# keystore.properties 不含口令,可随仓库分发,但禁止往里面加口令。
-# 本地若想放一份带口令的覆盖,请用 keystore.local.properties(见 build.gradle 的约定)。
+# 签名密钥(release.keystore)与口令(keystore.properties)随仓库分发 —— 仓库所有者的既定
+# 选择(2026-09-02 起),clone 下来即可出可安装的签名包,CI 不需要 Secret。
+# 代价要清楚:keystore 装的是口令加密的**私钥**,配上仓库里的口令任何人都能提取,
+# 所以这把密钥只提供「同一把钥匙签出」的一致性,不构成官方性与防伪。
+# 要换一把不进仓库的密钥:环境变量 KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD
+# 或下面这份不入库的覆盖文件可以盖掉 keystore.properties 里的口令(见 build.gradle)。
 keystore.local.properties
 # 本机密钥材料(合并 pplmx 时这条被误删:对方本地没有此文件,不知道它存在)
 /key

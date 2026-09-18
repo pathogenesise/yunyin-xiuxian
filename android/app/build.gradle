@@ -12,37 +12,37 @@ def versionParts = appVersionName.split('\\.')
 def versionPart = { int i -> i < versionParts.length ? versionParts[i].toInteger() : 0 }
 def appVersionCode = versionPart(0) * 10000 + versionPart(1) * 100 + versionPart(2)
 
-// 签名口令:优先走环境变量(CI 由 GitHub Secrets 注入 KEYSTORE_STORE_PASSWORD /
-// KEYSTORE_KEY_PASSWORD),回退到 keystore.properties。仓库内的 keystore.properties
-// 只存 storeFile/keyAlias,不含口令 —— 口令不入库,克隆者拿不到签名私钥口令。
-// 无口令时(本地未设环境变量):不配 release 签名,照常出包(不能安装)但不至于失败。
+// 签名按仓库内的 key 文件走:keystore.properties(storeFile / keyAlias / 口令)+ release.keystore
+// 随仓库分发,clone 下来直接就能出可安装的签名包,CI 不需要任何 Secret。
+// 这是仓库所有者的既定选择(2026-09-02 起)。
+// 环境变量(KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD)与不入库的 keystore.local.properties
+// 仍可覆盖文件里的口令 —— 想换一把不进仓库的密钥时用得上,平时不需要。
 def keystorePropsFile = rootProject.file('keystore.properties')
 def keystoreProps = new Properties()
 if (keystorePropsFile.exists()) {
     keystorePropsFile.withInputStream { keystoreProps.load(it) }
 }
-// 本地覆盖:不入库的 keystore.local.properties 可补口令与别名(见 android/.gitignore),
-// 供本地出包用,避免把口令提交进共享的 keystore.properties。
 def localPropsFile = rootProject.file('keystore.local.properties')
 def localProps = new Properties()
 if (localPropsFile.exists()) {
     localPropsFile.withInputStream { localProps.load(it) }
 }
-// 口令优先级:环境变量(CI Secrets) > 本地覆盖文件 > 共享属性文件。
+// 口令优先级:环境变量 > 本地覆盖文件 > 仓库内的 keystore.properties。
+// 空串按未设处理:CI 把没配的 Secret 注入成 "" 时,不能让它盖掉文件里的口令。
 def pick = { String key, String envName, props, local ->
     def v = System.getenv(envName)
-    if (v != null) return v
+    if (v != null && v.length() > 0) return v
     if (local != null && local[key]) return local[key].toString()
     if (props != null && props[key]) return props[key].toString()
     return null
 }
-def storePassword = pick('storePassword', 'KEYSTORE_STORE_PASSWORD', keystoreProps, localProps)
-def keyPassword = pick('keyPassword', 'KEYSTORE_KEY_PASSWORD', keystoreProps, localProps)
-// 哨兵:口令齐备才配签名;缺任何一位就直接跳过(出包但未签名)。
-// 不希望 CI 在某次构建里悄悄产出「没签名的 release」—— 无口令时显式打日志,一眼可查。
-def signingAvailable = storePassword != null && storePassword.length() > 0 && keyPassword != null && keyPassword.length() > 0 && keystorePropsFile.exists()
+def signStorePassword = pick('storePassword', 'KEYSTORE_STORE_PASSWORD', keystoreProps, localProps)
+def signKeyPassword = pick('keyPassword', 'KEYSTORE_KEY_PASSWORD', keystoreProps, localProps)
+// 口令齐备才配签名。凑不齐就直接失败,而不是悄悄产出「未签名 APK」——
+// 那种包手机装不上,却能一路绿到发布页。key 文件就在仓库里,凑不齐只能是文件坏了。
+def signingAvailable = signStorePassword != null && signStorePassword.length() > 0 && signKeyPassword != null && signKeyPassword.length() > 0 && keystorePropsFile.exists()
 if (!signingAvailable) {
-    println "WARNING: 未找到签名口令(KEYSTORE_STORE_PASSWORD/KEYSTORE_KEY_PASSWORD),本次构建产出未签名 APK"
+    throw new GradleException("签名口令缺失:检查 android/keystore.properties 的 storePassword / keyPassword(或环境变量 KEYSTORE_STORE_PASSWORD / KEYSTORE_KEY_PASSWORD)")
 }
 
 android {
@@ -53,9 +53,9 @@ android {
         release {
             if (signingAvailable) {
                 keyAlias keystoreProps['keyAlias']
-                keyPassword keyPassword
+                keyPassword signKeyPassword
                 storeFile rootProject.file(keystoreProps['storeFile'])
-                storePassword storePassword
+                storePassword signStorePassword
                 v1SigningEnabled true
                 v2SigningEnabled true
             }
