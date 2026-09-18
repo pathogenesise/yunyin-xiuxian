@@ -220,6 +220,13 @@ src/
 - **动效**：`rise-in` / `shimmer` / `pulse-ring` / `bar-grow` 等关键帧，`.stagger-in` 入场序列
 - **无障碍**：`prefers-reduced-motion` 全局禁用动画
 
+## 参与贡献
+
+- 从 `main` 拉分支改,改完开 Pull Request。PR 会自动跑「PR 校验」(类型检查 + ESLint + 单元测试 + 生产构建),**红了合不进去**——这是仓库规则集要求的合并前状态检查。
+- `main` 受规则集保护:不可删除、不可强推、只能经 PR 合入;`v*` 发版 tag 同样受保护,不可被创建 / 移动 / 删除。仓库管理员可绕过,用于直接推送与发版。
+- 从 fork 提 PR 前请先同步上游 `main`(fork 页面的 Sync fork),**不要重写 fork 的历史**——合并基一断,PR 就做不出来了。
+- 新账号 24 小时内暂不能评论 / 提 issue / 提 PR(仓库开了最低档的互动限制,挡一次性小号)。
+
 ## 交流
 
 - QQ 群：[920930589](https://qm.qq.com/q/2BVaTTwDkI)
