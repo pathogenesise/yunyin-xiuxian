@@ -125,7 +125,19 @@ const ROUTES = [
   '/celestial'
 ]
 
-const browser = await chromium.launch({ args: ['--allow-file-access-from-files', '--disable-web-security'] })
+/**
+ * 自检不许依赖公网。
+ *
+ * index.html 里挂着 `<script defer src="https://sdk.51.la/...">`(第三方统计)。`load` 事件
+ * 要等它下载完才触发,而 GitHub 的 runner 到这家 CDN 时通时堵:堵住时 `page.goto(..., load)`
+ * 就卡满 30 秒超时 —— 实测两次,一次在第一页(什么都还没跑),一次在第二十五件事的中途,
+ * 位置随机、没有任何判据失败,只有 `goto: Timeout 30000ms`。
+ * 让这个域名的 DNS 当场解析失败:脚本立刻 error、`load` 照常触发,统计脚本的运行时异常
+ * 本来就由下面 watchPageErrors 分流不计。自检从此不再随别人的 CDN 起伏。
+ */
+const browser = await chromium.launch({
+  args: ['--allow-file-access-from-files', '--disable-web-security', '--host-resolver-rules=MAP sdk.51.la ~NOTFOUND']
+})
 const failures = []
 let checked = 0
 
