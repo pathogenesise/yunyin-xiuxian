@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { WEATHERS, WORLD_WEATHERS, type WeatherDef } from '@/core/weather'
 import { formatPercent } from '@/utils/format'
 import { STAT_NAMES } from './statNames'
-import { weatherEffectText } from './weatherText'
+import { weatherEffectText, weatherTribulationLine } from './weatherText'
 import { modsText } from './statNames'
 import type { AnyStatKey } from '@/types'
 
@@ -40,6 +40,18 @@ describe('天时效果行与定义同源', () => {
   it('清和明示无加减,不把空白留给玩家猜', () => {
     const qinghe = WEATHERS.find(w => w.id === 'qinghe')!
     expect(weatherEffectText(qinghe)).toBe('今日无加减')
+  })
+
+  it('渡劫栏天时句:倍率从定义现算,清和不出句', () => {
+    const qinghe = WEATHERS.find(w => w.id === 'qinghe')!
+    expect(weatherTribulationLine(qinghe)).toBeNull()
+    const leiming = WEATHERS.find(w => w.id === 'leiming')!
+    const line = weatherTribulationLine(leiming)!
+    expect(line).toContain('雷鸣')
+    expect(line).toContain(formatPercent(leiming.tribulationMult - 1))
+    expect(line).toContain('引劫同轨')
+    const xianjie = WORLD_WEATHERS.immortal.find(w => w.id === 'xianjie')!
+    expect(weatherTribulationLine(xianjie)).toContain(formatPercent(xianjie.tribulationMult - 1))
   })
 
   it('风味句不再承诺数据里没有的属系', () => {

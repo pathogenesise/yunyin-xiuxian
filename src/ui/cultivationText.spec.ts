@@ -47,6 +47,10 @@ describe('修行页与提示同源', () => {
     expect(view).toContain('prepPillShortToast()')
     expect(view).not.toContain('灵气不足')
     expect(view).not.toContain('灵石不足')
+    expect(view, '天威区间须乘入今日 tribulationMult,与劫势/引劫同源').toContain(
+      'tribulationWaveSpan(tribPlan.value.def, tribTargetMajor.value, tribWeather.value.tribulationMult)'
+    )
+    expect(view).toContain('weatherTribulationLine')
     const offline = readFileSync(new URL('../core/offline.ts', import.meta.url), 'utf8')
     expect(offline).toContain('breakthroughReadyNote(')
     expect(offline).toContain('atMaxRealm')

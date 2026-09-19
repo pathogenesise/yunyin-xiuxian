@@ -186,4 +186,15 @@ describe('⑦ 波形读数(道数 × 逐道加重)', () => {
     expect(high.waves).toBeGreaterThan(low.waves)
     expect(high.first).toBeGreaterThan(low.first)
   })
+
+  it('天时倍率按比例抬高每一道,道数不变', () => {
+    const def = tribulationDef('thunder')
+    const clear = tribulationWaveSpan(def, 5, 1)
+    const storm = tribulationWaveSpan(def, 5, 1.08)
+    expect(storm.waves).toBe(clear.waves)
+    expect(storm.first).toBeCloseTo(clear.first * 1.08, 9)
+    expect(storm.last).toBeCloseTo(clear.last * 1.08, 9)
+    expect(storm.total).toBeCloseTo(clear.total * 1.08, 9)
+    expect(storm.max).toBeCloseTo(clear.max * 1.08, 9)
+  })
 })
