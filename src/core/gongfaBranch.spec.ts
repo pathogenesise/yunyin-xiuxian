@@ -185,4 +185,14 @@ describe('悟道分支平衡审计', () => {
       }
     }
   })
+
+  it('悟道分支风味对上已经改名的机制', () => {
+    for (const br of GONGFA_BRANCHES) {
+      expect(br.desc, br.id).not.toMatch(/出手愈快|出手更疾/)
+      expect(br.desc, br.id).not.toMatch(/关隘自消|天数可移/)
+      if (br.mods.eventLuck) expect(br.desc, br.id).not.toContain('机缘自来')
+      if (!br.mods.tribulationResist) expect(br.name, br.id).not.toBe('应劫')
+      if (br.mods.explorationSpeed) expect(br.desc, br.id).not.toContain('福地自现')
+    }
+  })
 })

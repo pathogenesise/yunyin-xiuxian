@@ -42,13 +42,13 @@ export interface PalaceDef {
 
 /** 十二宫 —— 依紫微斗数通行宫序(命宫起,逆布十二宫) */
 export const PALACES: PalaceDef[] = [
-  { id: 'ming', name: '命宫', domain: '一身之根本,性之所出', channel: '修行', use: '修行速度与根基' },
+  { id: 'ming', name: '命宫', domain: '一身之根本,性之所出', channel: '修行', use: '修炼速度与根基' },
   { id: 'xiongdi', name: '兄弟宫', domain: '同气与助力', channel: '同道', use: '师承与道侣之助' },
   { id: 'fuqi', name: '夫妻宫', domain: '相与与契合', channel: '因缘', use: '道侣缘分之厚薄' },
   { id: 'zinv', name: '子女宫', domain: '生生与所养', channel: '灵兽', use: '灵兽与洞府所养' },
   { id: 'caibo', name: '财帛宫', domain: '财之所聚', channel: '财货', use: '灵石与掉落之丰' },
   { id: 'jie', name: '疾厄宫', domain: '身之强弱与所忌', channel: '道躯', use: '气血与抗劫' },
-  { id: 'qianyi', name: '迁移宫', domain: '行止与远游', channel: '行旅', use: '历练之速' },
+  { id: 'qianyi', name: '迁移宫', domain: '行止与远游', channel: '行旅', use: '行止远游之象' },
   { id: 'jiaoyou', name: '交友宫', domain: '朋辈与部从', channel: '人脉', use: '际遇与机缘之数' },
   { id: 'guanlu', name: '官禄宫', domain: '功业与名位', channel: '征伐', use: '战阵攻伐之利' },
   { id: 'tianzhai', name: '田宅宫', domain: '所居与所积', channel: '洞府', use: '洞府产出与积蓄' },

@@ -11,7 +11,7 @@ describe('signedPercent', () => {
   })
 
   it('luck 主要抬装备成色,小进阶只折入此数的 5%', () => {
-    expect(modsText({ luck: 0.1 })).toBe('气运 +10%(主要抬装备成色;小进阶另吃此数的 5%)')
+    expect(modsText({ luck: 0.1 })).toBe('气运 +10%(主器物成色;小进阶另借此数半成)')
     const gen = readFileSync(resolve(__dirname, '../core/equipGen.ts'), 'utf8')
     expect(gen).toContain('luckBoost')
     const bt = readFileSync(resolve(__dirname, '../core/breakthrough.ts'), 'utf8')
@@ -21,11 +21,11 @@ describe('signedPercent', () => {
   })
 
   it('进阶成功率词条自带小进阶边界,称号丹药天时共用', () => {
-    expect(modsText({ breakthroughRate: 0.08 })).toBe('进阶成功率 +8%(小进阶;大关天劫不吃)')
+    expect(modsText({ breakthroughRate: 0.08 })).toBe('进阶成功率 +8%(只入小进阶;大关天劫不与)')
   })
 
   it('explorationSpeed 只加密同程遭遇,不说成缩短行程', () => {
-    expect(modsText({ explorationSpeed: 0.3 })).toBe('历练遇敌 +30%(同程更多遭遇;不缩短行程)')
+    expect(modsText({ explorationSpeed: 0.3 })).toBe('历练遇敌 +30%(同程妖踪更密;行程不减)')
     expect(modsText({ explorationSpeed: 0.3 })).not.toContain('历练速度')
     const explore = readFileSync(resolve(__dirname, '../core/exploration.ts'), 'utf8')
     expect(explore).toContain("modOf(player.finalStats.mods, 'explorationSpeed')")
@@ -33,7 +33,7 @@ describe('signedPercent', () => {
   })
 
   it('alchemyYield 只报双枚成丹概率,不说成产量翻倍', () => {
-    expect(modsText({ alchemyYield: 0.1 })).toBe('双枚成丹 +10%(多一枚的概率;与手艺合计顶 80%)')
+    expect(modsText({ alchemyYield: 0.1 })).toBe('双枚成丹 +10%(再得一枚之机;与手艺合计不过八成)')
     expect(modsText({ alchemyYield: 0.1 })).not.toContain('炼丹产出')
     const craft = readFileSync(resolve(__dirname, '../core/pillService.ts'), 'utf8')
     expect(craft).toContain("modOf(player.finalStats.mods, 'alchemyYield')")
@@ -42,7 +42,7 @@ describe('signedPercent', () => {
   })
 
   it('breakRefund 只报失败少损修为,不说成突破返还', () => {
-    expect(modsText({ breakRefund: 0.1 })).toBe('失败返还修为 +10%(失败掉的那份;不退灵气)')
+    expect(modsText({ breakRefund: 0.1 })).toBe('失败返还修为 +10%(只还败时所损修为;灵气不退)')
     expect(modsText({ breakRefund: 0.1 })).not.toContain('突破返还')
     const bt = readFileSync(resolve(__dirname, '../core/breakthrough.ts'), 'utf8')
     expect(bt).toContain("modOf(mods, 'breakRefund')")
@@ -51,7 +51,7 @@ describe('signedPercent', () => {
   })
 
   it('dropRate 只报装备出现率,不说成一切战利都涨', () => {
-    expect(modsText({ dropRate: 0.08 })).toBe('装备掉落率 +8%(只抬装备出现;灵石草矿不吃)')
+    expect(modsText({ dropRate: 0.08 })).toBe('装备掉落率 +8%(只增装备现世;灵石草矿不与)')
     expect(modsText({ dropRate: 0.08 })).not.toBe('掉落率 +8%')
     const loot = readFileSync(resolve(__dirname, '../core/loot.ts'), 'utf8')
     expect(loot).toContain("modOf(mods, 'dropRate')")
@@ -60,7 +60,7 @@ describe('signedPercent', () => {
   })
 
   it('spiritStoneGain 只报历练战胜灵石,不说成一切入账都涨', () => {
-    expect(modsText({ spiritStoneGain: 0.12 })).toBe('战利灵石 +12%(历练战胜所得;洞府产出不吃)')
+    expect(modsText({ spiritStoneGain: 0.12 })).toBe('战利灵石 +12%(只入历练战胜之石;洞府所产不与)')
     expect(modsText({ spiritStoneGain: 0.12 })).not.toContain('灵石获取')
     const loot = readFileSync(resolve(__dirname, '../core/loot.ts'), 'utf8')
     expect(loot).toContain("modOf(mods, 'spiritStoneGain')")
@@ -69,7 +69,7 @@ describe('signedPercent', () => {
   })
 
   it('forgeDiscount 只报装备强化花费,不说成整张炼器台都打折', () => {
-    expect(modsText({ forgeDiscount: 0.1 })).toBe('强化减耗 +10%(装备强化花费;法宝祭炼不吃)')
+    expect(modsText({ forgeDiscount: 0.1 })).toBe('强化减耗 +10%(只省装备强化之耗;法宝祭炼不与)')
     expect(modsText({ forgeDiscount: 0.1 })).not.toContain('炼器减耗')
     const forge = readFileSync(resolve(__dirname, '../core/forge.ts'), 'utf8')
     expect(forge).toContain("modOf(player.finalStats.mods, 'forgeDiscount')")
@@ -78,7 +78,7 @@ describe('signedPercent', () => {
   })
 
   it('eventLuck 只报历练途中掷点,不说成一切际遇都涨', () => {
-    expect(modsText({ eventLuck: 0.15 })).toBe('历练际遇 +15%(只抬历练途中掷点;洞府巡游不吃)')
+    expect(modsText({ eventLuck: 0.15 })).toBe('历练际遇 +15%(只增历练途中际遇;洞府巡游不与)')
     expect(modsText({ eventLuck: 0.15 })).not.toContain('际遇概率')
     const explore = readFileSync(resolve(__dirname, '../core/exploration.ts'), 'utf8')
     expect(explore).toContain("modOf(mods, 'eventLuck')")
@@ -88,7 +88,7 @@ describe('signedPercent', () => {
   })
 
   it('doubleDropRate 报当场整包翻倍,不说成只多一件装备', () => {
-    expect(modsText({ doubleDropRate: 0.1 })).toBe('双倍战利 +10%(当场灵石修为材料装备一并翻)')
+    expect(modsText({ doubleDropRate: 0.1 })).toBe('双倍战利 +10%(当场灵石、修为、材料与装备一并翻倍)')
     const loot = readFileSync(resolve(__dirname, '../core/loot.ts'), 'utf8')
     expect(loot).toContain("modOf(mods, 'doubleDropRate')")
     expect(loot).toContain('doubled')
@@ -96,7 +96,7 @@ describe('signedPercent', () => {
   })
 
   it('expGain 只报历练战胜修为,不说成静修也涨', () => {
-    expect(modsText({ expGain: 0.3 })).toBe('战斗修为 +30%(历练战胜所得;静修挂机不吃)')
+    expect(modsText({ expGain: 0.3 })).toBe('战斗修为 +30%(只入历练战胜之修为;静修不与)')
     const loot = readFileSync(resolve(__dirname, '../core/loot.ts'), 'utf8')
     expect(loot).toContain("modOf(mods, 'expGain')")
     const formulas = readFileSync(resolve(__dirname, '../core/formulas.ts'), 'utf8')
@@ -104,21 +104,21 @@ describe('signedPercent', () => {
   })
 
   it('先手判定是阈值开关,不是出手变快', () => {
-    expect(modsText({ speed: 0.06 })).toBe('先手判定 +6%(1+此项≥对手速度才抢先)')
+    expect(modsText({ speed: 0.06 })).toBe('先手判定 +6%(须不弱于对手,方得抢先)')
     const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
     expect(combat).toContain('1 + modOf(pEff.mods, \'speed\')')
     expect(combat).toContain('pSpeed >= eSpeed')
   })
 
   it('首回合伤害只乘第一回合,不改先手判定', () => {
-    expect(modsText({ firstStrike: 0.2 })).toBe('首回合伤害 +20%(只乘第一回合;不改谁先出手)')
+    expect(modsText({ firstStrike: 0.2 })).toBe('首回合伤害 +20%(只重开局一合;不改谁先出手)')
     const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
     expect(combat).toContain("modOf(aMods, 'firstStrike')")
     expect(combat).toContain('round === 1')
   })
 
   it('御劫只改天劫承伤,不改小进阶骰子', () => {
-    expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(天劫承伤;不改小进阶骰子)')
+    expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(只减天劫之伤;小进阶之骰不改)')
     const trib = readFileSync(resolve(__dirname, '../core/tribulationDecision.ts'), 'utf8')
     expect(trib).toContain("modOf(mods, 'tribulationResist')")
     const bt = readFileSync(resolve(__dirname, '../core/breakthrough.ts'), 'utf8')
