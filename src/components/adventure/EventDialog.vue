@@ -38,7 +38,9 @@
           @click="choose(idx)"
         >
           {{ choice.label }}
-          <span v-if="choice.hint" class="ml-2 text-[11px] font-normal text-ink-faint">{{ choice.hint }}</span>
+          <span v-if="choiceHintText(choice, tier)" class="ml-2 text-[11px] font-normal text-ink-faint">
+            {{ choiceHintText(choice, tier) }}
+          </span>
         </button>
       </div>
     </template>
@@ -69,6 +71,7 @@
   import { aftermathText, shouldTriggerAftermath } from '@/core/worldMemory'
   import { echoFor, rollEcho, ECHO_CHANCE } from '@/core/fortuneEcho'
   import { eventTierDef, eventTierOf, tierOddsText, type EventTier } from '@/core/eventTier'
+  import { choiceHintText } from '@/ui/eventText'
   import BaseModal from '@/components/common/BaseModal.vue'
 
   const adventure = useAdventureStore()
