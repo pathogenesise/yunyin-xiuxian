@@ -5,13 +5,15 @@
  * 不该有的(X):返还超过实际投入 —— 那会变成「强化再拆」的套利。
  */
 import { beforeEach, describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
 import type { EquipmentInstance, QualityId } from '@/types'
 import { DECOMPOSE_DUST, DECOMPOSE_REFUND_RATE } from '@/data/constants'
 import { qualityDef } from '@/data/qualities'
 import { cmp, gn, toNum } from '@/utils/gnum'
 import { upgradeCost } from './formulas'
-import { enhanceInvested, salvageOf } from './salvage'
+import { enhanceInvested, salvageOf, salvageRefundPhrase } from './salvage'
 import { decomposeByRanks, decomposeEquipment, upgradeEquipment } from './forge'
 import { useInventoryStore } from '@/stores/inventory'
 import { useResourcesStore } from '@/stores/resources'
@@ -134,5 +136,17 @@ describe('分解返还 · 强化投入的八成随件退回', () => {
     // 逐件弹提示只会互相顶掉(提示窗只留 5 条),批量只报一条总账
     expect(ui.toasts.filter(t => /分解得器灵尘/.test(t.text))).toHaveLength(0)
     expect(ui.toasts.some(t => /已分解 3 件装备,得器灵尘×\d+/.test(t.text))).toBe(true)
+  })
+})
+
+describe('分解返还文案', () => {
+  it('八成两个字跟 DECOMPOSE_REFUND_RATE 走,详情与提示都调用同一句', () => {
+    expect(salvageRefundPhrase()).toContain(`${Math.round(DECOMPOSE_REFUND_RATE * 100)}%`)
+    const dialog = readFileSync(resolve(__dirname, '../components/equipment/EquipmentDetailDialog.vue'), 'utf8')
+    const forge = readFileSync(resolve(__dirname, './forge.ts'), 'utf8')
+    expect(dialog).toContain('salvageRefundPhrase()')
+    expect(forge).toContain('salvageRefundPhrase()')
+    expect(dialog).not.toContain('含强化八成')
+    expect(forge).not.toContain('含强化八成')
   })
 })

@@ -9,7 +9,7 @@ import { EQUIP_MAX_LEVEL_BASE } from '@/data/constants'
 import { stoneByTier, upgradeCost } from './formulas'
 import { add, gnZero, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
-import { salvageOf } from './salvage'
+import { salvageOf, salvageRefundPhrase } from './salvage'
 import { modOf } from './statsCalc'
 import { track } from './progress'
 import { usePlayerStore } from '@/stores/player'
@@ -78,7 +78,7 @@ export function decomposeEquipment(uid: string, opts: { quiet?: boolean } = {}):
     ui.toast(
       isZero(gain.stone)
         ? `分解得器灵尘×${gain.dust}`
-        : `分解得器灵尘×${gain.dust} · 退灵石 ${formatGN(gain.stone)}(含强化八成)`,
+        : `分解得器灵尘×${gain.dust} · 退灵石 ${formatGN(gain.stone)}(${salvageRefundPhrase()})`,
       'info'
     )
   }

@@ -15,6 +15,12 @@ import { DECOMPOSE_DUST, DECOMPOSE_REFUND_RATE } from '@/data/constants'
 import { qualityDef } from '@/data/qualities'
 import { add, gn, gnZero, mulN } from '@/utils/gnum'
 import { upgradeCost } from './formulas'
+import { formatPercent } from '@/utils/format'
+
+/** Player-facing refund rate. Tracks DECOMPOSE_REFUND_RATE, not a handwritten 八成. */
+export function salvageRefundPhrase(): string {
+  return `含强化 ${formatPercent(DECOMPOSE_REFUND_RATE)}`
+}
 
 export interface Salvage {
   dust: number

@@ -128,9 +128,10 @@
           <span>强化 +{{ inst.level + 1 }} / 上限 {{ equipLevelCap() }}</span>
           <span class="tabular">器灵尘×{{ upCost.dust }} · 灵石 {{ formatGN(upCost.stone) }}</span>
         </p>
+        <p class="mt-1 text-[11px] tabular text-azure">{{ equipNextLevelText(inst.level) }}</p>
       </template>
       <p v-if="salvage" class="mt-1 flex items-center justify-between text-[11px] text-ink-ghost">
-        <span>分解返还{{ inst.level > 0 ? '(含强化八成)' : '' }}</span>
+        <span>分解返还{{ inst.level > 0 ? `(${salvageRefundPhrase()})` : '' }}</span>
         <span class="tabular">
           器灵尘×{{ salvage.dust }}
           <template v-if="!isZero(salvage.stone)"> · 灵石 {{ formatGN(salvage.stone) }}</template>
@@ -226,7 +227,7 @@
   import { worldNameOfTier } from '@/core/formulas'
   import { resolveEquipStats } from '@/core/equipGen'
   import { decomposeEquipment, equipLevelCap, equipUpgradeCost, upgradeEquipment } from '@/core/forge'
-  import { salvageOf } from '@/core/salvage'
+  import { salvageOf, salvageRefundPhrase } from '@/core/salvage'
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
@@ -237,6 +238,7 @@
   import { isZero, sub } from '@/utils/gnum'
   import type { AnyStatKey, GNum } from '@/types'
   import { AFFIX_RARITY_META, STAT_NAMES } from '@/ui/statNames'
+  import { equipNextLevelText } from '@/ui/equipText'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
