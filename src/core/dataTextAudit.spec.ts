@@ -454,6 +454,16 @@ describe('术语一致性 · 用户可见文本', () => {
     expect(hits, `应改成「战利灵石 / 强化减耗 / 历练际遇」:\n${hits.join('\n')}`).toEqual([])
   })
 
+  it('「冲击境界」「突破稳当」退休:进阶成功率不管大关', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,12}(?:冲击境界|突破稳当|突破前服用).{0,12}/g)) {
+        hits.push(`${file} 「${m[0]}」`)
+      }
+    }
+    expect(hits, `应写成小进阶,别承诺破大关:\n${hits.join('\n')}`).toEqual([])
+  })
+
   it('先手判定与首回合伤害各留一名,不许互相借名', () => {
     const all = userText().map(u => u.text).join('\n')
     expect(all, '先手判定(speed)应当出现在用户可见文本里').toContain('先手判定')

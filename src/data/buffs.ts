@@ -35,7 +35,7 @@ export const BUFFS: BuffDef[] = [
     '心魔缠身',
     'injury',
     600,
-    '心魔滋生,修炼速度降低 30%,进阶成功率降低 10%',
+    '心魔滋生,修炼速度降低 30%,进阶成功率降低 10%(只伤小进阶)',
     { cultivationSpeed: -0.3, breakthroughRate: -0.1 },
     'ghost'
   ),
@@ -46,7 +46,7 @@ export const BUFFS: BuffDef[] = [
   b('enlighten_cult_strong', '道心通明', 'blessing', 300, '道心澄澈,修炼速度提升 35%', { cultivationSpeed: 0.35 }, 'sun'),
   b('enlighten_dmg', '锤炼筋骨', 'blessing', 600, '筋骨如钢,战斗伤害提升 15%', { damageBonus: 0.15 }, 'sword'),
   b('enlighten_def', '凝气护体', 'blessing', 600, '真气护体,防御提升 12%', { defensePct: 0.12 }, 'shield'),
-  b('enlighten_bt', '悟透瓶颈', 'blessing', 1800, '瓶颈松动,进阶成功率提升 8%', { breakthroughRate: 0.08 }, 'zap'),
+  b('enlighten_bt', '悟透瓶颈', 'blessing', 1800, '瓶颈松动,进阶成功率提升 8%(大关天劫不吃此益)', { breakthroughRate: 0.08 }, 'zap'),
   b('enlighten_qi', '吐纳有序', 'blessing', 600, '气息绵长,灵气回复提升 25%', { qiRegen: 0.25 }, 'wind'),
   // ---- Phase 28 洞府巡游奖励 buff(修复前是纯空转:addBuff 查无此定义静默返回) ----
   b('cave_furnace_cult', '药气入体', 'blessing', 600, '吸纳丹炉药气,修炼速度提升 20%', { cultivationSpeed: 0.2 }, 'flame'),
@@ -60,7 +60,7 @@ export const BUFFS: BuffDef[] = [
   // ---- 仙界及以上丹药增益(每 buff 仅一味丹产出,见 pillValue 法则 C) ----
   b('buff_xianli', '仙力加身', 'pill', 1200, '仙力贯体,攻击提升 35%,暴击伤害提升 30%', { attackPct: 0.35, critDamage: 0.3 }, 'sword'),
   b('buff_shenwei', '神威临世', 'pill', 1200, '神威加身,造成伤害提升 25%,受伤降低 12%', { damageBonus: 0.25, damageReduction: 0.12 }, 'crown'),
-  b('buff_hundun', '本源归一', 'pill', 1800, '混沌本源入体,修炼速度提升 80%,进阶成功率提升 10%', {
+  b('buff_hundun', '本源归一', 'pill', 1800, '混沌本源入体,修炼速度提升 80%,进阶成功率提升 10%(大关天劫不吃此益)', {
     cultivationSpeed: 0.8,
     breakthroughRate: 0.1
   }, 'sparkles')
