@@ -3,11 +3,18 @@
  */
 import type { AnyStatKey, StatMods } from '@/types'
 import { artifactDef } from '@/data/artifacts'
+import { buffDef } from '@/data/buffs'
+import { equipmentTemplate } from '@/data/equipment'
 import { gongfaDef } from '@/data/gongfa'
+import { gongfaBranchDef } from '@/data/gongfaBranches'
+import { mentorDef } from '@/data/mentors'
+import { petDef } from '@/data/pets'
 import { talentDef } from '@/data/talents'
+import { titleDef } from '@/data/titles'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useInventoryStore } from '@/stores/inventory'
 import { usePlayerStore } from '@/stores/player'
+import { resolveEquipStats } from './equipGen'
 import { modOf } from './statsCalc'
 
 export interface BuildStyleDef {
@@ -95,7 +102,13 @@ export function detectBuild(mods: StatMods): BuildDetection | null {
   }
 }
 
-/** 列出当前构筑中贡献了核心词条的来源(功法/法宝/天赋名) */
+/**
+ * 列出当前构筑里真正带着核心词条的来路。
+ *
+ * 识别读的是 finalStats.mods,来路却曾只扫功法/法宝/天赋——
+ * 一身护符堆出来的罡盾,面板上「成路于」是空的。
+ * 装备按实算词条(固有 + 随机),与 detectBuild 吃到的是同一份。
+ */
 export function buildSources(style: BuildStyleDef): string[] {
   const cultivation = useCultivationStore()
   const inventory = useInventoryStore()
@@ -105,7 +118,12 @@ export function buildSources(style: BuildStyleDef): string[] {
 
   const hasCore = (mods: StatMods | undefined): boolean => {
     if (!mods) return false
-    return Object.keys(mods).some(k => coreKeys.has(k))
+    return Object.keys(mods).some(k => coreKeys.has(k) && (mods[k as AnyStatKey] ?? 0) !== 0)
+  }
+
+  for (const it of inventory.equippedItems) {
+    if (!hasCore(resolveEquipStats(it).mods)) continue
+    names.push(equipmentTemplate(it.templateId)?.name ?? '法器')
   }
 
   const equippedGongfa = [cultivation.mainGongfa, ...cultivation.subGongfa].filter((x): x is string => !!x)
@@ -113,13 +131,37 @@ export function buildSources(style: BuildStyleDef): string[] {
     const def = gongfaDef(id)
     if (def && (hasCore(def.baseMods) || hasCore(def.perLevelMods))) names.push(`《${def.name}》`)
   }
+  // 悟道分支并进 gongfaMods,不看是否仍在主修位
+  for (const [gid, bid] of Object.entries(cultivation.gongfaBranch)) {
+    const def = gongfaBranchDef(bid)
+    if (def?.gongfaId === gid && hasCore(def.mods)) {
+      const book = gongfaDef(gid)?.name ?? gid
+      names.push(`《${book}》·${def.name}`)
+    }
+  }
   for (const art of inventory.currentArtifacts) {
     const def = artifactDef(art.defId)
     if (def && hasCore(def.passive)) names.push(`「${def.name}」`)
   }
+  for (const b of cultivation.buffs) {
+    const def = buffDef(b.defId)
+    if (def && hasCore(def.mods)) names.push(`丹效·${def.name}`)
+  }
   for (const id of player.reincarnation.talents) {
     const def = talentDef(id)
     if (def && hasCore(def.mods)) names.push(`天赋·${def.name}`)
+  }
+  if (player.titleId) {
+    const def = titleDef(player.titleId)
+    if (def && hasCore(def.mods)) names.push(`称号·${def.name}`)
+  }
+  if (player.mentor) {
+    const def = mentorDef(player.mentor)
+    if (def && hasCore(def.mods)) names.push(`师承·${def.name}`)
+  }
+  if (player.petId) {
+    const def = petDef(player.petId)
+    if (def && hasCore(def.mods)) names.push(`灵兽·${def.name}`)
   }
   return names
 }
