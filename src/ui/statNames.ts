@@ -55,7 +55,11 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
    */
   dropRate: '装备掉落率',
   expGain: '战斗修为',
-  alchemyYield: '炼丹产出',
+  /**
+   * pillService adds this to craftability.bonusChance for a second pill,
+   * then caps the roll at 0.8. It is not a 10% larger batch.
+   */
+  alchemyYield: '双枚成丹',
   forgeDiscount: '炼器减耗',
   qiCapPct: '灵气上限',
   beastPct: '灵兽效果',
@@ -110,6 +114,7 @@ export function modsText(mods: StatMods): string {
       // so titles, pills, weather, and talent chips cannot over-promise tribulation.
       if (k === 'breakthroughRate') return `${line}(小进阶;大关天劫不吃)`
       if (k === 'breakRefund') return `${line}(失败掉的那份;不退灵气)`
+      if (k === 'alchemyYield') return `${line}(多一枚的概率;与手艺合计顶 80%)`
       return line
     })
     .join(' · ')

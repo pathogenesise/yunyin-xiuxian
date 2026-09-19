@@ -82,7 +82,7 @@ const VIA_RESOURCE: readonly { key: AnyStatKey; via: string }[] = [
   { key: 'doubleDropRate', via: '双倍掉落 → 装备 → 战力' },
   { key: 'eventLuck', via: '事件运 → 际遇收益 → 资源 → 战力' },
   { key: 'spiritStoneGain', via: '灵石 → 灵脉/建筑/强化 → 速度与战力' },
-  { key: 'alchemyYield', via: '丹药产出 → 属性与修为' },
+  { key: 'alchemyYield', via: '双枚成丹 → 丹药 → 属性与修为' },
   { key: 'forgeDiscount', via: '强化省耗 → 同等灵石换更多战力' },
   { key: 'breakRefund', via: '失败返还修为 → 少掉修为 → 重修耗时' },
   { key: 'explorationSpeed', via: '历练节奏 → 单位时间收益' }

@@ -14,6 +14,15 @@ describe('signedPercent', () => {
     expect(modsText({ breakthroughRate: 0.08 })).toBe('进阶成功率 +8%(小进阶;大关天劫不吃)')
   })
 
+  it('alchemyYield 只报双枚成丹概率,不说成产量翻倍', () => {
+    expect(modsText({ alchemyYield: 0.1 })).toBe('双枚成丹 +10%(多一枚的概率;与手艺合计顶 80%)')
+    expect(modsText({ alchemyYield: 0.1 })).not.toContain('炼丹产出')
+    const craft = readFileSync(resolve(__dirname, '../core/pillService.ts'), 'utf8')
+    expect(craft).toContain("modOf(player.finalStats.mods, 'alchemyYield')")
+    expect(craft).toContain('bonusChance + yieldMod')
+    expect(craft).toContain('Math.min(0.8')
+  })
+
   it('breakRefund 只报失败少损修为,不说成突破返还', () => {
     expect(modsText({ breakRefund: 0.1 })).toBe('失败返还修为 +10%(失败掉的那份;不退灵气)')
     expect(modsText({ breakRefund: 0.1 })).not.toContain('突破返还')
