@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { CAVE_EVENT_POOL } from '@/data/earlyGame'
 import { buffDef } from '@/data/buffs'
+import type { CaveEvent } from '@/types'
 import { modsText } from './statNames'
 import { formatChoiceSpan } from '@/utils/format'
 import { caveOptionText } from './caveText'
 import { readFileSync } from 'node:fs'
 
-const options = Object.values(CAVE_EVENT_POOL).flatMap(list => list.flatMap(ev => ev.options))
+type CaveOption = CaveEvent['options'][number]
+
+const options: CaveOption[] = (Object.values(CAVE_EVENT_POOL) as { options: CaveOption[] }[][]).flatMap(list =>
+  list.flatMap(ev => ev.options)
+)
 
 describe('洞府巡游选项文案与发放同源', () => {
   it('即时奖励写出种类和数量,零值不假装有收获', () => {

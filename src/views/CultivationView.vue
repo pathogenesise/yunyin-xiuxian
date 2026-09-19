@@ -447,7 +447,7 @@
     const mods = player.finalStats.mods
     const stat = currentStatGuard()
     const def = tribPlan.value?.def
-    const relief = def ? currentTribulationRelief(def.kind) : undefined
+    const relief = def ? currentTribulationRelief(def.id) : undefined
     // Same cap and same fold as waveDamage: reduction 0.6, resist 0.8, linggen reductionToResist.
     const reduction = Math.min(0.6, modOf(mods, 'damageReduction'))
     return {
