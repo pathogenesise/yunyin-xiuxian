@@ -86,12 +86,18 @@ export function artifactMetaText(a: ArtifactDef): string {
  */
 export function gongfaFuncText(g: GongfaDef): string {
   const lines = [`圆满(${g.maxLevel} 层)可得:${modsText(gongfaModsAt(g.id, g.maxLevel))}`]
-  if (g.skill) {
-    lines.push(
-      `附带神通「${g.skill.name}」:出手时 ${Math.round(g.skill.rate * 100)}% 几率,${Math.round(g.skill.mult * 100)}% 威力`
-    )
-  }
+  const skill = gongfaSkillLine(g.skill)
+  if (skill) lines.push(skill)
   return lines.join('\n')
+}
+
+/**
+ * 神通只从主修进战斗(playerSnap 只带 mainSkill)。
+ * 几率与威力从功法表现算;未设主修则这一式不出手。
+ */
+export function gongfaSkillLine(skill: GongfaDef['skill'] | undefined): string {
+  if (!skill) return ''
+  return `附带神通「${skill.name}」:出手 ${formatPercent(skill.rate)} 几率,${formatPercent(skill.mult)} 威力。须设为主修,战斗只出这一式`
 }
 
 /** 功法的出处一行:类型 · 品质 · 属性 · 从哪一境起可参 */
