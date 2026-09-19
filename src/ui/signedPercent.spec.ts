@@ -141,6 +141,22 @@ describe('signedPercent', () => {
     expect(combat).toContain('SHIELD_CAP_RATIO')
   })
 
+  it('破甲不是真伤,连击反击都是另起一击', () => {
+    expect(modsText({ armorPen: 0.1 })).toContain('不是真伤')
+    expect(modsText({ comboRate: 0.1 })).toContain('另起一击')
+    expect(modsText({ comboDamage: 0.3 })).toContain('追击')
+    expect(modsText({ counterRate: 0.12 })).toContain('受击')
+    expect(modsText({ counterDamage: 0.4 })).toContain('反击')
+    expect(modsText({ stunRate: 0.06 })).toContain('一合')
+    expect(modsText({ lifesteal: 0.05 })).toContain('造成之伤')
+    expect(modsText({ regenPerRound: 0.02 })).toContain('已满则无')
+    expect(modsText({ overhealShield: 0.4 })).toContain('溢出')
+    const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
+    expect(combat).toContain('1 - armorPen')
+    expect(combat).toContain("modOf(aMods, 'comboRate')")
+    expect(combat).toContain("modOf(tMods, 'counterRate')")
+  })
+
   it('御劫只改天劫承伤,不改小进阶骰子', () => {
     expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(只减天劫之伤;小进阶之骰不改)')
     const trib = readFileSync(resolve(__dirname, '../core/tribulationDecision.ts'), 'utf8')
