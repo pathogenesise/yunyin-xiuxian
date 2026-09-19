@@ -348,6 +348,8 @@ describe('敌人认知的逐层揭示(describeEnemy)', () => {
     const v = describeEnemy(boss, 2)
     expect(v.skills.length).toBe(boss.skills.length)
     expect(v.skills.every(s => s.note.length > 0)).toBe(true)
+    expect(v.skills[0]!.note).toContain('30%')
+    expect(v.skills[0]!.note).toContain('180%')
     expect(v.phases).toEqual([])
     expect(v.archetype).toBeNull()
     expect(v.hint).not.toBeNull()

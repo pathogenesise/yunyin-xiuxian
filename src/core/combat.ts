@@ -26,6 +26,12 @@ import {
   MITIGATION_CAP,
   MITIGATION_K,
   SHIELD_CAP_RATIO,
+  SKILL_BLEED_ATK,
+  SKILL_DRAIN_HP,
+  SKILL_MULTI_HITS,
+  SKILL_MULTI_RATIO,
+  SKILL_SHIELD_HP,
+  SKILL_STUN_CHANCE,
   COMBAT_ATK_BASE,
   COMBAT_DEF_BASE,
   COMBAT_HP_BASE
@@ -477,18 +483,17 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
     // 技能附加效果
     if (effect && !isZero(foe.hp)) {
       if (effect === 'multi') {
-        // 多段:两次 45% 追打,每段均可能挨反击
-        for (let i = 0; i < 2 && !isZero(foe.hp) && !isZero(self.hp); i += 1) {
-          strike(self, foe, mult * 0.45, label, round, { isSkill: true, skipFollowups: true })
+        for (let i = 0; i < SKILL_MULTI_HITS && !isZero(foe.hp) && !isZero(self.hp); i += 1) {
+          strike(self, foe, mult * SKILL_MULTI_RATIO, label, round, { isSkill: true, skipFollowups: true })
         }
-      } else if (effect === 'stun' && rng.chance(0.5)) {
+      } else if (effect === 'stun' && rng.chance(SKILL_STUN_CHANCE)) {
         tryStun(foe)
       } else if (effect === 'drain') {
-        healSelf(self, mulN(self.snap.maxHp, 0.06))
+        healSelf(self, mulN(self.snap.maxHp, SKILL_DRAIN_HP))
       } else if (effect === 'shield') {
-        gainShield(self, mulN(self.snap.maxHp, 0.1))
+        gainShield(self, mulN(self.snap.maxHp, SKILL_SHIELD_HP))
       } else if (effect === 'bleed') {
-        applyDamage(self, foe, mulN(self.snap.attack, 0.3))
+        applyDamage(self, foe, mulN(self.snap.attack, SKILL_BLEED_ATK))
       }
     }
   }
