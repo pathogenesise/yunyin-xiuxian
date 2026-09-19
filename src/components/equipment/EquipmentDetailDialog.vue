@@ -234,10 +234,10 @@
   import { reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost } from '@/core/reforge'
   import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
-  import { formatGN, formatPercent } from '@/utils/format'
+  import { formatGN } from '@/utils/format'
   import { isZero, sub } from '@/utils/gnum'
   import type { AnyStatKey, GNum } from '@/types'
-  import { AFFIX_RARITY_META, STAT_NAMES } from '@/ui/statNames'
+  import { AFFIX_RARITY_META, STAT_NAMES, signedPercent } from '@/ui/statNames'
   import { equipNextLevelText } from '@/ui/equipText'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
@@ -365,7 +365,7 @@
     if (!t?.fixedMods) return []
     return Object.entries(t.fixedMods).map(([k, v]) => ({
       label: STAT_NAMES[k as AnyStatKey] ?? k,
-      value: `+${formatPercent(v as number)}`
+      value: signedPercent(v as number)
     }))
   })
 

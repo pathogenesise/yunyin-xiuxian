@@ -16,7 +16,6 @@ export function enlightenmentOptionText(opt: EnlightenmentOption): string {
     const buff = buffDef(opt.buffId)
     if (buff) {
       const parts = [modsText(buff.mods), `持续 ${formatChoiceSpan(buff.durationSec)}`]
-      if (typeof buff.mods.breakthroughRate === 'number') parts.push('大关天劫不吃')
       return parts.join(',')
     }
   }

@@ -7,7 +7,7 @@
  * 人间五日的实际含义(与数据表一致,不是属系专精):
  *   灵雨:灵气恢复、修炼速度
  *   赤阳:攻击、伤害增幅(不是火属)
- *   月蚀:气运、掉落率(不是幽冥 / 夜行事件)
+ *   月蚀:气运、装备掉落率(不是幽冥 / 夜行事件,也不抬灵石草矿)
  *   雷鸣:攻击、御劫为负、渡劫难度升高(不是雷属)
  *   清和:无损益
  *
@@ -71,7 +71,7 @@ export const WEATHERS: WeatherDef[] = [
   {
     id: 'yueshi',
     name: '月蚀',
-    desc: '月蚀之夜,气运与所得皆旺。',
+    desc: '月蚀之夜,气运更盛,法器更易现世。',
     mods: { luck: 0.05, dropRate: 0.05 },
     tribulationMult: 1
   },
@@ -114,7 +114,7 @@ export const WORLD_WEATHERS: Record<Exclude<WorldId, 'mortal'>, WeatherDef[]> = 
     {
       id: 'ziqi',
       name: '紫气东来',
-      desc: '紫气自东而来,机缘与气运皆盛。',
+      desc: '紫气自东而来,气运更盛,法器更易现世。',
       mods: { luck: 0.08, dropRate: 0.08 },
       tribulationMult: 1
     },

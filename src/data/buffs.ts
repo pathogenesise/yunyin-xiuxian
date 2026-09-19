@@ -14,7 +14,7 @@ export const BUFFS: BuffDef[] = [
   b('buff_shenxing', '神行', 'pill', 900, '历练速度提升 30%,先手判定 +10%', { explorationSpeed: 0.3, speed: 0.1 }, 'footprints'),
   b('buff_wudao', '茶香悟道', 'pill', 1800, '战斗所得修为提升 30%', { expGain: 0.3 }, 'leaf'),
   b('buff_jingang', '金刚护体', 'pill', 900, '生命上限提升 20%,开战护盾 10%', { maxHpPct: 0.2, shieldOnStart: 0.1 }, 'mountain'),
-  b('buff_tianyun', '天运加身', 'pill', 1200, '气运提升 15%,掉落率提升 10%', { luck: 0.15, dropRate: 0.1 }, 'star'),
+  b('buff_tianyun', '天运加身', 'pill', 1200, '气运提升 15%,装备掉落率提升 10%', { luck: 0.15, dropRate: 0.1 }, 'star'),
   b('buff_xuanming', '玄冥护体', 'pill', 600, '天劫伤害降低 20%', { tribulationResist: 0.2 }, 'cloud'),
   b('buff_pojing', '破境', 'pill', 300, '进阶成功率大幅提升 15%(大关天劫不吃此益)', { breakthroughRate: 0.15 }, 'zap'),
   b(

@@ -440,7 +440,7 @@
   import { useLoreStore } from '@/stores/lore'
   import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
   import { cnNumber, formatGN, formatNum, formatPercent } from '@/utils/format'
-  import { STAT_NAMES } from '@/ui/statNames'
+  import { STAT_NAMES, signedPercent } from '@/ui/statNames'
   import type { AnyStatKey, EquipSlot, GNum, PillDef } from '@/types'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
@@ -702,7 +702,7 @@
     if (!def) return []
     // 与属性汇总(store/inventory)同源:卡片上写多少,身上加的就是多少
     return Object.entries(artifactValue(def, level).passive).map(
-      ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`
+      ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} ${signedPercent(v as number)}`
     )
   }
 
