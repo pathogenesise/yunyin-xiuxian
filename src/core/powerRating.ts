@@ -6,6 +6,7 @@
  * 星级基于词条合计的定性分段,不做精确排名——两个 4 星构筑谁强,由环境与相性决定。
  */
 import type { FinalStats, StatMods } from '@/types'
+import { STAT_NAMES } from '@/ui/statNames'
 import { detectBuild } from './buildDetect'
 import { modOf } from './statsCalc'
 
@@ -80,34 +81,38 @@ export function ratePower(stats: FinalStats): PowerRating {
   // 进攻:直接增伤 + 暴击期望 + 破甲/处决
   const critRaw = v('critRate')
   const critTerm: PowerTerm = {
-    label: '暴击率×(1+暴伤)',
+    label: `${STAT_NAMES.critRate}×(1+${STAT_NAMES.critDamage})`,
     raw: critRaw,
     contribution: critRaw * (1 + v('critDamage'))
   }
   const attackTerms = [
-    term('攻击加成', v('attackPct')),
-    term('造成伤害', v('damageBonus')),
+    term(STAT_NAMES.attackPct, v('attackPct')),
+    term(STAT_NAMES.damageBonus, v('damageBonus')),
     critTerm,
-    term('破甲', v('armorPen'), 0.8),
-    term('处决伤害', v('executeDamage'), 0.5)
+    term(STAT_NAMES.armorPen, v('armorPen'), 0.8),
+    term(STAT_NAMES.executeDamage, v('executeDamage'), 0.5)
   ]
   // 生存:防御/生命/减伤/盾/闪避
   const survivalTerms = [
-    term('防御加成', v('defensePct')),
-    term('气血加成', v('maxHpPct')),
-    term('伤害减免', v('damageReduction'), 2),
-    term('开战护盾', v('shieldOnStart')),
-    term('护盾强度', v('shieldPower'), 0.5),
-    term('闪避率', v('dodgeRate'), 1.5)
+    term(STAT_NAMES.defensePct, v('defensePct')),
+    term(STAT_NAMES.maxHpPct, v('maxHpPct')),
+    term(STAT_NAMES.damageReduction, v('damageReduction'), 2),
+    term(STAT_NAMES.shieldOnStart, v('shieldOnStart')),
+    term(STAT_NAMES.shieldPower, v('shieldPower'), 0.5),
+    term(STAT_NAMES.dodgeRate, v('dodgeRate'), 1.5)
   ]
-  // 身法:先手判定(阈值)/首回合伤害/连击率 —— 名字与 statNames 一致,面板与战力理由不许各叫各的
-  const speedTerms = [term('先手判定', v('speed'), 2), term('首回合伤害', v('firstStrike')), term('连击率', v('comboRate'), 1.5)]
+  // 身法:先手判定(阈值)/首回合伤害/连击 —— 名字与 statNames 一致,面板与战力理由不许各叫各的
+  const speedTerms = [
+    term(STAT_NAMES.speed, v('speed'), 2),
+    term(STAT_NAMES.firstStrike, v('firstStrike')),
+    term(STAT_NAMES.comboRate, v('comboRate'), 1.5)
+  ]
   // 恢复:吸血/回合回复/溢疗(量纲归一:小数值键放大)
   const recoveryTerms = [
-    term('吸血', v('lifesteal'), 8),
-    term('回合回复', v('regenPerRound'), 20),
-    term('溢疗转盾', v('overhealShield'), 0.6),
-    term('残血减伤', v('lowHpReduction'), 0.8)
+    term(STAT_NAMES.lifesteal, v('lifesteal'), 8),
+    term(STAT_NAMES.regenPerRound, v('regenPerRound'), 20),
+    term(STAT_NAMES.overhealShield, v('overhealShield'), 0.6),
+    term(STAT_NAMES.lowHpReduction, v('lowHpReduction'), 0.8)
   ]
   // 机制:流派成路程度 + 混合副系
   const build = detectBuild(m)

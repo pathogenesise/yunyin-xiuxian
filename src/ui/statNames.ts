@@ -131,6 +131,9 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   overhealShield: '溢疗成盾'
 }
 
+/** Every panel that lists mods walks this, so a new key cannot hide on the character sheet. */
+export const STAT_KEYS = Object.keys(STAT_NAMES) as AnyStatKey[]
+
 /**
  * 把一组词条摊成一行人话。
  *
