@@ -1,5 +1,12 @@
 /** 属性中文名映射(展示层共用) */
 import { formatPercent } from '@/utils/format'
+import {
+  CRIT_BASE,
+  CRIT_DMG_BASE,
+  FULL_HP_THRESHOLD,
+  LOW_HP_THRESHOLD,
+  SHIELD_CAP_RATIO
+} from '@/data/constants'
 import type { AffixRarity, AnyStatKey, StatMods } from '@/types'
 
 /**
@@ -158,7 +165,15 @@ export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   speed: '须不弱于对手,方得抢先',
   firstStrike: '只重开局一合;不改谁先出手',
   dodgeRate: '须高于对手命中,方得避开',
-  accuracy: '只抵对手闪避;不闪则无增益'
+  accuracy: '只抵对手闪避;不闪则无增益',
+  critRate: `叠于固有会心 ${formatPercent(CRIT_BASE)} 之上`,
+  critDamage: `叠于固有会心之伤 ${formatPercent(CRIT_DMG_BASE)} 之上`,
+  executeDamage: `只伤气血未满 ${formatPercent(LOW_HP_THRESHOLD)} 之敌`,
+  lowHpDamage: `须己身气血未满 ${formatPercent(LOW_HP_THRESHOLD)}`,
+  lowHpReduction: `须己身气血未满 ${formatPercent(LOW_HP_THRESHOLD)}`,
+  fullHpDamage: `须己身气血逾 ${formatPercent(FULL_HP_THRESHOLD)}`,
+  shieldOnStart: `开战凝盾;总量不过 ${formatPercent(SHIELD_CAP_RATIO)} 气血`,
+  shieldPower: '须护盾仍在'
 }
 
 export function statCaveat(key: string): string | undefined {
