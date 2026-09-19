@@ -201,6 +201,13 @@ export const MAX_COMBAT_ROUNDS = 50
 /** 流派阈值:低血/满血判定线 */
 export const LOW_HP_THRESHOLD = 0.3
 export const FULL_HP_THRESHOLD = 0.9
+/** 功法/敌方神通命中之后的附加。战斗与战前情报读同一批数。 */
+export const SKILL_STUN_CHANCE = 0.5
+export const SKILL_DRAIN_HP = 0.06
+export const SKILL_SHIELD_HP = 0.1
+export const SKILL_BLEED_ATK = 0.3
+export const SKILL_MULTI_HITS = 2
+export const SKILL_MULTI_RATIO = 0.45
 /** 护盾总量上限(占最大生命比例)——护体灵光有极限,防盾系滚雪球 */
 export const SHIELD_CAP_RATIO = 0.5
 /**

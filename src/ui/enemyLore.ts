@@ -21,16 +21,15 @@ import { ENEMY_LORE_MAX, ENEMY_LORE_STAGE_NAMES, useLoreStore } from '@/stores/l
 import { currentStage } from '@/core/samsaraService'
 import type { BossArchetype, EnemyDef, EnemySkill } from '@/types'
 import { ARCHETYPES } from '@/core/bossArchetypes'
-
-/** 招式效果的门道 —— 玩家该据此调整构筑,而不是死记 effect 枚举 */
-const EFFECT_NOTES: Record<NonNullable<EnemySkill['effect']>, string> = {
-  stun: '摄神,叫人当场失措',
-  bleed: '带毒,伤在事后',
-  drain: '噬血自补',
-  shield: '起罡护体',
-  multi: '一击数段',
-  pierce: '真伤贯体,护体挡不住'
-}
+import {
+  SKILL_BLEED_ATK,
+  SKILL_DRAIN_HP,
+  SKILL_MULTI_HITS,
+  SKILL_MULTI_RATIO,
+  SKILL_SHIELD_HP,
+  SKILL_STUN_CHANCE
+} from '@/data/constants'
+import { formatPercent } from '@/utils/format'
 
 /** 首领本相 —— 一句话点破它的打法核心 */
 const ARCHETYPE_NOTES: Record<BossArchetype, string> = {
@@ -102,10 +101,18 @@ function frameOf(def: EnemyDef): string[] {
 }
 
 function skillNote(sk: EnemySkill): string {
-  if (sk.effect) return EFFECT_NOTES[sk.effect]
-  if (sk.mult >= 2.2) return '一记重手,挨实了要伤筋动骨'
-  if (sk.mult >= 1.6) return '发力凶狠'
-  return '寻常一击'
+  const odds = `出手 ${formatPercent(sk.rate)},威力 ${formatPercent(sk.mult)}`
+  if (sk.effect === 'stun') return `${odds}。命中后再以 ${formatPercent(SKILL_STUN_CHANCE)} 摄住心神`
+  if (sk.effect === 'bleed') return `${odds}。事后再伤 ${formatPercent(SKILL_BLEED_ATK)} 攻击`
+  if (sk.effect === 'drain') return `${odds}。回补 ${formatPercent(SKILL_DRAIN_HP)} 气血`
+  if (sk.effect === 'shield') return `${odds}。凝 ${formatPercent(SKILL_SHIELD_HP)} 气血为盾`
+  if (sk.effect === 'multi') {
+    return `${odds}。本击之后另起 ${SKILL_MULTI_HITS} 段,各按威力 ${formatPercent(SKILL_MULTI_RATIO)}`
+  }
+  if (sk.effect === 'pierce') return `${odds}。真伤贯体,护盾挡不住`
+  if (sk.mult >= 2.2) return `${odds}。一记重手`
+  if (sk.mult >= 1.6) return `${odds}。发力凶狠`
+  return `${odds}。寻常一击`
 }
 
 /** 残血变阵的招式也算它的路数 —— 层 3 才见得到,合并进招式表反而乱,单列 */
