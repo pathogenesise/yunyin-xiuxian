@@ -17,6 +17,9 @@ import {
   earlyEventDecay
 } from '@/data/earlyGame'
 import { gn } from '@/utils/gnum'
+import { enlightenmentOptionText } from '@/ui/enlightenmentText'
+import { caveOptionText } from '@/ui/caveText'
+import { streakRewardText } from '@/ui/streakText'
 import { todayLocalNum } from '@/utils/time'
 
 function telemetry(): ReturnType<typeof usePacingTelemetry> {
@@ -92,7 +95,7 @@ export function chooseEnlightenment(optionIndex: number): void {
     ui.toast(`灵机一动,悟道点 +${opt.reward.value}`, 'success')
   } else if (opt.buffId) {
     cult.addBuff(opt.buffId, now)
-    ui.toast(opt.desc, 'success')
+    ui.toast(enlightenmentOptionText(opt), 'success')
   }
 
   telemetry().record('enlightenment_choose', 'modal', `悟道:${opt.label}`)
@@ -221,6 +224,7 @@ export function recordWin(): void {
     const resources = useResourcesStore()
     resources.addStone(gn(reward.stone))
     resources.addSmall('wudao', reward.wudao)
+    useUiStore().toast(streakRewardText(streak, reward.stone, reward.wudao), 'success')
     telemetry().record('win_streak', 'notify', `连胜 ${streak} 场奖励`)
   }
 }
@@ -318,7 +322,7 @@ export function chooseCaveOption(optionIndex: number): void {
   const today = todayLocalNum()
   player.markCaveEventToday(today)
   // 选完给一句回执——此前选完弹窗直接关,拿到什么全凭感觉
-  useUiStore().toast(`洞府巡游·${opt.effect}`, 'success')
+  useUiStore().toast(`洞府巡游·${caveOptionText(opt)}`, 'success')
   telemetry().record('cave_choose', 'modal', `洞府选择:${opt.label}`)
   caveEvent = null
 }
