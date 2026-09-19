@@ -49,7 +49,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
 
   // ---- 主修:青木长生功(良品·木) ----
   b('m_qingmu', 'b_qingmu_sheng', '生生', '木气长生,愈战愈盛', { maxHpPct: 0.08, regenPerRound: 0.01 }),
-  b('m_qingmu', 'b_qingmu_lian', '缠连', '藤蔓缠敌,出手愈快', { speed: 0.05, attackPct: 0.04 }),
+  b('m_qingmu', 'b_qingmu_lian', '缠连', '藤蔓缠敌,先机在我', { speed: 0.05, attackPct: 0.04 }),
 
   // ---- 主修:离火焚天诀(良品·火) ----
   b('m_lihuo', 'b_lihuo_fen', '焚天', '离火更炽,出招更狠', { damageBonus: 0.08, critRate: 0.03 }),
@@ -72,7 +72,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('m_houtu', 'b_houtu_zhenyue', '镇岳', '山岳压顶,一击定身', { stunRate: 0.06, attackPct: 0.05, defensePct: 0.045 }),
 
   // ---- 主修:紫霄神雷诀(灵品·雷) ----
-  b('m_zixiao', 'b_zixiao_ji', '疾雷', '雷行至疾,先发夺人', { speed: 0.1, firstStrike: 0.4 }),
+  b('m_zixiao', 'b_zixiao_ji', '疾雷', '雷行至疾,先声夺人;开局一合更重', { speed: 0.1, firstStrike: 0.4 }),
   b('m_zixiao', 'b_zixiao_guan', '贯霄', '一雷贯顶,连珠不绝', { comboRate: 0.12, comboDamage: 0.5, attackPct: 0.04 }),
   b('m_zixiao', 'b_zixiao_cui', '淬体', '以雷淬体,劫火难伤', { attackPct: 0.08, maxHpPct: 0.06, tribulationResist: 0.08 }),
 
@@ -131,7 +131,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('s_lianti', 'b_lianti_lu', '炉火', '肉身为炉,愈锻愈利', { attackPct: 0.05, defensePct: 0.03 }),
 
   // ---- 辅修:御风步(良品) ----
-  b('s_yufeng', 'b_yufeng_ji', '疾影', '出手更疾,避锋更巧', { speed: 0.06, dodgeRate: 0.04 }),
+  b('s_yufeng', 'b_yufeng_ji', '疾影', '影如惊鸿,先手更近,避锋亦巧', { speed: 0.06, dodgeRate: 0.04 }),
   b('s_yufeng', 'b_yufeng_suo', '缩地', '踏风缩地,山川尺寸', { explorationSpeed: 0.12, eventLuck: 0.05 }),
 
   // ---- 辅修:敛息诀(良品) ----
@@ -144,7 +144,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
 
   // ---- 辅修:明心见性篇(精品) ----
   b('s_mingxin', 'b_mingxin_guan', '观心', '战中悟道,所获倍之', { expGain: 0.16, cultivationSpeed: 0.03 }),
-  b('s_mingxin', 'b_mingxin_xing', '见性', '本性既明,关隘自消', { breakthroughRate: 0.03, breakRefund: 0.1 }),
+  b('s_mingxin', 'b_mingxin_xing', '见性', '本性既明,小进阶自开,败则少损;大关天劫,不由此悟', { breakthroughRate: 0.03, breakRefund: 0.1 }),
 
   // ---- 辅修:铁骨铮铮功(精品) ----
   b('s_tiegu', 'b_tiegu_xuan', '玄铁', '骨坚如铁,万击不摧', { defensePct: 0.09, damageReduction: 0.04 }),
@@ -159,7 +159,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('s_budong', 'b_budong_feng', '盾锋', '以盾为锋,罡在势盛', { shieldPower: 0.24, overhealShield: 0.6 }),
 
   // ---- 辅修:点石成金术(灵品) ----
-  b('s_dianshi', 'b_dianshi_jin', '点金', '顽石成金,囊中日丰', { spiritStoneGain: 0.2, forgeDiscount: 0.1 }),
+  b('s_dianshi', 'b_dianshi_jin', '点金', '点石成金,战胜则石来;锤炼更省,祭炼不与', { spiritStoneGain: 0.2, forgeDiscount: 0.1 }),
   b('s_dianshi', 'b_dianshi_sha', '淘沙', '沙里淘珍,时有意外', { dropRate: 0.12, doubleDropRate: 0.1, luck: 0.02 }),
 
   // ---- 辅修:龟息养寿功(灵品) ----
@@ -179,7 +179,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('s_wanjian', 'b_wanjian_gui', '归一', '万剑归一,一剑破万法', { attackPct: 0.09, armorPen: 0.08, critDamage: 0.08 }),
 
   // ---- 秘术:天眼通(精品) ----
-  b('x_tianyan', 'b_tianyan_ji', '窥机', '天眼所见,机缘自来', { eventLuck: 0.15, luck: 0.05 }),
+  b('x_tianyan', 'b_tianyan_ji', '窥机', '天眼开处,历练际遇自至', { eventLuck: 0.15, luck: 0.05 }),
   b('x_tianyan', 'b_tianyan_bao', '照宝', '宝气入眼,所获不空', { dropRate: 0.12, doubleDropRate: 0.12 }),
 
   // ---- 秘术:金刚不坏身(灵品) ----
@@ -188,7 +188,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
 
   // ---- 秘术:剑心通明(灵品) ----
   b('x_jianxin', 'b_jianxin_che', '澄澈', '剑心无瑕,一击中的', { critRate: 0.045, critDamage: 0.2 }),
-  b('x_jianxin', 'b_jianxin_ji', '先机', '料敌于先,首击如雷', { firstStrike: 0.4, speed: 0.09 }),
+  b('x_jianxin', 'b_jianxin_ji', '先机', '料敌于先,开局一合如雷', { firstStrike: 0.4, speed: 0.09 }),
 
   // ---- 秘术:向死而生诀(灵品) ----
   b('x_xiangsi', 'b_xiangsi_si', '死地', '入死地,则势不可挡', { lowHpDamage: 0.6, lowHpReduction: 0.3 }),
@@ -212,7 +212,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   }),
 
   // ---- 秘术:斡旋造化(天品) ----
-  b('x_woxuan', 'b_woxuan_wo', '斡旋', '关隘之前,天数可移', { breakthroughRate: 0.06, breakRefund: 0.2, luck: 0.02 }),
+  b('x_woxuan', 'b_woxuan_wo', '斡旋', '小进阶或可移数,败则修为少损;大关天数,不可窃改', { breakthroughRate: 0.06, breakRefund: 0.2, luck: 0.02 }),
   b('x_woxuan', 'b_woxuan_qie', '窃化', '窃天地造化,劫数分润', {
     tribulationResist: 0.25,
     breakthroughRate: 0.04,
@@ -237,8 +237,8 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('s_xianling', 'b_xianling_gu', '固本', '仙灵固本,根骨愈坚', { maxHpPct: 0.24, defensePct: 0.2 }),
   b('s_xianling', 'b_xianling_yu', '愈体', '仙灵润体,伤处自愈', { regenPerRound: 0.06, damageReduction: 0.12, maxHpPct: 0.12 }),
   // 秘术:仙机通玄
-  b('x_xianji', 'b_xianji_ji', '窥机', '仙机在握,机缘自来', { luck: 0.15, eventLuck: 0.2, dropRate: 0.15 }),
-  b('x_xianji', 'b_xianji_ying', '应劫', '洞悉天机,逢凶化吉', { dropRate: 0.25, spiritStoneGain: 0.35, luck: 0.1 }),
+  b('x_xianji', 'b_xianji_ji', '窥机', '仙机在握,历练际遇自来,装备亦易现', { luck: 0.15, eventLuck: 0.2, dropRate: 0.15 }),
+  b('x_xianji', 'b_xianji_ying', '撷珍', '洞悉天机,装备更易现世,战胜则灵石盈囊', { dropRate: 0.25, spiritStoneGain: 0.35, luck: 0.1 }),
 
   // ---- 神界功法(神品) ----
   // 主修:神霄九变
@@ -256,8 +256,8 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
   b('s_hundunti', 'b_hundunti_gu', '固本', '混沌磐身,万击不摇', { maxHpPct: 0.3, defensePct: 0.3 }),
   b('s_hundunti', 'b_hundunti_ren', '润身', '身化混沌,伤处自弥', { regenPerRound: 0.06, maxHpPct: 0.2, damageReduction: 0.1 }),
   // 秘术:神机衍数
-  b('x_shenji', 'b_shenji_ce', '测算', '天机在算,机缘自来', { luck: 0.15, dropRate: 0.25, spiritStoneGain: 0.35 }),
-  b('x_shenji', 'b_shenji_yan', '验天', '行止皆数,福地自现', { dropRate: 0.2, explorationSpeed: 0.25, luck: 0.1 }),
+  b('x_shenji', 'b_shenji_ce', '测算', '推演算尽,器物成色自高,战胜则石来', { luck: 0.15, dropRate: 0.25, spiritStoneGain: 0.35 }),
+  b('x_shenji', 'b_shenji_yan', '验天', '验于天时,同程妖踪更密,兵器更易现世', { dropRate: 0.2, explorationSpeed: 0.25, luck: 0.1 }),
   // 秘术:道音玄章
   b('x_daoyin', 'b_daoyin_ming', '明道', '道音入耳,修行不辍', { cultivationSpeed: 0.3, qiRegen: 0.28, breakthroughRate: 0.06 }),
   b('x_daoyin', 'b_daoyin_wu', '悟道', '闻音悟道,一日千里', { cultivationSpeed: 0.28, expGain: 0.28, luck: 0.12 }),
@@ -268,7 +268,7 @@ export const GONGFA_BRANCHES: GongfaBranchDef[] = [
 
   // ---- 太乙:太乙金华(仙界,补该境空白) ----
   b('x_taiyi', 'b_taiyi_shou', '守中', '守中致虚,道心更明', { cultivationSpeed: 0.3, breakthroughRate: 0.05 }),
-  b('x_taiyi', 'b_taiyi_guang', '回光', '回光照物,机缘自明', { luck: 0.15, eventLuck: 0.15, qiRegen: 0.2 }),
+  b('x_taiyi', 'b_taiyi_guang', '回光', '回光照物,历练际遇自明,如镜现影', { luck: 0.15, eventLuck: 0.15, qiRegen: 0.2 }),
 
   // ---- 大罗:大罗天章(仙界,补该境空白) ----
   b('m_daluo', 'b_daluo_zhen', '归真', '万法归真,一击破妄', { attackPct: 0.3, damageBonus: 0.1 }),

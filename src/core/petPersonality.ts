@@ -46,13 +46,23 @@ export function personalityEffects(petId: string | null): PetPersonalityEffects 
   return EFFECTS[def.personality] ?? { exploreDurMult: 1, dangerMult: 1, dropLuck: 0, lossReduction: 0 }
 }
 
-/** 性格一句话说明(选灵兽 UI) —— 只报 EFFECTS 里真有的事,不另许战斗收益或机缘 */
+const PERSONALITY_LEAD: Record<PetDef['personality'], string> = {
+  greedy: '贪其宝货',
+  steady: '行路从容',
+  fierce: '争锋不让',
+  cautious: '步步知止'
+}
+
+/** 性格一句话说明(选灵兽 UI) —— 文言说清 EFFECTS 里真有的事,不另许修为灵石或机缘 */
 export function personalityDesc(p: PetDef['personality']): string {
   const e = EFFECTS[p]
-  const parts: string[] = []
-  if (e.exploreDurMult !== 1) parts.push(e.exploreDurMult > 1 ? '行程更久' : '行程略短')
-  if (e.dangerMult !== 1) parts.push(e.dangerMult > 1 ? '遇险更高' : '遇险略低')
-  if (e.dropLuck !== 0) parts.push(e.dropLuck > 0 ? '装备成色更好' : '装备成色稍降')
+  const parts: string[] = [PERSONALITY_LEAD[p]]
+  if (e.exploreDurMult > 1) parts.push('行程更久,如缓步看山')
+  if (e.exploreDurMult < 1) parts.push('行程略短,不敢久羁')
+  if (e.dangerMult > 1) parts.push('遇险更高')
+  if (e.dangerMult < 1) parts.push('遇险略低')
+  if (e.dropLuck > 0) parts.push('装备成色更好')
+  if (e.dropLuck < 0) parts.push('装备成色稍降')
   if (e.lossReduction > 0) parts.push('败北偶有护持')
   return `${parts.join(',')}。`
 }

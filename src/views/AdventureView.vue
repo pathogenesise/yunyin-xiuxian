@@ -252,7 +252,7 @@
         </p>
       </div>
       <p class="text-[12px] text-ink-faint">此行欲作何打算?</p>
-      <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">行程是这一程走多久;遇敌快慢看「历练遇敌」,不缩短行程。</p>
+      <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">行程论这一程走多久;「历练遇敌」只令同程妖踪更密,不能缩地成寸。</p>
       <div class="mt-3 space-y-2">
         <button
           v-for="m in MODE_LIST"

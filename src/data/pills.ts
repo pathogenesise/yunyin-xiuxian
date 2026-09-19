@@ -76,7 +76,7 @@ export const PILLS: PillDef[] = [
     { kind: 'buff', buffId: 'buff_wudao', recipe: { herb: 8, stoneBase: 12 }, alchemyLevel: 2 },
     'leaf'
   ),
-  p('p_ningshen', '凝神丹', 'fine', 0, '小进阶前服用,心神凝定', {
+  p('p_ningshen', '凝神丹', 'fine', 0, '心神凝定,宜于小进阶之前;大关天劫,丹力不入', {
     kind: 'buff',
     buffId: 'buff_ningshen',
     recipe: { herb: 10, stoneBase: 18 },
@@ -100,13 +100,13 @@ export const PILLS: PillDef[] = [
     recipe: { herb: 16, stoneBase: 30 },
     alchemyLevel: 3
   }),
-  p('p_shenxing', '神行丹', 'excellent', 1, '同程多遇,先机更近', {
+  p('p_shenxing', '神行丹', 'excellent', 1, '脚下生风,同程妖踪更密,行程不减', {
     kind: 'buff',
     buffId: 'buff_shenxing',
     recipe: { herb: 18, stoneBase: 32 },
     alchemyLevel: 3
   }),
-  p('p_pojing', '破境丹', 'spirit', 1, '只助小进阶,大关天劫不吃', {
+  p('p_pojing', '破境丹', 'spirit', 1, '破境只开小进阶;大关天劫,此丹不与', {
     kind: 'buff',
     buffId: 'buff_pojing',
     recipe: { herb: 30, stoneBase: 60 },

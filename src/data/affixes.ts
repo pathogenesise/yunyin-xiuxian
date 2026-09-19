@@ -73,9 +73,9 @@ export const AFFIXES: AffixDef[] = [
   a('luck2', '鸿运', 'luck', 5, 10, '气运提升 {v}%', 40, { slots: J, minRank: 3 }),
   a('luck3', '天眷', 'luck', 10, 15, '气运提升 {v}%', 12, { slots: J, minRank: 6 }),
   // ---- 历练遇敌(加密遭遇间隔,不缩短行程,见 ui/statNames) ----
-  a('exp1', '疾行', 'explorationSpeed', 4, 8, '同程遇敌 +{v}%', 80, { slots: ['boots', ...J] }),
-  a('exp2', '御风', 'explorationSpeed', 8, 15, '同程遇敌 +{v}%', 40, { slots: ['boots', ...J], minRank: 3 }),
-  a('exp3', '缩地', 'explorationSpeed', 15, 25, '同程遇敌 +{v}%', 12, { slots: ['boots', ...J], minRank: 6 }),
+  a('exp1', '疾行', 'explorationSpeed', 4, 8, '同程妖踪 +{v}%', 80, { slots: ['boots', ...J] }),
+  a('exp2', '御风', 'explorationSpeed', 8, 15, '同程妖踪 +{v}%', 40, { slots: ['boots', ...J], minRank: 3 }),
+  a('exp3', '寻踪', 'explorationSpeed', 15, 25, '同程妖踪 +{v}%', 12, { slots: ['boots', ...J], minRank: 6 }),
   // ---- 身法 ----
   // 「出手速度提升 N%」读起来像连续收益,机制上却是一条阈值(1+修正 ≥ 对手速度即抢先)——
   // 差一点就是完全没抢先,故照实写成「先手判定」。战后分析会把两个数与差额一并摆出来

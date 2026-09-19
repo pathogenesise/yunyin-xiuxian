@@ -20,7 +20,7 @@ describe('悟道顿悟选项文案与 buff 同源', () => {
 
   it('悟透瓶颈标明大关不吃,灵机一动报出实发悟道点', () => {
     const bt = ENLIGHTENMENT_OPTIONS.find(o => o.buffId === 'enlighten_bt')!
-    expect(enlightenmentOptionText(bt)).toContain('大关天劫不吃')
+    expect(enlightenmentOptionText(bt)).toContain('大关天劫不与')
     expect(enlightenmentOptionText(bt)).toContain('30分钟')
     const wudao = ENLIGHTENMENT_OPTIONS.find(o => o.reward?.type === 'wudao')!
     expect(enlightenmentOptionText(wudao)).toBe(`立即获得 ${wudao.reward!.value} 悟道点`)

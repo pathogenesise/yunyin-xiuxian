@@ -28,7 +28,7 @@
         <div :class="player.expFull ? 'bar-charged' : ''">
         <ProgressBar :value="player.expProgress" color="var(--color-cinnabar)" :height="8" />
       </div>
-      <!-- 修行速度是玩家最常盯的数,故在它自己那一行就地摊开:基础 × (1 + 各来源) -->
+      <!-- 修炼速度是玩家最常盯的数,故在它自己那一行就地摊开:基础 × (1 + 各来源) -->
       <div v-if="showCultBreakdown" class="mt-2 rounded-md bg-paper-deep/60 px-2.5 py-2 text-[10px]">
         <p class="text-ink-soft">
           基础 {{ formatRate(cultBase) }}({{ player.realm.name }}{{ player.subName }}{{ player.linggen ? `·${player.linggen.gradeName}` : '' }})
@@ -42,7 +42,7 @@
           </span>
         </p>
         <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
-          这些都是修行速度的百分比加成,相加后乘在基础上 —— 与人物页属性明细同源。
+          这些都是修炼速度的百分比加成,相加后乘在基础上 —— 与人物页属性明细同源。
         </p>
       </div>
       </div>
@@ -361,7 +361,7 @@
   const resources = useResourcesStore()
 
   /**
-   * 修行速度的来路 —— 玩家最常盯的就是这一行,故就地摊开:
+   * 修炼速度的来路 —— 玩家最常盯的就是这一行,故就地摊开:
    *   基础(境界/层) × (1 + 各来源之和)
    * 来源取自 finalStats.breakdown,与人物页属性明细同源,不在界面里另算一遍。
    */

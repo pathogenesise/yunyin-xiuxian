@@ -454,6 +454,15 @@ describe('术语一致性 · 用户可见文本', () => {
     expect(hits, `应改成「战利灵石 / 强化减耗 / 历练际遇」:\n${hits.join('\n')}`).toEqual([])
   })
 
+  it('玩家可见处把修炼速度叫修炼速度,不另起修行速度', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      if (file.includes('.spec.')) continue
+      for (const m of text.matchAll(/.{0,12}修行速度.{0,12}/g)) hits.push(`${file} 「${m[0]}」`)
+    }
+    expect(hits, `应与词条名「修炼速度」对齐:\n${hits.join('\n')}`).toEqual([])
+  })
+
   it('「战斗收益更高」退休:好战性格不另加修为或灵石', () => {
     const hits: string[] = []
     for (const { file, text } of userText()) {

@@ -48,7 +48,7 @@ describe('灵兽性格(personality)', () => {
     for (const p of PETS) {
       expect(p.desc, p.id).not.toContain('机缘')
       expect(p.desc, p.id).not.toContain('聚财')
-      expect(p.desc, p.id).not.toContain('九万里')
+      if (p.desc.includes('九万里')) expect(p.desc, p.id).toContain('行程不减')
     }
   })
 

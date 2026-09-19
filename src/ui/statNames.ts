@@ -137,22 +137,22 @@ export function signedPercent(n: number): string {
  * Titles, pills, weather, veins, and talent chips all read this map.
  */
 export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
-  breakthroughRate: '小进阶;大关天劫不吃',
-  luck: '主要抬装备成色;小进阶另吃此数的 5%',
-  breakRefund: '失败掉的那份;不退灵气',
-  alchemyYield: '多一枚的概率;与手艺合计顶 80%',
-  explorationSpeed: '同程更多遭遇;不缩短行程',
-  spiritStoneGain: '历练战胜所得;洞府产出不吃',
-  forgeDiscount: '装备强化花费;法宝祭炼不吃',
-  dropRate: '只抬装备出现;灵石草矿不吃',
-  eventLuck: '只抬历练途中掷点;洞府巡游不吃',
-  doubleDropRate: '当场灵石修为材料装备一并翻',
-  expGain: '历练战胜所得;静修挂机不吃',
-  tribulationResist: '天劫承伤;不改小进阶骰子',
-  qiCapPct: '抬标称灵气上限;积余仓随之上浮',
-  beastPct: '放大灵兽词条;不含灵兽园等级',
-  speed: '1+此项≥对手速度才抢先',
-  firstStrike: '只乘第一回合;不改谁先出手'
+  breakthroughRate: '只入小进阶;大关天劫不与',
+  luck: '主器物成色;小进阶另借此数半成',
+  breakRefund: '只还败时所损修为;灵气不退',
+  alchemyYield: '再得一枚之机;与手艺合计不过八成',
+  explorationSpeed: '同程妖踪更密;行程不减',
+  spiritStoneGain: '只入历练战胜之石;洞府所产不与',
+  forgeDiscount: '只省装备强化之耗;法宝祭炼不与',
+  dropRate: '只增装备现世;灵石草矿不与',
+  eventLuck: '只增历练途中际遇;洞府巡游不与',
+  doubleDropRate: '当场灵石、修为、材料与装备一并翻倍',
+  expGain: '只入历练战胜之修为;静修不与',
+  tribulationResist: '只减天劫之伤;小进阶之骰不改',
+  qiCapPct: '灵气上限上浮,积余之仓随之',
+  beastPct: '放大灵兽词条;灵兽园等级不在其中',
+  speed: '须不弱于对手,方得抢先',
+  firstStrike: '只重开局一合;不改谁先出手'
 }
 
 export function statCaveat(key: string): string | undefined {

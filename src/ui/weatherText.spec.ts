@@ -32,7 +32,7 @@ describe('天时效果行与定义同源', () => {
   it('进阶成功率那天时写明大关天劫不吃', () => {
     const daoyin = WORLD_WEATHERS.chaos.find(w => w.id === 'daoyin')!
     expect(daoyin.mods.breakthroughRate).toBeGreaterThan(0)
-    expect(weatherEffectText(daoyin)).toContain('大关天劫不吃')
+    expect(weatherEffectText(daoyin)).toContain('大关天劫不与')
     expect(weatherEffectText(daoyin)).toContain('进阶成功率')
     expect(weatherEffectText(daoyin)).toContain('小进阶')
   })
