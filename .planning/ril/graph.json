@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 222,
+  "round": 226,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-19T05:39:30+00:00",
+  "updated_at": "2026-09-19T08:11:32+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -506,7 +506,7 @@
       "version": 2,
       "created_at": "2026-09-09T15:18:26+00:00",
       "updated_at": "2026-09-10T14:11:58+00:00",
-      "touched_round": 172,
+      "touched_round": 224,
       "confidence": 0.75,
       "summary": "转世泄漏的确定性成分是有意还是 bug 需拆分:镇压/世界记忆=设计;lastCaveEventDay/winStreak/eventChains=本世进程应清;secretRealm/regionEvent=一次性内容应清"
     },
@@ -13294,6 +13294,180 @@
       "source": "src/ui/eventText.spec.ts",
       "summary": "茶摊提示含可能花费,竞拍仍是确定的花费区间",
       "confidence": 1
+    },
+    "ISS-237": {
+      "id": "ISS-237",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-19T05:46:38+00:00",
+      "updated_at": "2026-09-19T05:46:49+00:00",
+      "touched_round": 223,
+      "summary": "天时进阶成功率未标明大关不吃;功法装备法宝仍用加号拼接百分号会印出+-",
+      "severity": 0.55,
+      "confidence": 0.95
+    },
+    "TASK-216": {
+      "id": "TASK-216",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-19T05:46:38+00:00",
+      "updated_at": "2026-09-19T05:46:49+00:00",
+      "touched_round": 223,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.95,
+      "effort": 1.5,
+      "summary": "weatherEffectText 补天劫不吃; signedPercent 接到功法装备法宝"
+    },
+    "EV-215": {
+      "id": "EV-215",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T05:46:49+00:00",
+      "updated_at": "2026-09-19T05:46:49+00:00",
+      "touched_round": 223,
+      "source": "src/ui/signedPercent.spec.ts",
+      "summary": "signedPercent 负值为-50%;道音天时含大关天劫不吃;功法装备法宝调用 signedPercent",
+      "confidence": 1
+    },
+    "ISS-238": {
+      "id": "ISS-238",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-19T06:54:57+00:00",
+      "updated_at": "2026-09-19T06:55:08+00:00",
+      "touched_round": 224,
+      "summary": "进阶成功率在称号丹药天时上仍像渡劫也吃,边界只写在人物页脚注",
+      "severity": 0.58,
+      "confidence": 0.95
+    },
+    "TASK-217": {
+      "id": "TASK-217",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-19T06:54:57+00:00",
+      "updated_at": "2026-09-19T06:55:08+00:00",
+      "touched_round": 224,
+      "category": "correctness",
+      "severity": 0.58,
+      "confidence": 0.95,
+      "effort": 1.5,
+      "summary": "modsText 给 breakthroughRate 带上小进阶边界,增益详情同步"
+    },
+    "EV-216": {
+      "id": "EV-216",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T06:55:08+00:00",
+      "updated_at": "2026-09-19T06:55:08+00:00",
+      "touched_round": 224,
+      "source": "src/ui/signedPercent.spec.ts",
+      "summary": "modsText 进阶成功率带小进阶与大关天劫不吃;BuffDialog 同源",
+      "confidence": 1
+    },
+    "ISS-239": {
+      "id": "ISS-239",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-19T06:57:22+00:00",
+      "updated_at": "2026-09-19T06:59:04+00:00",
+      "touched_round": 225,
+      "summary": "掉落率词条只抬装备出现概率却像一切战利都涨",
+      "severity": 0.62,
+      "confidence": 0.95
+    },
+    "TASK-218": {
+      "id": "TASK-218",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-19T06:57:22+00:00",
+      "updated_at": "2026-09-19T06:59:04+00:00",
+      "touched_round": 225,
+      "category": "correctness",
+      "severity": 0.62,
+      "confidence": 0.95,
+      "effort": 1.5,
+      "summary": "STAT_NAMES.dropRate 改成装备掉落率,天时丹药同源"
+    },
+    "HYP-100": {
+      "id": "HYP-100",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T06:58:53+00:00",
+      "updated_at": "2026-09-19T06:58:53+00:00",
+      "touched_round": 225,
+      "confidence": 0.95,
+      "summary": "dropRate 只乘装备出现率,灵石草矿丹药书页都不吃"
+    },
+    "EV-217": {
+      "id": "EV-217",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T06:58:53+00:00",
+      "updated_at": "2026-09-19T06:58:53+00:00",
+      "touched_round": 225,
+      "source": "src/ui/signedPercent.spec.ts",
+      "summary": "modsText dropRate 现为装备掉落率;loot 只进 equipChance",
+      "confidence": 1
+    },
+    "ISS-240": {
+      "id": "ISS-240",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-19T08:10:02+00:00",
+      "updated_at": "2026-09-19T08:11:32+00:00",
+      "touched_round": 226,
+      "summary": "突破返还像退灵气或保成功,实际只少掉失败修为",
+      "severity": 0.6,
+      "confidence": 0.95
+    },
+    "TASK-219": {
+      "id": "TASK-219",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-19T08:10:03+00:00",
+      "updated_at": "2026-09-19T08:11:32+00:00",
+      "touched_round": 226,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1.5,
+      "summary": "STAT_NAMES.breakRefund 改成失败返还修为并注明不退灵气"
+    },
+    "HYP-101": {
+      "id": "HYP-101",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T08:11:23+00:00",
+      "updated_at": "2026-09-19T08:11:23+00:00",
+      "touched_round": 226,
+      "confidence": 0.95,
+      "summary": "breakRefund 只缩小失败掉修为,灵气在掷点前已扣"
+    },
+    "EV-218": {
+      "id": "EV-218",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T08:11:23+00:00",
+      "updated_at": "2026-09-19T08:11:23+00:00",
+      "touched_round": 226,
+      "source": "src/core/breakthroughFlow.spec.ts",
+      "summary": "圆融天赋失败时灵气照扣,修为损耗按 1-refund 缩小",
+      "confidence": 1
     }
   },
   "edges": [
@@ -19585,6 +19759,48 @@
       "to": "ISS-236",
       "type": "addresses",
       "created_at": "2026-09-19T05:39:30+00:00"
+    },
+    {
+      "from": "TASK-216",
+      "to": "ISS-237",
+      "type": "addresses",
+      "created_at": "2026-09-19T05:46:49+00:00"
+    },
+    {
+      "from": "TASK-217",
+      "to": "ISS-238",
+      "type": "addresses",
+      "created_at": "2026-09-19T06:55:08+00:00"
+    },
+    {
+      "from": "EV-216",
+      "to": "HYP-001",
+      "type": "validates",
+      "created_at": "2026-09-19T06:55:33+00:00"
+    },
+    {
+      "from": "TASK-218",
+      "to": "ISS-239",
+      "type": "addresses",
+      "created_at": "2026-09-19T06:57:32+00:00"
+    },
+    {
+      "from": "EV-217",
+      "to": "HYP-100",
+      "type": "validates",
+      "created_at": "2026-09-19T06:59:04+00:00"
+    },
+    {
+      "from": "TASK-219",
+      "to": "ISS-240",
+      "type": "addresses",
+      "created_at": "2026-09-19T08:10:14+00:00"
+    },
+    {
+      "from": "EV-218",
+      "to": "HYP-101",
+      "type": "validates",
+      "created_at": "2026-09-19T08:11:32+00:00"
     }
   ]
 }
