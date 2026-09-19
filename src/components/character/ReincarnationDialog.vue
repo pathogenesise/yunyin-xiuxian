@@ -131,12 +131,20 @@
             <span class="text-[10px] text-ink-faint">{{ TALENT_GRADE_NAMES[talentDef(id)?.grade ?? 1] }}</span>
           </p>
           <p class="mt-0.5 text-[11px] text-ink-faint">{{ talentDef(id)?.desc }}</p>
+          <p v-if="talentDef(id) && modsText(talentDef(id)!.mods)" class="mt-0.5 text-[11px] tabular text-azure">
+            {{ modsText(talentDef(id)!.mods) }}
+          </p>
         </button>
       </div>
-      <p v-if="view.extraTalents.length" class="mt-3 text-[11px] text-ink-faint">
-        另有天资自开:
-        <span v-for="id in view.extraTalents" :key="id" class="mr-2 font-kai text-gold-ink">{{ talentDef(id)?.name }}</span>
-      </p>
+      <div v-if="view.extraTalents.length" class="mt-3 text-[11px] text-ink-faint">
+        <p>另有天资自开:</p>
+        <p v-for="id in view.extraTalents" :key="id" class="mt-1">
+          <span class="font-kai text-gold-ink">{{ talentDef(id)?.name }}</span>
+          <span v-if="talentDef(id) && modsText(talentDef(id)!.mods)" class="ml-1 tabular text-azure">
+            {{ modsText(talentDef(id)!.mods) }}
+          </span>
+        </p>
+      </div>
 
       <!-- 这一世的命题 -->
       <template v-if="view.themeChoices.length">
@@ -180,6 +188,7 @@
   import { usePlayerStore } from '@/stores/player'
   import { prepareReincarnation, confirmReincarnation } from '@/core/reincarnation'
   import { talentDef, TALENT_GRADE_COLORS, TALENT_GRADE_NAMES } from '@/data/talents'
+  import { modsText } from '@/ui/statNames'
   import { lifeThemeDef, TABOO_NAMES } from '@/data/lifeThemes'
   import { heritageGroups } from '@/core/samsaraAudit'
   import { engine } from '@/core/engine'
