@@ -44,6 +44,10 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
    * 去渡大关,发现一点用没有 —— 那是名字在过度承诺,不是数值失效。
    */
   breakthroughRate: '进阶成功率',
+  /**
+   * Equipment quality weights (equipGen) and 5% of this value folded into
+   * the minor-step rate (breakthroughInfo). It does not raise event odds.
+   */
   luck: '气运',
   /**
    * Divides EXPLORE_BATTLE_INTERVAL. Trip length is modeDef.durationSec
@@ -130,6 +134,7 @@ export function signedPercent(n: number): string {
  */
 export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   breakthroughRate: '小进阶;大关天劫不吃',
+  luck: '主要抬装备成色;小进阶另吃此数的 5%',
   breakRefund: '失败掉的那份;不退灵气',
   alchemyYield: '多一枚的概率;与手艺合计顶 80%',
   explorationSpeed: '同程更多遭遇;不缩短行程',
@@ -137,7 +142,11 @@ export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   forgeDiscount: '装备强化花费;法宝祭炼不吃',
   dropRate: '只抬装备出现;灵石草矿不吃',
   eventLuck: '只抬历练途中掷点;洞府巡游不吃',
-  doubleDropRate: '当场灵石修为材料装备一并翻'
+  doubleDropRate: '当场灵石修为材料装备一并翻',
+  expGain: '历练战胜所得;静修挂机不吃',
+  tribulationResist: '天劫承伤;不改小进阶骰子',
+  qiCapPct: '抬标称灵气上限;积余仓随之上浮',
+  beastPct: '放大灵兽词条;不含灵兽园等级'
 }
 
 export function statCaveat(key: string): string | undefined {

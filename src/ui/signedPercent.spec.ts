@@ -10,6 +10,16 @@ describe('signedPercent', () => {
     expect(signedPercent(-0.5)).not.toContain('+-')
   })
 
+  it('luck 主要抬装备成色,小进阶只折入此数的 5%', () => {
+    expect(modsText({ luck: 0.1 })).toBe('气运 +10%(主要抬装备成色;小进阶另吃此数的 5%)')
+    const gen = readFileSync(resolve(__dirname, '../core/equipGen.ts'), 'utf8')
+    expect(gen).toContain('luckBoost')
+    const bt = readFileSync(resolve(__dirname, '../core/breakthrough.ts'), 'utf8')
+    expect(bt).toContain("modOf(mods, 'luck') * 0.05")
+    const explore = readFileSync(resolve(__dirname, '../core/exploration.ts'), 'utf8')
+    expect(explore).not.toContain("modOf(mods, 'luck')")
+  })
+
   it('进阶成功率词条自带小进阶边界,称号丹药天时共用', () => {
     expect(modsText({ breakthroughRate: 0.08 })).toBe('进阶成功率 +8%(小进阶;大关天劫不吃)')
   })
@@ -83,6 +93,23 @@ describe('signedPercent', () => {
     expect(loot).toContain("modOf(mods, 'doubleDropRate')")
     expect(loot).toContain('doubled')
     expect(loot).toContain('stoneAmt')
+  })
+
+  it('expGain 只报历练战胜修为,不说成静修也涨', () => {
+    expect(modsText({ expGain: 0.3 })).toBe('战斗修为 +30%(历练战胜所得;静修挂机不吃)')
+    const loot = readFileSync(resolve(__dirname, '../core/loot.ts'), 'utf8')
+    expect(loot).toContain("modOf(mods, 'expGain')")
+    const formulas = readFileSync(resolve(__dirname, '../core/formulas.ts'), 'utf8')
+    expect(formulas).not.toContain('expGain')
+  })
+
+  it('御劫只改天劫承伤,不改小进阶骰子', () => {
+    expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(天劫承伤;不改小进阶骰子)')
+    const trib = readFileSync(resolve(__dirname, '../core/tribulationDecision.ts'), 'utf8')
+    expect(trib).toContain("modOf(mods, 'tribulationResist')")
+    const bt = readFileSync(resolve(__dirname, '../core/breakthrough.ts'), 'utf8')
+    expect(bt).toContain("modOf(mods, 'breakthroughRate')")
+    expect(bt).not.toContain("modOf(mods, 'tribulationResist')")
   })
 
   it('功法、装备详情和法宝被动都走同源词条句,不再手写加号', () => {

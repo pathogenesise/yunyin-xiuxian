@@ -9,6 +9,7 @@
  *     两个新词条真的抬高灵气上限与灵兽效果。
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { INJURY_DURATION } from '@/data/constants'
 
 describe('重伤时长取自 INJURY_DURATION(常数接线)', () => {
@@ -128,5 +129,15 @@ describe('qiCapPct / beastPct 接线(修复阵法 / 安抚灵兽语出必践)', 
     expect(player.finalStats.mods.explorationSpeed).toBeCloseTo(0.1)
     cultivation.addBuff('cave_garden_pet', Date.now())
     expect(player.finalStats.mods.explorationSpeed).toBeCloseTo(0.13)
+  })
+})
+
+describe('qiCapPct / beastPct 不只吃 buffMods', () => {
+  it('灵气上限与灵兽放大从 ownedModSources 合并,避免装备功法将来变成死词条', () => {
+    const src = readFileSync(new URL('../stores/player.ts', import.meta.url), 'utf8')
+    expect(src).toContain("modOf(mergeMods(ownedModSources.value), 'beastPct')")
+    expect(src).toContain("modOf(mergeMods([...ownedModSources.value, petMods.value]), 'qiCapPct')")
+    expect(src).not.toContain("modOf(cultivation.buffMods, 'beastPct')")
+    expect(src).not.toContain("modOf(cultivation.buffMods, 'qiCapPct')")
   })
 })

@@ -538,7 +538,10 @@
     'forgeDiscount',
     'breakRefund',
     'eventLuck',
-    'doubleDropRate'
+    'doubleDropRate',
+    'tribulationResist',
+    'qiCapPct',
+    'beastPct'
   ]
 
   const modRows = computed(() =>
