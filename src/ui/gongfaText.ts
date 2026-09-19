@@ -1,0 +1,24 @@
+/**
+ * 功法参悟提示 —— 残卷、精进。
+ *
+ * 藏经阁与功法升级是修行页高频短句。残页、悟道点、层数仍报清。
+ */
+export function gongfaPageShortToast(): string {
+  return '残页未足,难拼此卷'
+}
+
+export function gongfaAllLearnedToast(): string {
+  return '此境功法已尽数参透'
+}
+
+export function gongfaComprehendToast(name: string): string {
+  return `残卷拼合,你参悟出《${name}》`
+}
+
+export function gongfaUpShortToast(): string {
+  return '悟道点或残页未足,难以精进'
+}
+
+export function gongfaUpDoneToast(name: string, level: number): string {
+  return `《${name}》又进一重,已至第 ${level} 层`
+}
