@@ -117,6 +117,13 @@ describe('signedPercent', () => {
     expect(combat).toContain('round === 1')
   })
 
+  it('闪避与命中是相减,命中打不闪的敌手没有额外收益', () => {
+    expect(modsText({ dodgeRate: 0.1 })).toBe('闪避 +10%(须高于对手命中,方得避开)')
+    expect(modsText({ accuracy: 0.08 })).toBe('命中 +8%(只抵对手闪避;不闪则无增益)')
+    const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
+    expect(combat).toContain("modOf(tMods, 'dodgeRate') - modOf(aMods, 'accuracy')")
+  })
+
   it('御劫只改天劫承伤,不改小进阶骰子', () => {
     expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(只减天劫之伤;小进阶之骰不改)')
     const trib = readFileSync(resolve(__dirname, '../core/tribulationDecision.ts'), 'utf8')

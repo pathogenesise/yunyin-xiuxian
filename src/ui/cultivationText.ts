@@ -34,3 +34,16 @@ export function breakthroughExpReason(): string {
 export function breakthroughQiReason(qiText: string): string {
   return `灵气未足,此关需 ${qiText} 缕`
 }
+
+export function breakthroughActLabel(needTribulation: boolean): string {
+  return needTribulation ? '引劫突破' : '尝试突破'
+}
+
+export function breakthroughGoalText(near: boolean, needTribulation: boolean, targetLabel: string): string {
+  if (!near) return `向「${targetLabel}」迈进`
+  return `${breakthroughActLabel(needTribulation)}「${targetLabel}」`
+}
+
+export function breakthroughReadyNote(needTribulation: boolean): string {
+  return `修为已至圆满,可${breakthroughActLabel(needTribulation)}`
+}

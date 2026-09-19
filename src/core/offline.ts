@@ -6,6 +6,7 @@ import type { EventDef, OfflineSummary } from '@/types'
 import { add, gn, gnZero, isZero, mulN, sub } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { offlineAgeNote } from '@/ui/offlineText'
+import { breakthroughReadyNote } from '@/ui/cultivationText'
 import { rng } from '@/utils/random'
 import { regionDef } from '@/data/regions'
 import { enemyDef } from '@/data/enemies'
@@ -30,6 +31,7 @@ import { clearRegionAndUnlockNext, exploreEventChance, dangerFactorFor, explorat
 import { currentRegionEvent, regionEventDef } from './regionEvent'
 import { placeContent } from './mortalWorldService'
 import { expFromSecs, stoneByTier } from './formulas'
+import { breakthroughInfo } from './breakthrough'
 import { settleSuppressedRegions } from './suppress'
 import { harvestMaterials, studyTick } from './loreService'
 import { modOf } from './statsCalc'
@@ -318,7 +320,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     recycledDust,
     notes
   }
-  if (player.expFull) notes.push('修为已至圆满,可尝试突破')
+  if (player.expFull && !player.atMaxRealm) notes.push(breakthroughReadyNote(breakthroughInfo().needTribulation))
   if (summary.ageYears > 0) notes.push(offlineAgeNote(summary.ageYears))
 
   /**

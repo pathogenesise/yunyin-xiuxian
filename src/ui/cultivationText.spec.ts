@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import {
+  breakthroughActLabel,
   breakthroughExpReason,
+  breakthroughGoalText,
   breakthroughPeakReason,
   breakthroughQiReason,
+  breakthroughReadyNote,
   prepPillShortToast,
   repairActLabel,
   repairDoneToast,
@@ -28,6 +31,12 @@ describe('修行页提示 · 文言仍报清缕数与药资', () => {
     expect(breakthroughPeakReason()).toContain('大道尽头')
     expect(breakthroughExpReason()).toContain('圆满')
     expect(breakthroughQiReason('40')).toBe('灵气未足,此关需 40 缕')
+    expect(breakthroughActLabel(false)).toBe('尝试突破')
+    expect(breakthroughActLabel(true)).toBe('引劫突破')
+    expect(breakthroughGoalText(true, true, '筑基初期')).toBe('引劫突破「筑基初期」')
+    expect(breakthroughGoalText(true, false, '炼气中期')).toBe('尝试突破「炼气中期」')
+    expect(breakthroughReadyNote(true)).toBe('修为已至圆满,可引劫突破')
+    expect(breakthroughReadyNote(false)).not.toContain('引劫')
   })
 })
 
@@ -38,5 +47,8 @@ describe('修行页与提示同源', () => {
     expect(view).toContain('prepPillShortToast()')
     expect(view).not.toContain('灵气不足')
     expect(view).not.toContain('灵石不足')
+    const offline = readFileSync(new URL('../core/offline.ts', import.meta.url), 'utf8')
+    expect(offline).toContain('breakthroughReadyNote(')
+    expect(offline).toContain('atMaxRealm')
   })
 })

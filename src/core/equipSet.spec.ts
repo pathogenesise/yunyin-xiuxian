@@ -2,7 +2,9 @@
  * Phase 31.0 S5:装备共鸣 —— 机制组合而非数值堆叠
  */
 import { describe, it, expect } from 'vitest'
-import { activeSets, setCounts, hasActiveSet, equipSetDef } from './equipSet'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { activeSets, setCounts, hasActiveSet, equipSetDef, ASTRAL_SET_SHIELD } from './equipSet'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
 import type { EquipmentInstance, QualityId } from '@/types'
 
@@ -46,6 +48,14 @@ describe('装备共鸣(equipSet)', () => {
       expect(def, `${t.name}(${t.id}) 引用了不存在的共鸣 ${t.set}`).toBeDefined()
       expect(def!.effectDesc.length).toBeGreaterThan(0)
     }
+  })
+
+  it('astral 护盾百分比与 ASTRAL_SET_SHIELD 同源,不手抄 5%', () => {
+    expect(equipSetDef('s_xingdou')!.effectDesc).toContain(String(Math.round(ASTRAL_SET_SHIELD * 100)))
+    expect(equipSetDef('s_xianjia')!.effectDesc).toContain('护盾+')
+    const src = readFileSync(resolve(__dirname, './equipSet.ts'), 'utf8')
+    expect(src).toContain('astralShieldDesc(')
+    expect(src).not.toContain('护盾+5%')
   })
 
   it('每个共鸣都有足够多的部件可以真的触发(不能是凑不齐的空套)', () => {
