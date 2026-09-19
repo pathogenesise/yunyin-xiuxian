@@ -29,7 +29,8 @@ describe('signedPercent', () => {
     expect(modsText({ explorationSpeed: 0.3 })).not.toContain('历练速度')
     const explore = readFileSync(resolve(__dirname, '../core/exploration.ts'), 'utf8')
     expect(explore).toContain("modOf(player.finalStats.mods, 'explorationSpeed')")
-    expect(explore).toContain('modeDef.durationSec * petEff.exploreDurMult')
+    expect(explore).toContain('exploreDurationSec(mode, player.petId)')
+    expect(explore).toContain('personalityEffects(petId).exploreDurMult')
   })
 
   it('alchemyYield 只报双枚成丹概率,不说成产量翻倍', () => {

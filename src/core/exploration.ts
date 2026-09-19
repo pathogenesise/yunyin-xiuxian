@@ -92,16 +92,13 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   offerBondEvent('enterPlace')
   const now = Date.now()
   const modeDef = EXPLORE_MODES[mode]
-  const speed = 1 + modOf(player.finalStats.mods, 'explorationSpeed')
-  // Phase 31 S4:灵兽性格影响历练时长(慢稳更久)
-  const petEff = personalityEffects(player.petId)
-  const durationSec = Math.round(modeDef.durationSec * petEff.exploreDurMult)
+  const durationSec = exploreDurationSec(mode, player.petId)
   const session: AdventureSession = {
     regionId,
     mode,
     startedAt: now,
     endsAt: now + durationSec * 1000,
-    nextBattleAt: now + (EXPLORE_BATTLE_INTERVAL * 1000) / speed,
+    nextBattleAt: now + exploreBattleGapSec(modOf(player.finalStats.mods, 'explorationSpeed')) * 1000,
     wins: 0,
     losses: 0,
     events: 0,
@@ -433,8 +430,24 @@ export function clearRegionAndUnlockNext(regionId: string): void {
 
 function nextBattleTime(now: number): number {
   const player = usePlayerStore()
-  const speed = 1 + modOf(player.finalStats.mods, 'explorationSpeed')
-  return now + (EXPLORE_BATTLE_INTERVAL * 1000) / speed
+  return now + exploreBattleGapSec(modOf(player.finalStats.mods, 'explorationSpeed')) * 1000
+}
+
+/** 这一程实际走多久。灵兽之性改时长;历练遇敌不改。出发按钮与 startExploration 共用。 */
+export function exploreDurationSec(mode: ExploreMode, petId: string | null): number {
+  return Math.round(EXPLORE_MODES[mode].durationSec * personalityEffects(petId).exploreDurMult)
+}
+
+/** 两场遭遇的间隔(秒)。explorationSpeed 只收紧这一截,不缩短整程。 */
+export function exploreBattleGapSec(explorationSpeed: number): number {
+  const speed = 1 + explorationSpeed
+  return (EXPLORE_BATTLE_INTERVAL * 1000) / speed / 1000
+}
+
+/** 取胜收益倍率:档位 × 当前区域事件。没有事件时就是档位自己。 */
+export function exploreRewardMult(mode: ExploreMode, eventId: RegionEventId | null): number {
+  const extra = eventId ? (regionEventDef(eventId)?.rewardMult ?? 1) : 1
+  return EXPLORE_MODES[mode].rewardMult * extra
 }
 
 /**

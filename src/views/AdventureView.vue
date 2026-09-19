@@ -269,10 +269,7 @@
             两个数并排摆出来,「要不要涉险」才是个可算的账。
           -->
           <span class="text-right text-[11px] text-ink-faint tabular">
-            行程 {{ formatDuration(EXPLORE_MODES[m.id].durationSec) }}
-            <br />
-            收益 ×{{ EXPLORE_MODES[m.id].rewardMult }} · 遇险
-            <span :class="EXPLORE_MODES[m.id].dangerMult > 1 ? 'text-cinnabar' : ''">×{{ EXPLORE_MODES[m.id].dangerMult }}</span>
+            {{ departText(m.id) }}
           </span>
         </button>
       </div>
@@ -297,7 +294,17 @@
   import { isRetreating } from '@/core/earlyGameService'
   import { REALMS } from '@/data/realms'
   import { EXPLORE_MODES } from '@/data/constants'
-  import { regionFoeOrigin, startExploration } from '@/core/exploration'
+  import {
+    exploreBattleGapSec,
+    exploreDurationSec,
+    exploreRewardMult,
+    explorationFoeDanger,
+    regionFoeOrigin,
+    startExploration
+  } from '@/core/exploration'
+  import { currentRegionEvent } from '@/core/regionEvent'
+  import { modOf } from '@/core/statsCalc'
+  import { departButtonText } from '@/ui/adventureText'
   import { EVENT_TIERS, tierOddsText } from '@/core/eventTier'
   import { pendingChainStages } from '@/core/eventEngine'
   import { foeOriginPartsText } from '@/core/battleAnalysis'
@@ -306,7 +313,7 @@
   import { mulN } from '@/utils/gnum'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, ecologyChips, ECO_LEVEL_NAMES, recommendForRegion, regionEcology, starsText } from '@/core/buildAdvisor'
-  import { formatDuration, formatGN } from '@/utils/format'
+  import { formatGN } from '@/utils/format'
   import GameIcon from '@/components/common/GameIcon.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import CombatPanel from '@/components/adventure/CombatPanel.vue'
@@ -431,6 +438,25 @@
     }
     return groups
   })
+
+  function departText(mode: ExploreMode): string {
+    const region = modeTarget.value
+    if (!region) return ''
+    const eventId = currentRegionEvent(region.id)?.eventId ?? null
+    const danger = explorationFoeDanger({
+      tier: region.tier,
+      mode,
+      regionDanger: region.danger,
+      petId: player.petId,
+      eventId
+    }).total
+    return departButtonText({
+      durationSec: exploreDurationSec(mode, player.petId),
+      rewardMult: exploreRewardMult(mode, eventId),
+      dangerMult: danger,
+      battleGapSec: exploreBattleGapSec(modOf(player.finalStats.mods, 'explorationSpeed'))
+    })
+  }
 
   function chooseMode(region: RegionDef): void {
     /*
