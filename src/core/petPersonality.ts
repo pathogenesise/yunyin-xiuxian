@@ -4,11 +4,11 @@
  * 灵兽不只是数值加成:性格决定历练时的行为倾向。
  * 玩家选伙伴 = 选路线风格,而非单纯"哪个数值高"。
  *
- * 性格:
- *   greedy 贪宝 —— 更易遇稀有掉落/机缘,更易遇危险事件
- *   steady 慢稳 —— 历练更久,失败率下降
- *   fierce 好战 —— 战斗收益提高,更易走高危路线
- *   cautious 谨慎 —— 高闪避,少掉宝
+ * 性格只动这四件事(见 EFFECTS,界面 petTraitText 同源):
+ *   greedy 贪宝 —— 装备成色更好,遇险略高
+ *   steady 慢稳 —— 行程更久,遇险略低,败北偶有护持
+ *   fierce 好战 —— 遇险更高,成色略涨(不另加战斗修为或灵石)
+ *   cautious 谨慎 —— 行程略短,遇险略低,成色稍降,败北更有护持
  */
 import type { PetDef } from '@/types'
 import { petDef } from '@/data/pets'
@@ -46,16 +46,13 @@ export function personalityEffects(petId: string | null): PetPersonalityEffects 
   return EFFECTS[def.personality] ?? { exploreDurMult: 1, dangerMult: 1, dropLuck: 0, lossReduction: 0 }
 }
 
-/** 性格一句话说明(选灵兽 UI) */
+/** 性格一句话说明(选灵兽 UI) —— 只报 EFFECTS 里真有的事,不另许战斗收益或机缘 */
 export function personalityDesc(p: PetDef['personality']): string {
-  switch (p) {
-    case 'greedy':
-      return '更容易发现稀有之物,但也会招来危险。'
-    case 'steady':
-      return '历练更久更稳,失败率有所下降。'
-    case 'fierce':
-      return '战斗收益更高,但更容易走上险路。'
-    case 'cautious':
-      return '谨慎避祸,掉落则稍稍寻常。'
-  }
+  const e = EFFECTS[p]
+  const parts: string[] = []
+  if (e.exploreDurMult !== 1) parts.push(e.exploreDurMult > 1 ? '行程更久' : '行程略短')
+  if (e.dangerMult !== 1) parts.push(e.dangerMult > 1 ? '遇险更高' : '遇险略低')
+  if (e.dropLuck !== 0) parts.push(e.dropLuck > 0 ? '装备成色更好' : '装备成色稍降')
+  if (e.lossReduction > 0) parts.push('败北偶有护持')
+  return `${parts.join(',')}。`
 }

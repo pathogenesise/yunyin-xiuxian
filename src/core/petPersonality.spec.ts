@@ -28,9 +28,28 @@ describe('灵兽性格(personality)', () => {
     expect(personalityEffects(null).exploreDurMult).toBe(1)
   })
 
-  it('性格描述可读', () => {
-    expect(personalityDesc('greedy')).toContain('稀有')
-    expect(personalityDesc('fierce')).toContain('战斗')
+  it('性格描述只报真实效果,不另许战斗收益或机缘', () => {
+    const kinds = ['greedy', 'steady', 'fierce', 'cautious'] as const
+    for (const k of kinds) {
+      const text = personalityDesc(k)
+      const e = personalityEffects(
+        PETS.find(p => p.personality === k)!.id
+      )
+      expect(text, k).not.toContain('收益')
+      expect(text, k).not.toContain('机缘')
+      if (e.dropLuck !== 0) expect(text, k).toContain('成色')
+      if (e.dangerMult !== 1) expect(text, k).toContain('遇险')
+      if (e.exploreDurMult !== 1) expect(text, k).toContain('行程')
+      if (e.lossReduction > 0) expect(text, k).toContain('护持')
+    }
+  })
+
+  it('灵兽风味不把同程遇敌说成寻机缘,不把战利灵石说成聚财', () => {
+    for (const p of PETS) {
+      expect(p.desc, p.id).not.toContain('机缘')
+      expect(p.desc, p.id).not.toContain('聚财')
+      expect(p.desc, p.id).not.toContain('九万里')
+    }
   })
 
   it('petDef 回查正常', () => {
