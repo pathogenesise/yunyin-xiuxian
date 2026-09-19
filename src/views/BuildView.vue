@@ -24,8 +24,18 @@
         <p class="mt-2 text-[11px] leading-relaxed text-ink-faint">{{ build.style.desc }}</p>
         <div class="mt-2 space-y-1">
           <p v-for="cv in build.coreValues" :key="cv.key" class="flex justify-between text-[12px]">
-            <span class="text-ink-soft">{{ STAT_NAMES[cv.key] }}</span>
+            <span class="text-ink-soft">
+              {{ STAT_NAMES[cv.key] }}
+              <span v-if="isSoftCapped(player.finalStats.mods, cv.key)" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
+            </span>
             <span class="tabular text-violet-ink">{{ signedPercent(cv.value) }}</span>
+          </p>
+          <p
+            v-for="note in coreCaveats"
+            :key="note.key"
+            class="text-[9px] leading-relaxed text-ink-ghost"
+          >
+            {{ note.label }}:{{ note.caveat }}
           </p>
         </div>
         <p v-if="buildSourceNames.length" class="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-ink-faint">
@@ -209,7 +219,8 @@
   import { applyLoadout, captureLoadout, deleteLoadout } from '@/core/loadoutService'
   import { useLoadoutsStore, MAX_LOADOUTS } from '@/stores/loadouts'
   import { cnNumber } from '@/utils/format'
-  import { STAT_NAMES, signedPercent } from '@/ui/statNames'
+  import { STAT_NAMES, signedPercent, statCaveat } from '@/ui/statNames'
+  import { isSoftCapped } from '@/core/statsCalc'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -227,6 +238,11 @@
     dimKey.value = dimKey.value === key ? null : key
   }
   const buildSourceNames = computed(() => (build.value ? buildSources(build.value.style) : []))
+  const coreCaveats = computed(() =>
+    (build.value?.coreValues ?? [])
+      .map(cv => ({ key: cv.key, label: STAT_NAMES[cv.key], caveat: statCaveat(cv.key) }))
+      .filter((row): row is { key: typeof row.key; label: string; caveat: string } => Boolean(row.caveat))
+  )
 
   /** 主副体系凑对时展示组合技(未达门槛也展示,作为构筑目标) */
   const comboInfo = computed(() => {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { createPinia, setActivePinia } from 'pinia'
 import { BUILD_STYLES, buildSources, detectBuild } from './buildDetect'
 import { useCultivationStore } from '@/stores/cultivation'
@@ -99,5 +100,12 @@ describe('成路于与真正吃进属性的来路同源', () => {
     expect(buildSources(muze)).toContain('灵兽·混沌饕餮')
     const fengmang = BUILD_STYLES.find(s => s.id === 'fengmang')!
     expect(buildSources(fengmang)).toContain('称号·一剑破万法')
+  })
+
+  it('流派页把核心门槛与软顶摊在数字旁边', () => {
+    const view = readFileSync(new URL('../views/BuildView.vue', import.meta.url), 'utf8')
+    expect(view).toContain('statCaveat')
+    expect(view).toContain('isSoftCapped')
+    expect(view).toContain('coreCaveats')
   })
 })
