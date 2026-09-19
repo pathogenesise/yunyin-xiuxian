@@ -8,6 +8,7 @@ import {
   daoSourceDialog,
   daoFruitDialog,
   fruitMarginalInfo,
+  fruitCountLabel,
   fruitSoftCapText,
   shouldShowEndgameTutorial,
   markEndgameTutorialSeen,
@@ -21,6 +22,7 @@ import {
 import { usePlayerStore } from '@/stores/player'
 import { useEndgameStore } from '@/stores/endgame'
 import { condenseDaoFruit } from './endgameService'
+import { effectiveDaoFruit } from './statsCalc'
 
 describe('S1 生命周期语义', () => {
   it('道源=此世消耗,道果=永久积累', () => {
@@ -37,6 +39,7 @@ describe('S1 生命周期语义', () => {
     const df = daoFruitDialog()
     expect(df.name).toBe('道果')
     expect(df.lifecycle).toContain('跨世保留')
+    expect(df.lifecycle).toContain('道躯')
   })
 })
 
@@ -52,6 +55,9 @@ describe('S3 道果边际收益', () => {
     expect(info.nextEffective).toBeGreaterThan(info.effective)
     // 软上限:有效道果 = 道果^0.9
     // 增量 = ((11^0.9)/(10^0.9) - 1) ≈ 8.96%(基本等同 1.1^0.9 - 1,不随基数骤变)
+    expect(info.effective).toBeCloseTo(effectiveDaoFruit(10), 9)
+    expect(fruitCountLabel(info.effective)).toBe('7.9 枚')
+    expect(fruitCountLabel(info.effective)).not.toBe('8 枚')
     expect(Number(info.deltaPct)).toBeGreaterThan(8)
     expect(Number(info.deltaPct)).toBeLessThan(10)
   })

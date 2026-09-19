@@ -11,7 +11,9 @@
 import { useEndgameStore } from '@/stores/endgame'
 import { WORLD_BREAK_MAJOR } from '@/data/realms'
 import { usePlayerStore } from '@/stores/player'
-import { DAO_FRUIT_CULT_BONUS, DAO_FRUIT_SOFT_EXP } from '@/data/constants'
+import { DAO_FRUIT_COMBAT_BONUS, DAO_FRUIT_CULT_BONUS } from '@/data/constants'
+import { formatPercent } from '@/utils/format'
+import { effectiveDaoFruit } from './statsCalc'
 
 // ---------- S1 生命周期语义 ----------
 
@@ -51,7 +53,6 @@ export function daoSourceDialog(): ResourceDialogData {
 }
 
 export function daoFruitDialog(): ResourceDialogData {
-  const cultBonus = Math.round(DAO_FRUIT_CULT_BONUS * 100)
   return {
     name: '道果',
     role: DAO_FRUIT_ROLE,
@@ -59,19 +60,23 @@ export function daoFruitDialog(): ResourceDialogData {
     intro: '跨越轮回仍不磨灭的修行成果。',
     usages: DAO_FRUIT_USAGES,
     gains: ['道源凝聚', '终局奖励'],
-    lifecycle: `跨世保留。每枚:修行 +${cultBonus}%,道躯 +1.5%。`
+    lifecycle: `跨世保留。每枚:修行 +${formatPercent(DAO_FRUIT_CULT_BONUS)},道躯 +${formatPercent(DAO_FRUIT_COMBAT_BONUS)}。`
   }
 }
 
-// ---------- S3 道源→道果视觉链路 ----------
+/** 有效道果不四舍五入成整数。7.9 枚与 8 枚乘出来的修行不是同一笔。 */
+export function fruitCountLabel(n: number): string {
+  const rounded = Math.round(n * 10) / 10
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+  return `${text} 枚`
+}
 
 /** 本次凝聚一枚道果后,当前有效道果收益变化(白话:边际收益) */
 export function fruitMarginalInfo(): { total: number; effective: number; nextEffective: number; deltaPct: string } {
   const player = usePlayerStore()
   const fruit = player.reincarnation.daoFruit
-  const eff = Math.pow(fruit, DAO_FRUIT_SOFT_EXP)
-  const nextEff = Math.pow(fruit + 1, DAO_FRUIT_SOFT_EXP)
-  // 下轮有效道果收益的增长率(当前为基础,展示边际递减)
+  const eff = effectiveDaoFruit(fruit)
+  const nextEff = effectiveDaoFruit(fruit + 1)
   const delta = ((nextEff - eff) / Math.max(1, eff)) * 100
   return { total: fruit, effective: eff, nextEffective: nextEff, deltaPct: delta.toFixed(2) }
 }
