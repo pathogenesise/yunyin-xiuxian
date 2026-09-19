@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 226,
+  "round": 227,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-19T08:11:32+00:00",
+  "updated_at": "2026-09-19T08:15:52+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -13468,6 +13468,55 @@
       "source": "src/core/breakthroughFlow.spec.ts",
       "summary": "圆融天赋失败时灵气照扣,修为损耗按 1-refund 缩小",
       "confidence": 1
+    },
+    "ISS-241": {
+      "id": "ISS-241",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-19T08:14:59+00:00",
+      "updated_at": "2026-09-19T08:15:52+00:00",
+      "touched_round": 227,
+      "summary": "炼丹产出像产量翻倍,实际只加双枚成丹的概率且有顶",
+      "severity": 0.64,
+      "confidence": 0.95
+    },
+    "TASK-220": {
+      "id": "TASK-220",
+      "type": "task",
+      "status": "resolved",
+      "version": 4,
+      "created_at": "2026-09-19T08:14:59+00:00",
+      "updated_at": "2026-09-19T08:15:52+00:00",
+      "touched_round": 227,
+      "category": "correctness",
+      "severity": 0.64,
+      "confidence": 0.95,
+      "effort": 1.5,
+      "summary": "STAT_NAMES.alchemyYield 改成双枚成丹并写明顶 80%"
+    },
+    "HYP-102": {
+      "id": "HYP-102",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T08:15:43+00:00",
+      "updated_at": "2026-09-19T08:15:43+00:00",
+      "touched_round": 227,
+      "confidence": 0.95,
+      "summary": "alchemyYield 加在 bonusChance 上掷第二枚,合计封顶 0.8"
+    },
+    "EV-219": {
+      "id": "EV-219",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-19T08:15:43+00:00",
+      "updated_at": "2026-09-19T08:15:43+00:00",
+      "touched_round": 227,
+      "source": "src/ui/signedPercent.spec.ts",
+      "summary": "modsText 双枚成丹带顶;pillService 同源 bonusChance+yieldMod",
+      "confidence": 1
     }
   },
   "edges": [
@@ -19801,6 +19850,18 @@
       "to": "HYP-101",
       "type": "validates",
       "created_at": "2026-09-19T08:11:32+00:00"
+    },
+    {
+      "from": "TASK-220",
+      "to": "ISS-241",
+      "type": "addresses",
+      "created_at": "2026-09-19T08:15:08+00:00"
+    },
+    {
+      "from": "EV-219",
+      "to": "HYP-102",
+      "type": "validates",
+      "created_at": "2026-09-19T08:15:52+00:00"
     }
   ]
 }
