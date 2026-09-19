@@ -23,7 +23,7 @@
       -->
       <template v-if="info.canUpgrade">
         <span class="leading-tight">
-          <span class="whitespace-nowrap">{{ level > 0 ? '升级' : '建造' }} ·</span>
+          <span class="whitespace-nowrap">{{ buildingActLabel(level) }} ·</span>
           <span class="whitespace-nowrap">{{ formatGN(info.stone) }} 石</span>
           <span v-if="info.ore > 0" class="whitespace-nowrap">· {{ info.ore }} 铁</span>
         </span>
@@ -39,6 +39,7 @@
   import { useDongfuStore } from '@/stores/dongfu'
   import { buildingUpgradeInfo, upgradeBuilding } from '@/core/buildingService'
   import { modsText } from '@/ui/statNames'
+  import { buildingActLabel } from '@/ui/buildingText'
   import { formatGN } from '@/utils/format'
 
   const props = defineProps<{ def: BuildingDef }>()

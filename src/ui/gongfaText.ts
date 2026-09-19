@@ -22,3 +22,7 @@ export function gongfaUpShortToast(): string {
 export function gongfaUpDoneToast(name: string, level: number): string {
   return `《${name}》又进一重,已至第 ${level} 层`
 }
+
+export function gongfaSubFullToast(slots: number): string {
+  return `辅修已满 ${slots} 席,广营藏经阁方可再纳`
+}

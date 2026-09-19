@@ -28,6 +28,15 @@ import { track } from './progress'
 import { useInventoryStore } from '@/stores/inventory'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiStore } from '@/stores/ui'
+import {
+  reforgeDoneToast,
+  reforgeEmptyToast,
+  reforgeSealedNote,
+  reforgeShortToast,
+  sealDoneToast,
+  sealMustLeaveToast,
+  sealShortToast
+} from '@/ui/reforgeText'
 
 export interface ReforgeCost {
   stone: GNum
@@ -82,11 +91,11 @@ export function reforgeEquipment(uid: string): boolean {
   if (!inst) return false
   const cost = reforgeCost(inst)
   if (!cost) {
-    ui.toast('此物已无重铸余地', 'warn')
+    ui.toast(reforgeEmptyToast(), 'warn')
     return false
   }
   if (!resources.hasStone(cost.stone) || !resources.hasSmall('dust', cost.dust)) {
-    ui.toast('灵石或器灵尘不足', 'warn')
+    ui.toast(reforgeShortToast(), 'warn')
     return false
   }
 
@@ -122,9 +131,9 @@ export function reforgeEquipment(uid: string): boolean {
   inventory.replaceItem({ ...inst, affixes, reforgeCount: (inst.reforgeCount ?? 0) + 1 })
   track('upgrades')
 
-  const sealedNote = kept.length > 0 ? `(封存 ${kept.length} 条未动)` : ''
+  const sealedNote = reforgeSealedNote(kept.length)
   const countNote = before === affixes.length ? `${affixes.length} 条` : `${before} → ${affixes.length} 条`
-  ui.toast(`重铸而成:词条 ${countNote}${sealedNote}`, 'success')
+  ui.toast(reforgeDoneToast(countNote, sealedNote), 'success')
   return true
 }
 
@@ -147,16 +156,16 @@ export function sealAffix(uid: string, affixId: string): boolean {
   if ((inst.sealedAffixIds ?? []).includes(affixId)) return false
   const cost = sealCost(inst)
   if (!cost) {
-    ui.toast('至少须留一个词条随天意流转', 'warn')
+    ui.toast(sealMustLeaveToast(), 'warn')
     return false
   }
   if (!resources.hasStone(cost)) {
-    ui.toast('灵石不足', 'warn')
+    ui.toast(sealShortToast(), 'warn')
     return false
   }
   resources.spendStone(cost)
   inventory.replaceItem({ ...inst, sealedAffixIds: [...(inst.sealedAffixIds ?? []), affixId] })
   const name = affixDef(affixId)?.name ?? '词条'
-  ui.toast(`「${name}」已封存,重铸不移`, 'success')
+  ui.toast(sealDoneToast(name), 'success')
   return true
 }

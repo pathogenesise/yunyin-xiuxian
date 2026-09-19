@@ -129,6 +129,7 @@
   import { gongfaAffinity, rootElements } from '@/core/linggenAffinity'
   import { gongfaModsAt } from '@/stores/cultivation'
   import { STAT_NAMES, modsText, statValueText } from '@/ui/statNames'
+  import { gongfaSubFullToast } from '@/ui/gongfaText'
   import type { AnyStatKey } from '@/types'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
@@ -209,6 +210,6 @@
   function toggleSub(): void {
     if (!def.value) return
     const ok = cultivation.toggleSub(def.value.id, dongfu.subGongfaSlots)
-    if (!ok) ui.toast(`辅修栏已满(${dongfu.subGongfaSlots} 个,升级藏经阁可扩容)`, 'warn')
+    if (!ok) ui.toast(gongfaSubFullToast(dongfu.subGongfaSlots), 'warn')
   }
 </script>
