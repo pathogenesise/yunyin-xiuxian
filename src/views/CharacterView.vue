@@ -500,7 +500,7 @@
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
   import { cnNumber, formatGN } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
-  import { STAT_NAMES, modsText, signedPercent, statCaveat } from '@/ui/statNames'
+  import { STAT_KEYS, STAT_NAMES, modsText, signedPercent, statCaveat } from '@/ui/statNames'
   import { rebirthDecisionHint } from '@/ui/rebirthText'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -515,45 +515,17 @@
 
   const stats = computed(() => player.finalStats)
 
-  /** 灵根的天然牌面(倾向文案,不含任何数值) */
-  const tendencies = computed(() => tendencyLines(rootElements(player.linggen?.roots)))
-
-  const MOD_KEYS: AnyStatKey[] = [
-    'cultivationSpeed',
-    'qiRegen',
-    'breakthroughRate',
-    'critRate',
-    'critDamage',
-    'speed',
-    'firstStrike',
-    'damageBonus',
-    'damageReduction',
-    'dodgeRate',
-    'accuracy',
-    'shieldOnStart',
-    'luck',
-    'explorationSpeed',
-    'dropRate',
-    'expGain',
-    'spiritStoneGain',
-    'alchemyYield',
-    'forgeDiscount',
-    'breakRefund',
-    'eventLuck',
-    'doubleDropRate',
-    'tribulationResist',
-    'qiCapPct',
-    'beastPct'
-  ]
-
   const modRows = computed(() =>
-    MOD_KEYS.map(k => ({
+    STAT_KEYS.map(k => ({
       key: k,
       label: STAT_NAMES[k],
       value: modOf(stats.value.mods, k),
       capped: isSoftCapped(stats.value.mods, k)
     })).filter(x => x.value !== 0)
   )
+
+  /** 灵根的天然牌面(倾向文案,不含任何数值) */
+  const tendencies = computed(() => tendencyLines(rootElements(player.linggen?.roots)))
 
   /** 面板上只提示当前真有的词条边界,没有这项的玩家不需要看见空话 */
   const panelCaveats = computed(() =>

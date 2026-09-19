@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { SOFT_CAPS } from '@/data/constants'
 import { isSoftCapped, mergeMods } from '@/core/statsCalc'
+import { STAT_KEYS } from '@/ui/statNames'
 import type { AnyStatKey } from '@/types'
 
 /** 去掉注释与模板注释,免得注释里提一嘴就算「接上了」 */
@@ -57,8 +58,10 @@ describe('软上限:机制本体', () => {
 
 describe('软上限:人物页真的标出来了', () => {
   it('凡有软阈值的属性,人物页都必须显示(否则无从标记)', () => {
+    expect(CHAR_VIEW_SRC, '人物页应遍历 STAT_KEYS,不能再手抄一份白名单').toContain('STAT_KEYS')
+    expect(CHAR_VIEW_SRC).not.toMatch(/const MOD_KEYS/)
     for (const key of CAPPED_KEYS) {
-      expect(CHAR_VIEW_SRC, `人物页漏了 ${key}`).toContain(`'${key}'`)
+      expect(STAT_KEYS, `STAT_NAMES 漏了 ${key}`).toContain(key)
     }
   })
 

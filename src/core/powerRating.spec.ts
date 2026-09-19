@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ratePower, ratingStars } from './powerRating'
+import { STAT_NAMES } from '@/ui/statNames'
 import type { FinalStats, StatMods } from '@/types'
 
 const statsWith = (mods: StatMods): FinalStats => ({ mods }) as FinalStats
@@ -103,5 +104,31 @@ describe('五维评级的来路', () => {
     const mech = r.labels.find(l => l.key === 'mechanics')!
     expect(mech.terms.length, '成路之后机制维却没有任何来路').toBeGreaterThan(0)
     expect(mech.terms[0]!.label.startsWith('成路·'), `机制维第一条应是成路,实际 ${mech.terms[0]!.label}`).toBe(true)
+  })
+
+  it('词条名与 STAT_NAMES 同源,不另叫闪避率或连击率', () => {
+    const r = ratePower(
+      statsWith({
+        dodgeRate: 0.1,
+        comboRate: 0.1,
+        shieldPower: 0.15,
+        overhealShield: 0.4,
+        lowHpReduction: 0.2,
+        maxHpPct: 0.1,
+        damageBonus: 0.1
+      })
+    )
+    const labels = r.labels.flatMap(l => l.terms.map(t => t.label))
+    expect(labels).toContain(STAT_NAMES.dodgeRate)
+    expect(labels).toContain(STAT_NAMES.comboRate)
+    expect(labels).toContain(STAT_NAMES.shieldPower)
+    expect(labels).toContain(STAT_NAMES.overhealShield)
+    expect(labels).toContain(STAT_NAMES.lowHpReduction)
+    expect(labels).toContain(STAT_NAMES.maxHpPct)
+    expect(labels).toContain(STAT_NAMES.damageBonus)
+    expect(labels).not.toContain('闪避率')
+    expect(labels).not.toContain('连击率')
+    expect(labels).not.toContain('护盾强度')
+    expect(labels).not.toContain('溢疗转盾')
   })
 })
