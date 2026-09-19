@@ -9,6 +9,7 @@ import {
   VEIN_TOTAL_CAPACITY
 } from '@/data/constants'
 import { VEINS } from '@/data/veins'
+import { veinEffectText } from '@/ui/veinText'
 import { reforgeCost } from './reforge'
 import { stoneByTier } from './formulas'
 import type { EquipmentInstance } from '@/types'
@@ -51,7 +52,7 @@ describe('Phase 30.5:灵脉投资终局审计', () => {
     console.log('\n  灵脉定义:')
     for (const def of VEINS) {
       console.log(`    ${def.name}(${def.id}): ${def.desc}`)
-      console.log(`      满级增益: ${def.effectText(VEIN_MAIN_CAPACITY)}`)
+      console.log(`      满级增益: ${veinEffectText(def, VEIN_MAIN_CAPACITY)}`)
     }
 
     // 验证四脉增益互不相同(perPoint 不同)

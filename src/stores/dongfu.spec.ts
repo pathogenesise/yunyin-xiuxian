@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useDongfuStore } from './dongfu'
-import { BUILDINGS } from '@/data/buildings'
+import { BUILDINGS, ARRAY_QI_CAP_PER_LEVEL, BEAST_EFFECT_PER_LEVEL } from '@/data/buildings'
 import { FORGE_LEVEL_PER_CAP } from '@/data/constants'
+import { modsText } from '@/ui/statNames'
+import { readFileSync } from 'node:fs'
 import type { BuildingId } from '@/types'
 
 describe('dongfu store · sanitize', () => {
@@ -129,5 +131,41 @@ describe('洞府产出 · 等级线性', () => {
     expect(zero.herb).toBe(0)
     expect(zero.ore).toBe(0)
     expect(zero.wudao).toBe(0)
+  })
+})
+
+describe('建筑卡与结算同源', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('卡片把 mods 另起一行,洞府修速与藏经阁战斗修为不再只活在属性里', () => {
+    const card = readFileSync(new URL('../components/dongfu/BuildingCard.vue', import.meta.url), 'utf8')
+    expect(card).toContain('modsText(')
+    const mansion = BUILDINGS.find(b => b.id === 'mansion')!
+    const library = BUILDINGS.find(b => b.id === 'library')!
+    expect(modsText(mansion.mods!(1))).toContain('修炼速度 +4%')
+    expect(modsText(library.mods!(1))).toContain('战斗修为 +3%')
+    // effectText 不再手写这两条,避免和词条行各说各的
+    expect(mansion.effectText(1)).not.toContain('修炼速度')
+    expect(library.effectText(1)).not.toContain('战斗修为')
+  })
+
+  it('聚灵阵灵气上限与灵兽园倍率,文案和结算读同一个常数', () => {
+    const dongfu = useDongfuStore()
+    dongfu.setLevel('array', 5)
+    dongfu.setLevel('beast', 3)
+    expect(dongfu.qiCapMult).toBeCloseTo(1 + 5 * ARRAY_QI_CAP_PER_LEVEL)
+    expect(dongfu.beastMult).toBeCloseTo(1 + 3 * BEAST_EFFECT_PER_LEVEL)
+    const array = BUILDINGS.find(b => b.id === 'array')!
+    const beast = BUILDINGS.find(b => b.id === 'beast')!
+    expect(array.effectText(5)).toContain(`${Math.round(5 * ARRAY_QI_CAP_PER_LEVEL * 100)}%`)
+    expect(beast.effectText(3)).toContain(`${Math.round(3 * BEAST_EFFECT_PER_LEVEL * 100)}%`)
+    expect(array.effectText(1)).not.toMatch(/灵气恢复|修炼速度/)
+  })
+
+  it('炼器台强化上限文案跟 FORGE_LEVEL_PER_CAP 走', () => {
+    const forge = BUILDINGS.find(b => b.id === 'forge')!
+    expect(forge.effectText(FORGE_LEVEL_PER_CAP)).toContain('强化上限 +1')
   })
 })
