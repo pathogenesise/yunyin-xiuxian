@@ -41,8 +41,9 @@ export const BUILDINGS: BuildingDef[] = [
     unlockRealm: 0,
     costBase: 100,
     costOre: 10,
-    // Phase 32.3 之后丹方不再由炉火高低"解锁",炉子只管出丹多寡 —— 成与不成看所知与手上功夫
-    effectText: () => '炉子只管出丹多寡,成与不成看你懂多少',
+    // Phase 32.3: recipes are not gated by furnace level. The stove only
+    // adds alchemyYield (second-pill chance); success still comes from lore.
+    effectText: () => '只加双枚成丹的概率,成与不成看你懂多少',
     mods: (lv): StatMods => ({ alchemyYield: lv * 0.05 })
   },
   {

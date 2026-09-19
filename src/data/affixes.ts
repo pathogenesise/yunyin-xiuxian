@@ -154,8 +154,8 @@ export const AFFIXES: AffixDef[] = [
   a('life2', '龟息', 'lifespanPct', 5, 10, '寿元上限提升 {v}%', 20, { slots: J, minRank: 4 }),
   a('life3', '长存', 'lifespanPct', 10, 18, '寿元上限提升 {v}%', 6, { slots: J, minRank: 7 }),
   // ---- 补充:炼丹/炼器 ----
-  a('alc1', '丹心', 'alchemyYield', 5, 10, '炼丹产出提升 {v}%', 40, { slots: J }),
-  a('alc2', '丹圣', 'alchemyYield', 10, 20, '炼丹产出提升 {v}%', 15, { slots: J, minRank: 4 }),
+  a('alc1', '丹心', 'alchemyYield', 5, 10, '双枚成丹概率提升 {v}%', 40, { slots: J }),
+  a('alc2', '丹圣', 'alchemyYield', 10, 20, '双枚成丹概率提升 {v}%', 15, { slots: J, minRank: 4 }),
   a('fg1', '巧手', 'forgeDiscount', 5, 10, '炼器消耗降低 {v}%', 40, { slots: J }),
   a('fg2', '器道', 'forgeDiscount', 10, 20, '炼器消耗降低 {v}%', 15, { slots: J, minRank: 4 }),
   // ---- 流派:背水 ----
