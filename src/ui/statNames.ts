@@ -173,7 +173,16 @@ export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   lowHpReduction: `须己身气血未满 ${formatPercent(LOW_HP_THRESHOLD)}`,
   fullHpDamage: `须己身气血逾 ${formatPercent(FULL_HP_THRESHOLD)}`,
   shieldOnStart: `开战凝盾;总量不过 ${formatPercent(SHIELD_CAP_RATIO)} 气血`,
-  shieldPower: '须护盾仍在'
+  shieldPower: '须护盾仍在',
+  armorPen: '先削其防,再入减免;不是真伤',
+  comboRate: '另起一击,非连段暴击',
+  comboDamage: '只增追击,不增本击',
+  counterRate: '受击后方可还手',
+  counterDamage: '只增反击,不增本击',
+  stunRate: '震慑一合;净念或可破之',
+  lifesteal: '按造成之伤回血',
+  regenPerRound: '回合初回血;已满则无',
+  overhealShield: '只化溢出之疗'
 }
 
 export function statCaveat(key: string): string | undefined {
