@@ -9,6 +9,8 @@
     <p class="mt-2 grow text-[11px] leading-relaxed text-ink-faint">
       {{ level > 0 ? props.def.effectText(level) : props.def.desc }}
     </p>
+    <!-- 词条不写进 effectText:洞府的修速、藏经阁的战斗修为曾经因此漏掉 -->
+    <p v-if="modLine" class="mt-1 text-[11px] leading-relaxed text-azure tabular">{{ modLine }}</p>
     <button class="btn-ghost mt-2 w-full !py-1.5 !text-[12px]" :disabled="!info.canUpgrade" @click="upgradeBuilding(props.def.id)">
       <!--
         数与量词必须黏在一起:窄屏(320)上卡片只有 ~140px,浏览器会在数字与「石」之间断行,
@@ -36,6 +38,7 @@
   import type { BuildingDef } from '@/types'
   import { useDongfuStore } from '@/stores/dongfu'
   import { buildingUpgradeInfo, upgradeBuilding } from '@/core/buildingService'
+  import { modsText } from '@/ui/statNames'
   import { formatGN } from '@/utils/format'
 
   const props = defineProps<{ def: BuildingDef }>()
@@ -46,6 +49,11 @@
   /** 实际可达上限:洞府全局闸门与自身品类上限取小,洞府卡展现的是"提升到什么档"的依据 */
   const cap = computed(() => dongfu.buildingCap(props.def.id))
   const info = computed(() => buildingUpgradeInfo(props.def.id))
+  /** 这一级真正进属性的词条。只在已建造时显示,避免和未启用时的 desc 叠在一起。 */
+  const modLine = computed(() => {
+    if (level.value <= 0 || !props.def.mods) return ''
+    return modsText(props.def.mods(level.value))
+  })
 
   // 升级落成:整卡金光一闪(动画播完自清)
   const flashing = ref(false)

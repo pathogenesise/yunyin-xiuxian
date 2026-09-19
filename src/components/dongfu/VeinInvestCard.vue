@@ -34,7 +34,9 @@
         <!-- 每条脉都要自陈作用:此前只显示名字与价格,玩家无从判断该投哪条 -->
         <p class="px-0.5 text-[10px] leading-relaxed text-ink-faint">
           {{ v.desc }}
-          <span v-if="currentLevel(v.id) > 0" class="text-azure">· {{ v.effectText(currentLevel(v.id)) }}</span>
+          <span class="text-azure">
+            · {{ currentLevel(v.id) > 0 ? veinEffectText(v, currentLevel(v.id)) : `每点 ${veinEffectText(v, 1)}` }}
+          </span>
         </p>
         <!-- 原主脉迁出后超额部分保留(效果不失,不可再投) -->
         <p v-if="surplusPoints(v.id) > 0" class="px-0.5 text-[10px] text-gold-ink">
@@ -65,7 +67,8 @@
   import { computed } from 'vue'
   import { useDongfuStore } from '@/stores/dongfu'
   import { usePlayerStore } from '@/stores/player'
-  import { VEINS, type VeinId } from '@/data/veins'
+  import { VEINS, INSIGHT_EFFECT_NAME, type VeinId } from '@/data/veins'
+  import { veinEffectText } from '@/ui/veinText'
   import { investVein, veinPointCost, veinSwitchCost, switchMainVein } from '@/core/veinService'
   import { VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY, VEIN_UNLOCK_MAJOR } from '@/data/constants'
   import { STAT_NAMES } from '@/ui/statNames'
@@ -95,7 +98,7 @@
     }
     // 参悟折扣是减耗,故记负号
     if (dongfu.insightDiscount > 0) {
-      rows.push({ label: '参悟省耗', value: Math.min(0.5, dongfu.insightDiscount), sign: '−' })
+      rows.push({ label: INSIGHT_EFFECT_NAME, value: Math.min(0.5, dongfu.insightDiscount), sign: '−' })
     }
     return rows
   })

@@ -1,6 +1,11 @@
 /** 洞府建筑 —— 7 座,长线成长 */
 import type { BuildingDef, BuildingId, StatMods } from '@/types'
-import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS } from './constants'
+import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, FORGE_LEVEL_PER_CAP, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS } from './constants'
+
+/** 聚灵阵每级抬高的灵气上限(乘在境界容量上,不进 StatMods)。文案与 dongfu.qiCapMult 都读它。 */
+export const ARRAY_QI_CAP_PER_LEVEL = 0.08
+/** 灵兽园每级放大灵兽词条。文案与 dongfu.beastMult 都读它。 */
+export const BEAST_EFFECT_PER_LEVEL = 0.1
 
 export const BUILDINGS: BuildingDef[] = [
   {
@@ -24,7 +29,7 @@ export const BUILDINGS: BuildingDef[] = [
     unlockRealm: 0,
     costBase: 60,
     costOre: 6,
-    effectText: lv => `灵气恢复 +${lv * 10}%,灵气上限 +${lv * 8}%,修炼速度 +${lv * 3}%`,
+    effectText: lv => `灵气上限 +${Math.round(lv * ARRAY_QI_CAP_PER_LEVEL * 100)}%`,
     mods: (lv): StatMods => ({ qiRegen: lv * 0.1, cultivationSpeed: lv * 0.03 })
   },
   {
@@ -37,7 +42,7 @@ export const BUILDINGS: BuildingDef[] = [
     costBase: 100,
     costOre: 10,
     // Phase 32.3 之后丹方不再由炉火高低"解锁",炉子只管出丹多寡 —— 成与不成看所知与手上功夫
-    effectText: lv => `炼丹产出 +${lv * 5}% —— 炉子只管出丹多寡,成与不成看你懂多少`,
+    effectText: () => '炉子只管出丹多寡,成与不成看你懂多少',
     mods: (lv): StatMods => ({ alchemyYield: lv * 0.05 })
   },
   {
@@ -49,7 +54,7 @@ export const BUILDINGS: BuildingDef[] = [
     unlockRealm: 1,
     costBase: 150,
     costOre: 15,
-    effectText: lv => `强化上限 +${Math.floor(lv / 2)},炼器消耗 -${lv * 4}%`,
+    effectText: lv => `强化上限 +${Math.floor(lv / FORGE_LEVEL_PER_CAP)}`,
     mods: (lv): StatMods => ({ forgeDiscount: lv * 0.04 })
   },
   {
@@ -86,7 +91,7 @@ export const BUILDINGS: BuildingDef[] = [
     unlockRealm: 2,
     costBase: 300,
     costOre: 30,
-    effectText: lv => `可驯养灵兽,灵兽属性效果 +${lv * 10}%`
+    effectText: lv => `可驯养灵兽,灵兽属性效果 +${Math.round(lv * BEAST_EFFECT_PER_LEVEL * 100)}%`
   }
 ]
 

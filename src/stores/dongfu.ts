@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { BuildingId, StatMods } from '@/types'
 import type { VeinId } from '@/data/veins'
 import { persistConfig } from '@/utils/storage'
-import { BUILDINGS, buildingDef } from '@/data/buildings'
+import { BUILDINGS, buildingDef, ARRAY_QI_CAP_PER_LEVEL, BEAST_EFFECT_PER_LEVEL } from '@/data/buildings'
 import { INSIGHT_DISCOUNT_PER_POINT, VEINS } from '@/data/veins'
 import {
   FIELD_HERB_PER_HOUR,
@@ -76,8 +76,8 @@ export const useDongfuStore = defineStore(
     const alchemyLevel = computed(() => levels.value.alchemy)
     // 炼器台每 FORGE_LEVEL_PER_CAP 级提高强化上限 1(此前把 2 写死在业务代码里)
     const forgeCapBonus = computed(() => Math.floor(levels.value.forge / FORGE_LEVEL_PER_CAP))
-    const qiCapMult = computed(() => 1 + levels.value.array * 0.08)
-    const beastMult = computed(() => 1 + levels.value.beast * 0.1)
+    const qiCapMult = computed(() => 1 + levels.value.array * ARRAY_QI_CAP_PER_LEVEL)
+    const beastMult = computed(() => 1 + levels.value.beast * BEAST_EFFECT_PER_LEVEL)
 
     function setLevel(id: BuildingId, lv: number): void {
       levels.value = { ...levels.value, [id]: lv }

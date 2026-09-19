@@ -104,7 +104,8 @@ describe('灵脉可见性 · 展示层覆盖全部通道', () => {
     // 玩家反馈的另一半:「不知道寒冥灵脉的作用」。
     // veins.ts 里 desc 与 effectText 都写好了,但此前只有审计测试在读,页面从未渲染
     expect(CARD_SRC, '卡片没有渲染灵脉的 desc').toMatch(/\.desc/)
-    expect(CARD_SRC, '卡片没有渲染灵脉的 effectText').toMatch(/effectText\(/)
+    expect(CARD_SRC, '卡片没有渲染灵脉效果行').toContain('veinEffectText(')
+    expect(CARD_SRC, '零点时也要能看见每点加成,不能等投了才说').toContain('每点')
   })
 
   it('专用通道表与 veins.ts 保持同步:表里不能有已不存在的脉', () => {
