@@ -139,6 +139,7 @@
           </p>
         </div>
         <!-- 天威本身的长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
+        <p v-if="tribWeatherLine" class="mt-0.5 text-[10px] text-cinnabar/80">{{ tribWeatherLine }}</p>
         <p v-if="tribWave" class="mt-0.5 text-[10px] text-ink-faint tabular">
           共 {{ tribWave.waves }} 道,单波 {{ formatPercent(tribWave.min, 0) }}–{{ formatPercent(tribWave.max, 0) }} 最大生命(合计约
           {{ formatPercent(tribWave.total, 0) }}),
@@ -348,6 +349,8 @@
   import { buffDef } from '@/data/buffs'
   import { pillDef } from '@/data/pills'
   import { COMPREHEND_PAGE_COST } from '@/data/constants'
+  import { todayWeather } from '@/core/weather'
+  import { weatherTribulationLine } from '@/ui/weatherText'
   import { formatCountdown, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
   import { signedPercent } from '@/ui/statNames'
   import { gongfaAllLearnedToast } from '@/ui/gongfaText'
@@ -450,10 +453,16 @@
     }
   })
 
-  /** 天威本身的长相(道数 + 单波区间):与结算同一批函数,不在界面里另算一遍 */
+  /**
+   * 天威本身的长相(道数 + 单波区间):与结算同一批函数。
+   * 必须乘入今日 tribulationMult —— 劫势 verdict 已经吃了天时,
+   * 百分比若不乘,雷鸣日会看起来比真劫轻一截。
+   */
+  const tribWeather = computed(() => todayWeather())
+  const tribWeatherLine = computed(() => weatherTribulationLine(tribWeather.value))
   const tribWave = computed(() =>
     tribPlan.value
-      ? tribulationWaveSpan(tribPlan.value.def, player.isMajorStep ? player.major + 1 : player.major)
+      ? tribulationWaveSpan(tribPlan.value.def, tribTargetMajor.value, tribWeather.value.tribulationMult)
       : null
   )
 

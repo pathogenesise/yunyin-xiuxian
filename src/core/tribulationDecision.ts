@@ -252,7 +252,8 @@ export function waveMultiplier(def: TribulationDef, wave: number, waves: number,
  */
 export function tribulationWaveSpan(
   def: TribulationDef,
-  targetMajor: number
+  targetMajor: number,
+  weatherMult = 1
 ): { waves: number; first: number; last: number; min: number; max: number; total: number; heaviestWave: number } {
   const waves = tribulationWaves(targetMajor)
   let first = 0
@@ -262,7 +263,9 @@ export function tribulationWaveSpan(
   let total = 0
   let heaviestWave = 1
   for (let w = 1; w <= waves; w += 1) {
-    const v = tribulationWaveDamage(targetMajor, w, 0) * waveMultiplier(def, w, waves)
+    // weatherMult: same factor as waveDamage / runTribulation. The cultivation
+    // page used to print a clear-day span while the verdict already used today.
+    const v = tribulationWaveDamage(targetMajor, w, 0) * waveMultiplier(def, w, waves) * weatherMult
     if (w === 1) first = v
     if (w === waves) last = v
     min = Math.min(min, v)
