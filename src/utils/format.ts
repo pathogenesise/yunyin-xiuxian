@@ -83,6 +83,17 @@ export function formatDuration(totalSec: number): string {
 }
 
 /**
+ * 选择项上的时长。整分钟写成「10分钟」,不走倒计时那套「10分0秒」——
+ * 那是为了定宽,放在三选一的说明里反而像计时器在跳。
+ */
+export function formatChoiceSpan(totalSec: number): string {
+  if (!Number.isFinite(totalSec)) return NOT_AVAILABLE
+  const sec = Math.max(0, Math.floor(totalSec))
+  if (sec > 0 && sec % 60 === 0 && sec < 3600) return `${sec / 60}分钟`
+  return formatDuration(sec)
+}
+
+/**
  * 倒计时 —— 与 formatDuration 同义,但**逐位定宽**。
  *
  * 状态面板里的每一枚状态胶囊都在倒计时,而 formatDuration 的宽度会随数值变:

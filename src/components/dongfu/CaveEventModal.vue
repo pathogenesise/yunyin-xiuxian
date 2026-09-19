@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getCurrentCaveEvent, chooseCaveOption, dismissCaveEvent } from '@/core/earlyGameService'
+import { caveOptionText } from '@/ui/caveText'
 import type { CaveEvent } from '@/types'
 import BaseModal from '@/components/common/BaseModal.vue'
 
@@ -69,7 +70,7 @@ const locationLabel = computed(() =>
         @click="handleChoose(idx)"
       >
         <span class="block font-kai text-[14px] tracking-widest text-ink">{{ opt.label }}</span>
-        <span class="mt-0.5 block text-[11px] leading-relaxed text-ink-faint">{{ opt.effect }}</span>
+        <span class="mt-0.5 block text-[11px] leading-relaxed text-ink-faint">{{ caveOptionText(opt) }}</span>
       </button>
     </div>
     <template #footer>

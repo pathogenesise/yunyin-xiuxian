@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getCurrentEnlightenment, chooseEnlightenment, dismissEnlightenment } from '@/core/earlyGameService'
+import { enlightenmentOptionText } from '@/ui/enlightenmentText'
 import type { EnlightenmentEvent } from '@/types'
 import BaseModal from '@/components/common/BaseModal.vue'
 
@@ -63,7 +64,7 @@ const show = computed(() => event.value !== null)
         @click="handleChoose(idx)"
       >
         <span class="block font-kai text-[14px] tracking-widest text-ink">{{ opt.label }}</span>
-        <span class="mt-0.5 block text-[11px] leading-relaxed text-ink-faint">{{ opt.desc }}</span>
+        <span class="mt-0.5 block text-[11px] leading-relaxed text-ink-faint">{{ enlightenmentOptionText(opt) }}</span>
       </button>
     </div>
     <template #footer>
