@@ -524,6 +524,8 @@
     'breakthroughRate',
     'critRate',
     'critDamage',
+    'speed',
+    'firstStrike',
     'damageBonus',
     'damageReduction',
     'dodgeRate',

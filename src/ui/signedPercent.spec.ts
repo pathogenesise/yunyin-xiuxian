@@ -103,6 +103,20 @@ describe('signedPercent', () => {
     expect(formulas).not.toContain('expGain')
   })
 
+  it('先手判定是阈值开关,不是出手变快', () => {
+    expect(modsText({ speed: 0.06 })).toBe('先手判定 +6%(1+此项≥对手速度才抢先)')
+    const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
+    expect(combat).toContain('1 + modOf(pEff.mods, \'speed\')')
+    expect(combat).toContain('pSpeed >= eSpeed')
+  })
+
+  it('首回合伤害只乘第一回合,不改先手判定', () => {
+    expect(modsText({ firstStrike: 0.2 })).toBe('首回合伤害 +20%(只乘第一回合;不改谁先出手)')
+    const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
+    expect(combat).toContain("modOf(aMods, 'firstStrike')")
+    expect(combat).toContain('round === 1')
+  })
+
   it('御劫只改天劫承伤,不改小进阶骰子', () => {
     expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(天劫承伤;不改小进阶骰子)')
     const trib = readFileSync(resolve(__dirname, '../core/tribulationDecision.ts'), 'utf8')

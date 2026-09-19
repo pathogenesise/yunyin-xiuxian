@@ -81,6 +81,10 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   beastPct: '灵兽效果',
   armorPen: '破甲',
   // 与 speed 分开命名:那个管「谁先出手」,这个管「首回合打得更重」(先发/雷霆词条)
+  /**
+   * Round-1 damage only (combat.ts factor on round === 1).
+   * It does not move the speed threshold.
+   */
   firstStrike: '首回合伤害',
   counterRate: '反击概率',
   lifesteal: '吸血',
@@ -146,7 +150,9 @@ export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   expGain: '历练战胜所得;静修挂机不吃',
   tribulationResist: '天劫承伤;不改小进阶骰子',
   qiCapPct: '抬标称灵气上限;积余仓随之上浮',
-  beastPct: '放大灵兽词条;不含灵兽园等级'
+  beastPct: '放大灵兽词条;不含灵兽园等级',
+  speed: '1+此项≥对手速度才抢先',
+  firstStrike: '只乘第一回合;不改谁先出手'
 }
 
 export function statCaveat(key: string): string | undefined {

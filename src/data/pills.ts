@@ -100,7 +100,7 @@ export const PILLS: PillDef[] = [
     recipe: { herb: 16, stoneBase: 30 },
     alchemyLevel: 3
   }),
-  p('p_shenxing', '神行丹', 'excellent', 1, '脚下生风,历练如飞', {
+  p('p_shenxing', '神行丹', 'excellent', 1, '同程多遇,先机更近', {
     kind: 'buff',
     buffId: 'buff_shenxing',
     recipe: { herb: 18, stoneBase: 32 },
