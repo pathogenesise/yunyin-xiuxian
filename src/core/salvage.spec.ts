@@ -134,8 +134,8 @@ describe('分解返还 · 强化投入的八成随件退回', () => {
     expect(resources.dust - dustBefore).toBe(want)
     expect(inventory.findItem('keep')).toBeDefined()
     // 逐件弹提示只会互相顶掉(提示窗只留 5 条),批量只报一条总账
-    expect(ui.toasts.filter(t => /分解得器灵尘/.test(t.text))).toHaveLength(0)
-    expect(ui.toasts.some(t => /已分解 3 件装备,得器灵尘×\d+/.test(t.text))).toBe(true)
+    expect(ui.toasts.filter(t => /此器化尘/.test(t.text))).toHaveLength(0)
+    expect(ui.toasts.some(t => /炉中化去 3 件,得器灵尘×\d+/.test(t.text))).toBe(true)
   })
 })
 

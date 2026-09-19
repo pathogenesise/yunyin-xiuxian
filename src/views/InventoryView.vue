@@ -328,7 +328,7 @@
         </label>
       </div>
       <p v-if="decomposeTotal > 0" class="mt-2 text-right text-[11px] text-cinnabar/90 tabular">
-        共 {{ decomposeTotal }} 件 → {{ batchYieldText(decomposePlanned) }}
+        共 {{ decomposeTotal }} 件,入炉可化 {{ batchYieldText(decomposePlanned) }}
       </p>
       <template #footer>
         <button class="btn-seal w-full" :disabled="decomposeTotal === 0" @click="confirmDecompose">

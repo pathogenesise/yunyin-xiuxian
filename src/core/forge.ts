@@ -9,6 +9,17 @@ import { EQUIP_MAX_LEVEL_BASE } from '@/data/constants'
 import { stoneByTier, upgradeCost } from './formulas'
 import { add, gnZero, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
+import {
+  artifactCapToast,
+  artifactDoneToast,
+  artifactShortToast,
+  batchDecomposeToast,
+  decomposeToast,
+  salvageYieldText,
+  upgradeCapToast,
+  upgradeDoneToast,
+  upgradeShortToast
+} from '@/ui/forgeText'
 import { salvageOf, salvageRefundPhrase } from './salvage'
 import { modOf } from './statsCalc'
 import { track } from './progress'
@@ -39,11 +50,11 @@ export function upgradeEquipment(uid: string): boolean {
   const inst = inventory.findItem(uid)
   const cost = equipUpgradeCost(uid)
   if (!inst || !cost) {
-    ui.toast('已达强化上限', 'warn')
+    ui.toast(upgradeCapToast(), 'warn')
     return false
   }
   if (!resources.hasSmall('dust', cost.dust) || !resources.hasStone(cost.stone)) {
-    ui.toast('器灵尘或灵石不足', 'warn')
+    ui.toast(upgradeShortToast(), 'warn')
     return false
   }
   resources.spendSmall('dust', cost.dust)
@@ -59,7 +70,7 @@ export function upgradeEquipment(uid: string): boolean {
   const t = equipmentTemplate(inst.templateId)
   // 强化过也算「亲手用过」——图鉴那一档由玩家自己推进,不看运气
   useLoreStore().noteEquipUsed(inst.templateId)
-  ui.toast(`「${t?.name}」强化至 +${inst.level + 1}`, 'success')
+  ui.toast(upgradeDoneToast(t?.name ?? '此器', inst.level + 1), 'success')
   return true
 }
 
@@ -77,8 +88,8 @@ export function decomposeEquipment(uid: string, opts: { quiet?: boolean } = {}):
   if (!opts.quiet) {
     ui.toast(
       isZero(gain.stone)
-        ? `分解得器灵尘×${gain.dust}`
-        : `分解得器灵尘×${gain.dust} · 退灵石 ${formatGN(gain.stone)}(${salvageRefundPhrase()})`,
+        ? decomposeToast(gain.dust)
+        : decomposeToast(gain.dust, formatGN(gain.stone), salvageRefundPhrase()),
       'info'
     )
   }
@@ -93,7 +104,7 @@ export interface DecomposeBatch {
 
 /** 批量分解的账目文案:批量路径只有这一处措辞,免得各写各的 */
 export function batchYieldText(b: DecomposeBatch): string {
-  return isZero(b.stone) ? `得器灵尘×${b.dust}` : `得器灵尘×${b.dust} · 退灵石 ${formatGN(b.stone)}`
+  return salvageYieldText(b.dust, isZero(b.stone) ? undefined : formatGN(b.stone))
 }
 
 /**
@@ -134,7 +145,7 @@ export function decomposePreview(ranks: readonly number[]): DecomposeBatch {
 export function decomposeByRanks(ranks: readonly number[]): number {
   const ui = useUiStore()
   const got = decomposeBatch(decomposeTargets(ranks))
-  if (got.count > 0) ui.toast(`已分解 ${got.count} 件装备,${batchYieldText(got)}`, 'info')
+  if (got.count > 0) ui.toast(batchDecomposeToast(got.count, batchYieldText(got)), 'info')
   return got.count
 }
 
@@ -156,16 +167,16 @@ export function upgradeArtifact(defId: string): boolean {
   const cost = artifactUpCost(defId)
   const def = artifactDef(defId)
   if (!cost || !def) {
-    ui.toast('此法宝已臻圆满', 'warn')
+    ui.toast(artifactCapToast(), 'warn')
     return false
   }
   if (!resources.hasSmall('wudao', cost.wudao) || !resources.hasStone(cost.stone)) {
-    ui.toast('悟道点或灵石不足', 'warn')
+    ui.toast(artifactShortToast(), 'warn')
     return false
   }
   resources.spendSmall('wudao', cost.wudao)
   resources.spendStone(cost.stone)
   inventory.levelUpArtifact(defId)
-  ui.toast(`「${def.name}」炼化精进`, 'success')
+  ui.toast(artifactDoneToast(def.name), 'success')
   return true
 }
