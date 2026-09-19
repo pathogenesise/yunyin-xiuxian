@@ -51,6 +51,8 @@ describe('修行页与提示同源', () => {
       'tribulationWaveSpan(tribPlan.value.def, tribTargetMajor.value, tribWeather.value.tribulationMult)'
     )
     expect(view).toContain('weatherTribulationLine')
+    expect(view, '开劫护持与每波恢复须走 guardScore / sustainScore').toContain('guardScore(')
+    expect(view).toContain('sustainScore(')
     const offline = readFileSync(new URL('../core/offline.ts', import.meta.url), 'utf8')
     expect(offline).toContain('breakthroughReadyNote(')
     expect(offline).toContain('atMaxRealm')

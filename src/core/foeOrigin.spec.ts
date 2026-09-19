@@ -302,7 +302,8 @@ describe('来源到屏幕的接线', () => {
     const view = src('../views/AdventureView.vue')
     expect(view, '选地卡片该摊开层级补偿与地界凶险').toContain('regionFoeOrigin(')
     expect(view, '卡片与战报共用同一个格式化').toContain('foeOriginPartsText(')
-    expect(view, '出行方式的危险倍率必须可见(收益一直亮着,危险却暗着)').toMatch(/EXPLORE_MODES\[m\.id\]\.dangerMult/)
+    expect(view, '出行弹窗的遇险必须用与开战同一份 explorationFoeDanger').toContain('explorationFoeDanger')
+    expect(view, '遇险数字要出现在出发按钮上').toContain('departButtonText')
   })
 
   it('天界战报(试炼/变数/忆战/重写/挑战)也读它,不再只有远征能说清判定', () => {

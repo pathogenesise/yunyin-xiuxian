@@ -110,7 +110,7 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     const item = mk('excellent') // 精品 rank2,非勾选档 → 交由智能收纳裁决
     const got = acquireEquipment(item)
     expect(bagUids()).not.toContain(item.uid)
-    expect(got.line).toContain('与道无缘')
+    expect(got.line).toContain('道途未成')
     expect(resources.dust).toBeGreaterThanOrEqual(DECOMPOSE_DUST[2] ?? 1)
   })
 
