@@ -2,7 +2,12 @@
  * 突破服务 —— 成功率计算 / 天劫 / 结算
  */
 import { mulberry32, rng } from '@/utils/random'
-import { formatPercent } from '@/utils/format'
+import { formatNum, formatPercent } from '@/utils/format'
+import {
+  breakthroughExpReason,
+  breakthroughPeakReason,
+  breakthroughQiReason
+} from '@/ui/cultivationText'
 import { realmDef, realmLabel, worldOf, isWorldEntry } from '@/data/realms'
 import { BT_FAIL_EXP_LOSS, BT_QI_COST_RATIO } from '@/data/constants'
 import { breakthroughBaseRate, clampRate } from './formulas'
@@ -118,13 +123,13 @@ export function breakthroughInfo(): BreakthroughInfo {
   let reason = ''
   if (player.atMaxRealm) {
     ready = false
-    reason = '已至大道尽头'
+    reason = breakthroughPeakReason()
   } else if (!player.expFull) {
     ready = false
-    reason = '修为未至圆满'
+    reason = breakthroughExpReason()
   } else if (resources.qi < qiCost) {
     ready = false
-    reason = '灵气不足'
+    reason = breakthroughQiReason(formatNum(qiCost))
   }
   return {
     ready,

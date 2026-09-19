@@ -1,0 +1,36 @@
+/**
+ * 修行页提示 —— 疗伤、备药、突破门槛。
+ *
+ * 卡片与 toast 同源。写成「不足」太硬,缕数与药资仍得报清。
+ */
+export function repairIdleToast(): string {
+  return '周身无恙,无须静养'
+}
+
+export function repairShortToast(qiText: string): string {
+  return `灵气未足,静养需 ${qiText} 缕`
+}
+
+export function repairDoneToast(qiText: string): string {
+  return `你引灵气静养,伤势尽复(耗灵气 ${qiText})`
+}
+
+export function repairActLabel(affordable: boolean, qiText: string): string {
+  return affordable ? `引气疗伤 · 耗灵气 ${qiText}` : repairShortToast(qiText)
+}
+
+export function prepPillShortToast(): string {
+  return '灵石未足,无以备药'
+}
+
+export function breakthroughPeakReason(): string {
+  return '已至大道尽头'
+}
+
+export function breakthroughExpReason(): string {
+  return '修为未至圆满'
+}
+
+export function breakthroughQiReason(qiText: string): string {
+  return `灵气未足,此关需 ${qiText} 缕`
+}

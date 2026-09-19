@@ -69,7 +69,7 @@
           :disabled="!repair.affordable"
           @click="repairWithQi()"
         >
-          {{ repair.affordable ? `引气疗伤 · 耗灵气 ${formatNum(repair.cost)}` : `灵气不足(需 ${formatNum(repair.cost)})` }}
+          {{ repairActLabel(repair.affordable, formatNum(repair.cost)) }}
         </button>
       </div>
 
@@ -351,6 +351,7 @@
   import { formatCountdown, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
   import { signedPercent } from '@/ui/statNames'
   import { gongfaAllLearnedToast } from '@/ui/gongfaText'
+  import { prepPillShortToast, repairActLabel } from '@/ui/cultivationText'
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'
@@ -391,7 +392,7 @@
     if (prepareBreakthrough(option)) {
       ui.toast(option === 'meditate' ? '你盘膝入定,静待调息完成' : '丹药入腹,气机已然蓄足', 'info')
     } else {
-      ui.toast('灵石不足,无以备药', 'warn')
+      ui.toast(prepPillShortToast(), 'warn')
     }
   }
 
