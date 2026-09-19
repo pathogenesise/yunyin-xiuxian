@@ -24,6 +24,7 @@ import { useCultivationStore } from '@/stores/cultivation'
 import { useLoreStore } from '@/stores/lore'
 import { useUiStore } from '@/stores/ui'
 import { playSfx } from './audio'
+import { craftOkToast, craftShortToast, pillGoneToast, pillTakenToast } from '@/ui/pillText'
 import type { GNum } from '@/types'
 
 /** 服用丹药 */
@@ -36,7 +37,7 @@ export function usePill(id: string): boolean {
   const def = pillDef(id)
   if (!def) return false
   if (!inventory.spendPill(id)) {
-    ui.toast('丹药不足', 'warn')
+    ui.toast(pillGoneToast(), 'warn')
     return false
   }
   const lines: string[] = []
@@ -79,7 +80,7 @@ export function usePill(id: string): boolean {
   noteTaboo('pill')
   collect('pill', id)
   playSfx('success')
-  ui.toast(`服下「${def.name}」,${lines.join(',') || '药力温养周身'}`, 'success')
+  ui.toast(pillTakenToast(def.name, lines.join(',')), 'success')
   return true
 }
 
@@ -154,7 +155,7 @@ export function craftPill(id: string): CraftOutcome {
     return { ok: false, count: 0, aborted: true }
   }
   if (!resources.hasSmall('herb', cost.herb) || !resources.hasStone(cost.stone)) {
-    ui.toast('灵草或灵石不足', 'warn')
+    ui.toast(craftShortToast(), 'warn')
     return { ok: false, count: 0, aborted: true }
   }
 
@@ -188,7 +189,7 @@ export function craftPill(id: string): CraftOutcome {
   track('pillsCrafted', 1 + extra)
   collect('pill', id)
   playSfx('success')
-  ui.toast(extra ? `丹成两枚!「${def.name}」品相极佳` : `炼成「${def.name}」×1`, extra ? 'rare' : 'success')
+  ui.toast(craftOkToast(def.name, extra > 0), extra ? 'rare' : 'success')
   return { ok: true, count: 1 + extra }
 }
 
