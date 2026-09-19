@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { BUILD_STYLES, detectBuild } from './buildDetect'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { BUILD_STYLES, buildSources, detectBuild } from './buildDetect'
+import { useCultivationStore } from '@/stores/cultivation'
+import { useInventoryStore } from '@/stores/inventory'
+import { usePlayerStore } from '@/stores/player'
 
 describe('流派识别(Build 面板数据层)', () => {
   it('无相关词条时不识别', () => {
@@ -53,5 +57,47 @@ describe('流派识别(Build 面板数据层)', () => {
       expect(Object.keys(s.core).length).toBeGreaterThan(1)
       expect(s.seal.length).toBe(1)
     }
+  })
+})
+
+describe('成路于与真正吃进属性的来路同源', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('在身法器的核心词条要报出来,无关的件不报', () => {
+    const inventory = useInventoryStore()
+    inventory.items = [
+      { uid: 'talisman', templateId: 'tl_hushen', quality: 'mortal', tier: 6, level: 0, affixes: [] },
+      { uid: 'blade', templateId: 'w_yanwen', quality: 'mortal', tier: 7, level: 0, affixes: [] }
+    ]
+    inventory.equipped = { talisman: 'talisman', weapon: 'blade' }
+    const gangdun = BUILD_STYLES.find(s => s.id === 'gangdun')!
+    const names = buildSources(gangdun)
+    expect(names).toContain('战阵符')
+    expect(names).not.toContain('炎纹刀')
+  })
+
+  it('悟道分支、丹效、灵兽、师承、称号按实有词条入列', () => {
+    const cultivation = useCultivationStore()
+    const player = usePlayerStore()
+    cultivation.gongfaBranch = { m_xuanbing: 'b_xuanbing_liuli' }
+    cultivation.buffs = [{ defId: 'buff_jingang', endsAt: Date.now() + 60_000 }]
+    player.petId = 'pet_taotie'
+    player.mentor = 'arraymaster'
+    player.titleId = 'ti_wanfa'
+
+    const gangdun = BUILD_STYLES.find(s => s.id === 'gangdun')!
+    const shield = buildSources(gangdun)
+    expect(shield).toContain('《玄冰道典》·琉璃')
+    expect(shield).toContain('丹效·金刚护体')
+    expect(shield).toContain('师承·阵修')
+    expect(shield).not.toContain('灵兽·混沌饕餮')
+    expect(shield).not.toContain('称号·一剑破万法')
+
+    const muze = BUILD_STYLES.find(s => s.id === 'muze')!
+    expect(buildSources(muze)).toContain('灵兽·混沌饕餮')
+    const fengmang = BUILD_STYLES.find(s => s.id === 'fengmang')!
+    expect(buildSources(fengmang)).toContain('称号·一剑破万法')
   })
 })
