@@ -12,6 +12,11 @@ import { useCultivationStore } from '@/stores/cultivation'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useLoadoutsStore, MAX_LOADOUTS, type Loadout } from '@/stores/loadouts'
 import { useUiStore } from '@/stores/ui'
+import {
+  loadoutApplyToast,
+  loadoutFullToast,
+  loadoutSavedToast
+} from '@/ui/inventoryText'
 import { detectBuild } from './buildDetect'
 
 /** 保存当前构筑为快照 */
@@ -22,7 +27,7 @@ export function captureLoadout(name: string): Loadout | null {
   const loadouts = useLoadoutsStore()
   const ui = useUiStore()
   if (loadouts.list.length >= MAX_LOADOUTS) {
-    ui.toast(`构筑最多保存 ${MAX_LOADOUTS} 套,请先删去一套`, 'warn')
+    ui.toast(loadoutFullToast(MAX_LOADOUTS), 'warn')
     return null
   }
   const detected = detectBuild(player.finalStats.mods)
@@ -37,7 +42,7 @@ export function captureLoadout(name: string): Loadout | null {
     savedAt: Date.now()
   }
   loadouts.add(loadout)
-  ui.toast(`构筑「${loadout.name}」已存入行囊`, 'success')
+  ui.toast(loadoutSavedToast(loadout.name), 'success')
   return loadout
 }
 
@@ -82,7 +87,7 @@ export function applyLoadout(id: string): boolean {
   missing += loadout.artifactIds.length - validArts.length
   inventory.equippedArtifacts = validArts
 
-  ui.toast(missing > 0 ? `已切换至「${loadout.name}」(${missing} 处部件缺失,已跳过)` : `已切换至「${loadout.name}」`, 'success')
+  ui.toast(loadoutApplyToast(loadout.name, missing), 'success')
   return true
 }
 

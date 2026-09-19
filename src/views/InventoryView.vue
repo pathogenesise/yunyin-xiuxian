@@ -441,6 +441,11 @@
   import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
   import { cnNumber, formatGN, formatNum, formatPercent } from '@/utils/format'
   import { STAT_NAMES, statCaveat, statModPhrase } from '@/ui/statNames'
+  import {
+    artifactSlotReplacedToast,
+    decomposeEmptyToast,
+    smartCleanToast
+  } from '@/ui/inventoryText'
   import type { EquipSlot, GNum, PillDef } from '@/types'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
@@ -635,12 +640,12 @@
 
   function toggleArtifact(defId: string): void {
     const result = inventory.toggleArtifact(defId, artifactSlots.value)
-    if (result === 'replaced') ui.toast('法宝位已满,替换了最早祭炼的一件', 'info')
+    if (result === 'replaced') ui.toast(artifactSlotReplacedToast(), 'info')
   }
 
   function batchDecompose(): void {
     // 总账那一条由服务自己报(逐件弹提示只会互相顶掉)
-    if (decomposeByRanks(settings.decomposeRanks) === 0) ui.toast('无可分解之物', 'info')
+    if (decomposeByRanks(settings.decomposeRanks) === 0) ui.toast(decomposeEmptyToast(), 'info')
   }
 
   // ---- 一键分解弹窗 ----
@@ -693,7 +698,7 @@
     cleanConfirm.value = false
     const targets = inventory.bagItems.filter(it => !it.locked && !keepVerdict(it).keep)
     const got = decomposeBatch(targets)
-    ui.toast(got.count > 0 ? `收纳毕:${got.count} 件无缘之物化尘,${batchYieldText(got)}` : '行囊中皆是有缘之物', 'info')
+    ui.toast(smartCleanToast(got.count, batchYieldText(got)), 'info')
     smartOpen.value = false
   }
 
