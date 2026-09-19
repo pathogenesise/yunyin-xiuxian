@@ -105,6 +105,7 @@ describe('灵脉可见性 · 展示层覆盖全部通道', () => {
     // veins.ts 里 desc 与 effectText 都写好了,但此前只有审计测试在读,页面从未渲染
     expect(CARD_SRC, '卡片没有渲染灵脉的 desc').toMatch(/\.desc/)
     expect(CARD_SRC, '卡片没有渲染灵脉效果行').toContain('veinEffectText(')
+    expect(CARD_SRC, '当前加成应走 modsText,与词条 caveat 同源').toContain('modsText(')
     expect(CARD_SRC, '零点时也要能看见每点加成,不能等投了才说').toContain('每点')
   })
 

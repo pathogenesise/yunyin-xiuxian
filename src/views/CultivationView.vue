@@ -38,7 +38,7 @@
         <p v-for="row in cultSources" :key="row.name" class="mt-0.5 flex justify-between">
           <span class="text-ink-faint">{{ row.name }}</span>
           <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
-            {{ row.value > 0 ? '+' : '' }}{{ formatPercent(row.value) }}
+            {{ signedPercent(row.value) }}
           </span>
         </p>
         <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
@@ -349,6 +349,7 @@
   import { pillDef } from '@/data/pills'
   import { COMPREHEND_PAGE_COST } from '@/data/constants'
   import { formatCountdown, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
+  import { signedPercent } from '@/ui/statNames'
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'

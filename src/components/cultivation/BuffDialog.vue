@@ -45,7 +45,7 @@
   import { useCultivationStore } from '@/stores/cultivation'
   import { useNow } from '@/composables/useNow'
   import { buffDef } from '@/data/buffs'
-  import { STAT_NAMES, signedPercent } from '@/ui/statNames'
+  import { STAT_NAMES, statValueText } from '@/ui/statNames'
   import { formatCountdown, formatDuration } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -83,8 +83,7 @@
   const modRows = computed(() =>
     Object.entries(def.value?.mods ?? {}).map(([key, value]) => {
       const v = value as number
-      const caveat = key === 'breakthroughRate' ? ' · 小进阶;大关天劫不吃' : ''
-      return { key, label: STAT_NAMES[key as AnyStatKey] ?? key, text: `${signedPercent(v)}${caveat}`, good: v > 0 }
+      return { key, label: STAT_NAMES[key as AnyStatKey] ?? key, text: statValueText(key, v), good: v > 0 }
     })
   )
 

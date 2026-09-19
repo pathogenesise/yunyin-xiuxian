@@ -204,7 +204,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   const tier = region.tier
   const bossMult = isBoss ? 4 : 1
   const doubled = rng.chance(capChance(modOf(mods, 'doubleDropRate'))) ? 2 : 1
-  if (doubled === 2) lines.push('福缘深厚,战利品翻倍!')
+  if (doubled === 2) lines.push('福缘深厚,当场战利翻倍!')
 
   // 灵石
   const stoneAmt = rng.float(0.8, 1.2) * rewardMult * bossMult * doubled * (1 + modOf(mods, 'spiritStoneGain'))

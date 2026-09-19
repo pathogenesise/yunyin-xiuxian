@@ -72,10 +72,10 @@ export const AFFIXES: AffixDef[] = [
   a('luck1', '福缘', 'luck', 2, 5, '气运提升 {v}%', 80, { slots: J }),
   a('luck2', '鸿运', 'luck', 5, 10, '气运提升 {v}%', 40, { slots: J, minRank: 3 }),
   a('luck3', '天眷', 'luck', 10, 15, '气运提升 {v}%', 12, { slots: J, minRank: 6 }),
-  // ---- 历练速度 ----
-  a('exp1', '疾行', 'explorationSpeed', 4, 8, '历练速度提升 {v}%', 80, { slots: ['boots', ...J] }),
-  a('exp2', '御风', 'explorationSpeed', 8, 15, '历练速度提升 {v}%', 40, { slots: ['boots', ...J], minRank: 3 }),
-  a('exp3', '缩地', 'explorationSpeed', 15, 25, '历练速度提升 {v}%', 12, { slots: ['boots', ...J], minRank: 6 }),
+  // ---- 历练遇敌(加密遭遇间隔,不缩短行程,见 ui/statNames) ----
+  a('exp1', '疾行', 'explorationSpeed', 4, 8, '历练遇敌加快 {v}%', 80, { slots: ['boots', ...J] }),
+  a('exp2', '御风', 'explorationSpeed', 8, 15, '历练遇敌加快 {v}%', 40, { slots: ['boots', ...J], minRank: 3 }),
+  a('exp3', '缩地', 'explorationSpeed', 15, 25, '历练遇敌加快 {v}%', 12, { slots: ['boots', ...J], minRank: 6 }),
   // ---- 身法 ----
   // 「出手速度提升 N%」读起来像连续收益,机制上却是一条阈值(1+修正 ≥ 对手速度即抢先)——
   // 差一点就是完全没抢先,故照实写成「先手判定」。战后分析会把两个数与差额一并摆出来
@@ -87,9 +87,9 @@ export const AFFIXES: AffixDef[] = [
   a('gain2', '明心', 'expGain', 8, 16, '战斗所得修为提升 {v}%', 40, { minRank: 3 }),
   a('gain3', '大彻', 'expGain', 16, 28, '战斗所得修为提升 {v}%', 12, { minRank: 6 }),
   // ---- 灵石 ----
-  a('stone1', '聚财', 'spiritStoneGain', 5, 10, '灵石获取提升 {v}%', 80, { slots: J }),
-  a('stone2', '点金', 'spiritStoneGain', 10, 20, '灵石获取提升 {v}%', 40, { slots: J, minRank: 3 }),
-  a('stone3', '化宝', 'spiritStoneGain', 20, 35, '灵石获取提升 {v}%', 12, { slots: J, minRank: 6 }),
+  a('stone1', '聚财', 'spiritStoneGain', 5, 10, '战利灵石提升 {v}%', 80, { slots: J }),
+  a('stone2', '点金', 'spiritStoneGain', 10, 20, '战利灵石提升 {v}%', 40, { slots: J, minRank: 3 }),
+  a('stone3', '化宝', 'spiritStoneGain', 20, 35, '战利灵石提升 {v}%', 12, { slots: J, minRank: 6 }),
   // ---- 掉落 ----
   a('drop1', '寻宝', 'dropRate', 4, 8, '装备掉落率提升 {v}%', 80, { slots: J }),
   a('drop2', '探骊', 'dropRate', 8, 15, '装备掉落率提升 {v}%', 40, { slots: J, minRank: 3 }),
@@ -134,11 +134,11 @@ export const AFFIXES: AffixDef[] = [
   a('rf1', '稳固', 'breakRefund', 5, 10, '突破失败返还 {v}% 损耗修为', 60, { slots: J }),
   a('rf2', '道心', 'breakRefund', 10, 20, '突破失败返还 {v}% 损耗修为', 25, { slots: J, minRank: 4 }),
   // ---- 特殊:双倍掉落 ----
-  a('dd1', '丰饶', 'doubleDropRate', 5, 10, '{v}% 概率获得双倍战利品', 60, { slots: J }),
-  a('dd2', '满载', 'doubleDropRate', 10, 20, '{v}% 概率获得双倍战利品', 25, { slots: J, minRank: 4 }),
-  // ---- 特殊:际遇 ----
-  a('ev1', '际遇', 'eventLuck', 5, 10, '历练事件概率提升 {v}%', 60, { slots: J }),
-  a('ev2', '仙缘', 'eventLuck', 10, 20, '历练事件概率提升 {v}%', 25, { slots: J, minRank: 4 }),
+  a('dd1', '丰饶', 'doubleDropRate', 5, 10, '{v}% 概率当场战利翻倍', 60, { slots: J }),
+  a('dd2', '满载', 'doubleDropRate', 10, 20, '{v}% 概率当场战利翻倍', 25, { slots: J, minRank: 4 }),
+  // ---- 特殊:历练际遇(只抬历练途中掷点,见 ui/statNames) ----
+  a('ev1', '际遇', 'eventLuck', 5, 10, '历练际遇提升 {v}%', 60, { slots: J }),
+  a('ev2', '仙缘', 'eventLuck', 10, 20, '历练际遇提升 {v}%', 25, { slots: J, minRank: 4 }),
   // ---- 特殊:御雷 ----
   a('tb1', '御雷', 'tribulationResist', 5, 10, '天劫伤害降低 {v}%', 60, { slots: A }),
   a('tb2', '渡厄', 'tribulationResist', 10, 20, '天劫伤害降低 {v}%', 25, { slots: A, minRank: 4 }),
@@ -156,8 +156,8 @@ export const AFFIXES: AffixDef[] = [
   // ---- 补充:炼丹/炼器 ----
   a('alc1', '丹心', 'alchemyYield', 5, 10, '双枚成丹概率提升 {v}%', 40, { slots: J }),
   a('alc2', '丹圣', 'alchemyYield', 10, 20, '双枚成丹概率提升 {v}%', 15, { slots: J, minRank: 4 }),
-  a('fg1', '巧手', 'forgeDiscount', 5, 10, '炼器消耗降低 {v}%', 40, { slots: J }),
-  a('fg2', '器道', 'forgeDiscount', 10, 20, '炼器消耗降低 {v}%', 15, { slots: J, minRank: 4 }),
+  a('fg1', '巧手', 'forgeDiscount', 5, 10, '强化消耗降低 {v}%', 40, { slots: J }),
+  a('fg2', '器道', 'forgeDiscount', 10, 20, '强化消耗降低 {v}%', 15, { slots: J, minRank: 4 }),
   // ---- 流派:背水 ----
   a('bs1', '背水一击', 'lowHpDamage', 15, 25, '生命低于三成时造成伤害提升 {v}%', 55, { slots: W, decimals: 0 }),
   a('bs2', '向死而生', 'lowHpDamage', 25, 40, '生命低于三成时造成伤害提升 {v}%', 22, { slots: W, minRank: 4, decimals: 0 }),

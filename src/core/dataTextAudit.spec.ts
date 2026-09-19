@@ -428,6 +428,24 @@ describe('术语一致性 · 用户可见文本', () => {
     expect(hits, `「出手速度」已改名「先手判定」(它是阈值不是连续收益):\n${hits.join('\n')}`).toEqual([])
   })
 
+  it('「历练速度」这个名字退休:它实际只加密同程遭遇,一律叫「历练遇敌」', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}历练速度.{0,16}/g)) hits.push(`${file} 「${m[0]}」`)
+    }
+    expect(hits, `「历练速度」已改名「历练遇敌」(不缩短行程):\n${hits.join('\n')}`).toEqual([])
+  })
+
+  it('「灵石获取」「炼器减耗」「际遇概率」这三个过度承诺的名字退休', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}(?:灵石获取|炼器减耗|炼器消耗|际遇概率).{0,16}/g)) {
+        hits.push(`${file} 「${m[0]}」`)
+      }
+    }
+    expect(hits, `应改成「战利灵石 / 强化减耗 / 历练际遇」:\n${hits.join('\n')}`).toEqual([])
+  })
+
   it('先手判定与首回合伤害各留一名,不许互相借名', () => {
     const all = userText().map(u => u.text).join('\n')
     expect(all, '先手判定(speed)应当出现在用户可见文本里').toContain('先手判定')
