@@ -239,9 +239,9 @@
           道果
           <span class="ml-1 text-[10px] text-violet-ink">【永久积累】</span>
           <span class="block text-[10px] text-ink-faint">
-            每枚:修行 +{{ Math.round(DAO_FRUIT_CULT_BONUS * 100) }}%,道躯 +{{
-              Math.round(DAO_FRUIT_COMBAT_BONUS * 100)
-            }}%;转世保留
+            每枚:修行 +{{ formatPercent(DAO_FRUIT_CULT_BONUS) }},道躯 +{{
+              formatPercent(DAO_FRUIT_COMBAT_BONUS)
+            }};转世保留
           </span>
         </span>
         <span class="tabular font-kai text-[15px] text-cinnabar">{{ player.reincarnation.daoFruit }}</span>
@@ -249,9 +249,13 @@
       <!-- S3 道果收益:有效值与软上限白话 -->
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         有效收益
-        <span class="text-gold-ink">{{ fruitInfo.effective.toFixed(0) }} 枚</span>
+        <span class="text-gold-ink">{{ fruitCountLabel(fruitInfo.effective) }}</span>
         (边际渐减)·
-        {{ fruitInfo.total > 0 ? `当前修行 +${Math.round(fruitInfo.effective * DAO_FRUIT_CULT_BONUS * 100)}%` : '' }}
+        {{
+          fruitInfo.total > 0
+            ? `当前修行 +${formatPercent(fruitInfo.effective * DAO_FRUIT_CULT_BONUS)} · 道躯 +${formatPercent(fruitInfo.effective * DAO_FRUIT_COMBAT_BONUS)}`
+            : ''
+        }}
       </p>
       <!-- 逆旅契:道果的第一个消费出口。花道果换一世逆境,回报只有履历 -->
       <p class="mt-2 flex items-center justify-between text-[12px]">
@@ -492,13 +496,13 @@
   import { DAO_FRUIT_COMBAT_BONUS, DAO_FRUIT_CULT_BONUS, SOFT_CAPS } from '@/data/constants'
   import { RESPONSE_NAMES, SPARK_NAMES } from '@/data/bondIntent'
   import { TRIGGER_NAMES } from '@/data/bondEvents'
-  import { fruitMarginalInfo } from '@/core/resourceGuidance'
+  import { fruitCountLabel, fruitMarginalInfo } from '@/core/resourceGuidance'
   import { branchCodex, materialCodex } from '@/ui/codex'
   import { mentorVerdict, mentorChoices } from '@/core/mentorService'
   import { mentorHint } from '@/core/fortuneChain'
   import { buildIdentity } from '@/core/identityService'
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
-  import { cnNumber, formatGN } from '@/utils/format'
+  import { cnNumber, formatGN, formatPercent } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
   import { STAT_KEYS, STAT_NAMES, modsText, signedPercent, statCaveat } from '@/ui/statNames'
   import { rebirthDecisionHint } from '@/ui/rebirthText'
