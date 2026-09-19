@@ -11,6 +11,7 @@ import { LIFESPAN_CRITICAL_RATIO } from '@/data/constants'
 import { titleDef } from '@/data/titles'
 import { pillDef } from '@/data/pills'
 import { stoneByTier } from './formulas'
+import { formatGN } from '@/utils/format'
 import { usePlayerStore } from '@/stores/player'
 import { useQuestsStore } from '@/stores/quests'
 import { useResourcesStore } from '@/stores/resources'
@@ -24,46 +25,47 @@ export function playerTier(): number {
   return Math.min(20, player.major * 2 + 1 + (player.sub >= 5 ? 1 : 0))
 }
 
+/** 资源行与发放共用。灵石按当前层级折算,不写死一个数。 */
+function resourceParts(bundle: RewardBundle): string[] {
+  const lines: string[] = []
+  if (bundle.stoneTier) lines.push(`灵石 +${formatGN(stoneByTier(playerTier(), bundle.stoneTier))}`)
+  if (bundle.wudao) lines.push(`悟道点 +${bundle.wudao}`)
+  if (bundle.herb) lines.push(`灵草 +${bundle.herb}`)
+  if (bundle.ore) lines.push(`玄铁 +${bundle.ore}`)
+  if (bundle.page) lines.push(`残页 +${bundle.page}`)
+  if (bundle.dust) lines.push(`器灵尘 +${bundle.dust}`)
+  if (bundle.pillId && pillDef(bundle.pillId)) lines.push(`丹药「${pillDef(bundle.pillId)!.name}」`)
+  return lines
+}
+
+/** 领赏前就能看见的清单(含称号)。数字与 grantReward 入账的是同一套折算。 */
+export function rewardPreview(bundle: RewardBundle): string {
+  const lines = resourceParts(bundle)
+  if (bundle.titleId && titleDef(bundle.titleId)) lines.push(`称号「${titleDef(bundle.titleId)!.name}」`)
+  return lines.join(' · ')
+}
+
+function withReward(prefix: string, lines: string[]): string {
+  return lines.length ? `${prefix} · ${lines.join(' · ')}` : prefix
+}
+
 export function grantReward(bundle: RewardBundle, quiet = false): string[] {
   const resources = useResourcesStore()
   const quests = useQuestsStore()
   const inventory = useInventoryStore()
   const ui = useUiStore()
-  const lines: string[] = []
-  if (bundle.stoneTier) {
-    const v = stoneByTier(playerTier(), bundle.stoneTier)
-    resources.addStone(v)
-    lines.push('灵石')
-  }
-  if (bundle.wudao) {
-    resources.addSmall('wudao', bundle.wudao)
-    lines.push(`悟道点×${bundle.wudao}`)
-  }
-  if (bundle.herb) {
-    resources.addSmall('herb', bundle.herb)
-    lines.push(`灵草×${bundle.herb}`)
-  }
-  if (bundle.ore) {
-    resources.addSmall('ore', bundle.ore)
-    lines.push(`玄铁×${bundle.ore}`)
-  }
-  if (bundle.page) {
-    resources.addSmall('page', bundle.page)
-    lines.push(`残页×${bundle.page}`)
-  }
-  if (bundle.dust) {
-    resources.addSmall('dust', bundle.dust)
-    lines.push(`器灵尘×${bundle.dust}`)
-  }
-  if (bundle.pillId && pillDef(bundle.pillId)) {
-    inventory.addPill(bundle.pillId, 1)
-    lines.push(`丹药「${pillDef(bundle.pillId)!.name}」`)
-  }
-  if (bundle.titleId && titleDef(bundle.titleId)) {
-    if (quests.ownTitle(bundle.titleId)) {
-      lines.push(`称号「${titleDef(bundle.titleId)!.name}」`)
-      if (!quiet) ui.toast(`获得称号「${titleDef(bundle.titleId)!.name}」`, 'rare')
-    }
+  if (bundle.stoneTier) resources.addStone(stoneByTier(playerTier(), bundle.stoneTier))
+  if (bundle.wudao) resources.addSmall('wudao', bundle.wudao)
+  if (bundle.herb) resources.addSmall('herb', bundle.herb)
+  if (bundle.ore) resources.addSmall('ore', bundle.ore)
+  if (bundle.page) resources.addSmall('page', bundle.page)
+  if (bundle.dust) resources.addSmall('dust', bundle.dust)
+  if (bundle.pillId && pillDef(bundle.pillId)) inventory.addPill(bundle.pillId, 1)
+  const lines = resourceParts(bundle)
+  if (bundle.titleId && titleDef(bundle.titleId) && quests.ownTitle(bundle.titleId)) {
+    const title = `称号「${titleDef(bundle.titleId)!.name}」`
+    lines.push(title)
+    if (!quiet) ui.toast(`获得${title}`, 'rare')
   }
   return lines
 }
@@ -95,8 +97,8 @@ function unlockAchievement(id: string): void {
   const ui = useUiStore()
   const def = ACHIEVEMENTS.find(a => a.id === id)
   if (!def || !quests.unlockAchievement(id)) return
-  if (def.reward) grantReward(def.reward, true)
-  ui.toast(`成就达成「${def.name}」`, 'rare')
+  const lines = def.reward ? grantReward(def.reward, true) : []
+  ui.toast(withReward(`成就达成「${def.name}」`, lines), 'rare')
 }
 
 /** 检查所有可自动判定的成就 */
@@ -153,8 +155,8 @@ function checkMainQuest(): void {
     guard += 1
     const current = MAIN_QUESTS[quests.mainIdx]
     if (!current || !evalCond(current.cond)) break
-    grantReward(current.reward, true)
-    ui.toast(`任务完成「${current.name}」`, 'success')
+    const lines = grantReward(current.reward, true)
+    ui.toast(withReward(`任务完成「${current.name}」`, lines), 'success')
     quests.advanceMain()
   }
 }
@@ -166,8 +168,8 @@ function checkDaily(): void {
     if (quests.daily.done.includes(task.id)) continue
     if (quests.dailyDelta(task.counterKey) >= task.target) {
       quests.markDailyDone(task.id)
-      grantReward(task.reward, true)
-      ui.toast(`日课已成「${task.name}」`, 'success')
+      const lines = grantReward(task.reward, true)
+      ui.toast(withReward(`日课已成「${task.name}」`, lines), 'success')
     }
   }
 }
