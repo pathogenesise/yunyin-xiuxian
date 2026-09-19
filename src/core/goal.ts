@@ -7,7 +7,7 @@
  * - 从前期教学自然过渡到 Build 游戏
  *
  * 类型:
- * - breakthrough  修为接近突破 → "尝试突破XX"
+ * - breakthrough  修为接近突破 → 小进阶「尝试突破」/ 大关「引劫突破」
  * - equipment     装备槽有空位 → "寻一件XX法器"
  * - explore       区域未涉足   → "深入XX"
  * - material      材料不足     → "采集XX"
@@ -23,6 +23,7 @@ import { REGIONS } from '@/data/regions'
 import { EQUIP_SLOT_NAMES } from '@/data/equipment'
 import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
 import { pillDef } from '@/data/pills'
+import { breakthroughGoalText } from '@/ui/cultivationText'
 import type { EquipSlot } from '@/types'
 
 export type GoalType = 'breakthrough' | 'equipment' | 'explore' | 'material' | 'build'
@@ -72,11 +73,11 @@ export function generateCurrentGoal(player: ReturnType<typeof usePlayerStore>): 
 
   // 2. 修为接近突破(最高优先级)。大道尽头没有下一境,不硬塞突破。
   if (!player.atMaxRealm && player.expProgress >= 0.5) {
-    const info = breakthroughInfo()
     const near = player.expProgress >= 0.85
+    const info = breakthroughInfo()
     return {
       type: 'breakthrough',
-      text: near ? `尝试突破「${info.targetLabel}」` : `向「${info.targetLabel}」迈进`,
+      text: breakthroughGoalText(near, info.needTribulation, info.targetLabel),
       progress: player.expProgress,
       hint: near ? nearBreakthroughHint(info.needTribulation) : undefined
     }

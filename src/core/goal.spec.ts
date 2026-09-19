@@ -52,6 +52,8 @@ describe('修行目标(Phase 29)', () => {
     expect(goal.text).not.toContain('圆满')
     expect(goal.hint).toContain('天劫')
     expect(goal.hint).not.toContain('可提升')
+    expect(goal.text).toContain('引劫')
+    expect(goal.text).not.toContain('尝试突破')
   })
 
   it('修为 50%~85% → 突破目标,无 hint(未临近,不给多余建议)', () => {

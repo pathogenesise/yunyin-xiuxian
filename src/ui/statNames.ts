@@ -91,6 +91,10 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   shieldOnStart: '开战护盾',
   executeDamage: '处决伤害',
   regenPerRound: '回合回复',
+  /**
+   * Net dodge after subtracting attacker accuracy (combat.ts).
+   * Accuracy does nothing against a foe who does not dodge.
+   */
   dodgeRate: '闪避',
   accuracy: '命中',
   lowHpReduction: '濒危减伤',
@@ -152,7 +156,9 @@ export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   qiCapPct: '灵气上限上浮,积余之仓随之',
   beastPct: '放大灵兽词条;灵兽园等级不在其中',
   speed: '须不弱于对手,方得抢先',
-  firstStrike: '只重开局一合;不改谁先出手'
+  firstStrike: '只重开局一合;不改谁先出手',
+  dodgeRate: '须高于对手命中,方得避开',
+  accuracy: '只抵对手闪避;不闪则无增益'
 }
 
 export function statCaveat(key: string): string | undefined {
