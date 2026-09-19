@@ -5,6 +5,7 @@
 import type { EventDef, OfflineSummary } from '@/types'
 import { add, gn, gnZero, isZero, mulN, sub } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
+import { offlineAgeNote } from '@/ui/offlineText'
 import { rng } from '@/utils/random'
 import { regionDef } from '@/data/regions'
 import { enemyDef } from '@/data/enemies'
@@ -318,7 +319,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     notes
   }
   if (player.expFull) notes.push('修为已至圆满,可尝试突破')
-  if (summary.ageYears > 0) notes.push(`闭关期间寿元流逝 ${summary.ageYears} 载`)
+  if (summary.ageYears > 0) notes.push(offlineAgeNote(summary.ageYears))
 
   /**
    * 在途的一次性内容**原样冻结** —— 这一点玩家看不见,得说一句。

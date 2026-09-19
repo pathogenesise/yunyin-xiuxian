@@ -30,7 +30,7 @@ export const COUNTER_DIRECTIONS: Record<CounterKey, string> = {
   tribulations: '突破与渡劫',
   reincarnations: '轮回转世',
   soulsRefined: '器魂',
-  offlineClaims: '闭关归来',
+  offlineClaims: '离府归来',
   buildingUpgrades: '洞府经营'
 }
 
