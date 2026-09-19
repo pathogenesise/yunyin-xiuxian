@@ -231,7 +231,11 @@
   function modsText(mods: Record<string, unknown>): string {
     return Object.entries(mods)
       .filter(([, v]) => typeof v === 'number' && v !== 0)
-      .map(([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${Math.round((v as number) * 100)}%`)
+      .map(([k, v]) => {
+        const n = v as number
+        const pct = Math.round(Math.abs(n) * 100)
+        return `${STAT_NAMES[k as AnyStatKey] ?? k} ${n > 0 ? '+' : '-'}${pct}%`
+      })
       .join(' · ')
   }
 

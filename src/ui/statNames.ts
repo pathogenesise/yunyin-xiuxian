@@ -87,6 +87,12 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
  */
 export function modsText(mods: StatMods): string {
   return Object.entries(mods)
-    .map(([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`)
+    .map(([k, v]) => {
+      const n = v as number
+      const name = STAT_NAMES[k as AnyStatKey] ?? k
+      // formatPercent 自带负号;再加一个「+」会把「修炼速度 -50%」印成「+-50%」
+      if (typeof n === 'number' && n < 0) return `${name} -${formatPercent(Math.abs(n))}`
+      return `${name} +${formatPercent(n)}`
+    })
     .join(' · ')
 }

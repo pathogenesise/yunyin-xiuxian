@@ -71,9 +71,7 @@
   import { PERSONALITY_NAMES, personalityDesc } from '@/core/petPersonality'
   import { petTraitText } from '@/ui/itemText'
   import { qualityDef } from '@/data/qualities'
-  import { formatPercent } from '@/utils/format'
-  import { STAT_NAMES } from '@/ui/statNames'
-  import type { AnyStatKey } from '@/types'
+  import { modsText } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
@@ -88,12 +86,6 @@
     { id: 'pet', label: '灵兽' }
   ]
 
-  function modsText(mods: Partial<Record<string, number>> | undefined): string {
-    return Object.entries(mods ?? {})
-      .map(([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} +${formatPercent(v as number)}`)
-      .join(' · ')
-  }
-
   // ---- 名号 ----
   const ownedCount = computed(() => quests.titlesOwned.length)
 
@@ -104,7 +96,7 @@
       def,
       owned: ownedSet.has(def.id),
       worn: player.titleId === def.id,
-      modText: modsText(def.mods)
+      modText: modsText(def.mods ?? {})
     })).sort((a, b) => Number(b.worn) - Number(a.worn) || Number(b.owned) - Number(a.owned))
   })
 
