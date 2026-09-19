@@ -9,6 +9,8 @@ import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { gn, toNum, gnZero } from '@/utils/gnum'
 import { generateCurrentGoal } from './goal'
+import { SUB_LEVELS } from '@/data/constants'
+import { breakthroughInfo } from './breakthrough'
 
 const { setBuild } = vi.hoisted(() => ({ setBuild: { value: null as unknown } }))
 vi.mock('./buildDetect', () => ({ detectBuild: () => setBuild.value }))
@@ -33,7 +35,23 @@ describe('修行目标(Phase 29)', () => {
     const goal = generateCurrentGoal(player)!
     expect(goal.type).toBe('breakthrough')
     expect(goal.text).toContain('突破')
-    expect(goal.hint).toBeTruthy()
+    expect(goal.text).toContain(breakthroughInfo().targetLabel)
+    expect(goal.hint).toContain('小进阶')
+    expect(goal.hint).not.toContain('天劫')
+  })
+
+  it('圆满层指向下一境,且不把小进阶的丹药说成能渡天劫', () => {
+    const player = usePlayerStore()
+    player.initCharacter('目标', { roots: [] } as never)
+    player.sub = SUB_LEVELS - 1
+    player.exp = gn(Math.floor(toNum(player.expReq) * 0.9))
+    const info = breakthroughInfo()
+    expect(info.needTribulation, '圆满层必须是大关').toBe(true)
+    const goal = generateCurrentGoal(player)!
+    expect(goal.text).toContain(info.targetLabel)
+    expect(goal.text).not.toContain('圆满')
+    expect(goal.hint).toContain('天劫')
+    expect(goal.hint).not.toContain('可提升')
   })
 
   it('修为 50%~85% → 突破目标,无 hint(未临近,不给多余建议)', () => {

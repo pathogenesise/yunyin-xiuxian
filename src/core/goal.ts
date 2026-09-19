@@ -18,10 +18,11 @@ import { useAdventureStore } from '@/stores/adventure'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { detectBuild } from './buildDetect'
-import { realmLabel } from '@/data/realms'
+import { breakthroughInfo } from './breakthrough'
 import { REGIONS } from '@/data/regions'
 import { EQUIP_SLOT_NAMES } from '@/data/equipment'
-import { SUB_LEVELS } from '@/data/constants'
+import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
+import { pillDef } from '@/data/pills'
 import type { EquipSlot } from '@/types'
 
 export type GoalType = 'breakthrough' | 'equipment' | 'explore' | 'material' | 'build'
@@ -49,27 +50,35 @@ const GEAR_SLOTS: EquipSlot[] = ['weapon', 'head', 'body', 'wrist', 'belt', 'boo
  */
 const MATERIAL_LOW_HERB = 10
 
+/**
+ * 临近突破时的一句提示。
+ *
+ * 下一境的名字必须来自 breakthroughInfo(圆满层要进下一个大境界,不能把 sub+1 钳在本境)。
+ * 凝神丹与静坐只加小进阶的 breakthroughRate;大关走天劫,提示若仍说「提升成功率」就是谎话。
+ */
+function nearBreakthroughHint(needTribulation: boolean): string {
+  if (needTribulation) return '这一步是大关天劫,凝神丹与静坐不加成功率,先看劫势再决意'
+  const prep = BREAKTHROUGH_PREP_OPTIONS.filter(o => o.bonusRate > 0)
+    .map(o => o.label)
+    .join('、')
+  const pill = pillDef('p_ningshen')?.name ?? '凝神丹'
+  return `这一步是小进阶,${prep}或${pill}可提升进阶成功率`
+}
+
 /** 纯函数:根据玩家状态生成当前目标 */
 export function generateCurrentGoal(player: ReturnType<typeof usePlayerStore>): Goal | null {
   // 1. 死后无目标
   if (player.dead) return null
 
-  // 2. 修为接近突破(最高优先级)
-  if (player.expProgress >= 0.85) {
-    const next = realmLabel(player.major, Math.min(player.sub + 1, SUB_LEVELS - 1))
+  // 2. 修为接近突破(最高优先级)。大道尽头没有下一境,不硬塞突破。
+  if (!player.atMaxRealm && player.expProgress >= 0.5) {
+    const info = breakthroughInfo()
+    const near = player.expProgress >= 0.85
     return {
       type: 'breakthrough',
-      text: `尝试突破「${next}」`,
+      text: near ? `尝试突破「${info.targetLabel}」` : `向「${info.targetLabel}」迈进`,
       progress: player.expProgress,
-      hint: '修为已近圆满,服用凝神丹或静坐调息可提升成功率'
-    }
-  }
-  if (player.expProgress >= 0.5) {
-    const next = realmLabel(player.major, Math.min(player.sub + 1, SUB_LEVELS - 1))
-    return {
-      type: 'breakthrough',
-      text: `向「${next}」迈进`,
-      progress: player.expProgress
+      hint: near ? nearBreakthroughHint(info.needTribulation) : undefined
     }
   }
 
