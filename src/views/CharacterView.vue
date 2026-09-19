@@ -292,9 +292,10 @@
         <p v-if="talentTap && tappedTalent" class="mt-1.5 text-[10px] leading-relaxed text-ink-faint">
           <span :style="{ color: TALENT_GRADE_COLORS[tappedTalent.grade] }">{{ tappedTalent.name }}</span>
           ：{{ tappedTalent.desc }}
+          <span v-if="modsText(tappedTalent.mods)" class="mt-0.5 block text-azure tabular">{{ modsText(tappedTalent.mods) }}</span>
         </p>
       </div>
-      <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">兵解转世保留道果 / 天赋 / 法宝,功法折半,余者归尘。金丹境方可自行兵解。</p>
+      <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">{{ rebirthDecisionHint() }}</p>
       <template #footer>
         <button class="btn-ghost w-full !text-[12px]" @click="rebirth">兵解转世</button>
       </template>
@@ -435,7 +436,7 @@
           </span>
         </p>
         <p class="text-[11px] leading-relaxed text-ink-faint">
-          师承词条(并入终局属性):{{ Object.values(mentorVer.mentor?.mods ?? {}).join(' · ') || '—' }}
+          师承词条:{{ mentorVer.mentor ? modsText(mentorVer.mentor.mods) : '—' }}
         </p>
       </div>
       <div v-else class="space-y-2.5">
@@ -454,6 +455,7 @@
             <span class="ml-auto text-[10px] text-ink-faint">{{ m!.master }}</span>
           </p>
           <p class="mt-0.5 text-[11px] text-ink-faint">{{ m!.desc }}</p>
+          <p class="mt-0.5 text-[11px] text-azure tabular">{{ modsText(m!.mods) }}</p>
         </button>
       </div>
       <template #footer>
@@ -498,7 +500,8 @@
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
   import { cnNumber, formatGN, formatPercent } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
-  import { STAT_NAMES } from '@/ui/statNames'
+  import { STAT_NAMES, modsText } from '@/ui/statNames'
+  import { rebirthDecisionHint } from '@/ui/rebirthText'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
 

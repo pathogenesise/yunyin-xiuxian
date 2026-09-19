@@ -35,7 +35,7 @@ export const MENTORS: MentorDef[] = [
     id: 'swordsman',
     name: '剑修',
     title: '一剑破万法',
-    desc: '擅长单体爆发、命中、暴击',
+    desc: '锋芒更利,暴击更易',
     mods: { critRate: 0.03, damageBonus: 0.02 },
     narrative: {
       aligned: '师尊抚剑而笑:「剑心渐明,锋芒初露。」',
@@ -47,7 +47,7 @@ export const MENTORS: MentorDef[] = [
     id: 'alchemist',
     name: '丹修',
     title: '草木通神',
-    desc: '擅长丹药、恢复、炼丹',
+    desc: '回合间回气,炉中更易出丹',
     mods: { regenPerRound: 0.01, alchemyYield: 0.05 },
     narrative: {
       aligned: '师尊捻须:「丹道亦是道,你已得其味。」',
@@ -59,7 +59,7 @@ export const MENTORS: MentorDef[] = [
     id: 'arraymaster',
     name: '阵修',
     title: '定鼎乾坤',
-    desc: '擅长护盾、控制、减伤',
+    desc: '开战便有护盾,受击更轻',
     mods: { shieldOnStart: 0.03, damageReduction: 0.02 },
     narrative: {
       aligned: '师尊抚阵纹:「以阵护道,此心甚稳。」',
@@ -71,7 +71,7 @@ export const MENTORS: MentorDef[] = [
     id: 'hunter',
     name: '猎修',
     title: '踏遍山河',
-    desc: '擅长历练、掉落、异兽',
+    desc: '赶路更快,所得更多',
     mods: { explorationSpeed: 0.04, dropRate: 0.03 },
     narrative: {
       aligned: '师尊拍肩:「行万里路,猎万兽。你正是猎修的苗子。」',
