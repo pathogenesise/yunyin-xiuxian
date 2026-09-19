@@ -5,6 +5,7 @@ import type { ArtifactDef, EquipmentInstance, GNum, RegionDef } from '@/types'
 import { rng } from '@/utils/random'
 import { gnZero, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
+import { salvageYieldText } from '@/ui/forgeText'
 import { qualityDef } from '@/data/qualities'
 import { equipmentTemplate } from '@/data/equipment'
 import { PILLS } from '@/data/pills'
@@ -86,7 +87,7 @@ export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolea
     const gain = salvageOf(item)
     resources.addSmall('dust', gain.dust)
     resources.addStone(gain.stone)
-    const tail = isZero(gain.stone) ? `化作器灵尘×${gain.dust}` : `化作器灵尘×${gain.dust} · 退灵石 ${formatGN(gain.stone)}`
+    const tail = `化作${salvageYieldText(gain.dust, isZero(gain.stone) ? undefined : formatGN(gain.stone))}`
     return { line: tail, bagged: false, dust: gain.dust, stone: gain.stone }
   }
   // 自动回收闸:新件先过裁决,命中回收规则的不占行囊,直接化尘
