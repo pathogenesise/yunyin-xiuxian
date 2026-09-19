@@ -14,6 +14,7 @@
       </div>
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         胜 {{ session?.wins ?? 0 }} 场 · 际遇 {{ session?.events ?? 0 }} 次 · 拾获 {{ session?.itemGain ?? 0 }} 件
+        <span v-if="huntIn > 0.4" class="text-ink-ghost"> · 下一场 {{ formatCountdown(huntIn) }}</span>
       </p>
       <!-- 本次所得:石头与修为此前只在挂机总结里出现,在线历练中玩家看不到这一趟赚了什么 -->
       <p v-if="gains" class="mt-0.5 text-[10px] text-ink-faint tabular">
@@ -52,7 +53,7 @@
                 <span data-foe-name class="whitespace-nowrap">{{ battle.enemyName }}</span>
               </template>
               <template v-else>
-                <span class="whitespace-nowrap">搜寻猎物中</span>
+                <span class="whitespace-nowrap">寻敌中</span>
                 <span class="ink-dots text-ink-faint">
                   <span />
                   <span />
@@ -262,6 +263,7 @@
   const region = computed(() => adventure.currentRegion)
   const battle = computed(() => adventure.lastBattle)
   const timeLeft = computed(() => (session.value ? Math.max(0, (session.value.endsAt - now.value) / 1000) : 0))
+  const huntIn = computed(() => (session.value ? Math.max(0, (session.value.nextBattleAt - now.value) / 1000) : 0))
   const modeName = computed(() => (session.value ? EXPLORE_MODES[session.value.mode].name : ''))
 
   /** 本次历练已得(灵石/修为)—— 取自会话里如实累计的入账数,不是期望值 */

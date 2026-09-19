@@ -237,7 +237,7 @@
   import { formatGN } from '@/utils/format'
   import { isZero, sub } from '@/utils/gnum'
   import type { AnyStatKey, GNum } from '@/types'
-  import { AFFIX_RARITY_META, STAT_NAMES, signedPercent } from '@/ui/statNames'
+  import { AFFIX_RARITY_META, STAT_NAMES, statValueText } from '@/ui/statNames'
   import { equipNextLevelText } from '@/ui/equipText'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
@@ -365,7 +365,7 @@
     if (!t?.fixedMods) return []
     return Object.entries(t.fixedMods).map(([k, v]) => ({
       label: STAT_NAMES[k as AnyStatKey] ?? k,
-      value: signedPercent(v as number)
+      value: statValueText(k, v as number)
     }))
   })
 

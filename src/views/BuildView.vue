@@ -25,7 +25,7 @@
         <div class="mt-2 space-y-1">
           <p v-for="cv in build.coreValues" :key="cv.key" class="flex justify-between text-[12px]">
             <span class="text-ink-soft">{{ STAT_NAMES[cv.key] }}</span>
-            <span class="tabular text-violet-ink">+{{ formatPercent(cv.value) }}</span>
+            <span class="tabular text-violet-ink">{{ signedPercent(cv.value) }}</span>
           </p>
         </div>
         <p v-if="buildSourceNames.length" class="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-ink-faint">
@@ -208,8 +208,8 @@
   import { useEndgameStore } from '@/stores/endgame'
   import { applyLoadout, captureLoadout, deleteLoadout } from '@/core/loadoutService'
   import { useLoadoutsStore, MAX_LOADOUTS } from '@/stores/loadouts'
-  import { cnNumber, formatPercent } from '@/utils/format'
-  import { STAT_NAMES } from '@/ui/statNames'
+  import { cnNumber } from '@/utils/format'
+  import { STAT_NAMES, signedPercent } from '@/ui/statNames'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import BaseModal from '@/components/common/BaseModal.vue'

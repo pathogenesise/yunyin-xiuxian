@@ -174,8 +174,7 @@
   import { useRouter } from 'vue-router'
   import { goBack } from '@/router/goBack'
   import { formatNum } from '@/utils/format'
-  import { STAT_NAMES } from '@/ui/statNames'
-  import type { AnyStatKey } from '@/types'
+  import { modsText } from '@/ui/statNames'
   import { equipmentTemplate } from '@/data/equipment'
   import { SOUL_SLOTS, soulGradeDef, soulMods, soulName, soulTypeDef, type SoulInstance } from '@/data/souls'
   import { canRefine, dissolveSoul, previewSoul, refineEquipment, removeSoul, SOUL_REFINE_COST, wearSoul } from '@/core/soulService'
@@ -227,17 +226,6 @@
         }
       })
   })
-
-  function modsText(mods: Record<string, unknown>): string {
-    return Object.entries(mods)
-      .filter(([, v]) => typeof v === 'number' && v !== 0)
-      .map(([k, v]) => {
-        const n = v as number
-        const pct = Math.round(Math.abs(n) * 100)
-        return `${STAT_NAMES[k as AnyStatKey] ?? k} ${n > 0 ? '+' : '-'}${pct}%`
-      })
-      .join(' · ')
-  }
 
   function soulLabel(soul: SoulInstance): string {
     return soulName(soul)

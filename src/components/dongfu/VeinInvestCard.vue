@@ -55,10 +55,8 @@
 
     <p class="mt-3 text-[10px] text-azure">
       当前加成:
-      <span v-if="!bonusRows.length" class="ml-1 text-ink-faint">尚无</span>
-      <span v-for="row in bonusRows" :key="row.label" class="ml-1">
-        {{ row.label }} {{ row.sign }}{{ formatPercent(row.value) }}
-      </span>
+      <span v-if="!bonusLine" class="ml-1 text-ink-faint">尚无</span>
+      <span v-else class="ml-1">{{ bonusLine }}</span>
     </p>
   </div>
 </template>
@@ -71,9 +69,8 @@
   import { veinEffectText } from '@/ui/veinText'
   import { investVein, veinPointCost, veinSwitchCost, switchMainVein } from '@/core/veinService'
   import { VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY, VEIN_UNLOCK_MAJOR } from '@/data/constants'
-  import { STAT_NAMES } from '@/ui/statNames'
+  import { modsText } from '@/ui/statNames'
   import { formatGN, formatPercent } from '@/utils/format'
-  import type { AnyStatKey } from '@/types'
 
   const dongfu = useDongfuStore()
   const player = usePlayerStore()
@@ -89,18 +86,14 @@
    * 走 dongfu.insightDiscount,不进 veinMods。此前这里只读 veinMods,
    * 于是投了满脉也一个字都不显示 —— 玩家因此不知道它有没有用
    */
-  const bonusRows = computed(() => {
-    const rows: { label: string; value: number; sign: string }[] = []
-    for (const [k, v] of Object.entries(dongfu.veinMods)) {
-      if (typeof v === 'number' && v > 0) {
-        rows.push({ label: STAT_NAMES[k as AnyStatKey] ?? k, value: v, sign: '+' })
-      }
-    }
-    // 参悟折扣是减耗,故记负号
+  const bonusLine = computed(() => {
+    const parts: string[] = []
+    const mods = modsText(dongfu.veinMods)
+    if (mods) parts.push(mods)
     if (dongfu.insightDiscount > 0) {
-      rows.push({ label: INSIGHT_EFFECT_NAME, value: Math.min(0.5, dongfu.insightDiscount), sign: '−' })
+      parts.push(`${INSIGHT_EFFECT_NAME} −${formatPercent(Math.min(0.5, dongfu.insightDiscount))}`)
     }
-    return rows
+    return parts.join(' · ')
   })
 
   function isMain(veinId: VeinId): boolean {

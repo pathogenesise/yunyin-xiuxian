@@ -440,8 +440,8 @@
   import { useLoreStore } from '@/stores/lore'
   import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
   import { cnNumber, formatGN, formatNum, formatPercent } from '@/utils/format'
-  import { STAT_NAMES, signedPercent } from '@/ui/statNames'
-  import type { AnyStatKey, EquipSlot, GNum, PillDef } from '@/types'
+  import { STAT_NAMES, statCaveat, statModPhrase } from '@/ui/statNames'
+  import type { EquipSlot, GNum, PillDef } from '@/types'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
@@ -701,9 +701,7 @@
     const def = artifactDef(defId)
     if (!def) return []
     // 与属性汇总(store/inventory)同源:卡片上写多少,身上加的就是多少
-    return Object.entries(artifactValue(def, level).passive).map(
-      ([k, v]) => `${STAT_NAMES[k as AnyStatKey] ?? k} ${signedPercent(v as number)}`
-    )
+    return Object.entries(artifactValue(def, level).passive).map(([k, v]) => statModPhrase(k, v as number))
   }
 
   /** 神通主体那个数说的是什么(用药名之外的话:威力 / 护盾 / 破解…) */
@@ -725,9 +723,11 @@
     const def = artifactDef(defId)
     const gain = def ? artifactNextLevelGain(def, level) : null
     if (!gain) return ''
-    const parts = gain.passive.map(
-      p => `${STAT_NAMES[p.key] ?? p.key} ${formatPercent(p.from)} → ${formatPercent(p.to)}`
-    )
+    const parts = gain.passive.map(p => {
+      const caveat = statCaveat(p.key)
+      const span = `${STAT_NAMES[p.key] ?? p.key} ${formatPercent(p.from)} → ${formatPercent(p.to)}`
+      return caveat ? `${span}(${caveat})` : span
+    })
     if (gain.active) {
       const noun = ACTIVE_NOUNS[def!.active.effect.type] ?? '效果'
       /**

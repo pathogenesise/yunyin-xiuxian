@@ -11,7 +11,7 @@ export const BUFFS: BuffDef[] = [
   b('buff_ningshen', '凝神', 'pill', 600, '心神凝定,进阶成功率提升 8%(大关天劫不吃此益)', { breakthroughRate: 0.08 }, 'moon'),
   b('buff_zhanli', '战意沸腾', 'pill', 900, '攻击提升 20%,防御提升 10%', { attackPct: 0.2, defensePct: 0.1 }, 'sword'),
   b('buff_huxin', '护心', 'pill', 900, '受到伤害降低 15%', { damageReduction: 0.15 }, 'shield'),
-  b('buff_shenxing', '神行', 'pill', 900, '历练速度提升 30%,先手判定 +10%', { explorationSpeed: 0.3, speed: 0.1 }, 'footprints'),
+  b('buff_shenxing', '神行', 'pill', 900, '历练遇敌加快 30%,先手判定 +10%', { explorationSpeed: 0.3, speed: 0.1 }, 'footprints'),
   b('buff_wudao', '茶香悟道', 'pill', 1800, '战斗所得修为提升 30%', { expGain: 0.3 }, 'leaf'),
   b('buff_jingang', '金刚护体', 'pill', 900, '生命上限提升 20%,开战护盾 10%', { maxHpPct: 0.2, shieldOnStart: 0.1 }, 'mountain'),
   b('buff_tianyun', '天运加身', 'pill', 1200, '气运提升 15%,装备掉落率提升 10%', { luck: 0.15, dropRate: 0.1 }, 'star'),
@@ -27,8 +27,8 @@ export const BUFFS: BuffDef[] = [
     'skull'
   ),
   b('bless_qingfeng', '清风拂面', 'blessing', 900, '心旷神怡,修炼速度提升 20%', { cultivationSpeed: 0.2 }, 'wind'),
-  // 名字里不带「机缘」:「机缘」已专属 ft_ 取/弃事件,这条祝福给的是气运与际遇概率
-  b('bless_jiyuan', '气运加身', 'blessing', 1200, '气运提升 20%,际遇概率提升 15%', { luck: 0.2, eventLuck: 0.15 }, 'star'),
+  // 名字里不带「机缘」:「机缘」已专属 ft_ 取/弃事件,这条祝福给的是气运与历练际遇
+  b('bless_jiyuan', '气运加身', 'blessing', 1200, '气运提升 20%,历练际遇提升 15%', { luck: 0.2, eventLuck: 0.15 }, 'star'),
   b('bless_daoyun', '道韵加身', 'blessing', 1800, '修炼速度提升 40%,战斗修为提升 20%', { cultivationSpeed: 0.4, expGain: 0.2 }, 'scroll'),
   b(
     'curse_xinmo',

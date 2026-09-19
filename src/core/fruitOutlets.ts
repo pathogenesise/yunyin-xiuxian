@@ -78,14 +78,14 @@ const VIA_COMBAT: readonly AnyStatKey[] = [
 /** 经资源抵达的键 —— 资源换装备/丹药/建筑,最终仍回到战力或速度 */
 const VIA_RESOURCE: readonly { key: AnyStatKey; via: string }[] = [
   { key: 'luck', via: '幸运 → 掉落品质 → 装备 → 战力' },
-  { key: 'dropRate', via: '掉落率 → 装备 → 战力' },
+  { key: 'dropRate', via: '装备掉落率 → 装备 → 战力' },
   { key: 'doubleDropRate', via: '双倍掉落 → 装备 → 战力' },
-  { key: 'eventLuck', via: '事件运 → 际遇收益 → 资源 → 战力' },
-  { key: 'spiritStoneGain', via: '灵石 → 灵脉/建筑/强化 → 速度与战力' },
+  { key: 'eventLuck', via: '历练际遇 → 途中掷点 → 资源 → 战力' },
+  { key: 'spiritStoneGain', via: '战利灵石 → 强化/灵脉 → 速度与战力' },
   { key: 'alchemyYield', via: '双枚成丹 → 丹药 → 属性与修为' },
   { key: 'forgeDiscount', via: '强化省耗 → 同等灵石换更多战力' },
   { key: 'breakRefund', via: '失败返还修为 → 少掉修为 → 重修耗时' },
-  { key: 'explorationSpeed', via: '历练节奏 → 单位时间收益' }
+  { key: 'explorationSpeed', via: '历练遇敌 → 单位时间遭遇 → 修为与掉落' }
 ]
 
 /** 全部属性键到「轮回速度」的可达路径 */

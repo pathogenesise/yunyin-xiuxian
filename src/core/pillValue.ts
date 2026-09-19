@@ -102,8 +102,8 @@ export type PillLine = 'craft' | 'drop'
 /**
  * 状态类丹药里唯一能折成时间的那一份:修炼速度。
  *
- * expGain(战斗所得修为)与 explorationSpeed(历练速度)不并入 —— 它们提升的是
- * 另外两条产出渠道,与挂机秒数不同量纲。把三者相加会让「历练提速 30%」看起来
+ * expGain(战斗所得修为)与 explorationSpeed(历练遇敌)不并入 —— 它们提升的是
+ * 另外两条产出渠道,与挂机秒数不同量纲。把三者相加会让「历练遇敌加快 30%」看起来
  * 等于「修炼提速 30%」,那是假的可比性。
  */
 function tempoRateOf(def: PillDef): number {

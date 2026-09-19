@@ -45,9 +45,17 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
    */
   breakthroughRate: '进阶成功率',
   luck: '气运',
-  explorationSpeed: '历练速度',
+  /**
+   * Divides EXPLORE_BATTLE_INTERVAL. Trip length is modeDef.durationSec
+   * (and pet exploreDurMult). Calling it 「历练速度」looks like a shorter walk.
+   */
+  explorationSpeed: '历练遇敌',
   lifespanPct: '寿元上限',
-  spiritStoneGain: '灵石获取',
+  /**
+   * loot.ts / offline explore only scale battle stone. Cave yield, events,
+   * salvage, and suppress ticks ignore this key.
+   */
+  spiritStoneGain: '战利灵石',
   /**
    * loot.ts / offline.ts only multiply EQUIP_DROP_CHANCE.
    * Stone, herb, ore, pages, and pills ignore this key — calling it
@@ -60,7 +68,11 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
    * then caps the roll at 0.8. It is not a 10% larger batch.
    */
   alchemyYield: '双枚成丹',
-  forgeDiscount: '炼器减耗',
+  /**
+   * forge.equipUpgradeCost only. Artifact ritual, reforge, and crafting
+   * ignore this key — 「炼器减耗」read like the whole forge table.
+   */
+  forgeDiscount: '强化减耗',
   qiCapPct: '灵气上限',
   beastPct: '灵兽效果',
   armorPen: '破甲',
@@ -79,8 +91,16 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
    * and never comes back. The old name 「突破返还」read like a success rebate.
    */
   breakRefund: '失败返还修为',
+  /**
+   * loot.afterWin rolls this once: stone, battle exp, herb/ore count,
+   * pages, extra equip tries. It is not "more item drops only".
+   */
   doubleDropRate: '双倍战利',
-  eventLuck: '际遇概率',
+  /**
+   * Multiplies EXPLORE_EVENT_CHANCE in exploreEventChance.
+   * Cave tours, bonds, and shop luck ignore this key.
+   */
+  eventLuck: '历练际遇',
   tribulationResist: '御劫',
   comboRate: '连击',
   stunRate: '震慑',
@@ -104,18 +124,38 @@ export function signedPercent(n: number): string {
   return `+${formatPercent(n)}`
 }
 
+/**
+ * Scope notes that belong on the number, not only in comments.
+ * Titles, pills, weather, veins, and talent chips all read this map.
+ */
+export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
+  breakthroughRate: '小进阶;大关天劫不吃',
+  breakRefund: '失败掉的那份;不退灵气',
+  alchemyYield: '多一枚的概率;与手艺合计顶 80%',
+  explorationSpeed: '同程更多遭遇;不缩短行程',
+  spiritStoneGain: '历练战胜所得;洞府产出不吃',
+  forgeDiscount: '装备强化花费;法宝祭炼不吃',
+  dropRate: '只抬装备出现;灵石草矿不吃',
+  eventLuck: '只抬历练途中掷点;洞府巡游不吃',
+  doubleDropRate: '当场灵石修为材料装备一并翻'
+}
+
+export function statCaveat(key: string): string | undefined {
+  return STAT_CAVEATS[key as AnyStatKey]
+}
+
+export function statValueText(key: string, n: number): string {
+  const caveat = statCaveat(key)
+  return caveat ? `${signedPercent(n)}(${caveat})` : signedPercent(n)
+}
+
+export function statModPhrase(key: string, n: number): string {
+  const name = STAT_NAMES[key as AnyStatKey] ?? key
+  return `${name} ${statValueText(key, n)}`
+}
+
 export function modsText(mods: StatMods): string {
   return Object.entries(mods)
-    .map(([k, v]) => {
-      const n = v as number
-      const name = STAT_NAMES[k as AnyStatKey] ?? k
-      const line = `${name} ${signedPercent(n)}`
-      // This stat is the minor-step roll only. Leave the caveat on the number
-      // so titles, pills, weather, and talent chips cannot over-promise tribulation.
-      if (k === 'breakthroughRate') return `${line}(小进阶;大关天劫不吃)`
-      if (k === 'breakRefund') return `${line}(失败掉的那份;不退灵气)`
-      if (k === 'alchemyYield') return `${line}(多一枚的概率;与手艺合计顶 80%)`
-      return line
-    })
+    .map(([k, v]) => statModPhrase(k, v as number))
     .join(' · ')
 }

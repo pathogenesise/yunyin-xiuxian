@@ -80,17 +80,17 @@
               <span v-if="row.capped" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
             </span>
             <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
-              {{ row.value > 0 ? '+' : '' }}{{ formatPercent(row.value) }}
+              {{ signedPercent(row.value) }}
             </span>
           </button>
         </div>
         <p v-if="modRows.length" class="mt-1 text-[9px] text-ink-faint">点一行看它从哪来</p>
-        <!--
-          进阶成功率的名字容易过度承诺:它只进小进阶那一次掷点,大关走天劫推演。
-          有这一项时才提示 —— 没有这项的玩家不需要知道这个边界。
-        -->
-        <p v-if="hasAdvanceRate" class="mt-0.5 text-[9px] leading-relaxed text-ink-ghost">
-          进阶成功率只作用于小进阶;大关须渡天劫,看的是劫型与四维准备度(护持/恢复/抗性/爆发)。
+        <p
+          v-for="note in panelCaveats"
+          :key="note.key"
+          class="mt-0.5 text-[9px] leading-relaxed text-ink-ghost"
+        >
+          {{ note.label }}:{{ note.caveat }}
         </p>
         <div v-if="breakdownRows.length" class="mt-1.5 rounded-md bg-paper-deep/60 px-2.5 py-2">
           <p class="text-[10px] text-ink-soft">{{ STAT_NAMES[breakdownKey!] }} · 来源明细</p>
@@ -100,7 +100,7 @@
               <span v-if="c.onTop" class="ml-1 text-[9px] text-cinnabar/80">另乘</span>
             </span>
             <span class="tabular" :class="c.value > 0 ? 'text-azure' : 'text-cinnabar'">
-              {{ c.value > 0 ? '+' : '' }}{{ formatPercent(c.value) }}
+              {{ signedPercent(c.value) }}
             </span>
           </p>
           <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
@@ -498,9 +498,9 @@
   import { mentorHint } from '@/core/fortuneChain'
   import { buildIdentity } from '@/core/identityService'
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
-  import { cnNumber, formatGN, formatPercent } from '@/utils/format'
+  import { cnNumber, formatGN } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
-  import { STAT_NAMES, modsText } from '@/ui/statNames'
+  import { STAT_NAMES, modsText, signedPercent, statCaveat } from '@/ui/statNames'
   import { rebirthDecisionHint } from '@/ui/rebirthText'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -531,7 +531,14 @@
     'shieldOnStart',
     'luck',
     'explorationSpeed',
-    'dropRate'
+    'dropRate',
+    'expGain',
+    'spiritStoneGain',
+    'alchemyYield',
+    'forgeDiscount',
+    'breakRefund',
+    'eventLuck',
+    'doubleDropRate'
   ]
 
   const modRows = computed(() =>
@@ -543,8 +550,13 @@
     })).filter(x => x.value !== 0)
   )
 
-  /** 面板上是否需要那句「进阶成功率只作用于小进阶」的边界说明 */
-  const hasAdvanceRate = computed(() => modOf(stats.value.mods, 'breakthroughRate') !== 0)
+  /** 面板上只提示当前真有的词条边界,没有这项的玩家不需要看见空话 */
+  const panelCaveats = computed(() =>
+    modRows.value.flatMap(row => {
+      const caveat = statCaveat(row.key)
+      return caveat ? [{ key: row.key, label: row.label, caveat }] : []
+    })
+  )
 
   /** 来源明细:点哪一行看哪一行 —— 数据来自 finalStats.breakdown,不在界面里另算 */
   const breakdownKey = ref<AnyStatKey | null>(null)

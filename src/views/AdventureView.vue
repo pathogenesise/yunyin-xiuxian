@@ -252,6 +252,7 @@
         </p>
       </div>
       <p class="text-[12px] text-ink-faint">此行欲作何打算?</p>
+      <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">行程是这一程走多久;遇敌快慢看「历练遇敌」,不缩短行程。</p>
       <div class="mt-3 space-y-2">
         <button
           v-for="m in MODE_LIST"
@@ -268,7 +269,7 @@
             两个数并排摆出来,「要不要涉险」才是个可算的账。
           -->
           <span class="text-right text-[11px] text-ink-faint tabular">
-            {{ formatDuration(EXPLORE_MODES[m.id].durationSec) }}
+            行程 {{ formatDuration(EXPLORE_MODES[m.id].durationSec) }}
             <br />
             收益 ×{{ EXPLORE_MODES[m.id].rewardMult }} · 遇险
             <span :class="EXPLORE_MODES[m.id].dangerMult > 1 ? 'text-cinnabar' : ''">×{{ EXPLORE_MODES[m.id].dangerMult }}</span>
