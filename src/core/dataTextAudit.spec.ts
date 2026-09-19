@@ -537,7 +537,7 @@ describe('文案数值对账 · 用具三类的界面读同源函数', () => {
 
   it('功法的神通把几率与威力一起写出来', () => {
     const dlg = src('../components/cultivation/GongfaDialog.vue')
-    expect(dlg, '只说「威力」看不出多久出一次').toContain('skill.rate')
+    expect(dlg, '神通几率与主修门槛走同一句').toContain('gongfaSkillLine')
     expect(dlg, '未习得也要给得出圆满账').toContain('previewRows')
   })
 

@@ -70,7 +70,8 @@ describe('用具 · 装备/法宝/功法三类的功用行', () => {
       expect(func, `${g.name} 的圆满数值与 gongfaModsAt 不同源`).toContain(modsText(gongfaModsAt(g.id, g.maxLevel)))
       if (g.skill) {
         expect(func).toContain('几率')
-        expect(func).toContain(`${Math.round(g.skill.rate * 100)}%`)
+        expect(func).toContain('须设为主修')
+        expect(func).toContain(formatPercent(g.skill.rate))
       }
       const meta = gongfaMetaText(g)
       expect(meta, `${g.name} 的出处没写门槛境界`).toContain(`${REALMS[g.minRealm]!.name}期可参`)
