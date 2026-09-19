@@ -332,7 +332,10 @@
   import {
     currentStatGuard,
     currentTribulationPlan,
+    currentTribulationRelief,
+    guardScore,
     statFoldAt,
+    sustainScore,
     tribulationWaveSpan,
     verdictLabel,
     type TribulationPlan
@@ -436,19 +439,23 @@
   const worldStep = computed(() => statFoldAt(tribTargetMajor.value) < 1)
 
   /**
-   * 渡劫账上的四项实际读数 —— 只摊天劫真的会读的那些(口径与 tribulationDecision 同源:
-   * 恢复 = regenPerRound + 吸血×0.3,与 sustainScore 对齐)。
-   * 摆出来是因为"血厚防高却过不去"几乎只可能来自一个误会:以为天劫看三维。
+   * 渡劫账上的四项实际读数。
+   * 恢复与开劫护持走 sustainScore / guardScore:铁躯、逆流会把护盾与回血打折,
+   * 不能把词条原值当成开劫水位。
    */
   const tribLedger = computed(() => {
     const mods = player.finalStats.mods
     const stat = currentStatGuard()
+    const def = tribPlan.value?.def
+    const relief = def ? currentTribulationRelief(def.kind) : undefined
+    // Same cap and same fold as waveDamage: reduction 0.6, resist 0.8, linggen reductionToResist.
+    const reduction = Math.min(0.6, modOf(mods, 'damageReduction'))
     return {
-      resist: Math.min(0.8, modOf(mods, 'tribulationResist') + stat.resist),
+      resist: Math.min(0.8, modOf(mods, 'tribulationResist') + reduction * (relief?.reductionToResist ?? 0) + stat.resist),
       statResist: stat.resist,
-      reduction: modOf(mods, 'damageReduction'),
-      sustain: modOf(mods, 'regenPerRound') + modOf(mods, 'lifesteal') * 0.3,
-      guard: modOf(mods, 'shieldOnStart') + stat.guard,
+      reduction,
+      sustain: def ? sustainScore(mods, def, relief) : 0,
+      guard: (def ? guardScore(mods, def, relief) : 0) + stat.guard,
       statGuard: stat.guard
     }
   })

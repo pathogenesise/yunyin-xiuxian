@@ -300,6 +300,7 @@ describe('死导出审计', () => {
     weatherDef: '查表原语:运行时用 todayWeather() 直接取对象,按 id 查表服务于数据自检与联动审计',
     reliefKinds: '审计汇总:把灵根的劫型解法通道列出来,供渡劫审计与灵根角色审计读',
     winChanceFromRatio: '审计公式:胜率换算只作审计口径,不进战斗结算',
+    tribulationSuccessRate: '审计口径:五种劫型的抽样成功率,界面走劫势推演,不展示这一条单一概率',
     div: '数值原语:gNum 库的除法(含零除分支),gnum.spec 覆盖;库完整性优先于"当前无人调"',
     lt: '数值原语:gNum 比较,供公式单调性用例读',
     gt: '数值原语:gNum 比较,与 lt 成对'
