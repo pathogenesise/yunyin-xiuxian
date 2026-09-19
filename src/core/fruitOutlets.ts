@@ -39,7 +39,7 @@ export interface ReachPath {
 /** 直接压缩重修耗时的键(fullSecondsForMajor 的四个因子) */
 const DIRECT: readonly ReachPath[] = [
   { key: 'cultivationSpeed', hops: 1, via: '修为累积速度' },
-  { key: 'expGain', hops: 1, via: '修为获取量' },
+  { key: 'expGain', hops: 1, via: '战斗修为 → 历练战胜所得' },
   { key: 'breakthroughRate', hops: 1, via: '进阶成功率 → 失败重试次数' },
   { key: 'qiRegen', hops: 1, via: '灵气回复 → 突破前的等待' },
   { key: 'lifespanPct', hops: 1, via: '寿元 → 一世可用的修行时长' }
@@ -77,7 +77,7 @@ const VIA_COMBAT: readonly AnyStatKey[] = [
 
 /** 经资源抵达的键 —— 资源换装备/丹药/建筑,最终仍回到战力或速度 */
 const VIA_RESOURCE: readonly { key: AnyStatKey; via: string }[] = [
-  { key: 'luck', via: '幸运 → 掉落品质 → 装备 → 战力' },
+  { key: 'luck', via: '装备成色 → 装备 → 战力;小进阶另折入 5%' },
   { key: 'dropRate', via: '装备掉落率 → 装备 → 战力' },
   { key: 'doubleDropRate', via: '双倍掉落 → 装备 → 战力' },
   { key: 'eventLuck', via: '历练际遇 → 途中掷点 → 资源 → 战力' },

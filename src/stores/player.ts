@@ -13,7 +13,7 @@ import { petDef } from '@/data/pets'
 import { mentorDef } from '@/data/mentors'
 import { talentDef } from '@/data/talents'
 import { baseCultPerSec, baseQiRegen, expRequirement, qiCap } from '@/core/formulas'
-import { computeFinalStats, modOf } from '@/core/statsCalc'
+import { computeFinalStats, mergeMods, modOf } from '@/core/statsCalc'
 import { todayWeather } from '@/core/weather'
 import { readingFromState, readingMods } from '@/core/divination'
 import { asFiniteNumber, asStringArray } from '@/utils/saveShape'
@@ -158,20 +158,6 @@ export const usePlayerStore = defineStore(
       if (!mentor.value) return {}
       return mentorDef(mentor.value)?.mods ?? {}
     })
-    const petMods = computed<StatMods>(() => {
-      if (!petId.value) return {}
-      const def = petDef(petId.value)
-      if (!def) return {}
-      // 灵兽园等级(beastMult)与「安抚灵兽」类 buff(beastPct)都放大灵兽效果;
-      // buffMods 只依赖 cultivation 自身,不兜回本 computed,无循环
-      const buffPct = 1 + modOf(cultivation.buffMods, 'beastPct')
-      const scaled: StatMods = {}
-      for (const k in def.mods) {
-        const key = k as keyof StatMods
-        scaled[key] = (def.mods[key] ?? 0) * dongfu.beastMult * buffPct
-      }
-      return scaled
-    })
 
     /** 当天天时(Phase 31 A1)作为环境 mod 源并入最终属性:
      * 灵雨修炼/灵气、赤阳伤害、月蚀福缘/掉落、雷鸣攻伐/渡劫抗性 ——
@@ -205,10 +191,41 @@ export const usePlayerStore = defineStore(
     const chart = computed(() => fateChart(fateSeed(linggen.value, reincarnation.value.count)))
     const fateModsValue = computed<StatMods>(() => fateMods(chart.value))
 
+    /**
+     * Mod sources except the pet itself. beastPct/qiCapPct must not read
+     * finalStats (qiRich → qiCap → finalStats would cycle; pet scaling
+     * cannot include the pet's own mods).
+     */
+    const ownedModSources = computed(() => [
+      inventory.equipMods,
+      cultivation.gongfaMods,
+      cultivation.buffMods,
+      dongfu.buildingMods,
+      dongfu.veinMods,
+      titleMods.value,
+      mentorMods.value,
+      weatherMods.value,
+      divinationMods.value,
+      fateModsValue.value,
+      ...talentMods.value
+    ])
+
+    const petMods = computed<StatMods>(() => {
+      if (!petId.value) return {}
+      const def = petDef(petId.value)
+      if (!def) return {}
+      const beastPct = 1 + modOf(mergeMods(ownedModSources.value), 'beastPct')
+      const scaled: StatMods = {}
+      for (const k in def.mods) {
+        const key = k as keyof StatMods
+        scaled[key] = (def.mods[key] ?? 0) * dongfu.beastMult * beastPct
+      }
+      return scaled
+    })
+
     const qiCapValue = computed(() => {
-      // 聚灵阵(qiCapMult)与「修复阵法」类 buff(qiCapPct)都能抬高灵气上限
-      const buffPct = 1 + modOf(cultivation.buffMods, 'qiCapPct')
-      return Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult * buffPct)
+      const capPct = 1 + modOf(mergeMods([...ownedModSources.value, petMods.value]), 'qiCapPct')
+      return Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult * capPct)
     })
     const qiRich = computed(() => resources.qi >= qiCapValue.value * 0.5)
     /** 灵气积余上限(标称容量 × 积余倍数):卡境期间灵气可存到此处 */
