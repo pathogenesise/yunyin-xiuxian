@@ -68,6 +68,9 @@
               <p class="text-[10px] leading-relaxed text-cinnabar/90">
                 道分歧路,一经择定<strong>终身不改</strong>(转世仍随你)。确认择【{{ gongfaBranchDef(branchConfirm)?.name ?? '' }}】?
               </p>
+              <p v-if="gongfaBranchDef(branchConfirm)" class="mt-1 text-[11px] tabular text-azure">
+                {{ modsText(gongfaBranchDef(branchConfirm)!.mods) }}
+              </p>
               <div class="mt-1.5 flex justify-end gap-2">
                 <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="branchConfirm = null">再想想</button>
                 <button class="btn-seal !px-3 !py-1 !text-[11px]" @click="confirmBranch()">确认择道</button>

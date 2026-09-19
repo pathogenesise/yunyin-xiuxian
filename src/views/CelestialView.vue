@@ -664,6 +664,7 @@
         <p class="font-kai text-[14px] tracking-wider text-ink">{{ pendingDao.name }}</p>
         <p class="mt-1.5 text-[12px] leading-relaxed text-ink-soft">{{ pendingDao.desc }}</p>
         <p v-for="(r, i) in pendingDao.ruleText" :key="i" class="mt-0.5 text-[11px] text-azure">· {{ r }}</p>
+        <p v-for="(r, i) in pendingDao.deepText" :key="`confirm-${i}`" class="mt-0.5 text-[11px] text-gold-ink">◈ {{ r }}</p>
         <p class="mt-3 border-l-2 border-cinnabar/60 pl-2 text-[11px] text-cinnabar">道途既定,此世不再更改;误选须待兵解转世方能重择</p>
       </template>
       <template #footer>
