@@ -130,7 +130,7 @@ export const AFFIXES: AffixDef[] = [
   // ---- 特殊:濒危减伤 ----
   a('low1', '背水', 'lowHpReduction', 10, 20, '生命低于三成时受伤降低 {v}%', 70, { slots: A, decimals: 0 }),
   a('low2', '涅槃', 'lowHpReduction', 20, 35, '生命低于三成时受伤降低 {v}%', 30, { slots: A, minRank: 4, decimals: 0 }),
-  // ---- 特殊:突破返还 ----
+  // ---- 特殊:失败返还修为(只少掉失败损耗,不退灵气,见 ui/statNames) ----
   a('rf1', '稳固', 'breakRefund', 5, 10, '突破失败返还 {v}% 损耗修为', 60, { slots: J }),
   a('rf2', '道心', 'breakRefund', 10, 20, '突破失败返还 {v}% 损耗修为', 25, { slots: J, minRank: 4 }),
   // ---- 特殊:双倍掉落 ----

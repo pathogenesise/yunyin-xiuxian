@@ -48,7 +48,12 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   explorationSpeed: '历练速度',
   lifespanPct: '寿元上限',
   spiritStoneGain: '灵石获取',
-  dropRate: '掉落率',
+  /**
+   * loot.ts / offline.ts only multiply EQUIP_DROP_CHANCE.
+   * Stone, herb, ore, pages, and pills ignore this key — calling it
+   * 「掉落率」makes a title or weather day look like every bag fill.
+   */
+  dropRate: '装备掉落率',
   expGain: '战斗修为',
   alchemyYield: '炼丹产出',
   forgeDiscount: '炼器减耗',
@@ -65,7 +70,11 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
   dodgeRate: '闪避',
   accuracy: '命中',
   lowHpReduction: '濒危减伤',
-  breakRefund: '突破返还',
+  /**
+   * Fail path only: shrinks BT_FAIL_EXP_LOSS. Qi is spent before the roll
+   * and never comes back. The old name 「突破返还」read like a success rebate.
+   */
+  breakRefund: '失败返还修为',
   doubleDropRate: '双倍战利',
   eventLuck: '际遇概率',
   tribulationResist: '御劫',
@@ -85,14 +94,23 @@ export const STAT_NAMES: Record<AnyStatKey, string> = {
  * 功法分支的词条既在择道界面出现,也在悟道录里出现 ——
  * 两处若各写一份格式化,措辞迟早分叉。
  */
+/** Percent with an explicit sign. formatPercent already has a minus; do not prefix '+'. */
+export function signedPercent(n: number): string {
+  if (n < 0) return `-${formatPercent(Math.abs(n))}`
+  return `+${formatPercent(n)}`
+}
+
 export function modsText(mods: StatMods): string {
   return Object.entries(mods)
     .map(([k, v]) => {
       const n = v as number
       const name = STAT_NAMES[k as AnyStatKey] ?? k
-      // formatPercent 自带负号;再加一个「+」会把「修炼速度 -50%」印成「+-50%」
-      if (typeof n === 'number' && n < 0) return `${name} -${formatPercent(Math.abs(n))}`
-      return `${name} +${formatPercent(n)}`
+      const line = `${name} ${signedPercent(n)}`
+      // This stat is the minor-step roll only. Leave the caveat on the number
+      // so titles, pills, weather, and talent chips cannot over-promise tribulation.
+      if (k === 'breakthroughRate') return `${line}(小进阶;大关天劫不吃)`
+      if (k === 'breakRefund') return `${line}(失败掉的那份;不退灵气)`
+      return line
     })
     .join(' · ')
 }

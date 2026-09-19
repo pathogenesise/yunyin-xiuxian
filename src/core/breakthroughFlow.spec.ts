@@ -18,6 +18,7 @@ vi.mock('@/utils/random', async importOriginal => {
 
 import { attemptBreakthrough, breakthroughInfo } from './breakthrough'
 import { BT_FAIL_EXP_LOSS } from '@/data/constants'
+import { modOf } from './statsCalc'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useCultivationStore } from '@/stores/cultivation'
@@ -112,6 +113,24 @@ describe('突破 · 小关(无劫)', () => {
     ).toBe(true)
     // 掉的是「一成修为 ×(1 − 退返)」,没有退返词条时就是 BT_FAIL_EXP_LOSS
     expect(toNum(player.exp) / expBefore).toBeCloseTo(1 - BT_FAIL_EXP_LOSS, 3)
+  })
+
+  it('失败返还只少掉修为损耗,灵气仍按门槛扣光', () => {
+    ready(0, 3)
+    mockRand = 0.999
+    const player = usePlayerStore()
+    const resources = useResourcesStore()
+    player.addTalent('t_yuanman')
+    const refund = Math.min(0.8, modOf(player.finalStats.mods, 'breakRefund'))
+    expect(refund, '圆融天赋该带上失败返还').toBeGreaterThan(0)
+    const info = breakthroughInfo()
+    const qiBefore = resources.qi
+    const expBefore = toNum(player.exp)
+
+    const view = attemptBreakthrough()
+    expect(view?.success).toBe(false)
+    expect(qiBefore - resources.qi, '失败不该把灵气退回来').toBe(info.qiCost)
+    expect(toNum(player.exp) / expBefore).toBeCloseTo(1 - BT_FAIL_EXP_LOSS * (1 - refund), 3)
   })
 })
 
