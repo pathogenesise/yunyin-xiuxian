@@ -306,7 +306,7 @@
         <button class="btn-ghost w-full" @click="comprehendGongfa()">
           于藏经阁参悟功法(残页×{{ COMPREHEND_PAGE_COST }})
           <span v-if="comprehendLeft > 0" class="ml-1 text-[10px] text-ink-faint">· 池中尚有 {{ comprehendLeft }} 部未参</span>
-          <span v-else class="ml-1 text-[10px] text-ink-faint">· 此境功法已尽数参悟</span>
+          <span v-else class="ml-1 text-[10px] text-ink-faint">· {{ gongfaAllLearnedToast() }}</span>
         </button>
       </div>
     </section>
@@ -350,6 +350,7 @@
   import { COMPREHEND_PAGE_COST } from '@/data/constants'
   import { formatCountdown, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
   import { signedPercent } from '@/ui/statNames'
+  import { gongfaAllLearnedToast } from '@/ui/gongfaText'
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'

@@ -9,6 +9,13 @@ import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useUiStore } from '@/stores/ui'
+import {
+  buildingDoneToast,
+  buildingMansionGateToast,
+  buildingPeakToast,
+  buildingRealmGate,
+  buildingShortToast
+} from '@/ui/buildingText'
 
 export interface BuildingUpgradeInfo {
   canUpgrade: boolean
@@ -29,13 +36,13 @@ export function buildingUpgradeInfo(id: BuildingId): BuildingUpgradeInfo {
   let reason = ''
   if (player.major < def.unlockRealm) {
     canUpgrade = false
-    reason = `需 ${['炼气', '筑基', '金丹'][def.unlockRealm] ?? '更高'} 境`
+    reason = buildingRealmGate(['炼气', '筑基', '金丹'][def.unlockRealm] ?? '更高')
   } else if (lv >= def.maxLevel) {
     canUpgrade = false
-    reason = '已至顶层'
+    reason = buildingPeakToast()
   } else if (id !== 'mansion' && lv >= dongfu.buildingLevelCap) {
     canUpgrade = false
-    reason = '受洞府等级所限'
+    reason = buildingMansionGateToast()
   }
   return { canUpgrade, reason, stone, ore, nextLevel: lv + 1 }
 }
@@ -51,13 +58,13 @@ export function upgradeBuilding(id: BuildingId): boolean {
     return false
   }
   if (!resources.hasStone(info.stone) || !resources.hasSmall('ore', info.ore)) {
-    ui.toast('灵石或玄铁不足', 'warn')
+    ui.toast(buildingShortToast(), 'warn')
     return false
   }
   resources.spendStone(info.stone)
   resources.spendSmall('ore', info.ore)
   dongfu.setLevel(id, info.nextLevel)
   track('buildingUpgrades')
-  ui.toast(`${def.name}升至 ${info.nextLevel} 级`, 'success')
+  ui.toast(buildingDoneToast(def.name, info.nextLevel), 'success')
   return true
 }
