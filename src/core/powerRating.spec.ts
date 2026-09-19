@@ -63,7 +63,19 @@ describe('五维评级的来路', () => {
     {},
     { attackPct: 0.35, damageBonus: 0.2, critRate: 0.25, critDamage: 0.6, armorPen: 0.2, executeDamage: 0.15 },
     { defensePct: 0.3, maxHpPct: 0.25, damageReduction: 0.2, shieldOnStart: 0.3, shieldPower: 0.2, dodgeRate: 0.15 },
-    { lifesteal: 0.12, regenPerRound: 0.05, overhealShield: 0.4, lowHpReduction: 0.3, speed: 0.2, comboRate: 0.15 }
+    {
+      lifesteal: 0.12,
+      regenPerRound: 0.05,
+      overhealShield: 0.4,
+      lowHpReduction: 0.3,
+      speed: 0.2,
+      comboRate: 0.15,
+      lowHpDamage: 0.4,
+      fullHpDamage: 0.3,
+      comboDamage: 0.35,
+      counterRate: 0.2,
+      counterDamage: 0.4
+    }
   ]
 
   it('每一维:贡献之和 = 得分', () => {
@@ -130,5 +142,21 @@ describe('五维评级的来路', () => {
     expect(labels).not.toContain('连击率')
     expect(labels).not.toContain('护盾强度')
     expect(labels).not.toContain('溢疗转盾')
+  })
+
+  it('背水锋芒反震连击的核心词条会抬进攻或身法,不成路却零星', () => {
+    const scoreOf = (r: ReturnType<typeof ratePower>, key: 'attack' | 'speed'): number =>
+      r.labels.find(l => l.key === key)!.score
+    const bare = ratePower(statsWith({}))
+    const beishui = ratePower(statsWith({ lowHpDamage: 0.6 }))
+    const fengmang = ratePower(statsWith({ fullHpDamage: 0.5 }))
+    const fanzhen = ratePower(statsWith({ counterRate: 0.3, counterDamage: 0.5 }))
+    const lianji = ratePower(statsWith({ comboRate: 0.3, comboDamage: 0.4 }))
+    expect(scoreOf(beishui, 'attack')).toBeGreaterThan(scoreOf(bare, 'attack'))
+    expect(scoreOf(fengmang, 'attack')).toBeGreaterThan(scoreOf(bare, 'attack'))
+    expect(scoreOf(fanzhen, 'attack')).toBeGreaterThan(scoreOf(bare, 'attack'))
+    expect(scoreOf(fanzhen, 'speed')).toBeGreaterThan(scoreOf(bare, 'speed'))
+    expect(scoreOf(lianji, 'attack')).toBeGreaterThan(scoreOf(bare, 'attack'))
+    expect(scoreOf(lianji, 'speed')).toBeGreaterThan(scoreOf(bare, 'speed'))
   })
 })

@@ -78,7 +78,7 @@ export function ratePower(stats: FinalStats): PowerRating {
   const v = (k: Parameters<typeof modOf>[1]): number => Math.max(0, modOf(m, k))
   const term = (label: string, raw: number, weight = 1): PowerTerm => ({ label, raw, contribution: raw * weight })
 
-  // 进攻:直接增伤 + 暴击期望 + 破甲/处决
+  // 进攻:直接增伤 + 暴击期望 + 破甲/处决,以及背水锋芒连击反震的条件伤
   const critRaw = v('critRate')
   const critTerm: PowerTerm = {
     label: `${STAT_NAMES.critRate}×(1+${STAT_NAMES.critDamage})`,
@@ -90,7 +90,11 @@ export function ratePower(stats: FinalStats): PowerRating {
     term(STAT_NAMES.damageBonus, v('damageBonus')),
     critTerm,
     term(STAT_NAMES.armorPen, v('armorPen'), 0.8),
-    term(STAT_NAMES.executeDamage, v('executeDamage'), 0.5)
+    term(STAT_NAMES.executeDamage, v('executeDamage'), 0.5),
+    term(STAT_NAMES.lowHpDamage, v('lowHpDamage'), 0.5),
+    term(STAT_NAMES.fullHpDamage, v('fullHpDamage'), 0.5),
+    term(STAT_NAMES.comboDamage, v('comboDamage'), 0.4),
+    term(STAT_NAMES.counterDamage, v('counterDamage'), 0.4)
   ]
   // 生存:防御/生命/减伤/盾/闪避
   const survivalTerms = [
@@ -105,7 +109,8 @@ export function ratePower(stats: FinalStats): PowerRating {
   const speedTerms = [
     term(STAT_NAMES.speed, v('speed'), 2),
     term(STAT_NAMES.firstStrike, v('firstStrike')),
-    term(STAT_NAMES.comboRate, v('comboRate'), 1.5)
+    term(STAT_NAMES.comboRate, v('comboRate'), 1.5),
+    term(STAT_NAMES.counterRate, v('counterRate'), 1.2)
   ]
   // 恢复:吸血/回合回复/溢疗(量纲归一:小数值键放大)
   const recoveryTerms = [
@@ -143,10 +148,18 @@ export function ratePower(stats: FinalStats): PowerRating {
    */
   const scores: Record<PowerDimKey, number> = {
     attack:
-      v('attackPct') + v('damageBonus') + v('critRate') * (1 + v('critDamage')) + v('armorPen') * 0.8 + v('executeDamage') * 0.5,
+      v('attackPct') +
+      v('damageBonus') +
+      v('critRate') * (1 + v('critDamage')) +
+      v('armorPen') * 0.8 +
+      v('executeDamage') * 0.5 +
+      v('lowHpDamage') * 0.5 +
+      v('fullHpDamage') * 0.5 +
+      v('comboDamage') * 0.4 +
+      v('counterDamage') * 0.4,
     survival:
       v('defensePct') + v('maxHpPct') + v('damageReduction') * 2 + v('shieldOnStart') + v('shieldPower') * 0.5 + v('dodgeRate') * 1.5,
-    speed: v('speed') * 2 + v('firstStrike') + v('comboRate') * 1.5,
+    speed: v('speed') * 2 + v('firstStrike') + v('comboRate') * 1.5 + v('counterRate') * 1.2,
     recovery: v('lifesteal') * 8 + v('regenPerRound') * 20 + v('overhealShield') * 0.6 + v('lowHpReduction') * 0.8,
     mechanics: build ? build.affinity + (build.secondary?.affinity ?? 0) * 0.6 : 0
   }
