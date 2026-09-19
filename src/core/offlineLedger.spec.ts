@@ -106,7 +106,11 @@ describe('离线总结 · 变动了多少就报多少', () => {
     expect(summary.wudao).toBe(delta.wudao)
     // 二 寿元:流逝多少就报多少(它不受离线上限约束,按真实时长算)
     expect(summary.ageYears, '寿元流逝没报').toBeCloseTo(delta.age, 0)
-    expect(summary.ageYears, '这一档闭关 60 小时,寿元不该一点没动').toBeGreaterThan(50)
+    expect(summary.ageYears, '这一档离开 60 小时,寿元不该一点没动').toBeGreaterThan(50)
+    expect(
+      summary.notes.some(n => n.startsWith('此去寿元流逝')),
+      '寿元说明应写「此去」,别冒充闭关'
+    ).toBe(true)
     // 三 凡变动过的,摘要里都得有交代 —— 不许有「悄悄动了」的资源
     if (delta.qi > 0) expect(summary.qi, '灵气涨了但摘要没这一项').toBeGreaterThan(0)
     if (delta.qi > 0) expect(summary.notes.some(n => n.includes('寿元流逝')), '寿元流逝该有一句说明').toBe(true)

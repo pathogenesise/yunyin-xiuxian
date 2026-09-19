@@ -82,8 +82,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ac('a_re1', '一世轮回', '完成第一次转世', counter('reincarnations', 1), { titleId: 'ti_zhuanshi', wudao: 50 }),
   ac('a_re3', '三生三世', '完成三次转世', counter('reincarnations', 3), { wudao: 150 }),
   // ---- 离线 ----
-  ac('a_off5', '闭关有成', '领取 5 次离线收益', counter('offlineClaims', 5), { stoneTier: 30 }),
-  ac('a_off30', '闭关狂人', '领取 30 次离线收益', counter('offlineClaims', 30), { stoneTier: 100 }),
+  ac('a_off5', '归来有成', '领取 5 次离线收益', counter('offlineClaims', 5), { stoneTier: 30 }),
+  ac('a_off30', '常归常往', '领取 30 次离线收益', counter('offlineClaims', 30), { stoneTier: 100 }),
   // ---- 特殊 ----
   ac('a_lifelow', '寿元将尽', '寿元只剩不到一成', { type: 'custom', key: 'lifespanLow' }, { herb: 50 }),
   ac('a_lifespan', '万古长生', '寿元上限超过一万载', { type: 'custom', key: 'lifespan10k' }, { titleId: 'ti_changsheng' }),

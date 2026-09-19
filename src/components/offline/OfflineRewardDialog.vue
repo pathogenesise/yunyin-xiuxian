@@ -3,9 +3,7 @@
     <div v-if="summary" class="text-center">
       <p class="font-kai text-2xl tracking-[0.5em] text-ink mt-1 animate-ink-pop">归 来</p>
       <p class="mt-2 text-[12px] text-ink-faint">
-        闭关
-        <span class="font-kai text-[13px] text-ink">{{ formatDuration(summary.seconds) }}</span>
-        <template v-if="summary.capped">(收益按 {{ formatDuration(summary.cappedSeconds) }} 结算)</template>
+        {{ awayLine }}
       </p>
       <div class="ink-divider my-3" />
       <ul class="stagger-in space-y-2 text-left">
@@ -45,6 +43,7 @@
   import { computed, watch } from 'vue'
   import { useUiStore } from '@/stores/ui'
   import { formatDuration, formatGN } from '@/utils/format'
+  import { offlineAwayPhrase } from '@/ui/offlineText'
   import { qualityDef } from '@/data/qualities'
   import { playSfx } from '@/core/audio'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -53,6 +52,14 @@
   const ui = useUiStore()
 
   const summary = computed(() => ui.offlineSummary)
+  const awayLine = computed(() => {
+    const s = summary.value
+    if (!s) return ''
+    return offlineAwayPhrase(
+      formatDuration(s.seconds),
+      s.capped ? formatDuration(s.cappedSeconds) : undefined
+    )
+  })
 
   // 归来一声钟磬,与收益清点同起
   watch(summary, (nv, ov) => {
@@ -70,7 +77,7 @@
     if (s.ore > 0) list.push({ icon: 'mountain', label: '玄铁', value: `+${s.ore}` })
     if (s.wudao > 0) list.push({ icon: 'book', label: '悟道点', value: `+${s.wudao}` })
     if (s.battles > 0) list.push({ icon: 'swords', label: '历练战斗', value: `${s.wins} 胜 / ${s.battles} 战` })
-    if (s.events > 0) list.push({ icon: 'star', label: '路遇际会', value: `${s.events} 次` })
+    if (s.events > 0) list.push({ icon: 'star', label: '途中际遇', value: `${s.events} 次` })
     // 自动回收的产出不入行囊、只化器灵尘,单独成行,免得玩家以为掉了没捡到
     if (s.recycledDust > 0) {
       const recycled = s.equipment.filter(e => e.recycled).length
