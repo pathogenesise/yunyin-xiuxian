@@ -33,6 +33,8 @@
             <span class="font-kai text-[12px] tracking-widest text-ink">{{ weather.name }}</span>
           </div>
           <p class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">{{ weather.desc }}</p>
+          <!-- 风味句不负责报数:加减从天时定义现算,避免「火属 / 雷属」这类并未生效的承诺 -->
+          <p class="mt-0.5 text-[10px] leading-relaxed text-ink-soft tabular">{{ weatherLine }}</p>
         </div>
         <!-- 修炼法球 · 灵气法阵环绕 -->
         <div class="relative mr-1 -mt-1 h-35 w-35 shrink-0">
@@ -80,17 +82,25 @@
             <span class="font-kai text-[13px] tracking-wider text-ink">{{ mainQuest.name }}</span>
             <span class="text-[10px] text-ink-faint">主线 {{ quests.mainIdx + 1 }}/{{ MAIN_QUESTS.length }}</span>
           </p>
-          <p class="mt-0.5 text-[11px] text-ink-faint">{{ mainQuest.desc }}(达成后自动领赏)</p>
+          <p class="mt-0.5 text-[11px] text-ink-faint">{{ mainQuest.desc }}</p>
+          <p v-if="rewardPreview(mainQuest.reward)" class="mt-0.5 text-[10px] tabular text-azure">
+            达成即得 {{ rewardPreview(mainQuest.reward) }}
+          </p>
         </template>
         <p v-else class="text-[12px] text-ink-faint">主线已尽,前路由你自己书写。</p>
         <div class="ink-divider my-2.5" />
         <div class="space-y-1.5">
-          <p v-for="t in dailyRows" :key="t.id" class="flex items-center justify-between text-[12px]">
-            <span :class="t.done ? 'text-ink-ghost line-through' : 'text-ink-soft'">{{ t.desc }}</span>
-            <span class="tabular text-[11px]" :class="t.done ? 'text-jade' : 'text-ink-faint'">
+          <div v-for="t in dailyRows" :key="t.id" class="flex items-start justify-between gap-2 text-[12px]">
+            <span class="min-w-0">
+              <span :class="t.done ? 'text-ink-ghost line-through' : 'text-ink-soft'">{{ t.desc }}</span>
+              <span v-if="!t.done && rewardPreview(t.reward)" class="mt-0.5 block text-[10px] tabular text-azure">
+                {{ rewardPreview(t.reward) }}
+              </span>
+            </span>
+            <span class="shrink-0 tabular text-[11px]" :class="t.done ? 'text-jade' : 'text-ink-faint'">
               {{ t.done ? '已成' : `${t.progress}/${t.target}` }}
             </span>
-          </p>
+          </div>
         </div>
       </div>
     </section>
@@ -138,6 +148,10 @@
   import { LIFESPAN_WARN_RATIO } from '@/data/constants'
   import { WORLD_BREAK_MAJOR } from '@/data/realms'
   import { todayWeather } from '@/core/weather'
+  import { isRetreating } from '@/core/earlyGameService'
+  import { homeStatusText } from '@/ui/homeStatus'
+  import { rewardPreview } from '@/core/progress'
+  import { weatherEffectText } from '@/ui/weatherText'
   import { generateCurrentGoal, type Goal } from '@/core/goal'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -156,15 +170,20 @@
   // Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页)
   const currentGoal = computed<Goal | null>(() => generateCurrentGoal(player))
 
-  const statusText = computed(() => {
-    if (player.dead) return '陨落'
-    if (adventure.sessionActive) return `历练中 · ${adventure.currentRegion?.name ?? ''}`
-    if (cultivation.hasBuff('injury')) return '疗伤中'
-    return '闭关修炼中'
-  })
+  const statusText = computed(() =>
+    homeStatusText({
+      dead: player.dead,
+      adventuring: adventure.sessionActive,
+      regionName: adventure.currentRegion?.name ?? '',
+      injured: cultivation.hasBuff('injury'),
+      retreating: isRetreating(),
+      expFull: player.expFull
+    })
+  )
 
   // Phase 31 A1:今日天时(确定性,refreshed 每游戏日)
   const weather = computed(() => todayWeather())
+  const weatherLine = computed(() => weatherEffectText(weather.value))
 
   const mainQuest = computed(() => MAIN_QUESTS[quests.mainIdx])
 
