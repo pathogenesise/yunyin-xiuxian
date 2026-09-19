@@ -436,6 +436,14 @@ describe('术语一致性 · 用户可见文本', () => {
     expect(hits, `「历练速度」已改名「历练遇敌」(不缩短行程):\n${hits.join('\n')}`).toEqual([])
   })
 
+  it('「历练遇敌加快」退休:加快读起来像缩短行程', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,16}遇敌加快.{0,16}/g)) hits.push(`${file} 「${m[0]}」`)
+    }
+    expect(hits, `应写成「同程遇敌」(不缩短行程):\n${hits.join('\n')}`).toEqual([])
+  })
+
   it('「灵石获取」「炼器减耗」「际遇概率」这三个过度承诺的名字退休', () => {
     const hits: string[] = []
     for (const { file, text } of userText()) {
