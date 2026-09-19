@@ -13,6 +13,13 @@ import { usePlayerStore } from '@/stores/player'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiStore } from '@/stores/ui'
+import {
+  veinFullToast,
+  veinPeakToast,
+  veinShortToast,
+  veinSwitchDoneToast,
+  veinSwitchShortToast
+} from '@/ui/veinText'
 
 /** 灵脉是否开放(金丹起) */
 export function veinsUnlocked(): boolean {
@@ -46,18 +53,18 @@ export function investVein(id: VeinId): boolean {
   if (!veinsUnlocked()) return false
 
   if (dongfu.veinTotal >= VEIN_TOTAL_CAPACITY) {
-    ui.toast('灵脉容量已尽,唯有取舍', 'warn')
+    ui.toast(veinFullToast(), 'warn')
     return false
   }
   if (dongfu.veinMain === null) dongfu.setVeinMain(id)
   const current = dongfu.veinPoints[id] ?? 0
   if (current >= veinCap(id)) {
-    ui.toast(dongfu.veinMain === id ? '主脉已至圆满' : '副脉有其上限,欲再进须立为主脉', 'warn')
+    ui.toast(veinPeakToast(dongfu.veinMain === id), 'warn')
     return false
   }
   const cost = veinPointCost()
   if (!resources.hasStone(cost)) {
-    ui.toast('灵石不足', 'warn')
+    ui.toast(veinShortToast(), 'warn')
     return false
   }
   resources.spendStone(cost)
@@ -73,11 +80,11 @@ export function switchMainVein(id: VeinId): boolean {
   if (!veinsUnlocked() || dongfu.veinMain === id) return false
   const cost = veinSwitchCost()
   if (!resources.hasStone(cost)) {
-    ui.toast('灵石不足,迁脉非小事', 'warn')
+    ui.toast(veinSwitchShortToast(), 'warn')
     return false
   }
   resources.spendStone(cost)
   dongfu.setVeinMain(id)
-  ui.toast(`主脉改走「${veinDef(id).name}」`, 'success')
+  ui.toast(veinSwitchDoneToast(veinDef(id).name), 'success')
   return true
 }

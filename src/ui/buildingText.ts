@@ -23,3 +23,7 @@ export function buildingShortToast(): string {
 export function buildingDoneToast(name: string, level: number): string {
   return `「${name}」营造再进,已至 ${level} 级`
 }
+
+export function buildingActLabel(level: number): string {
+  return level > 0 ? '再营' : '起造'
+}
