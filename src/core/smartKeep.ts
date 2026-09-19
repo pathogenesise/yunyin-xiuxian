@@ -47,12 +47,21 @@ export interface KeepVerdict {
  * 上锁者豁免。
  */
 export function shouldAutoRecycle(item: EquipmentInstance): boolean {
-  if (item.locked) return false
+  return autoRecycleReason(item) !== null
+}
+
+/**
+ * 自动回收时该告诉玩家的那一句。
+ * 所勾品质与「与道无缘」不是同一件事,账上不能只写自动回收。
+ */
+export function autoRecycleReason(item: EquipmentInstance): string | null {
+  if (item.locked) return null
   const settings = useSettingsStore()
-  if (!settings.smartKeep.enabled) return false
+  if (!settings.smartKeep.enabled) return null
   const q = qualityDef(item.quality)
-  if (settings.decomposeRanks.includes(q.rank)) return true
-  return !keepVerdict(item).keep
+  if (settings.decomposeRanks.includes(q.rank)) return `所勾${q.name}`
+  const verdict = keepVerdict(item)
+  return verdict.keep ? null : verdict.reason
 }
 
 /** 身上有没有玩家的投入(强化 / 重铸 / 封存词条)—— 有则不参与一切自动去留 */

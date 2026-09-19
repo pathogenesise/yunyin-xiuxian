@@ -22,7 +22,7 @@ import { generateEquipment } from './equipGen'
 import { expFromSecs, stoneByTier } from './formulas'
 import { modOf } from './statsCalc'
 import { personalityEffects } from './petPersonality'
-import { compareEvictable, keepVerdict, shouldAutoRecycle, smartKeepEnabled } from './smartKeep'
+import { autoRecycleReason, compareEvictable, keepVerdict, smartKeepEnabled } from './smartKeep'
 import { salvageOf } from './salvage'
 import { checkQualityAchievement, collect, track } from './progress'
 import { harvestMaterials } from './loreService'
@@ -91,9 +91,10 @@ export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolea
     return { line: tail, bagged: false, dust: gain.dust, stone: gain.stone }
   }
   // 自动回收闸:新件先过裁决,命中回收规则的不占行囊,直接化尘
-  if (!forceKeep && shouldAutoRecycle(inst)) {
+  const why = autoRecycleReason(inst)
+  if (!forceKeep && why) {
     const res = toDust(inst)
-    return { ...res, line: `${label}(自动回收,${res.line})` }
+    return { ...res, line: `${label}(自动回收·${why},${res.line})` }
   }
   if (!inventory.addEquipment(inst)) {
     // 智能收纳:新件值得留则腾位(分解包内最差的「与道无缘」件)
