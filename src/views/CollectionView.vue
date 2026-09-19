@@ -16,7 +16,8 @@
           </span>
           <div class="min-w-0">
             <p class="font-kai text-[12px]" :class="row.done ? 'text-ink' : 'text-ink-ghost'">{{ row.name }}</p>
-            <p class="truncate text-[10px] text-ink-ghost">{{ row.desc }}</p>
+            <p class="text-[10px] text-ink-ghost">{{ row.desc }}</p>
+            <p v-if="row.reward" class="mt-0.5 text-[10px] tabular text-azure">{{ row.reward }}</p>
           </div>
         </div>
       </div>
@@ -93,8 +94,10 @@
     type CodexCat,
     type CodexEntry
   } from '@/ui/codex'
-  import { gongfaFuncText, gongfaMetaText } from '@/ui/itemText'
+  import { gongfaFuncText, gongfaMetaText, petFuncText } from '@/ui/itemText'
+  import { modsText } from '@/ui/statNames'
   import { achievementDirection } from '@/ui/achievementHint'
+  import { rewardPreview } from '@/core/progress'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import InkTabs from '@/components/common/InkTabs.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -123,7 +126,9 @@
         done,
         name: done ? a.name : '???',
         // 名字成时自现,但方向要给:六十多个「???」不给方向,这一页就是白纸
-        desc: done ? a.desc : `尚未达成 · 方向:${achievementDirection(a.cond)}`
+        desc: done ? a.desc : `尚未达成 · 方向:${achievementDirection(a.cond)}`,
+        // 未达成不报赏,免得把称号提前说破;已达成的数额与 grantReward 同一套折算
+        reward: done && a.reward ? rewardPreview(a.reward) : ''
       }
     }).sort((a, b) => Number(b.done) - Number(a.done))
   )
@@ -188,7 +193,13 @@
         'pet',
         '灵兽册',
         c.pet,
-        PETS.map(p => ({ id: p.id, name: p.name, desc: p.desc, meta: qualityDef(p.quality).name, color: qualityDef(p.quality).color }))
+        PETS.map(p => ({
+          id: p.id,
+          name: p.name,
+          desc: [p.desc, petFuncText(p)].filter(Boolean).join('\n'),
+          meta: qualityDef(p.quality).name,
+          color: qualityDef(p.quality).color
+        }))
       ),
       makeCat(
         'event',
@@ -207,7 +218,13 @@
         'talent',
         '天赋鉴',
         c.talent,
-        TALENTS.map(t => ({ id: t.id, name: t.name, desc: t.desc, meta: '先天之姿', color: TALENT_GRADE_COLORS[t.grade] }))
+        TALENTS.map(t => ({
+          id: t.id,
+          name: t.name,
+          desc: [t.desc, modsText(t.mods)].filter(Boolean).join('\n'),
+          meta: '先天之姿',
+          color: TALENT_GRADE_COLORS[t.grade]
+        }))
       )
     ]
   })
