@@ -124,6 +124,23 @@ describe('signedPercent', () => {
     expect(combat).toContain("modOf(tMods, 'dodgeRate') - modOf(aMods, 'accuracy')")
   })
 
+  it('会心叠在固有基数上,处决背水锋芒罡盾都有门槛', () => {
+    expect(modsText({ critRate: 0.08 })).toContain('固有会心')
+    expect(modsText({ critRate: 0.08 })).toContain('5%')
+    expect(modsText({ critDamage: 0.3 })).toContain('50%')
+    expect(modsText({ executeDamage: 0.2 })).toContain('30%')
+    expect(modsText({ lowHpDamage: 0.25 })).toContain('未满')
+    expect(modsText({ fullHpDamage: 0.18 })).toContain('90%')
+    expect(modsText({ shieldOnStart: 0.1 })).toContain('50%')
+    expect(modsText({ shieldPower: 0.12 })).toContain('护盾仍在')
+    const combat = readFileSync(resolve(__dirname, '../core/combat.ts'), 'utf8')
+    expect(combat).toContain('CRIT_BASE + modOf(aMods, \'critRate\')')
+    expect(combat).toContain('CRIT_DMG_BASE + modOf(aMods, \'critDamage\')')
+    expect(combat).toContain('LOW_HP_THRESHOLD')
+    expect(combat).toContain('FULL_HP_THRESHOLD')
+    expect(combat).toContain('SHIELD_CAP_RATIO')
+  })
+
   it('御劫只改天劫承伤,不改小进阶骰子', () => {
     expect(modsText({ tribulationResist: 0.2 })).toBe('御劫 +20%(只减天劫之伤;小进阶之骰不改)')
     const trib = readFileSync(resolve(__dirname, '../core/tribulationDecision.ts'), 'utf8')
