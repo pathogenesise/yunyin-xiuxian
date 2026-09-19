@@ -454,6 +454,14 @@ describe('术语一致性 · 用户可见文本', () => {
     expect(hits, `应改成「战利灵石 / 强化减耗 / 历练际遇」:\n${hits.join('\n')}`).toEqual([])
   })
 
+  it('「战斗收益更高」退休:好战性格不另加修为或灵石', () => {
+    const hits: string[] = []
+    for (const { file, text } of userText()) {
+      for (const m of text.matchAll(/.{0,12}战斗收益更高.{0,12}/g)) hits.push(`${file} 「${m[0]}」`)
+    }
+    expect(hits, `好战只抬遇险与成色:\n${hits.join('\n')}`).toEqual([])
+  })
+
   it('「冲击境界」「突破稳当」退休:进阶成功率不管大关', () => {
     const hits: string[] = []
     for (const { file, text } of userText()) {

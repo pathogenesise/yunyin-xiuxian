@@ -7,7 +7,7 @@ export const PETS: PetDef[] = [
   {
     id: 'pet_qingyu',
     name: '青羽灵狐',
-    desc: '尾生青羽,善寻机缘',
+    desc: '尾生青羽,同程多遇',
     icon: 'paw',
     quality: 'excellent',
     mods: { explorationSpeed: 0.1, eventLuck: 0.05 },
@@ -43,7 +43,7 @@ export const PETS: PetDef[] = [
   {
     id: 'pet_jinchan',
     name: '三足金蟾',
-    desc: '口衔铜钱,天生聚财',
+    desc: '口衔铜钱,战胜多拾灵石',
     icon: 'gem',
     quality: 'spirit',
     mods: { spiritStoneGain: 0.15, luck: 0.05 },
@@ -98,7 +98,7 @@ export const PETS: PetDef[] = [
   {
     id: 'pet_kunpeng',
     name: '鲲鹏',
-    desc: '北冥有鱼,化而为鹏,扶摇直上九万里',
+    desc: '北冥有鱼,化而为鹏,同程多遇',
     icon: 'bird',
     quality: 'divine',
     mods: { explorationSpeed: 0.25, dodgeRate: 0.08, eventLuck: 0.12 },
@@ -107,7 +107,7 @@ export const PETS: PetDef[] = [
   {
     id: 'pet_taotie',
     name: '混沌饕餮',
-    desc: '混沌中孕育的凶兽,吞天噬地,不知餍足',
+    desc: '混沌中孕育的凶兽,吞天噬地,小进阶更贪',
     icon: 'skull',
     quality: 'divine',
     mods: { cultivationSpeed: 0.15, breakthroughRate: 0.05, lifesteal: 0.04 },
@@ -126,7 +126,7 @@ export const PETS: PetDef[] = [
   {
     id: 'pet_baize',
     name: '白泽',
-    desc: '知万物之名,能言人语,卧于神迹荒原的断碑之侧',
+    desc: '知万物之名,战胜修为更丰',
     icon: 'book',
     quality: 'divine',
     mods: { expGain: 0.18, breakthroughRate: 0.04, eventLuck: 0.15 },
