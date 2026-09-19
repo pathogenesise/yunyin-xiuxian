@@ -108,9 +108,18 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     useSettingsStore().smartKeep.enabled = true
     const resources = useResourcesStore()
     const item = mk('excellent') // 精品 rank2,非勾选档 → 交由智能收纳裁决
-    acquireEquipment(item)
+    const got = acquireEquipment(item)
     expect(bagUids()).not.toContain(item.uid)
+    expect(got.line).toContain('与道无缘')
     expect(resources.dust).toBeGreaterThanOrEqual(DECOMPOSE_DUST[2] ?? 1)
+  })
+
+  it('勾选档回收要写明是所勾品质,不写成与道无缘', () => {
+    useSettingsStore().smartKeep.enabled = true
+    const item = mk('mortal')
+    const got = acquireEquipment(item)
+    expect(got.line).toContain(`所勾${qualityDef('mortal').name}`)
+    expect(got.line).not.toContain('与道无缘')
   })
 
   it('新手馈赠(forceKeep)不受回收规则影响,必入包', () => {
