@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { Capacitor } from '@capacitor/core'
 import App from './App.vue'
 import { router } from './router'
 import { migrateLocalSchema, preflightScan } from './utils/storage'
@@ -56,9 +57,14 @@ if (corrupted.length > 0) {
   useUiStore().toast('检测到部分存档数据异常,已为你隔离修复', 'warn')
 }
 
-// PWA 离线缓存:只在生产构建注册(dev 下 SW 会缓存 HMR 产物、干扰热重载)。
+// PWA 离线缓存:只在生产构建、且只在**真正的网页部署**上注册。
+// dev 下 SW 会缓存 HMR 产物、干扰热重载;而 Electron(file://)与 Capacitor(https://localhost)
+// 本身就是本地文件,离线缓存毫无意义,反而致命:SW 接管导航后 fetch() 这类本地 URL 会失败,
+// 缓存又没有副本,于是第二次启动起就只剩「离线且无缓存副本」—— Windows 版白屏、
+// 安卓版卡在加载遮罩(玩家反馈)。第一次启动总是好的,因为那次 SW 还没接管,最会误导排查。
 // 注册失败静默 —— 有 SW 是增强(断网可重开),没有也不影响在线游玩。
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+const isLocalShell = location.protocol === 'file:' || Capacitor.isNativePlatform()
+if (import.meta.env.PROD && !isLocalShell && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`)

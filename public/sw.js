@@ -17,6 +17,29 @@
 
 const CACHE_VERSION = 'yunyin-v1'
 
+/**
+ * 本地外壳里不许存在:Electron 跑在 file://,Capacitor 跑在 https://localhost。
+ * 这两处 fetch() 本地 URL 会失败、缓存又没有副本,SW 一接管导航就只剩 503 兜底页
+ * (Windows 白屏、安卓卡加载)。main.ts 已不在这两处注册;这里是给**已经被旧版注册过**
+ * 的玩家准备的 —— 浏览器每次导航都会拿新的 sw.js 做更新检查,新脚本一装上就自我注销,
+ * 再把自己开的缓存清掉,下一次启动便恢复正常。
+ */
+const IN_LOCAL_SHELL = self.location.protocol === 'file:' || self.location.origin === 'https://localhost'
+if (IN_LOCAL_SHELL) {
+  self.addEventListener('install', () => self.skipWaiting())
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      (async () => {
+        const keys = await caches.keys()
+        await Promise.all(keys.map((k) => caches.delete(k)))
+        await self.registration.unregister()
+        const clients = await self.clients.matchAll({ type: 'window' })
+        for (const c of clients) c.navigate(c.url)
+      })()
+    )
+  })
+}
+
 self.addEventListener('install', () => {
   // 新 SW 就位后立刻接管,不等旧页签全部关闭
   self.skipWaiting()
@@ -60,6 +83,8 @@ async function cacheFirst(request) {
 }
 
 self.addEventListener('fetch', (event) => {
+  // 本地外壳里一概不接管:让浏览器按原样加载,直到上面的 activate 把自己注销
+  if (IN_LOCAL_SHELL) return
   const req = event.request
   if (req.method !== 'GET') return
   const url = new URL(req.url)

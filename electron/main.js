@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } from 'electron'
+import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, session } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import pkg from '../package.json'
@@ -229,7 +229,19 @@ ipcMain.handle('quit-app', () => {
   app.quit()
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // 先清掉 Service Worker 与其缓存,再开窗。
+  //
+  // 页面跑在 file:// 上,而 Electron(与 Chrome 不同)允许 file:// 注册 SW。1.34.0 的网页
+  // 侧曾无条件注册离线缓存 SW:第一次启动正常(那次 SW 还没接管),第二次起 SW 接管导航、
+  // fetch() file:// 失败、缓存又无副本,整页只剩「离线且无缓存副本」—— 玩家反馈的白屏。
+  // 网页侧已不再在 file:// 上注册,但已中招的玩家那份 SW 会先于新页面执行,新代码根本
+  // 跑不到,只能由外壳在这里替他们拆掉。只动这两类存储,localStorage(存档)不碰。
+  try {
+    await session.defaultSession.clearStorageData({ storages: ['serviceworkers', 'cachestorage'] })
+  } catch {
+    // 清不掉也照常开窗:sw.js 自身还有一道自我注销
+  }
   createWindow()
 
   // 如果启用了托盘功能，创建托盘

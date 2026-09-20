@@ -111,23 +111,10 @@ public class MainActivity extends BridgeActivity {
                 }
             }, "NativeApp");
 
-            // 延迟注入轮询脚本，等 Capacitor 加载页面后检测 Vue 渲染完成
-            handler.postDelayed(() -> {
-                WebView wv = getBridge().getWebView();
-                if (wv != null) {
-                    wv.evaluateJavascript(
-                        "(function check() {" +
-                        "  var app = document.getElementById('app');" +
-                        "  if (app && app.children.length > 0) {" +
-                        "    NativeApp.hideLoading();" +
-                        "  } else {" +
-                        "    setTimeout(check, 200);" +
-                        "  }" +
-                        "})();",
-                        null
-                    );
-                }
-            }, 500);
+            // 等 Capacitor 起好页面后,由原生轮询「Vue 渲染完成了没」,渲染完就撤遮罩。
+            // 轮询放在原生而不是注入一段自转的 JS:下面的自愈会 reload 页面,注入的脚本随之消失,
+            // 原生驱动的轮询才能跨过 reload 继续盯着。
+            handler.postDelayed(() -> pollForApp(System.currentTimeMillis()), 500);
         }
     }
 
@@ -135,6 +122,49 @@ public class MainActivity extends BridgeActivity {
     public void onDestroy() {
         super.onDestroy();
         handler.removeCallbacksAndMessages(null);
+    }
+
+    /** 自愈只做一次,防止 reload 循环 */
+    private boolean healAttempted = false;
+
+    /** Vue 挂好了没:#app 有子节点即算渲染完成 */
+    private static final String JS_APP_READY =
+        "(function(){var a=document.getElementById('app');return !!(a&&a.children.length>0)})()";
+
+    /**
+     * 自愈脚本:注销全部 Service Worker、清掉它开的缓存,然后重载。
+     *
+     * 页面迟迟没有 #app,多半是 1.34.0 注册进来的离线缓存 SW 在作怪:它接管导航后
+     * fetch() https://localhost 失败、缓存又无副本,整页只剩「离线且无缓存副本」,
+     * #app 永远不出现,遮罩就永远不消失(玩家反馈)。第一次启动总是正常的(那次 SW 还没接管),
+     * 第二次起才中招。网页侧已不再在 Capacitor 里注册,但已中招的玩家那份 SW 先于新页面执行,
+     * 新代码根本跑不到 —— 这段由原生注入,在任何文档里都跑,替玩家把它拆掉。
+     * 只动 SW 与 CacheStorage,localStorage(存档)不碰。
+     */
+    private static final String JS_HEAL =
+        "(function(){var sw=navigator.serviceWorker;if(!sw||!sw.getRegistrations)return;" +
+        "sw.getRegistrations().then(function(rs){if(!rs.length)return;" +
+        "console.warn('yunyin: #app 迟迟未出现且存在 Service Worker,注销 '+rs.length+' 个并重载');" +
+        "return Promise.all(rs.map(function(r){return r.unregister()}))" +
+        ".then(function(){return caches.keys()})" +
+        ".then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))})" +
+        ".then(function(){location.reload()})})})()";
+
+    private void pollForApp(long startedAt) {
+        if (loadingDismissed) return;
+        WebView wv = getBridge().getWebView();
+        if (wv == null) return;
+        wv.evaluateJavascript(JS_APP_READY, value -> {
+            if ("true".equals(value)) {
+                dismissLoading();
+                return;
+            }
+            if (!healAttempted && System.currentTimeMillis() - startedAt > 6000) {
+                healAttempted = true;
+                wv.evaluateJavascript(JS_HEAL, null);
+            }
+            handler.postDelayed(() -> pollForApp(startedAt), 200);
+        });
     }
 
     private void dismissLoading() {
