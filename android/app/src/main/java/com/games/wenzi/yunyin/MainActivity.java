@@ -10,7 +10,10 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.getcapacitor.BridgeActivity;
@@ -26,6 +29,23 @@ public class MainActivity extends BridgeActivity {
     private boolean loadingDismissed = false;
     private SaveMigrator migrator;
     private Runnable enterButtonRunnable;
+
+    /**
+     * 系统栏占位,CSS 像素。
+     *
+     * 我们开了边到边(setDecorFitsSystemWindows(false),targetSdk 36 也会强制),网页内容
+     * 铺到导航栏底下 —— 而 Android WebView **不会**把导航栏高度写进 CSS 的
+     * env(safe-area-inset-bottom),那个值在安卓上恒为 0。于是三键导航的老机型上,
+     * 页面底部的导航条整排被系统按钮盖住(玩家反馈)。手势导航机型看不出来:
+     * 那条小横杠是半透明的,内容从底下透出来反而好看。
+     *
+     * 所以由原生把真实占位量出来,经 NativeApp 桥交给页面自己垫。
+     * 底部取 tappableElement 而不是 navigationBars:三键导航两者相等(约 48dp),
+     * 手势导航前者为 0、后者是横杠区 —— 正好只在「按钮真会挡住点按」时才垫。
+     * JS 侧读到的是 CSS px,故除以 density。
+     */
+    private volatile float insetTopCss = 0f;
+    private volatile float insetBottomCss = 0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,11 +81,39 @@ public class MainActivity extends BridgeActivity {
 
         WebView webView = getBridge().getWebView();
         if (webView != null) {
-            // 注册 JS 接口，让 WebView 可以通知 Native 隐藏遮罩
+            // 系统栏占位:每次窗口 insets 变化(旋转、切换导航模式)都重新量,并通知页面重读
+            final float density = getResources().getDisplayMetrics().density;
+            ViewCompat.setOnApplyWindowInsetsListener(webView, (v, insets) -> {
+                Insets status = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                Insets tappable = insets.getInsets(WindowInsetsCompat.Type.tappableElement());
+                float top = status.top / density;
+                float bottom = tappable.bottom / density;
+                if (top != insetTopCss || bottom != insetBottomCss) {
+                    insetTopCss = top;
+                    insetBottomCss = bottom;
+                    // 页面可能还没加载(首次派发在 attach 时),事件丢了也无妨:组件挂载时会主动读一次
+                    v.post(() -> ((WebView) v).evaluateJavascript(
+                        "window.dispatchEvent(new Event('nativeinsets'))", null));
+                }
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(webView);
+
+            // 注册 JS 接口:隐藏遮罩 + 读系统栏占位(方法在 JavaBridge 线程上被调,只读 volatile 字段)
             webView.addJavascriptInterface(new Object() {
                 @android.webkit.JavascriptInterface
                 public void hideLoading() {
                     runOnUiThread(() -> dismissLoading());
+                }
+
+                @android.webkit.JavascriptInterface
+                public float insetTop() {
+                    return insetTopCss;
+                }
+
+                @android.webkit.JavascriptInterface
+                public float insetBottom() {
+                    return insetBottomCss;
                 }
             }, "NativeApp");
 

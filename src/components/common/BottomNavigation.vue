@@ -1,7 +1,7 @@
 <template>
   <nav
     class="relative z-20 shrink-0 border-t border-ink/15 bg-paper-deep/95 backdrop-blur"
-    style="padding-bottom: env(safe-area-inset-bottom)"
+    :style="`padding-bottom: max(env(safe-area-inset-bottom), ${navInset}px)`"
   >
     <div class="ink-divider absolute -top-px inset-x-0" />
     <div class="grid grid-cols-5">
@@ -23,9 +23,12 @@
 
 <script setup lang="ts">
   import { useRoute } from 'vue-router'
+  import { useNativeInsets } from '@/composables/useNativeInsets'
   import GameIcon from './GameIcon.vue'
 
   const route = useRoute()
+  // 安卓三键导航的按钮高度(手势导航与非安卓平台为 0),与 env() 取大者垫在底下
+  const { bottom: navInset } = useNativeInsets()
 
   const TABS = [
     { name: 'home', label: '洞府', icon: 'mountain', to: '/' },
