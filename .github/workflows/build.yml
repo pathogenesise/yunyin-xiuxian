@@ -66,7 +66,7 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun run check
-          bun run test
+          bun run test:report
 
       - name: 缓存 Electron Builder
         uses: actions/cache@v6
@@ -127,7 +127,7 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun run check
-          bun run test
+          bun run test:report
 
       - name: 配置 Java
         uses: actions/setup-java@v6

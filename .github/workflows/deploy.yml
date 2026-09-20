@@ -29,7 +29,7 @@ jobs:
       - name: 静态检查 + 单元测试
         run: |
           bun run check
-          bun run test
+          bun run test:report
       - name: 构建
         run: bun run build
       # 前置条件:仓库需在 Settings → Pages → Build and deployment 里把 Source 选成

@@ -49,7 +49,7 @@ jobs:
       - name: 静态检查 + 单元测试
         run: |
           bun run check
-          bun run test
+          bun run test:report
 
       - name: 构建项目
         run: bun run build

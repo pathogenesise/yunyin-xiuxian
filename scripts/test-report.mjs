@@ -28,7 +28,7 @@ const CATEGORIES = [
   { name: 'Economy     资源经济', match: ['economySim', 'expIncome', 'lootSim', 'loot.spec', 'salvage', 'smartKeep', 'petLuck', 'pillValue', 'pillService', 'veinEconomyAudit', 'veinVisibility', 'resourceGuidance', 'offlineCap', 'offlineLedger', 'offlineParity', 'offlineScope', 'veinService', 'qiRepair'] },
   {
     name: 'Regression  服务与归因',
-    match: ['loadoutService', 'battleAnalysis', 'foeOrigin', 'loreService', 'contentReachability', 'contentDensity', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform', 'saveRoundTrip', 'saveBackup', 'importCorruption', 'saveMigration', 'codexSource', 'achievementHint', 'titleLadder', 'artifactEffects', 'dataHeaderAudit', 'deadExportAudit', 'chainProgression', 'vocabularyCoverage', 'singleSourceAudit', 'effectWiring', 'uiLayering', 'itemText', 'kaiFontCoverage', 'fatePreview', 'goBack', 'storeResilience', 'cultivation.spec', 'diag.spec', 'platform.spec', 'rewardReachability', 'dataIntegrity', 'dataTextAudit']
+    match: ['/ui/', 'rewardText', 'unlockChainSelfHeal', 'loadoutService', 'battleAnalysis', 'foeOrigin', 'loreService', 'contentReachability', 'contentDensity', 'mentorService', 'daoluService', 'bondEvents', 'bondTiming', 'bondIntent', 'bondCausality', 'worldMemory', 'phase31LinkAudit', 'suppress', 'game.spec', 'earlyGameService', 'earlyGameBuffs', 'savePlatform', 'saveRoundTrip', 'saveBackup', 'importCorruption', 'saveMigration', 'codexSource', 'achievementHint', 'titleLadder', 'artifactEffects', 'dataHeaderAudit', 'deadExportAudit', 'chainProgression', 'vocabularyCoverage', 'singleSourceAudit', 'effectWiring', 'uiLayering', 'itemText', 'kaiFontCoverage', 'fatePreview', 'goBack', 'storeResilience', 'cultivation.spec', 'diag.spec', 'platform.spec', 'rewardReachability', 'dataIntegrity', 'dataTextAudit']
   },
   { name: 'Celestial   真仙终局', match: ['celestialSim', 'celestialCaliber', 'endgameService', 'phase21', 'expedition', 'soulForge', 'souls.spec', 'rulesetEra', 'qimen'] },
   {
@@ -59,34 +59,47 @@ rmSync(OUT, { force: true })
 
 const rows = CATEGORIES.map(c => ({ ...c, passed: 0, failed: 0 }))
 let uncategorized = 0
+/** 未登记的文件与失败的用例都要点名 —— 这份报告现在是 CI 的门,只给个数字没法修 */
+const uncategorizedFiles = []
+const failures = []
 
 for (const file of report.testResults ?? []) {
-  const path = String(file.name ?? '')
+  // 统一成正斜杠:Windows 上 vitest 报的是反斜杠,目录级条目('/ui/')否则只在 CI 命中
+  const path = String(file.name ?? '').split('\\').join('/')
   const row = rows.find(c => c.match.some(m => path.includes(m)))
   const passed = (file.assertionResults ?? []).filter(a => a.status === 'passed').length
   const failed = (file.assertionResults ?? []).filter(a => a.status === 'failed').length
+  const short = path.replace(/^.*\/src\//, 'src/')
+  for (const a of file.assertionResults ?? []) {
+    if (a.status === 'failed') failures.push(`${short} › ${a.fullName ?? a.title}`)
+  }
   if (row) {
     row.passed += passed
     row.failed += failed
   } else {
     uncategorized += passed + failed
+    uncategorizedFiles.push(short)
   }
 }
 
 console.log('\n—— 《云隐修仙录》分类测试报告 ——\n')
 let totalPassed = 0
-let totalFailed = 0
 for (const row of rows) {
   totalPassed += row.passed
-  totalFailed += row.failed
   const status = row.failed > 0 ? 'FAIL' : 'PASS'
   const mark = row.failed > 0 ? '✗' : '✓'
   console.log(`  ${mark} ${row.name.padEnd(22, ' ')} ${status}  (${row.passed} 过${row.failed ? ` / ${row.failed} 败` : ''})`)
 }
 if (uncategorized > 0) {
-  console.log(`  ✗ 未分类用例 ${uncategorized} 个 —— 请在 scripts/test-report.mjs 的 CATEGORIES 中补充映射`)
+  console.log(`  ✗ 未分类用例 ${uncategorized} 个 —— 请在 scripts/test-report.mjs 的 CATEGORIES 中补充映射:`)
+  for (const f of uncategorizedFiles) console.log(`      ${f}`)
 }
-console.log(`\n  共 ${totalPassed} 过 / ${totalFailed} 败\n`)
+if (failures.length > 0) {
+  console.log(`\n  失败用例(${failures.length}):`)
+  for (const f of failures) console.log(`    ✗ ${f}`)
+}
+// 总数用逐条点名的失败数:未登记文件里的失败不计入任何一类,只按类汇总会把它算成「0 败」
+console.log(`\n  共 ${totalPassed} 过 / ${failures.length} 败\n`)
 // 未分类也算失败:漏登记的用例不计入任何一类,报告便少算了它。
 // 只提示不拦截的话,这个数会一路悄悄涨上去(曾积到 225 个才被发现)。
-process.exit(totalFailed > 0 || uncategorized > 0 ? 1 : 0)
+process.exit(failures.length > 0 || uncategorized > 0 ? 1 : 0)
