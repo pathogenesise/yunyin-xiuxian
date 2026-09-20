@@ -58,7 +58,7 @@
       android:paddingHorizontal="32dp"
       android:paddingVertical="10dp"
       android:text="进入游戏"
-      android:textColor="#c8a45c"
+      android:textColor="#6b7280"
       android:textSize="15sp"
       android:visibility="gone" />
 
