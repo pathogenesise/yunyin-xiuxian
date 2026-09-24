@@ -7,6 +7,7 @@
  * 两条分支都必须是可用的存档出口,不能因为平台差异退化成静默失败。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
 /** node 测试环境无 localStorage,导出路径内部(buildExportPayload)要读它,补一个最小桩 */
 class MemStorage {
@@ -64,6 +65,7 @@ const freshMocks = () => {
 
 describe('savePlatform 导出路径', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
     freshMocks()
     useUiStore().$patch({ toasts: [] })
   })
