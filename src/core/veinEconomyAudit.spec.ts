@@ -33,7 +33,6 @@ describe('灵脉投资与重铸经济审计', () => {
     console.log(`  主脉上限: ${VEIN_MAIN_CAPACITY} 点`)
     console.log(`  副脉上限: 不设上限`)
 
-    const veinCount = VEINS.length
     const maxTotal = VEIN_MAIN_CAPACITY + 300
     console.log(`  副脉长期成长至各 100 点时: ${maxTotal} 点`)
     expect(maxTotal).toBeGreaterThan(100)
