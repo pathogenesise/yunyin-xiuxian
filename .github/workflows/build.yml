@@ -195,7 +195,7 @@ jobs:
           mkdir -p ./final-release
 
           # Android-only 构建:只收集 APK,不复制 Electron / Web 产物
-          find ./raw-assets/android-apk -type f -name "*.apk" -exec cp {} ./final-release/ \;
+          find ./raw-assets -type f -name "*.apk" -exec cp {} ./final-release/ \;
           test -n "$(find ./final-release -maxdepth 1 -type f -name '*.apk' -print -quit)"
 
       # 3. 删除已有 Release 的文件（如果存在）
