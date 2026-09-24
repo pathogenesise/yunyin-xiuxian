@@ -1,4 +1,4 @@
-name: 构建多平台程序 (Electron & Android)
+name: 构建 Android APK
 
 # 只在推 tag(v1.2.3)时触发。
 #
@@ -48,6 +48,7 @@ jobs:
   # 1. 构建 Electron 客户端
   build-electron:
     name: 构建 Electron (${{ matrix.os }})
+    if: ${{ false }}
     needs: [guard]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -165,7 +166,7 @@ jobs:
 
   # 3. 发布 Release
   release:
-    needs: [guard, build-electron, build-android]
+    needs: [guard, build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -193,15 +194,9 @@ jobs:
         run: |
           mkdir -p ./final-release
 
-          # 移动 Electron zip 包
-          find ./raw-assets/electron-* -type f -name "*.zip" -exec cp {} ./final-release/ \;
-
-          # 移动 Android APK
-          find ./raw-assets/android-apk -type f -name "*.apk" -exec cp {} ./final-release/ \; || true
-
-          # 检查结果
-          echo "Final assets to upload:"
-          ls -R ./final-release
+          # Android-only 构建:只收集 APK,不复制 Electron / Web 产物
+          find ./raw-assets/android-apk -type f -name "*.apk" -exec cp {} ./final-release/ \;
+          test -n "$(find ./final-release -maxdepth 1 -type f -name '*.apk' -print -quit)"
 
       # 3. 删除已有 Release 的文件（如果存在）
       - name: 删除已有 Release 资产
