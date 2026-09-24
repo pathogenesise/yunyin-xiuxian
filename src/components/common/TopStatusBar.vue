@@ -1,7 +1,7 @@
 <template>
   <header
     class="relative z-20 flex shrink-0 items-center justify-between gap-2 border-b border-ink/10 bg-paper-deep/90 px-4 py-2 backdrop-blur short:py-1"
-    :style="`padding-top: max(env(safe-area-inset-top), ${statusInset}px, ${Capacitor.isNativePlatform() ? `30px` : `8px`})`"
+    :style="`padding-top: max(env(safe-area-inset-top), ${Capacitor.isNativePlatform() ? `30px` : `8px`})`"
   >
     <!--
       窄屏不许折行:320 宽时右组的「9 兆」「25.33 亿」与左组的「3000/1000 亿载」
@@ -55,11 +55,8 @@
   import { formatGN, formatNum, formatYears } from '@/utils/format'
   import { LIFESPAN_WARN_RATIO } from '@/data/constants'
   import { Capacitor } from '@capacitor/core'
-  import { useNativeInsets } from '@/composables/useNativeInsets'
   import GameIcon from './GameIcon.vue'
 
-  // 安卓状态栏的真实高度(非安卓为 0);与 env() 及原有的 40px 保底取大者,只会更准不会更矮
-  const { top: statusInset } = useNativeInsets()
   const player = usePlayerStore()
   const resources = useResourcesStore()
 </script>
