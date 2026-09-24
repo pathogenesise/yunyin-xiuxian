@@ -8,6 +8,7 @@ name: 构建多平台程序 (Electron & Android)
 # (`git push origin v1.2.3`);main 上的每次提交仍由 deploy.yml 过同一道闸
 # (类型检查 + ESLint + 单测),闸门没丢,只是不再顺手发版。
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*.*.*'
@@ -34,6 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: 校验 tag 与 package.json 版本一致
+        if: github.event_name == 'push'
         run: |
           TAG="${GITHUB_REF_NAME}"
           PKG="v$(node -p "require('./package.json').version")"
