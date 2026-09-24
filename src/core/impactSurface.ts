@@ -23,7 +23,7 @@ import {
   legacyInsightOf,
   stageAt
 } from '@/data/samsara'
-import { REINCARNATE_APTITUDE_FLOOR, VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY } from '@/data/constants'
+import { REINCARNATE_APTITUDE_FLOOR, VEIN_MAIN_CAPACITY } from '@/data/constants'
 import { TALENTS } from '@/data/talents'
 import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
 
@@ -275,11 +275,8 @@ export function veinPeakOf(p: SaveProbe): number {
   return Math.max(...Object.values(p.veins))
 }
 
-/** 两份存档的平均灵脉饱和度 */
-function veinSaturation(): number {
-  const avg = PROBES.reduce((s, p) => s + veinTotalOf(p), 0) / PROBES.length
-  return avg / VEIN_TOTAL_CAPACITY
-}
+/** 历史快照中的副脉上限 30;当前副脉已取消单条上限 */
+const LEGACY_VEIN_SIDE_CAP = 30
 
 /** 两份存档的平均先天之姿饱和度 */
 function talentSaturation(): number {
@@ -291,13 +288,13 @@ export const LEGACY_ASSETS: LegacyAsset[] = [
   {
     id: 'veins',
     name: '灵脉',
-    saturation: veinSaturation(),
+    saturation: 1,
     sunkCost: true,
     touchedByRebirth: false,
     verdict: 'heritage',
     evidence:
-      'confirmReincarnation 折半建筑却分毫不动 veinPoints;两份真实存档均已 100/100 投满,' +
-      '且每一点都付过灵石 —— 清零等于追溯性剥夺已付代价'
+      '历史快照:两份旧存档均已 100/100 投满;当前取消总容量与副脉单条上限,' +
+      '新玩家可继续成长,旧投点仍有沉没成本'
   },
   {
     id: 'talents',
@@ -320,9 +317,9 @@ export function verdictOf(a: LegacyAsset): LegacyVerdict {
   return a.touchedByRebirth ? 'thisLife' : 'heritage'
 }
 
-/** 主脉机制是否被真实玩家用过(投点超过副脉上限即为立过主脉) */
+/** 主脉机制是否在旧存档中被真实玩家用过(旧规则单脉投点超过 30 即视为立过主脉) */
 export function mainVeinEverUsed(): boolean {
-  return PROBES.some(p => veinPeakOf(p) > VEIN_SIDE_CAP)
+  return PROBES.some(p => veinPeakOf(p) > LEGACY_VEIN_SIDE_CAP)
 }
 
-export { VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY, SAMSARA_STAGES, stageAt }
+export { VEIN_MAIN_CAPACITY, SAMSARA_STAGES, stageAt }

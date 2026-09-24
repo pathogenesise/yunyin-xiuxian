@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cnNumber } from '@/utils/format'
 import { REALMS, WORLDS, ascensionLeap } from '@/data/realms'
-import { VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY } from '@/data/constants'
+import { VEIN_MAIN_CAPACITY } from '@/data/constants'
 import { VEINS } from '@/data/veins'
 import { BUILD_PROFILES } from '@/core/buildSim'
 import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
@@ -291,24 +291,18 @@ describe('文案数值对账 · 手写的门槛与容量', () => {
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '')
 
-  it('灵脉卡的自陈数字取自 constants(接线换的是算法,不是玩家看到的数)', () => {
+  it('灵脉卡的自陈数字取自 constants,且不再宣称存在总容量或副脉上限', () => {
     expect(VEIN_MAIN_CAPACITY).toBe(70)
-    expect(VEIN_SIDE_CAP).toBe(30)
-    expect(VEIN_TOTAL_CAPACITY).toBe(100)
     const card = src('../components/dongfu/VeinInvestCard.vue')
-    for (const ref of ['VEIN_MAIN_CAPACITY', 'VEIN_SIDE_CAP', 'VEIN_TOTAL_CAPACITY']) {
-      expect(card, `灵脉卡的自陈应读 ${ref}`).toContain(ref)
+    expect(card, '主脉上限应读 constants').toContain('VEIN_MAIN_CAPACITY')
+    for (const hand of ['70 点', '30 点', '总容量 100', '副脉各30']) {
+      expect(card, `手抄的「${hand}」应改成读常数或删掉`).not.toContain(hand)
     }
-    for (const hand of ['70 点', '30 点', '总容量 100']) {
-      expect(card, `手抄的「${hand}」应改成读常数`).not.toContain(hand)
-    }
+    expect(card, '总投入与副脉均不设上限时不能再写 /VEIN_TOTAL_CAPACITY').not.toContain('VEIN_TOTAL_CAPACITY')
   })
 
-  it('「不能全部点满」是算术事实:全部脉的上限之和确实超过总容量', () => {
-    // 文案这么说,是因为投满所有脉需要的点数 > 总容量;若哪天不成立了,取舍就没了
-    const allIn = VEIN_MAIN_CAPACITY + VEIN_SIDE_CAP * (VEINS.length - 1)
-    expect(allIn, `共 ${VEINS.length} 条脉,投满需 ${allIn} 点,总容量 ${VEIN_TOTAL_CAPACITY}`)
-      .toBeGreaterThan(VEIN_TOTAL_CAPACITY)
+  it('灵脉只有主脉上限,副脉与总投入均不限', () => {
+    expect(VEIN_MAIN_CAPACITY).toBeGreaterThan(0)
   })
 
   it('「可行流派 x/N」的分母取自 BUILD_PROFILES(界面与生态健康度同源)', () => {

@@ -5,7 +5,6 @@ import { formatPercent } from '@/utils/format'
 import { STAT_NAMES } from './statNames'
 import {
   veinEffectText,
-  veinFullToast,
   veinPeakToast,
   veinShortToast,
   veinSwitchDoneToast,
@@ -35,10 +34,8 @@ describe('灵脉效果行与每点加成同源', () => {
 })
 
 describe('灵脉投点提示 · 文言仍报清主副与灵石', () => {
-  it('容量、圆满、缺石、改立,不说不足', () => {
-    expect(veinFullToast()).toContain('容量已尽')
-    expect(veinPeakToast(true)).toContain('圆满')
-    expect(veinPeakToast(false)).toContain('副脉')
+  it('单脉圆满、缺石、改立,不说不足', () => {
+    expect(veinPeakToast()).toContain('主脉')
     expect(veinShortToast()).toContain('灵石')
     expect(veinShortToast()).not.toContain('不足')
     expect(veinSwitchShortToast()).toContain('迁脉')

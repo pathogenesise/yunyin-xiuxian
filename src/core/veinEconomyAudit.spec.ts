@@ -4,9 +4,7 @@ import {
   REFORGE_SEAL_LOAD,
   STONE_TIER_GROWTH,
   VEIN_MAIN_CAPACITY,
-  VEIN_POINT_STONE,
-  VEIN_SIDE_CAP,
-  VEIN_TOTAL_CAPACITY
+  VEIN_POINT_STONE
 } from '@/data/constants'
 import { VEINS } from '@/data/veins'
 import { veinEffectText } from '@/ui/veinText'
@@ -22,30 +20,24 @@ import type { EquipmentInstance } from '@/types'
  * 2. 重铸成本是否允许"无限洗完美装"(封存核心词条→无限重铸其他→装备随机性消失)
  *
  * 审计维度:
- * - 灵脉容量设计:总100点,主脉70,副脉各30,是否形成真正的取舍
+ * - 灵脉上限设计:主脉70,副脉与总投入均不设上限
  * - 投点成本曲线:按层级递增,中后期资源压力测算
  * - 重铸成本递增:是否足以阻止"暴力洗完美"
  * - 资源Sink效能:灵脉+重铸能否消化后期灵石过剩
  */
 
-describe('Phase 30.5:灵脉投资终局审计', () => {
-  it('灵脉容量设计:总量100点形成主副脉取舍', () => {
-    console.log('\n—— Phase 30.5 灵脉投资容量设计 ——')
-    console.log(`  总容量: ${VEIN_TOTAL_CAPACITY} 点`)
+describe('灵脉投资与重铸经济审计', () => {
+  it('灵脉只有主脉上限,副脉与总投入均不设上限', () => {
+    console.log('\n—— 灵脉投资上限设计 ——')
+    console.log(`  总投入: 不设上限`)
     console.log(`  主脉上限: ${VEIN_MAIN_CAPACITY} 点`)
-    console.log(`  副脉上限: 各 ${VEIN_SIDE_CAP} 点`)
+    console.log(`  副脉上限: 不设上限`)
 
-    // 设计意图验证:4条脉如果都想投满副脉上限(4×30=120点)会超出总容量
     const veinCount = VEINS.length
-    const fullSideCap = veinCount * VEIN_SIDE_CAP
-    console.log(`  若4脉均投满副脉上限: ${fullSideCap} 点(超出总容量 ${fullSideCap - VEIN_TOTAL_CAPACITY} 点)`)
-
-    // 主脉投满后剩余容量
-    const remainAfterMain = VEIN_TOTAL_CAPACITY - VEIN_MAIN_CAPACITY
-    console.log(`  主脉投满后剩余: ${remainAfterMain} 点(可投满1副脉,另2脉无法投满)`)
-
-    expect(VEIN_TOTAL_CAPACITY, '总容量应形成约束').toBeLessThan(fullSideCap)
-    expect(remainAfterMain, '主脉投满后应无法投满所有副脉').toBeLessThan(VEIN_SIDE_CAP * (veinCount - 1))
+    const maxTotal = VEIN_MAIN_CAPACITY + 300
+    console.log(`  副脉长期成长至各 100 点时: ${maxTotal} 点`)
+    expect(maxTotal).toBeGreaterThan(100)
+    expect(VEIN_MAIN_CAPACITY).toBeGreaterThan(0)
   })
 
   it('灵脉四脉定义:各脉增益明确,形成不同流派偏好', () => {
@@ -105,13 +97,13 @@ describe('Phase 30.5:灵脉投资终局审计', () => {
     expect(fullMainCost.m, '投满主脉总成本应显著').toBeGreaterThan(50)
   })
 
-  it('灵脉容量模拟:三种策略的资源分配', () => {
+  it('灵脉投入策略模拟:副脉可长期投入,只有主脉仍受 70 点上限约束', () => {
     console.log('\n  灵脉投资策略模拟:')
 
     const strategies = [
       { name: '专精主脉', main: 70, sides: [10, 10, 10], total: 100 },
-      { name: '主副兼顾', main: 70, sides: [30, 0, 0], total: 100 },
-      { name: '均衡四脉', main: 40, sides: [20, 20, 20], total: 100 },
+      { name: '主副兼顾', main: 70, sides: [100, 0, 0], total: 170 },
+      { name: '均衡长期成长', main: 70, sides: [100, 100, 100], total: 370 }
     ]
 
     for (const s of strategies) {
@@ -119,11 +111,11 @@ describe('Phase 30.5:灵脉投资终局审计', () => {
     }
 
     console.log('\n  关键约束:')
-    console.log('    - 总容量100点无法投满所有副脉(4×30=120点)')
+    console.log('    - 不设总容量上限,四条脉都可继续成长')
+    console.log('    - 主脉上限 70 点,副脉不设单条上限')
     console.log('    - 主脉迁移有成本(20×单点成本),已投点数不回收')
-    console.log('    - 形成长期取舍:深修单脉 vs 广泛涉猎')
 
-    expect(strategies.length).toBe(3)
+    expect(strategies.at(-1)!.total).toBeGreaterThan(100)
   })
 })
 

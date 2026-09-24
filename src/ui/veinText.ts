@@ -23,13 +23,8 @@ export function veinEffectText(def: VeinDef, points: number): string {
   return parts.join(' · ')
 }
 
-/** 洞府灵脉投点与改立。容量、主副上限、灵石仍报清。 */
-export function veinFullToast(): string {
-  return '灵脉容量已尽,唯有取舍'
-}
-
-export function veinPeakToast(isMain: boolean): string {
-  return isMain ? '主脉已至圆满' : '副脉有其上限,欲再进须立为主脉'
+export function veinPeakToast(): string {
+  return '主脉已至圆满'
 }
 
 export function veinShortToast(): string {

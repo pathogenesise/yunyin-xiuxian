@@ -38,24 +38,19 @@ describe('浅轮回收益 · 金丹一世能推进什么', () => {
     expect(s.unbounded.map(g => g.name)).toContain('道果')
   })
 
-  it('两项无上限:道果与宿慧——宿慧此前一直被当成有界项', () => {
+  it('三项无上限:道果、宿慧与灵脉;灵脉可随每世投入持续成长', () => {
     const s = summarizeShallow()
-    expect(s.unbounded).toHaveLength(2)
+    expect(s.unbounded).toHaveLength(3)
     const names = s.unbounded.map(g => g.name)
     expect(names).toContain('道果')
     expect(names).toContain('宿慧')
-    console.log(`\n无上限项:${names.join('、')}——金丹每世都在推,永远不会到头`)
+    expect(names).toContain('灵脉')
+    console.log(`\n无上限项:${names.join('、')}——灵脉取消总容量后不再有 100 点封顶`)
   })
 
-  it('五项有上限,但都能靠浅轮回刷满,不需要深修一次', () => {
+  it('灵脉不再列入有上限资产', () => {
     const s = summarizeShallow()
-    const names = s.capped.map(g => g.name)
-    expect(names).toContain('先天之姿')
-    expect(names).toContain('灵脉')
-    expect(names).toContain('灵兽')
-    expect(names).toContain('认知(材料/丹方/敌手/技艺)')
-    expect(names).toContain('成就与图鉴')
-    console.log(`\n有上限但浅轮回可刷满:${names.join('、')}`)
+    expect(s.capped.map(g => g.name)).not.toContain('灵脉')
   })
 })
 

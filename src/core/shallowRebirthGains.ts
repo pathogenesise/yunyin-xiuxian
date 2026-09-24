@@ -22,7 +22,7 @@ import { PETS } from '@/data/pets'
 import { MENTORS } from '@/data/mentors'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import { INSIGHT_PER_LIFE_REALM } from '@/data/samsara'
-import { TALENT_DRAW_DIV, VEIN_TOTAL_CAPACITY } from '@/data/constants'
+import { TALENT_DRAW_DIV } from '@/data/constants'
 
 /** 一项永久资产在浅轮回下的推进性质 */
 export type ProgressKind =
@@ -87,11 +87,11 @@ export const SHALLOW_GAINS: ShallowGainRow[] = [
   {
     id: 'veins',
     name: '灵脉',
-    kind: 'capped',
+    kind: 'unbounded',
     perLife: '视本世灵石产出',
-    cap: VEIN_TOTAL_CAPACITY,
+    cap: null,
     livesToCap: null,
-    evidence: '灵石每世清零但 veinPoints 跨世保留,可逐世累积投满'
+    evidence: '灵石每世清零,本世灵脉也随皮囊散去;总投入不设上限,每世仍可从零继续成长'
   },
   {
     id: 'pets',

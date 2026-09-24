@@ -2,14 +2,11 @@
   <div class="card-ink px-4 py-3">
     <div class="mb-2 flex items-center justify-between">
       <h3 class="font-kai text-[14px] tracking-[0.25em] text-ink">灵脉投资</h3>
-      <span class="text-[11px] text-ink-faint tabular">
-        {{ veinTotal }}/{{ VEIN_TOTAL_CAPACITY }}
-      </span>
+      <span class="text-[11px] text-ink-faint tabular">已投 {{ veinTotal }} 点</span>
     </div>
     <p class="mb-3 text-[11px] leading-relaxed text-ink-soft">
       炼化灵石永久强化洞府灵脉,获得全局属性加成。主脉可投
-      <span class="text-cinnabar">{{ VEIN_MAIN_CAPACITY }} 点</span>,副脉各
-      <span class="text-cinnabar">{{ VEIN_SIDE_CAP }} 点</span>,总容量 {{ VEIN_TOTAL_CAPACITY }}——不能全部点满,方向即取舍。
+      <span class="text-cinnabar">{{ VEIN_MAIN_CAPACITY }} 点</span>,副脉不设单条上限,总投入也不设上限,可随修为长期成长。
     </p>
 
     <div class="space-y-2.5">
@@ -25,8 +22,8 @@
             <span v-else-if="dongfu.veinMain === null" class="shrink-0 text-[10px] text-ink-ghost">首投成主</span>
           </span>
           <span class="tabular text-[11px]">
-            <span :class="currentLevel(v.id) >= cap(v.id) ? 'text-jade' : 'text-ink-faint'">
-              {{ currentLevel(v.id) }}/{{ cap(v.id) }}
+            <span :class="isFull(v.id) ? 'text-jade' : 'text-ink-faint'">
+              {{ currentLevel(v.id) }}<template v-if="cap(v.id) !== null">/{{ cap(v.id) }}</template>
             </span>
             <span class="ml-1.5 text-ink-ghost">{{ formatGN(investCost) }}</span>
           </span>
@@ -38,9 +35,9 @@
             · {{ currentLevel(v.id) > 0 ? veinEffectText(v, currentLevel(v.id)) : `每点 ${veinEffectText(v, 1)}` }}
           </span>
         </p>
-        <!-- 原主脉迁出后超额部分保留(效果不失,不可再投) -->
-        <p v-if="surplusPoints(v.id) > 0" class="px-0.5 text-[10px] text-gold-ink">
-          原主脉的 {{ surplusPoints(v.id) }} 点超额保留,效果不减,唯不再可投
+        <!-- 原主脉迁出后可以继续作为副脉投资 -->
+        <p v-if="!isMain(v.id) && currentLevel(v.id) > 0" class="px-0.5 text-[10px] text-gold-ink">
+          此脉现为副脉,仍可继续投入
         </p>
         <!-- 改立此脉为主脉:付费换向,已投点数不回收 -->
         <button
@@ -68,7 +65,7 @@
   import { VEINS, INSIGHT_EFFECT_NAME, type VeinId } from '@/data/veins'
   import { veinEffectText } from '@/ui/veinText'
   import { investVein, veinPointCost, veinSwitchCost, switchMainVein } from '@/core/veinService'
-  import { VEIN_MAIN_CAPACITY, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY, VEIN_UNLOCK_MAJOR } from '@/data/constants'
+  import { VEIN_MAIN_CAPACITY, VEIN_UNLOCK_MAJOR } from '@/data/constants'
   import { modsText } from '@/ui/statNames'
   import { formatGN, formatPercent } from '@/utils/format'
 
@@ -100,25 +97,23 @@
     return dongfu.veinMain === veinId
   }
 
-  /** 该脉实际可投上限:主脉 70,副脉 30 */
-  function cap(veinId: VeinId): number {
-    return isMain(veinId) ? VEIN_MAIN_CAPACITY : VEIN_SIDE_CAP
+  /** 该脉实际可投上限:主脉 70,副脉不限 */
+  function cap(veinId: VeinId): number | null {
+    return isMain(veinId) ? VEIN_MAIN_CAPACITY : null
   }
 
   function currentLevel(veinId: VeinId): number {
     return dongfu.veinPoints[veinId] ?? 0
   }
 
-  /** 原主脉迁出后超出副脉上限的部分 */
-  function surplusPoints(veinId: VeinId): number {
-    if (isMain(veinId)) return 0
-    return Math.max(0, currentLevel(veinId) - VEIN_SIDE_CAP)
-  }
-
   function canInvest(veinId: VeinId): boolean {
     if (!veinsUnlocked.value) return false
-    if (currentLevel(veinId) >= cap(veinId)) return false
-    return veinTotal.value < VEIN_TOTAL_CAPACITY
+    return !isFull(veinId)
+  }
+
+  function isFull(veinId: VeinId): boolean {
+    const limit = cap(veinId)
+    return limit !== null && currentLevel(veinId) >= limit
   }
 
   function canSwitchTo(veinId: VeinId): boolean {

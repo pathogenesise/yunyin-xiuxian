@@ -258,12 +258,9 @@ export const SOFT_CAPS: Partial<Record<import('@/types').AnyStatKey, { cap: numb
 }
 
 // ============ Phase 30.3 洞府灵脉投资 ============
-/** 灵脉总容量(点) */
-export const VEIN_TOTAL_CAPACITY = 100
 /** 主脉容量(独占) */
 export const VEIN_MAIN_CAPACITY = 70
-/** 副脉单条上限 */
-export const VEIN_SIDE_CAP = 30
+/** 副脉不设单条上限;只受灵石成本约束 */
 /** 每点投资灵石倍率(stoneByTier 按玩家层级) */
 export const VEIN_POINT_STONE = 25
 /** 灵脉开放境界(金丹) */
@@ -488,9 +485,9 @@ export const FORTUNE_CHANCE = 0.02
 /** 事件搁置超过该秒数后自动按默认选项处理 */
 export const EVENT_AUTO_RESOLVE_SECONDS = 120
 export const EXPLORE_MODES = {
-  normal: { name: '寻常游历', durationSec: 1800, rewardMult: 1, dangerMult: 1 },
-  deep: { name: '深入探寻', durationSec: 3600, rewardMult: 1.4, dangerMult: 1.45 },
-  risky: { name: '涉险求机', durationSec: 7200, rewardMult: 1.9, dangerMult: 2.1 }
+  normal: { name: '寻常游历', durationSec: 4 * 3600, rewardMult: 1, dangerMult: 1 },
+  deep: { name: '深入探寻', durationSec: 8 * 3600, rewardMult: 1.4, dangerMult: 1.45 },
+  risky: { name: '涉险求机', durationSec: 12 * 3600, rewardMult: 1.9, dangerMult: 2.1 }
 } as const
 /** 战败重伤 Buff 持续秒数 */
 export const INJURY_DURATION = 150

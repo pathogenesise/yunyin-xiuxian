@@ -1,14 +1,14 @@
 /**
- * 存档导出平台抽象 —— Web/Electron 走浏览器下载,Capacitor 原生端写 Documents。
+ * 存档导出平台抽象 —— Web/Electron 走浏览器下载,Capacitor 原生端交给系统保存。
  *
  * 背景:SettingsView 原把导出/导入整体用 `!Capacitor.isNativePlatform()` 藏起,
  * 因为 Capacitor WebView 没有 DownloadListener,`saveAs` 触发的下载在安卓上
  * 根本没着落。但存档只存本地、无法备份,卸载/清数据即永久丢失 —— 导出能力
- * 恰恰是移动端最需要的一环。原生端改用 @capacitor/filesystem 写 Documents:
- * 卸载前把 .save 文件导出,重装后经设置页导入恢复。
+ * 恰恰是移动端最需要的一环。原生端先写应用 Cache,再通过系统分享界面保存或发送。
  */
 import { Capacitor } from '@capacitor/core'
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
 import { saveAs } from 'file-saver'
 import { exportSaveText } from './save'
 import { useUiStore } from '@/stores/ui'
@@ -17,22 +17,36 @@ import { useUiStore } from '@/stores/ui'
 export async function exportSaveToDevice(): Promise<string | null> {
   const text = exportSaveText()
   if (Capacitor.isNativePlatform()) {
+    let temporaryFile = ''
     try {
-      // Documents 在部分 Android 上需运行时授权,先问一句,被拒就如实告知
-      const perm = await Filesystem.requestPermissions()
-      if (perm.publicStorage === 'denied') return '存储权限被拒绝,无法导出存档'
-      const stamp = new Date().toISOString().slice(0, 10)
+      // Android 11+ 不允许应用直接写公共 Documents；旧实现无论目录不存在还是权限策略
+      // 都会落入 catch，最后只会误报「存储空间不足」。先写应用私有的 Cache，
+      // 再交给系统分享/文件保存界面，让用户把文件保存到网盘、文件管理器等位置。
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-')
       const file = `yunyin-xiuxian-${stamp}.save`
-      await Filesystem.writeFile({
-        path: `Export/${file}`,
+      const result = await Filesystem.writeFile({
+        path: file,
         data: text,
-        directory: Directory.Documents,
+        directory: Directory.Cache,
         encoding: Encoding.UTF8
       })
-      useUiStore().toast(`已导出到「文档/Export/${file}」`, 'success')
+      temporaryFile = result.uri
+
+      const canShare = await Share.canShare()
+      if (!canShare.value) {
+        useUiStore().toast('当前设备没有可用的文件保存或分享应用', 'warn')
+        return '系统分享不可用'
+      }
+      await Share.share({
+        title: '云隐修仙录存档',
+        files: [temporaryFile],
+        dialogTitle: '保存或分享存档'
+      })
+      useUiStore().toast('存档已生成,请在系统界面选择保存位置', 'success')
       return null
-    } catch {
-      // 写盘失败(存储不可用/权限异常)明确告知,不静默
+    } catch (error) {
+      // 取消分享不是导出失败，不必把正常的返回动作说成错误。
+      if (error instanceof Error && error.message.toLowerCase().includes('cancel')) return null
       useUiStore().toast('存档导出失败,请检查存储空间后重试', 'warn')
       return '导出失败'
     }

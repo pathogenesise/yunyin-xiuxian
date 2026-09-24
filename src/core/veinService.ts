@@ -1,12 +1,12 @@
 /**
  * 灵脉服务 —— Phase 30.3
- * 投点规则:总容量 100;主脉独占 70;副脉各 ≤30。
+ * 投点规则:无总容量上限;主脉独占 70;副脉不设单条上限。
  * 主脉可迁移(付费换向),已投点数不回收——方向选择有代价但不锁死。
  */
 import type { GNum } from '@/types'
 import type { VeinId } from '@/data/veins'
 import { veinDef } from '@/data/veins'
-import { VEIN_MAIN_CAPACITY, VEIN_POINT_STONE, VEIN_SIDE_CAP, VEIN_TOTAL_CAPACITY, VEIN_UNLOCK_MAJOR } from '@/data/constants'
+import { VEIN_MAIN_CAPACITY, VEIN_POINT_STONE, VEIN_UNLOCK_MAJOR } from '@/data/constants'
 import { stoneByTier } from './formulas'
 import { playerTier } from './progress'
 import { usePlayerStore } from '@/stores/player'
@@ -14,7 +14,6 @@ import { useDongfuStore } from '@/stores/dongfu'
 import { useResourcesStore } from '@/stores/resources'
 import { useUiStore } from '@/stores/ui'
 import {
-  veinFullToast,
   veinPeakToast,
   veinShortToast,
   veinSwitchDoneToast,
@@ -26,10 +25,10 @@ export function veinsUnlocked(): boolean {
   return usePlayerStore().major >= VEIN_UNLOCK_MAJOR
 }
 
-/** 某条脉当前可投上限 */
-export function veinCap(id: VeinId): number {
+/** 某条脉当前可投上限:主脉 70 点,副脉不限 */
+export function veinCap(id: VeinId): number | null {
   const dongfu = useDongfuStore()
-  return dongfu.veinMain === id ? VEIN_MAIN_CAPACITY : VEIN_SIDE_CAP
+  return dongfu.veinMain === id ? VEIN_MAIN_CAPACITY : null
 }
 
 /** 单点投资成本(按玩家当前层级) */
@@ -52,14 +51,11 @@ export function investVein(id: VeinId): boolean {
   const ui = useUiStore()
   if (!veinsUnlocked()) return false
 
-  if (dongfu.veinTotal >= VEIN_TOTAL_CAPACITY) {
-    ui.toast(veinFullToast(), 'warn')
-    return false
-  }
   if (dongfu.veinMain === null) dongfu.setVeinMain(id)
   const current = dongfu.veinPoints[id] ?? 0
-  if (current >= veinCap(id)) {
-    ui.toast(veinPeakToast(dongfu.veinMain === id), 'warn')
+  const cap = veinCap(id)
+  if (cap !== null && current >= cap) {
+    ui.toast(veinPeakToast(), 'warn')
     return false
   }
   const cost = veinPointCost()
@@ -72,7 +68,7 @@ export function investVein(id: VeinId): boolean {
   return true
 }
 
-/** 迁移主脉:付费换向;原主脉点数保留(超出副脉上限的部分不再可投,但效果不失) */
+/** 迁移主脉:付费换向;原主脉点数保留,副脉不设单条上限 */
 export function switchMainVein(id: VeinId): boolean {
   const dongfu = useDongfuStore()
   const resources = useResourcesStore()
