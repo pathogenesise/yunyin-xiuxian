@@ -8,6 +8,38 @@
   [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0)
 </div>
 
+## Fork 说明
+
+本仓库是 [setube/yunyin-xiuxian](https://github.com/setube/yunyin-xiuxian) 的 fork，默认分支为 `main`。当前实现以上游 `v1.35.0` 的提交 `b6f6b39` 为基线，主要面向 Android 构建与少量玩法调整。
+
+### 与上游的差异
+
+| 范围 | 本 fork 的改动 | 相关提交 |
+| --- | --- | --- |
+| Android 构建 | GitHub Actions 改为只构建 Android APK；支持手动触发；Release 只收集 `*.apk`，不再构建/发布 Electron 与 Web 产物 | `bb59565` `cd62053` `de55098` |
+| Android 存档导出 | 存档先写入应用 Cache，再调用 `@capacitor/share` 打开系统保存/分享界面；移除公共存储写入权限，更新 FileProvider 路径 | `c6fcaf9` |
+| 历练时长 | 三种模式的基础时长改为 4 / 8 / 12 小时（原本 30 分钟 / 1 小时 / 2 小时）；收益与危险倍率不变 | `c6fcaf9` |
+| 灵脉投资 | 取消总投入上限与副脉单条上限，保留主脉 70 点上限；迁移主脉后原主脉可作为副脉继续投资 | `c6fcaf9` |
+| Android 原生桥 | 回退上游的三键导航底部占位修复：删除 `useNativeInsets` 及 `MainActivity` 中相应桥接，恢复不垫底的版本 | `a383a7b` |
+| 测试与依赖 | 同步更新灵脉 / 历练 / 存档导出测试；新增运行时依赖 `@capacitor/share` | `c6fcaf9` `886afe3` `fcb30cc` |
+
+### Android 构建与发布
+
+本 fork 的 APK 只通过 GitHub Actions 构建，不在本地出包。触发方式：
+
+- Actions 页面选择「构建 Android APK」→「Run workflow」；
+- 或命令行：`gh workflow run build.yml --ref main`。
+
+构建成功后，APK 发布在 Release `main` 下，文件名为 `yunyin-<package.json 版本号>.apk`。当前版本号为 `1.35.0`，因此资产文件是 `yunyin-1.35.0.apk`。
+
+### 与上游同步
+
+- 分叉基线：上游 `main` 的 `b6f6b39`（v1.35.0，2026-09-20）。
+- 截至 2026-09-25，上游 `main` 已前进到 `e31eb9c`；本 fork 有 7 个代码 / CI 提交，上游另有 12 个提交尚未合并。
+- 同步上游时，以下区域存在重叠，需要手工合并或取舍：
+  - 上游 `7bce274` 新增了独立的「长线云游（4h）」档位；本 fork 则是把原三档基础时长整体改为 4 / 8 / 12 小时。
+  - 上游 `bc80f40` 为 Web 端导出增加剪贴板兜底；本 fork 主要重写了 Android 原生导出路径。
+
 ## 游戏特色
 
 **四界二十一境** — 人间界（炼气→渡劫）、仙界（真仙→大罗）、神界（神人→神帝）、混沌海（混沌真灵→混沌道祖）四重界域；每境九层至圆满，突破需渡劫，5 类天劫（雷鸣/逆流/裂魂/铁躯/重压）各有克制之法
