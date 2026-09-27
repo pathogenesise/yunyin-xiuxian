@@ -41,10 +41,11 @@ describe('装备经济压力测试(Phase 19)', () => {
     for (const d of DECOMPOSE_DUST) expect(d).toBeGreaterThan(0)
   })
 
-  it('[发现] 背包在 2 小时内爆仓——依赖折算阀,构筑管理压力真实存在', () => {
-    // 该断言"锁定问题存在":若未来加了自动分解/过滤,爆仓时长改变,此测试提醒同步更新设计文档
+  it('行囊可装下 12h 历练:爆仓时长远大于 12 小时(不再依赖化尘阀)', () => {
+    // BAG_CAPACITY=3000 兜住 12h 涉险典型(基线 1465 件 × 常规叠加 2~3 倍);
+    // 离线批量允许超 cap 入包,故爆仓不再是化尘的理由。此测试锁的是"不断档",不是"问题存在"。
     for (const p of tiers) {
-      expect(p.hoursToFillBag).toBeLessThan(4)
+      expect(p.hoursToFillBag).toBeGreaterThan(12)
     }
   })
 })

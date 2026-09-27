@@ -1018,8 +1018,19 @@ export interface OfflineSummary {
   battles: number
   wins: number
   events: number
-  /** 产出装备清单;回收(自动回收/满包化尘)的件以 recycled 标注 */
+  /**
+   * 产出装备清单(旧口径,逐件)。
+   *
+   * 12h 离线约 1500 件,逐件清单会撑爆总结 —— 现只保留作兼容(镇压区在线路径
+   * 的旧测试仍读它),新口径看 equipmentSummary(总数 + 按品质分档)。
+   * 新代码不得再向此数组 push 历练批量件。
+   */
   equipment: { name: string; quality: QualityId; recycled?: boolean }[]
+  /**
+   * 离线装备汇总:只报总数 + 按品质分档,不列逐件。
+   * 明细去行囊页看(分页)。为空表示本次无装备产出。
+   */
+  equipmentSummary?: { total: number; byQuality: { quality: string; name: string; count: number }[] }[]
   /** 期间未入包装备化作的器灵尘总量 */
   recycledDust: number
   notes: string[]

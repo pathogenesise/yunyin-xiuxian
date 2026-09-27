@@ -14,21 +14,23 @@
           </span>
           <span class="tabular text-[13px] text-ink">{{ row.value }}</span>
         </li>
-        <li v-if="savedEquipment.length" class="rounded-md bg-paper-deep/70 px-3 py-2">
+        <!-- 离线装备只报总数 + 按品质分档,不列逐件(12h 约 1500 件);明细去行囊页看 -->
+        <li v-if="equipTotal > 0" class="rounded-md bg-paper-deep/70 px-3 py-2">
           <p class="mb-1 flex items-center gap-2 text-[13px] text-ink-soft">
             <GameIcon name="backpack" :size="15" class="text-ink-faint" />
-            拾得装备 ×{{ savedEquipment.length }}
+            拾得装备 ×{{ equipTotal }}
           </p>
           <p class="flex flex-wrap gap-x-3 gap-y-1">
             <span
-              v-for="(eq, i) in savedEquipment"
-              :key="i"
+              v-for="row in equipRows"
+              :key="row.quality"
               class="font-kai text-[12px]"
-              :style="{ color: qualityDef(eq.quality).color }"
+              :style="{ color: qualityDef(row.quality as never).color }"
             >
-              {{ qualityDef(eq.quality).name }}·{{ eq.name }}
+              {{ row.name }}×{{ row.count }}
             </span>
           </p>
+          <p class="mt-1 text-[10px] text-ink-ghost">明细已入行囊,去「行囊」页翻看</p>
         </li>
       </ul>
       <p v-for="(note, i) in summary.notes" :key="i" class="mt-2 text-[11px] text-ink-faint">{{ note }}</p>
@@ -78,16 +80,20 @@
     if (s.wudao > 0) list.push({ icon: 'book', label: '悟道点', value: `+${s.wudao}` })
     if (s.battles > 0) list.push({ icon: 'swords', label: '历练战斗', value: `${s.wins} 胜 / ${s.battles} 战` })
     if (s.events > 0) list.push({ icon: 'star', label: '途中际遇', value: `${s.events} 次` })
-    // 自动回收的产出不入行囊、只化器灵尘,单独成行,免得玩家以为掉了没捡到
+    // 镇压区在线路径的化尘(历练批量入包不化尘):行囊没收下的那几件,尘数要交代
     if (s.recycledDust > 0) {
-      const recycled = s.equipment.filter(e => e.recycled).length
-      list.push({ icon: 'sparkles', label: '回收化尘', value: `${recycled} 件 · 器灵尘+${s.recycledDust}` })
+      list.push({ icon: 'sparkles', label: '回收化尘', value: `器灵尘+${s.recycledDust}` })
     }
     return list
   })
 
-  /** 真正入行囊的装备(回收件已并入"回收化尘"行,不在此重复列出) */
-  const savedEquipment = computed(() => summary.value?.equipment.filter(e => !e.recycled) ?? [])
+  /**
+   * 离线装备汇总(新口径):总数 + 按品质分档。
+   * 旧逐件清单(equipment)只剩镇压区在线路径的兼容项,不再作为展示源 ——
+   * 历练批量件不进它,故此处只读 equipmentSummary。
+   */
+  const equipTotal = computed(() => summary.value?.equipmentSummary?.[0]?.total ?? 0)
+  const equipRows = computed(() => summary.value?.equipmentSummary?.[0]?.byQuality ?? [])
 
   function close(): void {
     ui.offlineSummary = null

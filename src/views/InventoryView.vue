@@ -47,14 +47,20 @@
           </template>
         </button>
       </div>
-      <p class="mt-2 text-center text-[10px] text-ink-faint">点击部位查看候选,行囊满时新掉落自动折作器灵尘</p>
+      <p class="mt-2 text-center text-[10px] text-ink-faint">点击部位查看候选{{ overCap ? ' · 行囊已满,先清理再出门' : '' }}</p>
 
-      <!-- 全部藏品(含佩戴中):部位槽之下的完整清单 -->
+      <!-- 全部藏品(含佩戴中):部位槽之下的完整清单,分页(60 件/页) -->
       <div v-if="allItems.length" class="mt-4">
-        <SectionTitle title="全部藏品" :hint="`${allItems.length} 件 · 行囊 ${inventory.bagItems.length}/${BAG_CAPACITY}`" />
-        <!-- 方格背包:五列格子 + 空槽占位,一眼看出还剩多少地方 -->
+        <SectionTitle title="全部藏品" :hint="`${allItems.length} 件 · 行囊 ${inventory.bagItems.length}/${BAG_CAPACITY}${overCap ? ' · 已满' : ''}`" />
+        <!-- 方格背包:五列格子,只渲染当前页(3000 件全量渲染会卡死低端机) -->
         <div class="mt-2 grid grid-cols-5 gap-1.5">
-          <EquipmentCard v-for="row in allItems" :key="row.item.uid" :item="row.item" :equipped="row.equipped" @open="openDetail" />
+          <EquipmentCard v-for="row in pageItems" :key="row.item.uid" :item="row.item" :equipped="row.equipped" @open="openDetail" />
+        </div>
+        <!-- 翻页条:只有多于一页才出现;换页回顶,免得停在半山腰 -->
+        <div v-if="pageCount > 1" class="mt-2 flex items-center justify-center gap-3">
+          <button class="btn-ghost !px-3 !py-1 !text-[12px]" :disabled="bagPage <= 1" @click="bagPage -= 1">‹ 上页</button>
+          <span class="tabular text-[11px] text-ink-faint">{{ bagPage }} / {{ pageCount }}</span>
+          <button class="btn-ghost !px-3 !py-1 !text-[12px]" :disabled="bagPage >= pageCount" @click="bagPage += 1">下页 ›</button>
         </div>
       </div>
       <p v-else class="mt-8 text-center text-[12px] text-ink-faint">行囊空空,去历练中寻些机缘吧</p>
@@ -424,7 +430,7 @@
   } from '@/data/artifacts'
   import { REALMS } from '@/data/realms'
   import { EQUIP_SLOT_NAMES, equipmentTemplate } from '@/data/equipment'
-  import { BAG_CAPACITY } from '@/data/constants'
+  import { BAG_CAPACITY, BAG_PAGE_SIZE } from '@/data/constants'
   import { usePill, availableRecipes, craftPill, pillCraftCost } from '@/core/pillService'
   import { craftability, type Craftability } from '@/core/craftability'
   import {
@@ -510,6 +516,20 @@
         return dq !== 0 ? dq : b.item.tier - a.item.tier
       })
   )
+
+  /**
+   * 行囊分页 —— 3000 件全量渲染会卡死低端机,故只渲染当前页。
+   * 页码越界时自动收敛(删了一批之后停在空页上,不如回末页)。
+   */
+  const bagPage = ref(1)
+  const pageCount = computed(() => Math.max(1, Math.ceil(allItems.value.length / BAG_PAGE_SIZE)))
+  const safePage = computed(() => Math.min(Math.max(1, bagPage.value), pageCount.value))
+  const pageItems = computed(() => {
+    const p = safePage.value
+    return allItems.value.slice((p - 1) * BAG_PAGE_SIZE, p * BAG_PAGE_SIZE)
+  })
+  /** 行囊是否超 cap(离线批量允许超收):超了就提示清理,而不是悄悄化尘 */
+  const overCap = computed(() => inventory.bagItems.length > BAG_CAPACITY)
 
   /** 当前部位的候选:佩戴中的置顶,其余按品质/层级降序 */
   const pickerRows = computed(() => {

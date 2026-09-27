@@ -2,7 +2,7 @@
  * 离线结算 —— 「归来」系统
  * 与在线 Tick 共用同一套公式,按封顶时长折算收益
  */
-import type { EventDef, OfflineSummary } from '@/types'
+import type { EventDef, EquipmentInstance, OfflineSummary } from '@/types'
 import { add, gn, gnZero, isZero, mulN, sub } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { offlineAgeNote } from '@/ui/offlineText'
@@ -25,7 +25,7 @@ import {
 import { makeEnemySnap, resolveCombat, sampleWinRate } from './combat'
 import { buildPlayerSnap } from './playerSnap'
 import { generateEquipment } from './equipGen'
-import { acquireEquipment, afterWin } from './loot'
+import { afterWin } from './loot'
 import { autoResolveEvent, regionEventPoolFor } from './eventEngine'
 import { clearRegionAndUnlockNext, exploreEventChance, dangerFactorFor, explorationRules } from './exploration'
 import { currentRegionEvent, regionEventDef } from './regionEvent'
@@ -36,8 +36,8 @@ import { settleSuppressedRegions } from './suppress'
 import { harvestMaterials, studyTick } from './loreService'
 import { modOf } from './statsCalc'
 import { personalityEffects } from './petPersonality'
-import { track } from './progress'
-import { equipmentTemplate } from '@/data/equipment'
+import { checkQualityAchievement, collect, track } from './progress'
+import { qualityDef } from '@/data/qualities'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useDongfuStore } from '@/stores/dongfu'
@@ -72,6 +72,37 @@ function isOfflineSafeEvent(ev: EventDef): boolean {
 }
 
 /**
+ * 离线批量入包 —— 12h 不溢出的关键。
+ *
+ * acquireEquipment 是逐件走 Pinia 响应式与图鉴/成就埋点的「陈列」路径:
+ * 逐件跑 1500+ 次就是 1500+ 次响应式数组拷贝 + 1500+ 次成就全表扫描,
+ * 离线结算会从毫秒级掉到秒级(低端机更糟)。
+ * 故离线只逐件生成(品质/词条仍逐件掷,掉落结构与在线一致),
+ * 入包走批量直写:图鉴见闻与成就只记最高品质那件,
+ * 计数类(track/collect)按总量一次记。超 BAG_CAPACITY 也照收入包,
+ * 不化尘 —— 行囊页分页展示,超 cap 时提示清理(见 InventoryView)。
+ */
+function batchAcquireOffline(instances: EquipmentInstance[]): { saved: number } {
+  if (instances.length === 0) return { saved: 0 }
+  const inventory = useInventoryStore()
+  const lore = useLoreStore()
+  let best: EquipmentInstance | null = null
+  for (const inst of instances) {
+    if (!best || qualityDef(inst.quality).rank > qualityDef(best.quality).rank) best = inst
+  }
+  // 图鉴见闻:只记最高品质一件(化尘的也是「见过」,与 acquireEquipment 同口径)
+  if (best) {
+    lore.noteEquipSeen(best.templateId, qualityDef(best.quality).rank, best.tier)
+    checkQualityAchievement(qualityDef(best.quality).rank)
+  }
+  collect('equip', best?.templateId ?? instances[0]!.templateId)
+  track('equipsGained', instances.length)
+  // 批量直写入包:超 cap 也收,不化尘
+  inventory.items = [...inventory.items, ...instances]
+  return { saved: instances.length }
+}
+
+/**
  * 结算离线收益
  * @param nowMs 当前时间戳
  */
@@ -92,9 +123,27 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   const capSec = Math.min(dtSec, dongfu.offlineCapHours * 3600)
   const effSec = capSec * OFFLINE_EFFICIENCY
   const notes: string[] = []
-  const equipmentGained: OfflineSummary['equipment'] = []
-  /** 离线期间未入包(自动回收/满包化尘)装备化作的器灵尘 */
+  /** 离线装备只记总数(按品质汇总),不存逐件清单 —— 12h 约 1500 件,逐件清单会撑爆总结 */
+  let offlineEquipTotal = 0
+  const offlineEquipByQuality: { quality: string; name: string; count: number }[] = []
+  /** 离线期间未入包装备化作的器灵尘(镇压区在线路径记账) */
   let recycledDust = 0
+  const recordOfflineBatch = (instances: EquipmentInstance[]): void => {
+    offlineEquipTotal += instances.length
+    for (const inst of instances) {
+      const q = qualityDef(inst.quality)
+      const row = offlineEquipByQuality.find(r => r.quality === inst.quality)
+      if (row) row.count += 1
+      else offlineEquipByQuality.push({ quality: inst.quality, name: q.name, count: 1 })
+    }
+  }
+  const recordOfflineSingles = (count: number, qualityName = '首领战利'): void => {
+    if (count <= 0) return
+    offlineEquipTotal += count
+    const row = offlineEquipByQuality.find(r => r.name === qualityName)
+    if (row) row.count += count
+    else offlineEquipByQuality.push({ quality: 'boss', name: qualityName, count })
+  }
 
   // ---- 修炼 ----
   const expBefore = { ...player.exp }
@@ -116,14 +165,29 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   // ---- 镇压区域被动收益(豁免离线效率折扣,是统治该区域的补偿;但仍受洞府离线上限约束) ----
   // 之前误传完整 dtSec:镇压收益绕过 mansion 离线封顶,洞府离线等级对"镇压力"玩家几乎失效。
   // 折扣豁免只豁免 0.9 效率,不平白豁免洞府离线上限本身
+  // 镇压区在 settleSuppressedRegions 内已逐件 acquire 入包(在线 tick 同路径,
+  // 0.4 件/h,12h 约 5 件/区,陈列开销可忽略,故不改批量);
   const suppressYield = settleSuppressedRegions(capSec)
   if (suppressYield && !isZero(suppressYield.stone)) {
     const extra = suppressYield.resources.map(r => `${r.name} +${r.amount}`).join(' · ')
     notes.push(`镇压诸域仍有余韵:灵石 +${formatGN(suppressYield.stone)}${extra ? ` · ${extra}` : ''}`)
-    for (const eq of suppressYield.equipment) {
-      equipmentGained.push(eq)
-    }
+    // 离线总结只记总数,不列逐件(见下方 equipmentSummary)。
+    offlineEquipTotal += suppressYield.equipment.length
     recycledDust += suppressYield.recycledDust
+    for (const eq of suppressYield.equipment) {
+      const row = offlineEquipByQuality.find(r => r.quality === eq.quality)
+      if (row) row.count += 1
+      else {
+        const qname = (() => {
+          try {
+            return qualityDef(eq.quality).name
+          } catch {
+            return String(eq.quality)
+          }
+        })()
+        offlineEquipByQuality.push({ quality: String(eq.quality), name: qname, count: 1 })
+      }
+    }
   }
 
   // ---- 历练挂机 ----
@@ -206,23 +270,20 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         harvestMaterials(region.tier, 'ore', oreGain)
         resources.addSmall('page', Math.round(wins * 0.15 * doubleMult))
         resources.addSmall('dust', Math.round(wins * 0.3 * doubleMult))
-        // 装备:最多实际生成 6 件,其余折算为器灵尘(掉落数与在线同源,乘事件加丰与福缘)
+        // 装备:期望数全额逐件生成、全额批量入包(见 batchAcquireOffline),不化尘。
+        // 件数与在线同源(×区域加丰 ×掉率词条 ×福缘期望);品质/词条逐件掷,与在线同一池。
+        // 12h 涉险基线约 1465 件(不确定性:胜率 0.85 是 expIncome 假设,无妖潮无词条;
+        // 常规叠加约 2~3 倍;BAG_CAPACITY=3000 兜住典型,极端叠加超 cap 也照收,见批量函数)。
         const equipCount = Math.round(wins * EQUIP_DROP_CHANCE * regionEventReward * (1 + modOf(mods, 'dropRate')) * doubleMult)
-        const realCount = Math.min(6, equipCount)
-        for (let i = 0; i < realCount; i += 1) {
+        const offlineLuck = modOf(mods, 'luck') + personalityEffects(player.petId).dropLuck
+        const offlineBatch: EquipmentInstance[] = []
+        for (let i = 0; i < equipCount; i += 1) {
           // 灵兽性格同样管离线掉落:贪宝更易稀出,谨慎稍稍寻常(与在线 afterWin 同源)
-          const inst = generateEquipment(region.tier, rng, { luck: modOf(mods, 'luck') + personalityEffects(player.petId).dropLuck })
-          const res = acquireEquipment(inst, { quiet: true })
-          // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收;
-          // 器灵尘按 acquire 返回值记账,不再依赖对行囊作 findItem 二次判定。
-          equipmentGained.push({ name: equipmentTemplate(inst.templateId)?.name ?? '未知', quality: inst.quality, recycled: !res.bagged })
-          if (!res.bagged) recycledDust += res.dust
+          offlineBatch.push(generateEquipment(region.tier, rng, { luck: offlineLuck }))
         }
-        trip.items += realCount
-        if (equipCount > realCount) {
-          resources.addSmall('dust', (equipCount - realCount) * 4)
-          notes.push(`另有 ${equipCount - realCount} 件寻常之物,已折作器灵尘`)
-        }
+        batchAcquireOffline(offlineBatch)
+        recordOfflineBatch(offlineBatch)
+        trip.items += equipCount
         if (wins < battles) {
           notes.push(`有 ${battles - wins} 战失利,幸而全身而退`)
         }
@@ -260,8 +321,13 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           const bossDanger = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
           const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, explorationRules())
           if (bossResult.win) {
-            // 首领战奖励同样并入事件加丰倍率(在线 boss 也是 mode×regReward,离线再叠收益折损)
+            // 首领战奖励同样并入事件加丰倍率(在线 boss 也是 mode×regReward,离线再叠收益折损)。
+            // 首领掉落(装备/丹药/法宝)走 afterWin 的逐件陈列路径,不进批量 —— 首领一生一次,
+            // 件数是个位数,陈列开销可忽略;且首领保底(minQualityRank)与图鉴品质成就要逐件记。
+            // afterWin 内的装备走 acquireEquipment 逐件入包,故同步记入汇总(总数口径一致)。
+            // 首领装备品质逐件未知(afterWin 只回 lines),分档记「首领战利」一行,总数对得上。
             const drops = afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true)
+            recordOfflineSingles(drops.items)
             trip.stone = add(trip.stone, drops.stone)
             trip.exp = add(trip.exp, drops.exp)
             trip.items += drops.items
@@ -302,6 +368,30 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
   // ---- Buff 过期 ----
   cultivation.pruneBuffs(nowMs)
 
+  // 装备汇总行:只报总数 + 按品质分档,不列逐件(12h 约 1500 件,逐件会撑爆总结与卷轴)。
+  // 明细去行囊页看(分页)。offlineEquipByQuality 按品质 rank 降序,读数稳定。
+  const sortedQualityRows = [...offlineEquipByQuality].sort((a, b) => {
+    const ra = (() => {
+      try {
+        return qualityDef(b.quality as never).rank
+      } catch {
+        return -1
+      }
+    })()
+    const rb = (() => {
+      try {
+        return qualityDef(a.quality as never).rank
+      } catch {
+        return -1
+      }
+    })()
+    return ra - rb
+  })
+  const equipmentSummary =
+    sortedQualityRows.length > 0
+      ? [{ total: offlineEquipTotal, byQuality: sortedQualityRows.map(r => ({ ...r })) }]
+      : []
+
   const summary: OfflineSummary = {
     seconds: dtSec,
     cappedSeconds: capSec,
@@ -316,7 +406,8 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     battles,
     wins,
     events,
-    equipment: equipmentGained,
+    equipment: [],
+    equipmentSummary,
     recycledDust,
     notes
   }
