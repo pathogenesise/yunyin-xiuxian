@@ -302,12 +302,18 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         .map(ev => ev.id)
       if (offlineEventPool.length === 0) offlineEventPool = DEFAULT_OFFLINE_EVENT_IDS
       for (let i = 0; i < evCap; i += 1) {
+        const itemsBeforeEvent = useInventoryStore().items.length
         if (adventure.pendingEventId) {
           autoResolveEvent(adventure.pendingEventId, region.tier)
           adventure.setPendingEvent(null, nowMs)
         } else {
           autoResolveEvent(rng.pick(offlineEventPool), region.tier)
         }
+        // 事件内装备走 acquireEquipment 逐件入包(见 eventEngine.applyEffect):
+        // 际遇给的装备是剧情口径(带 minQualityRank),不进历练批量;件数少,逐件可接受。
+        // 汇总只记总数,不列逐件(与历练批量同口径,见 equipmentSummary)。
+        const eventGained = useInventoryStore().items.length - itemsBeforeEvent
+        if (eventGained > 0) recordOfflineSingles(eventGained, '际遇所得')
       }
       // 事件只实际结算了 evCap 个;events 此前按全程估算,超额部分只是"路上料到"、
       // 并非真实经历。总结与旅途记录若按全量上报,玩家会看到「际会 3456 次」
