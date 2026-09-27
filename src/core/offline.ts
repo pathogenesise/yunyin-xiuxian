@@ -303,6 +303,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
       if (offlineEventPool.length === 0) offlineEventPool = DEFAULT_OFFLINE_EVENT_IDS
       for (let i = 0; i < evCap; i += 1) {
         const itemsBeforeEvent = useInventoryStore().items.length
+        const dustBeforeEvent = useResourcesStore().dust
         if (adventure.pendingEventId) {
           autoResolveEvent(adventure.pendingEventId, region.tier)
           adventure.setPendingEvent(null, nowMs)
@@ -312,8 +313,11 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         // 事件内装备走 acquireEquipment 逐件入包(见 eventEngine.applyEffect):
         // 际遇给的装备是剧情口径(带 minQualityRank),不进历练批量;件数少,逐件可接受。
         // 汇总只记总数,不列逐件(与历练批量同口径,见 equipmentSummary)。
+        // 化尘也算产出(行囊差为 0 但尘涨了,说明事件给了装备又被回收)。
         const eventGained = useInventoryStore().items.length - itemsBeforeEvent
+        const eventDusted = useResourcesStore().dust - dustBeforeEvent
         if (eventGained > 0) recordOfflineSingles(eventGained, '际遇所得')
+        else if (eventDusted > 0) recordOfflineSingles(1, '际遇所得')
       }
       // 事件只实际结算了 evCap 个;events 此前按全程估算,超额部分只是"路上料到"、
       // 并非真实经历。总结与旅途记录若按全量上报,玩家会看到「际会 3456 次」
@@ -330,10 +334,13 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
             // 首领战奖励同样并入事件加丰倍率(在线 boss 也是 mode×regReward,离线再叠收益折损)。
             // 首领掉落(装备/丹药/法宝)走 afterWin 的逐件陈列路径,不进批量 —— 首领一生一次,
             // 件数是个位数,陈列开销可忽略;且首领保底(minQualityRank)与图鉴品质成就要逐件记。
-            // afterWin 内的装备走 acquireEquipment 逐件入包,故同步记入汇总(总数口径一致)。
+            // afterWin 内的装备走 acquireEquipment 逐件入包,故按前后行囊差记入汇总(总数口径一致)。
             // 首领装备品质逐件未知(afterWin 只回 lines),分档记「首领战利」一行,总数对得上。
+            const bossItemsBefore = useInventoryStore().items.length
             const drops = afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true)
-            recordOfflineSingles(drops.items)
+            const bossGained = useInventoryStore().items.length - bossItemsBefore
+            // 化尘也算产出(首领保底件被自动回收时行囊差为 0,此时按 drops.items 兜底)
+            recordOfflineSingles(Math.max(bossGained, drops.items))
             trip.stone = add(trip.stone, drops.stone)
             trip.exp = add(trip.exp, drops.exp)
             trip.items += drops.items
