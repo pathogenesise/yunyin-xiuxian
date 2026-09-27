@@ -26,7 +26,7 @@ import { useInventoryStore } from '@/stores/inventory'
 import { useResourcesStore } from '@/stores/resources'
 import { useSettingsStore } from '@/stores/settings'
 import { qualityDef } from '@/data/qualities'
-import { DECOMPOSE_DUST } from '@/data/constants'
+import { BAG_CAPACITY, DECOMPOSE_DUST } from '@/data/constants'
 import { useLoreStore } from '@/stores/lore'
 import { gn } from '@/utils/gnum'
 import type { EquipmentInstance, QualityId } from '@/types'
@@ -131,13 +131,13 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
   it('行囊满时,保留下来的新件仍按老规矩腾退包内无缘旧件', () => {
     useSettingsStore().smartKeep.enabled = true
     const inventory = useInventoryStore()
-    // 塞满 120 件凡品(老规矩积压的垃圾)
-    for (let i = 0; i < 120; i += 1) inventory.addEquipment(mk('mortal'))
+    // 塞满至 BAG_CAPACITY 件凡品(老规矩积压的垃圾);容量常量变更时此处同源跟随
+    for (let i = 0; i < BAG_CAPACITY; i += 1) inventory.addEquipment(mk('mortal'))
     expect(inventory.bagFull).toBe(true)
     const keep = mk('spirit')
     acquireEquipment(keep)
     expect(bagUids()).toContain(keep.uid)
-    expect(inventory.items.length).toBeLessThanOrEqual(120)
+    expect(inventory.items.length).toBeLessThanOrEqual(BAG_CAPACITY)
   })
 
   it('回收裁决无随机性:同件装备重复判定结果一致(在线/离线一致的基础)', () => {
