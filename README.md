@@ -39,7 +39,7 @@
 ### 与上游同步
 
 - 分叉基线：上游 `v1.35.0` 的 `b6f6b39`（2026-09-20）。
-- 截至 2026-09-28：本 fork 自基线有 13 个提交；上游 `main` 已前进到 `d44aae8`，另有 70 个提交尚未合并。
+- 截至 2026-09-28：本 fork 自基线有 14 个提交；上游 `main` 已前进到 `94f5717`，另有 80 个提交尚未合并。
 - 同步上游时，以下区域存在重叠，需要手工合并或取舍：
   - **洞府 / 灵脉** —— 上游这一带改动密集（折叠面板 a11y、纪要卡重排、灵脉进度条、四脉配色等，`d44aae8` 至 `fdc3cbb` 一批），且部分提交明确写着「主脉行套脉色描边」。本 fork 已在 `81aa287` 撤除主脉，合并时这些 UI 提交需按无主脉重做，不能直接取用。
   - **行囊 / 智能收纳** —— 上游 `f7ed4c3`、`5dbc4e1` 改的是智能收纳弹窗；本 fork 已把行囊容量扩到 3000 并加了 60 件/页的分页，两者要一起看。
@@ -174,7 +174,7 @@ docker run -d -p 8080:80 yunyin-xiuxian
 | Vue 3           | 3.5   | 组合式 API + `<script setup>`               |
 | TypeScript      | 6.0   | strict 严格类型检查                         |
 | Vite            | 8     | 构建与开发服务器（legacy 插件兜旧 WebView） |
-| Pinia           | 3     | 状态管理（14 个 store，自动持久化）         |
+| Pinia           | 3     | 状态管理（15 个 store，自动持久化）         |
 | Tailwind CSS    | 3.4   | 水墨色系语义色与暗色主题                    |
 | Vue Router      | 4     | 客户端路由（hash 模式）                     |
 | Tone.js         | 15    | FluidR3 乐器采样播放（BGM + SFX）           |
@@ -194,8 +194,9 @@ src/
 │   ├── enemies.ts            # 132 敌人
 │   ├── equipment.ts          # 288 装备模板(一阶一名)
 │   ├── affixes.ts            # 113 词条
-│   ├── gongfa.ts             # 46 功法
-│   ├── gongfaBranches.ts     # 107 悟道分支
+│   ├── gongfa.ts             # 63 功法
+│   ├── gongfaBranches.ts     # 141 悟道分支
+│   ├── pets.ts               # 14 灵兽
 │   ├── pills.ts              # 50 丹药
 │   ├── artifacts.ts          # 45 法宝
 │   ├── souls.ts              # 6 类 6 阶器魂
