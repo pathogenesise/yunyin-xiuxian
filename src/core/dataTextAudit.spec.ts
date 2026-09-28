@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cnNumber } from '@/utils/format'
 import { REALMS, WORLDS, ascensionLeap } from '@/data/realms'
-import { VEIN_MAIN_CAPACITY } from '@/data/constants'
+
 import { BUILD_PROFILES } from '@/core/buildSim'
 import { HEXAGRAMS, TRIGRAMS } from '@/data/yijing'
 import { PALACES, STARS } from '@/data/ziwei'
@@ -279,7 +279,7 @@ describe('文案数值对账 · 视图不手抄数量', () => {
 /**
  * 手写的门槛与容量 —— 数字的另一种写法:阿拉伯数字 + 单位。
  *
- * 「主脉可投 70 点」「可行流派 3/6」这类句子里的数字同样是抄的,只是长得不像
+ * 「炼器脉可投 200 点」「可行流派 3/6」这类句子里的数字同样是抄的,只是长得不像
  * 「二十一境」那样明显。它们抄的是**另一张表**(容量常数、构筑流派数),
  * 而这张表正是最常被调的东西 —— 调完数值,句子还在说旧数。
  */
@@ -290,18 +290,20 @@ describe('文案数值对账 · 手写的门槛与容量', () => {
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '')
 
-  it('灵脉卡的自陈数字取自 constants,且不再宣称存在总容量或副脉上限', () => {
-    expect(VEIN_MAIN_CAPACITY).toBe(70)
+  it('灵脉卡的上限读 veinCap(判据本体),不手写点数', () => {
     const card = src('../components/dongfu/VeinInvestCard.vue')
-    expect(card, '主脉上限应读 constants').toContain('VEIN_MAIN_CAPACITY')
-    for (const hand of ['70 点', '30 点', '总容量 100', '副脉各30']) {
-      expect(card, `手抄的「${hand}」应改成读常数或删掉`).not.toContain(hand)
+    expect(card, '上限应读 veinCap(与 investVein 同一处)').toContain('veinCap(')
+    for (const hand of ['70 点', '30 点', '总容量 100', '副脉各30', '主脉']) {
+      expect(card, `手抄的「${hand}」应改成读上限判据或删掉`).not.toContain(hand)
     }
-    expect(card, '总投入与副脉均不设上限时不能再写 /VEIN_TOTAL_CAPACITY').not.toContain('VEIN_TOTAL_CAPACITY')
+    expect(card, '主脉已撤,不能再写 VEIN_MAIN_CAPACITY').not.toContain('VEIN_MAIN_CAPACITY')
   })
 
-  it('灵脉只有主脉上限,副脉与总投入均不限', () => {
-    expect(VEIN_MAIN_CAPACITY).toBeGreaterThan(0)
+  it('灵脉上限来自效果本身的数值上限,不在灵脉侧另设', () => {
+    const veins = src('../data/veins.ts')
+    expect(veins, '上限应读 VEIN_EFFECT_CAPS').toContain('VEIN_EFFECT_CAPS')
+    // 四条脉的 capKey 各自接同一条上限;修炼速度没有硬上限故为 null
+    expect(veins).toContain('capKey: null')
   })
 
   it('「可行流派 x/N」的分母取自 BUILD_PROFILES(界面与生态健康度同源)', () => {

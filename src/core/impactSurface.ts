@@ -23,7 +23,7 @@ import {
   legacyInsightOf,
   stageAt
 } from '@/data/samsara'
-import { REINCARNATE_APTITUDE_FLOOR, VEIN_MAIN_CAPACITY } from '@/data/constants'
+import { REINCARNATE_APTITUDE_FLOOR } from '@/data/constants'
 import { TALENTS } from '@/data/talents'
 import { MANUAL_REBIRTH_MIN_MAJOR } from './reincarnation'
 
@@ -270,12 +270,16 @@ export function veinTotalOf(p: SaveProbe): number {
   return Object.values(p.veins).reduce((a, b) => a + b, 0)
 }
 
-/** 单条脉的最高投点 —— 用来看主脉机制有没有被真正使用 */
+/** 单条脉的最高投点 —— 用来看「立主脉深投」这条旧设计有没有被真正使用 */
 export function veinPeakOf(p: SaveProbe): number {
   return Math.max(...Object.values(p.veins))
 }
 
-/** 历史快照中的副脉上限 30;当前副脉已取消单条上限 */
+/**
+ * 历史快照中的副脉上限 30(旧规则:主脉 70、副脉各 30、总 100)。
+ * 2026-09-27 起主脉/副脉之分已撤,当前改成「上限 = 效果本身的数值上限」,
+ * 这条判据随之成为历史观察:玩家当初有没有真的把点数压在一条脉上。
+ */
 const LEGACY_VEIN_SIDE_CAP = 30
 
 /** 两份存档的平均先天之姿饱和度 */
@@ -317,9 +321,12 @@ export function verdictOf(a: LegacyAsset): LegacyVerdict {
   return a.touchedByRebirth ? 'thisLife' : 'heritage'
 }
 
-/** 主脉机制是否在旧存档中被真实玩家用过(旧规则单脉投点超过 30 即视为立过主脉) */
+/**
+ * 旧「立主脉深投」是否真被用过:旧规则下单脉投点超过 30(旧副脉上限)即视为立过主脉。
+ * 主脉机制已于 2026-09-27 撤除,此判据留作历史观察,不再驱动任何现行规则。
+ */
 export function mainVeinEverUsed(): boolean {
   return PROBES.some(p => veinPeakOf(p) > LEGACY_VEIN_SIDE_CAP)
 }
 
-export { VEIN_MAIN_CAPACITY, SAMSARA_STAGES, stageAt }
+export { SAMSARA_STAGES, stageAt }

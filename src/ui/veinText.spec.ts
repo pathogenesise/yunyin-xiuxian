@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { VEINS } from '@/data/veins'
-import { INSIGHT_DISCOUNT_PER_POINT, INSIGHT_EFFECT_NAME } from '@/data/veins'
+import { VEINS, INSIGHT_DISCOUNT_PER_POINT, INSIGHT_EFFECT_NAME, VEIN_EFFECT_CAPS } from '@/data/veins'
 import { formatPercent } from '@/utils/format'
 import { STAT_NAMES } from './statNames'
-import {
-  veinEffectText,
-  veinPeakToast,
-  veinShortToast,
-  veinSwitchDoneToast,
-  veinSwitchShortToast
-} from './veinText'
+import { effectiveVeinPoints, veinEffectText, veinPeakToast, veinShortToast } from './veinText'
 import type { AnyStatKey } from '@/types'
 
 describe('灵脉效果行与每点加成同源', () => {
@@ -31,14 +24,27 @@ describe('灵脉效果行与每点加成同源', () => {
     expect(veinEffectText(insight, 1)).not.toContain('双成')
     expect(veinEffectText(insight, 1)).not.toContain('耗材')
   })
+
+  it('超上限的读数封顶:超过硬线后不再往上报', () => {
+    const alchemy = VEINS.find(v => v.id === 'alchemy')!
+    const cap = Math.floor(VEIN_EFFECT_CAPS.alchemyYield / 0.005)
+    expect(effectiveVeinPoints('alchemy', cap)).toBe(cap)
+    expect(veinEffectText(alchemy, cap)).toContain(formatPercent(VEIN_EFFECT_CAPS.alchemyYield))
+    // 超投之后读数与到顶时逐字相同
+    expect(veinEffectText(alchemy, cap * 4)).toBe(veinEffectText(alchemy, cap))
+    expect(effectiveVeinPoints('alchemy', cap * 4)).toBe(cap)
+
+    // 修炼速度没有硬上限 ⇒ 不封顶
+    expect(effectiveVeinPoints('gather', 9999)).toBe(9999)
+  })
 })
 
-describe('灵脉投点提示 · 文言仍报清主副与灵石', () => {
-  it('单脉圆满、缺石、改立,不说不足', () => {
-    expect(veinPeakToast()).toContain('主脉')
+describe('灵脉投点提示 · 文言报清到顶与灵石', () => {
+  it('到顶、缺石,不说不足', () => {
+    expect(veinPeakToast('玉髓灵脉')).toContain('玉髓灵脉')
+    expect(veinPeakToast('玉髓灵脉')).toContain('不再增')
+    expect(veinPeakToast()).not.toContain('主脉')
     expect(veinShortToast()).toContain('灵石')
     expect(veinShortToast()).not.toContain('不足')
-    expect(veinSwitchShortToast()).toContain('迁脉')
-    expect(veinSwitchDoneToast('聚灵')).toBe('主脉改立「聚灵」')
   })
 })

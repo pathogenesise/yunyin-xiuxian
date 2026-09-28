@@ -6,6 +6,7 @@ import type { VeinId } from '@/data/veins'
 import { persistConfig } from '@/utils/storage'
 import { BUILDINGS, buildingDef, ARRAY_QI_CAP_PER_LEVEL, BEAST_EFFECT_PER_LEVEL } from '@/data/buildings'
 import { INSIGHT_DISCOUNT_PER_POINT, VEINS } from '@/data/veins'
+import { effectiveVeinPoints } from '@/ui/veinText'
 import {
   FIELD_HERB_PER_HOUR,
   FIELD_ORE_PER_HOUR,
@@ -30,8 +31,12 @@ export const useDongfuStore = defineStore(
     })
     /** 产出小数累积器 */
     const frac = ref({ herb: 0, ore: 0, wudao: 0 })
-    /** Phase 30.3 灵脉:主脉方向 + 各脉已投点数 */
-    const veinMain = ref<VeinId | null>(null)
+    /**
+     * Phase 30.3 灵脉:各脉已投点数(2026-09-27 起四条脉平级,不再有主脉/副脉)
+     *
+     * 旧存档里还留着一个 veinMain 字段,读档后无人引用,故不再维护;
+     * 它留在存档里也只是几个字节,不做迁移清理。
+     */
     const veinPoints = ref<Record<VeinId, number>>({ gather: 0, craft: 0, alchemy: 0, insight: 0 })
 
     const buildingMods = computed<StatMods>(() => {
@@ -43,11 +48,17 @@ export const useDongfuStore = defineStore(
       return mergeMods(sources)
     })
 
-    /** 灵脉属性加成(悟道脉走参悟折扣,不入 mods) */
+    /**
+     * 灵脉属性加成(悟道脉走参悟折扣,不入 mods)
+     *
+     * 超出**效果上限**的那部分不计数值:每条脉实际生效的点数
+     * 由 effectiveVeinPoints 按 VEIN_EFFECT_CAPS 折算(见 core/veinService.veinCap)。
+     * 没有硬上限的效果(修炼速度)原样计入。
+     */
     const veinMods = computed<StatMods>(() => {
       const out: StatMods = {}
       for (const def of VEINS) {
-        const pts = veinPoints.value[def.id] ?? 0
+        const pts = effectiveVeinPoints(def.id, veinPoints.value[def.id] ?? 0)
         if (pts <= 0) continue
         for (const k in def.perPoint) {
           const key = k as keyof StatMods
@@ -57,8 +68,8 @@ export const useDongfuStore = defineStore(
       return out
     })
 
-    /** 悟道脉参悟折扣(0~) */
-    const insightDiscount = computed(() => (veinPoints.value.insight ?? 0) * INSIGHT_DISCOUNT_PER_POINT)
+    /** 悟道脉参悟折扣(0~);同样受 VEIN_EFFECT_CAPS.insightDiscount 封顶 */
+    const insightDiscount = computed(() => effectiveVeinPoints('insight', veinPoints.value.insight ?? 0) * INSIGHT_DISCOUNT_PER_POINT)
 
     /** 灵脉已投总点数 */
     const veinTotal = computed(() => Object.values(veinPoints.value).reduce((a, b) => a + b, 0))
@@ -113,10 +124,6 @@ export const useDongfuStore = defineStore(
       veinPoints.value = { ...veinPoints.value, [id]: (veinPoints.value[id] ?? 0) + n }
     }
 
-    function setVeinMain(id: VeinId): void {
-      veinMain.value = id
-    }
-
     /**
      * 转世:洞府与地脉都是「外物」,随皮囊一同散去 —— 建筑归零、灵脉清零。
      * 留下的只有认知与宿慧(见 core/reincarnation 的继承清单)。
@@ -126,7 +133,6 @@ export const useDongfuStore = defineStore(
       for (const def of BUILDINGS) nextLevels[def.id] = 0
       levels.value = nextLevels
       frac.value = { herb: 0, ore: 0, wudao: 0 }
-      veinMain.value = null
       veinPoints.value = { gather: 0, craft: 0, alchemy: 0, insight: 0 }
     }
 
@@ -154,7 +160,6 @@ export const useDongfuStore = defineStore(
     return {
       levels,
       frac,
-      veinMain,
       veinPoints,
       buildingMods,
       veinMods,
@@ -170,7 +175,6 @@ export const useDongfuStore = defineStore(
       beastMult,
       setLevel,
       addVeinPoint,
-      setVeinMain,
       resetForRebirth,
       produce,
       sanitize

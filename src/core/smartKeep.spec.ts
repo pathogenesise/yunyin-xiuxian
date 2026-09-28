@@ -110,9 +110,10 @@ describe('智能收纳 · 自动裁决的边界', () => {
     inventory.addEquipment(mk('lv', 'mortal', { level: 9, tier: 20 })) // 练过的,不可动
     inventory.addEquipment(mk('low_tier', 'mortal', { tier: 1 }))
     inventory.addEquipment(mk('mid_tier', 'mortal', { tier: 2 }))
-    for (let i = 0; inventory.bagItems.length < BAG_CAPACITY; i += 1) {
-      inventory.addEquipment(mk(`f${i}`, 'mortal', { tier: 8 }))
-    }
+    // 塞满到 BAG_CAPACITY:行囊已是 3000 件量级,逐件 addEquipment 会走 3000 次响应式,
+    // 测试环境直接超时,故一次性摆好(与存档读回后的形状一致)
+    const filler = Array.from({ length: BAG_CAPACITY - 3 }, (_, i) => mk(`f${i}`, 'mortal', { tier: 8 }))
+    inventory.items = [...inventory.items, ...filler]
     const incoming = mk('in', 'profound', { tier: 9 })
     acquireEquipment(incoming)
     expect(inventory.findItem('lv'), '练过的件被挤掉了').toBeDefined()

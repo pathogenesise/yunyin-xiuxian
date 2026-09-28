@@ -131,8 +131,9 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
   it('行囊满时,保留下来的新件仍按老规矩腾退包内无缘旧件', () => {
     useSettingsStore().smartKeep.enabled = true
     const inventory = useInventoryStore()
-    // 塞满至 BAG_CAPACITY 件凡品(老规矩积压的垃圾);容量常量变更时此处同源跟随
-    for (let i = 0; i < BAG_CAPACITY; i += 1) inventory.addEquipment(mk('mortal'))
+    // 塞满至 BAG_CAPACITY 件凡品(老规矩积压的垃圾);容量常量变更时此处同源跟随。
+    // 一次性摆好而不是逐件 addEquipment:行囊 3000 件量级,逐件入包会把测试拖到超时
+    inventory.items = Array.from({ length: BAG_CAPACITY }, () => mk('mortal'))
     expect(inventory.bagFull).toBe(true)
     const keep = mk('spirit')
     acquireEquipment(keep)

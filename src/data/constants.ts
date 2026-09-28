@@ -258,9 +258,8 @@ export const SOFT_CAPS: Partial<Record<import('@/types').AnyStatKey, { cap: numb
 }
 
 // ============ Phase 30.3 洞府灵脉投资 ============
-/** 主脉容量(独占) */
-export const VEIN_MAIN_CAPACITY = 70
-/** 副脉不设单条上限;只受灵石成本约束 */
+// 不再有主脉/副脉之分(2026-09-27):四条脉平级,每条都可长期投资。
+// 上限改由**效果本身的数值上限**决定,见 data/veins 的 VEIN_EFFECT_CAPS。
 /** 每点投资灵石倍率(stoneByTier 按玩家层级) */
 export const VEIN_POINT_STONE = 25
 /** 灵脉开放境界(金丹) */

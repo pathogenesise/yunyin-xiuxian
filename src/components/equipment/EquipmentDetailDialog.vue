@@ -84,16 +84,13 @@
               {{ line.before }}<span class="tabular font-medium text-ink">{{ line.value }}</span>{{ line.after }}
             </span>
             <button
-              v-if="canSealAffix(line.id)"
-              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
-              :aria-label="`封存词条${line.name}`"
-              @click="doSealAffix(line.id)"
+              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] active:scale-90 active:opacity-60"
+              :class="isAffixLocked(line.id) ? 'text-jade' : 'text-azure'"
+              :aria-label="`${isAffixLocked(line.id) ? '解锁' : '锁定'}词条${line.name}`"
+              @click="doToggleAffixLock(line.id)"
             >
-              封存
+              {{ isAffixLocked(line.id) ? '已锁' : '锁定' }}
             </button>
-            <span v-else-if="isAffixSealed(line.id)" class="shrink-0 text-jade" role="img" aria-label="这条词条已封存">
-              <GameIcon name="lock" :size="12" />
-            </span>
           </li>
         </ul>
         <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
@@ -169,8 +166,8 @@
     </div>
     <template #footer>
       <div class="flex flex-col gap-2">
-        <!-- 重铸与封存 (Phase 30.1) -->
-        <template v-if="reforgeCostVal || sealCostVal">
+        <!-- 重铸与词条锁定 (Phase 30.1) -->
+        <template v-if="reforgeCostVal || lockableLeft > 0">
           <div class="flex gap-2 text-[11px]">
             <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-1" @click="doReforge">
               重铸词条
@@ -178,25 +175,29 @@
                 {{ formatGN(reforgeCostVal.stone) }} · 尘×{{ reforgeCostVal.dust }}
               </span>
             </button>
-            <div v-if="sealCostVal" class="flex flex-1 items-center justify-center rounded-md border border-azure/20 bg-azure/5 px-2 py-1 text-azure">
-              封存一词 {{ formatGN(sealCostVal) }}
+            <div
+              v-if="lockableLeft > 0"
+              class="flex flex-1 items-center justify-center rounded-md border border-azure/20 bg-azure/5 px-2 py-1 text-azure"
+            >
+              锁定一词 {{ formatGN(lockCostVal) }}
             </div>
           </div>
           <!--
-            重铸到底做什么,得在按下之前说清:条数与数值一并重掷(封存的不动),
-            不限次数、成本只随「阶数」与「封存数」走 —— 与旧版"越洗越贵、上限十次"不同。
+            重铸到底做什么,得在按下之前说清:条数与数值一并重掷(锁定的不动),
+            不限次数、成本只随「阶数」与「锁定数」走 —— 与旧版"越洗越贵、上限十次"不同。
           -->
           <p v-if="reforgeCostVal" class="text-center text-[10px] leading-relaxed text-ink-faint">
-            重掷未封存的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,封存的不动 · 不限次数,成本随阶数与封存数走
+            重掷未锁定的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,锁定的不动 · 不限次数,成本随阶数与锁定数走
           </p>
           <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
-            已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ sealCapacity(inst) }}
+            已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已锁定 {{ (inst.sealedAffixIds ?? []).length }}/{{ inst.affixes.length }}
+            <span class="ml-1">· 再点「已锁」即解锁,不另计灵石</span>
           </p>
         </template>
         <div class="flex gap-2">
           <button class="btn-seal flex-1" @click="toggleEquip">{{ isEquipped ? '卸 下' : '装 备' }}</button>
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
-          <!-- 分解二步确认:一件淬养过的装备(强化/封存/重铸)误触垃圾桶不该直接没 -->
+          <!-- 分解二步确认:一件淬养过的装备(强化/词条锁定/重铸)误触垃圾桶不该直接没 -->
           <template v-if="decomposeArm !== inst?.uid">
             <button
               class="btn-ghost px-3"
@@ -231,11 +232,11 @@
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
-  import { reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost } from '@/core/reforge'
+  import { reforgeEquipment, reforgeCost, toggleAffixLock, lockCapacity, lockCost } from '@/core/reforge'
   import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
   import { formatGN } from '@/utils/format'
-  import { isZero, sub } from '@/utils/gnum'
+  import { isZero, sub, gnZero } from '@/utils/gnum'
   import type { AnyStatKey, GNum } from '@/types'
   import { AFFIX_RARITY_META, STAT_NAMES, statValueText } from '@/ui/statNames'
   import { equipNextLevelText } from '@/ui/equipText'
@@ -268,23 +269,22 @@
     return { def, count, active: count >= def.required }
   })
 
-  // ---- 重铸与封存 (Phase 30.1) ----
+  // ---- 重铸与词条锁定 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))
-  const sealCostVal = computed(() => (inst.value ? sealCost(inst.value) : null))
+  /** 锁定一词的当前价(第 n 条 = 基础 × n);已全部锁定时不再显示 */
+  const lockCostVal = computed(() => (inst.value ? lockCost(inst.value) : gnZero()))
+  /** 还能再锁几条:不强制留可重掷位,故 = 词条数 − 已锁定数 */
+  const lockableLeft = computed(() => (inst.value ? lockCapacity(inst.value) : 0))
   /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
   const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
   const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))
 
-  function isAffixSealed(affixId: string): boolean {
+  function isAffixLocked(affixId: string): boolean {
     return (inst.value?.sealedAffixIds ?? []).includes(affixId)
   }
 
-  function canSealAffix(affixId: string): boolean {
-    return inst.value !== undefined && sealCostVal.value !== null && !isAffixSealed(affixId)
-  }
-
-  function doSealAffix(affixId: string): void {
-    if (inst.value) sealAffix(inst.value.uid, affixId)
+  function doToggleAffixLock(affixId: string): void {
+    if (inst.value) toggleAffixLock(inst.value.uid, affixId)
   }
 
   function doReforge(): void {

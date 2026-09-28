@@ -14,7 +14,6 @@ import {
   LEGACY_ASSETS,
   PROBES,
   SAMSARA_STAGES,
-  VEIN_MAIN_CAPACITY,
   aptitudeBinding,
   mainVeinEverUsed,
   migrationGap,
@@ -215,16 +214,16 @@ describe('影响面 · 灵脉与先天之姿的存量处理', () => {
     )
   })
 
-  it('意外发现:主脉机制从未被真实玩家用过', () => {
-    // 历史快照中副脉上限为 30；当前副脉已取消单条上限，但旧存档的单条峰值仍为 30
+  it('意外发现:「立主脉深投」从未被真实玩家用过', () => {
+    // 历史快照中副脉上限为 30;主脉机制已于 2026-09-27 撤除,此判据留作历史观察
     expect(mainVeinEverUsed()).toBe(false)
     for (const p of PROBES) {
       expect(veinPeakOf(p)).toBeLessThanOrEqual(30)
     }
     console.log(
-      `\n历史主脉上限 ${VEIN_MAIN_CAPACITY}、副脉上限 30,但两份存档的单条峰值都只有 ` +
+      `\n旧规则主脉上限 70、副脉上限 30,但两份存档的单条峰值都只有 ` +
         `${PROBES.map(p => veinPeakOf(p)).join('、')} —— 玩家一律平铺四条副脉,` +
-        `\n「立主脉深投」这条设计在真实行为里不存在。收窄灵脉时若指望主脉承载深修差异,前提不成立`
+        `\n「立主脉深投」这条设计在真实行为里不存在`
     )
   })
 

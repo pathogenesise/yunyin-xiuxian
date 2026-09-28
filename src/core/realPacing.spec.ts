@@ -70,8 +70,8 @@ function realSecondsForMajor(major: number, kind: 'bare' | 'max'): number {
     cul.equipMain(mainId)
     for (const id of subIds) cul.toggleSub(id, 7)
     for (const b of BUILDINGS) dongfu.setLevel(b.id, b.maxLevel)
+    // 青木灵脉(修炼速度)没有效果上限,故可长期投;此处取旧版的 70 点作中档构筑
     dongfu.veinPoints = { gather: 70, craft: 0, alchemy: 0, insight: 0 }
-    dongfu.veinMain = 'gather'
   } else {
     // 裸档:无 kit、无灵根加成
     player.linggen = { roots: [{ element: 'wood', aptitude: 60 }], gradeName: '单灵根', growthMult: 1 }

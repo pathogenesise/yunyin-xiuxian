@@ -76,7 +76,6 @@ describe('player.rebirth 转世状态重置', () => {
     p.setPet('pet_yueying')
     dongfu.setLevel('field', 8)
     dongfu.setLevel('library', 6)
-    dongfu.setVeinMain('gather')
     dongfu.addVeinPoint('gather', 30)
     dongfu.addVeinPoint('insight', 12)
 
@@ -85,7 +84,6 @@ describe('player.rebirth 转世状态重置', () => {
     expect(p.petId, '灵兽应随皮囊散去').toBeNull()
     expect(dongfu.levels.field, '洞府建筑应归零').toBe(0)
     expect(dongfu.levels.library).toBe(0)
-    expect(dongfu.veinMain, '灵脉主脉应清空').toBeNull()
     expect(Object.values(dongfu.veinPoints).every(v => v === 0), '灵脉投点应清零').toBe(true)
   })
 })
