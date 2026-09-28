@@ -189,11 +189,17 @@
           <p v-if="reforgeCostVal" class="text-center text-[10px] leading-relaxed text-ink-faint">
             重掷未锁定的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,锁定的不动 · 不限次数,成本随阶数与锁定数走
           </p>
-          <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
-            已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已锁定 {{ (inst.sealedAffixIds ?? []).length }}/{{ inst.affixes.length }}
-            <span class="ml-1">· 再点「已锁」即解锁,不另计灵石</span>
-          </p>
         </template>
+        <!--
+          状态行独立于上面的按钮区:「已锁满」时按钮区整体隐去(无可洗、无可锁),
+          但玩家恰恰最需要看见"解锁一条即可再洗"这句话 —— 它若跟着一起消失,
+          锁满这一件就变成一个没有出路的死结,比改之前更难懂。
+        -->
+        <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
+          已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已锁定 {{ lockedCount }}/{{ affixCap }}(品质上限)
+          <span v-if="lockedCount < affixCap" class="ml-1">· 未锁满仍可重铸,再点「已锁」即解锁且不另计灵石</span>
+          <span v-else class="ml-1">· 已锁满,解锁一条即可再洗</span>
+        </p>
         <div class="flex gap-2">
           <button class="btn-seal flex-1" @click="toggleEquip">{{ isEquipped ? '卸 下' : '装 备' }}</button>
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
@@ -275,6 +281,8 @@
   const lockCostVal = computed(() => (inst.value ? lockCost(inst.value) : gnZero()))
   /** 还能再锁几条:不强制留可重掷位,故 = 词条数 − 已锁定数 */
   const lockableLeft = computed(() => (inst.value ? lockCapacity(inst.value) : 0))
+  /** 已锁定条数:与「品质上限」比,满即洗不动 */
+  const lockedCount = computed(() => (inst.value ? (inst.value.sealedAffixIds ?? []).length : 0))
   /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
   const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
   const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))

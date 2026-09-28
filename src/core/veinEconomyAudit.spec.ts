@@ -152,12 +152,10 @@ describe('Phase 30.5:装备重铸成本审计(机制已实现,行为验证)', ()
   })
 
   it('成本随锁定数线性上浮:每锁定一条 +REFORGE_SEAL_LOAD', () => {
-    const one = reforgeCost({ ...base, affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }], sealedAffixIds: ['atk1'] })!
-    const two = reforgeCost({
-      ...base,
-      affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }],
-      sealedAffixIds: ['atk1', 'def1']
-    })!
+    // 用地品(上限 6)做底:凡品上限只有 1,锁两条就撞满上限,根本报不出价来
+    const eq: EquipmentInstance = { ...base, quality: 'earth', affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }] }
+    const one = reforgeCost({ ...eq, sealedAffixIds: ['atk1'] })!
+    const two = reforgeCost({ ...eq, sealedAffixIds: ['atk1', 'def1'] })!
     expect(stoneOf(two.stone) / stoneOf(one.stone)).toBeCloseTo(
       (1 + 2 * REFORGE_SEAL_LOAD) / (1 + REFORGE_SEAL_LOAD),
       6
@@ -172,18 +170,43 @@ describe('Phase 30.5:装备重铸成本审计(机制已实现,行为验证)', ()
 
   it('「暴力洗完美」的刹车换到了别处:高阶层 + 锁定溢价,而不是次数', () => {
     // 同一件锁了三条的 20 阶装备,单次重铸要比 3 阶未锁定的贵出几个数量级 ——
-    // 玩家想一直洗下去,付的是"这件有多高阶、我保住了几条"的钱
-    const cheap = stoneOf(reforgeCost({ ...base, tier: 3 })!.stone)
+    // 玩家想一直洗下去,付的是"这件有多高阶、我保住了几条"的钱。
+    // 品质要用地品(上限 6):base 是凡品,上限只有 1,锁三条直接撞满、连价都报不出来。
     const dear = stoneOf(
       reforgeCost({
         ...base,
         tier: 20,
+        quality: 'earth',
         affixes: [...base.affixes, { id: 'hp1', roll: 0.5 }, { id: 'crit1', roll: 0.5 }, { id: 'luck1', roll: 0.5 }],
         sealedAffixIds: ['atk1', 'def1', 'hp1']
       })!.stone
     )
+    const cheap = stoneOf(reforgeCost({ ...base, tier: 3 })!.stone)
     console.log(`\n  3 阶未锁定 ${cheap.toExponential(2)} → 20 阶锁定三条 ${dear.toExponential(2)}(×${(dear / cheap).toFixed(0)})`)
     expect(dear / cheap).toBeGreaterThan(1000)
+  })
+
+  it('锁满品质条数上限才洗不动 —— 判据是「锁定数 vs 上限」,不是「还剩几条没锁」', () => {
+    // 回归:旧判据按「未锁定词条数」算,于是天品(上限 7)锁 6 条的件按钮直接消失,
+    // 玩家看着一堆锁好的词条却没法接着洗。锁定是保护,不是封禁。
+    const heaven: EquipmentInstance = {
+      ...base,
+      uid: 'u3',
+      quality: 'heaven', // 4~7 条
+      tier: 20,
+      affixes: [
+        { id: 'atk1', roll: 0.5 },
+        { id: 'def1', roll: 0.5 },
+        { id: 'hp1', roll: 0.5 },
+        { id: 'crit1', roll: 0.5 },
+        { id: 'atk2', roll: 0.5 },
+        { id: 'def2', roll: 0.5 }
+      ],
+      sealedAffixIds: ['atk1', 'def1', 'hp1', 'crit1', 'atk2', 'def2']
+    }
+    expect(reforgeCost(heaven), '6 条全锁但上限 7,仍可重铸').not.toBeNull()
+    const full = { ...heaven, affixes: [...heaven.affixes, { id: 'hp2', roll: 0.5 }], sealedAffixIds: [...heaven.affixes.map(a => a.id), 'hp2'] }
+    expect(reforgeCost(full), '锁满 7 条才洗不动').toBeNull()
   })
 })
 

@@ -2,9 +2,12 @@
  * 装备重铸与词条锁定
  *
  * 灵石的长期 sink,直接连接 Build:
- * - **重铸**:把**未锁定**的词条推倒重来 —— 条数按品质区间重掷(至少给一条新的),
+ * - **重铸**:把**未锁定**的词条推倒重来 —— 条数按品质区间重掷(锁定数为保底),
  *   数值全部重掷;品质、阶数、强化等级都不动。**不限次数**。
  * - **锁定**:付费锁定一个词条,重铸不会碰它;再点一次即可解锁(不再退灵石)。
+ *
+ * **何时洗不动**:锁定数达到该品质的词条条数上限为止。锁定只是保护,不是封禁 ——
+ * 上限 7 条的装备锁了 6 条,第 7 条还没锁,就仍可继续重掷那一条。
  *
  * 成本只与**装备阶数**和**锁定数**挂钩(见 data/constants 的注释):
  * 想保住好词条就得付溢价 —— 「洗得越多越贵」由「你保护了多少」表达,
@@ -44,26 +47,32 @@ export interface ReforgeCost {
 }
 
 /**
+ * 装备的词条条数上限 —— 唯一口径,重铸判据与界面读数都走它。
+ * 取品质区间的上界(qualities 里的规则:上限 = rank + 1)。
+ */
+export function reforgeAffixCap(inst: EquipmentInstance): number {
+  return qualityDef(inst.quality).affixes[1]
+}
+
+/**
  * 重铸成本:灵石 = stoneByTier(阶数) × (1 + 锁定数 × REFORGE_SEAL_LOAD);
  * 器灵尘 = REFORGE_DUST_BASE × (1 + 锁定数)。
  *
  * 没有次数项,也没有上限:同一件、同一锁定数,第一次与第两百次一个价。
- * 无可重铸余地(全锁定)时返回 null —— 这是唯一的"不能再炼"。
+ *
+ * 何时不能再炼:**锁定数已达该品质的词条条数上限**。
+ * 这不是「还有没有未锁定的词条」——锁定是保护,不是封禁。一件天品上限 7 条,
+ * 锁了 6 条、另 1 条是上次重掷出来还没锁的,就该还能接着洗(玩家最自然的一句疑问
+ * 就是这个);只有把 7 条全锁满,才真的洗不动了。
  */
 export function reforgeCost(inst: EquipmentInstance): ReforgeCost | null {
-  if (reforgeableAffixIds(inst).length === 0) return null
+  if ((inst.sealedAffixIds ?? []).length >= reforgeAffixCap(inst)) return null
   const locked = (inst.sealedAffixIds ?? []).length
   const load = 1 + locked * REFORGE_SEAL_LOAD
   return {
     stone: stoneByTier(inst.tier, REFORGE_STONE_BASE * load),
     dust: Math.round(REFORGE_DUST_BASE * load)
   }
-}
-
-/** 可被重铸(未锁定)的词条 id 列表 */
-export function reforgeableAffixIds(inst: EquipmentInstance): string[] {
-  const locked = new Set(inst.sealedAffixIds ?? [])
-  return inst.affixes.map(a => a.id).filter(id => !locked.has(id))
 }
 
 /**
@@ -149,8 +158,12 @@ export function reforgeEquipment(uid: string): boolean {
   resources.spendStone(cost.stone)
   resources.spendSmall('dust', cost.dust)
 
-  // 条数:品质区间内重掷,但不低于「锁定数 + 1」(总得留一条新的给它重掷)
-  const wantCount = Math.max(kept.length + 1, Math.min(maxCount, rng.int(minCount, maxCount)))
+  // 条数:品质区间内重掷,但以「锁定数」保底 —— 锁住的几条永远不会被掷掉。
+  // 注意这里**不**再 +1 抬下限:「锁定数 + 1」是旧判据(全锁即禁洗)的配套物,
+  // 用来保证「每次至少有一条新的可洗」。判据换成「锁定数 < 品质上限」之后,
+  // 若还按锁定数 + 1 掷,天品锁 6 条会被强制掷到 7 条 —— 于是每次点重铸必涨一条,
+  // 涨满上限 7 就再也不能洗(7 < 7 为假),玩家平白丢掉了「维持 6 条只换数值」的能力。
+  const wantCount = Math.max(kept.length, Math.min(maxCount, rng.int(minCount, maxCount)))
   const used = new Set([...kept.map(a => a.id)])
   const fresh: { id: string; roll: number }[] = []
   let guard = 0
