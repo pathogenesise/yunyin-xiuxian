@@ -1,7 +1,7 @@
 /* eslint-disable no-console -- Phase 30.5 灵脉与重铸经济审计 */
 import { describe, expect, it } from 'vitest'
 import { REFORGE_SEAL_LOAD, STONE_TIER_GROWTH, VEIN_POINT_STONE } from '@/data/constants'
-import { VEINS, VEIN_EFFECT_CAPS } from '@/data/veins'
+import { VEINS, VEIN_EFFECT_CAPS, veinDef } from '@/data/veins'
 import { veinEffectText } from '@/ui/veinText'
 import { veinCap } from './veinService'
 import { reforgeCost } from './reforge'
@@ -23,7 +23,7 @@ import type { EquipmentInstance } from '@/types'
  */
 
 describe('灵脉投资与重铸经济审计', () => {
-  it('四条脉平级:有硬上限的效果按上限折算点数,没有的视作无上限', () => {
+  it('各脉平级:有硬上限的效果按上限折算点数,没有的视作无上限', () => {
     console.log('\n—— 灵脉投资上限设计(上限 = 效果本身的极限)——')
     let capped = 0
     for (const def of VEINS) {
@@ -35,9 +35,11 @@ describe('灵脉投资与重铸经济审计', () => {
       capped += 1
       console.log(`  ${def.name}: ${cap} 点即至 ${(VEIN_EFFECT_CAPS[def.capKey!] * 100).toFixed(0)}% 效果上限`)
     }
-    // 修炼速度没有硬上限,其余三条各有自己的硬线
-    expect(veinCap('gather')).toBeNull()
-    expect(capped).toBe(3)
+    // 上限条数从数据表数,不写死:灵脉增删时这条断言不该跟着改
+    const expectedCapped = VEINS.filter(d => d.capKey !== null).length
+    expect(veinCap('gather'), '修炼速度无硬上限').toBeNull()
+    expect(veinCap('swift'), '历练遇敌速度无硬上限').toBeNull()
+    expect(capped, '有硬上限的脉条数应与数据表一致').toBe(expectedCapped)
     // 每一处上限都真的落在效果硬线上,而不是另设的灵脉数
     for (const def of VEINS) {
       const cap = veinCap(def.id)
@@ -48,7 +50,7 @@ describe('灵脉投资与重铸经济审计', () => {
     }
   })
 
-  it('灵脉四脉定义:各脉增益明确,形成不同流派偏好', () => {
+  it('灵脉定义:各脉增益明确,形成不同流派偏好', () => {
     console.log('\n  灵脉定义:')
     for (const def of VEINS) {
       const cap = veinCap(def.id)
@@ -112,11 +114,28 @@ describe('灵脉投资与重铸经济审计', () => {
       console.log(`    ${s.name}: ${JSON.stringify(s.points)} = ${total} 点`)
     }
     console.log('\n  关键约束:')
-    console.log('    - 四条脉平级,没有主脉/副脉之分,也不设总容量上限')
+    console.log('    - 各脉平级,没有主脉/副脉之分,也不设总容量上限')
     console.log('    - 某脉到顶后再投不增数值,故被上限挡住')
-    // 三条有上限的脉各自封顶,修炼速度那条没有硬上限、可长期投
+    // 有上限的脉各自封顶,修炼速度与历练遇敌那两条没有硬上限、可长期投
     expect(strategies[1]!.points.gather).toBeGreaterThan(veinCap('insight')!)
     expect(strategies[0]!.points.gather).toBeGreaterThan(veinCap('insight')!)
+  })
+
+  it('曜金灵脉(气运)与疾风灵脉(遇敌速度):上限口径各不相同,各按各的来', () => {
+    const fortune = veinDef('fortune')
+    const swift = veinDef('swift')
+
+    // 气运有 VEIN 专用硬上限(1.0):luck 的消费点本不钳制,故这里是灵脉单设的线
+    expect(fortune.perPoint.luck, '每点 +0.4%').toBeCloseTo(0.004, 10)
+    expect(veinCap('fortune'), '1.0 ÷ 0.004 = 250 点封顶').toBe(250)
+    expect(veinCap('fortune')! * 0.004).toBeCloseTo(VEIN_EFFECT_CAPS.fortuneLuck, 10)
+
+    // 遇敌速度没有硬上限(consumers 不钳制),故不封顶,只受灵石成本约束
+    expect(swift.perPoint.explorationSpeed, '每点 +0.1%').toBeCloseTo(0.001, 10)
+    expect(veinCap('swift'), '无硬上限的效果不该被折算成点数上限').toBeNull()
+
+    // 两条脉的效果键互不重叠:气运推品质、遇敌推频率,不是同一条通道
+    expect(Object.keys(fortune.perPoint)).not.toEqual(Object.keys(swift.perPoint))
   })
 })
 

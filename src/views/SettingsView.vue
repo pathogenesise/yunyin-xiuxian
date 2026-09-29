@@ -30,6 +30,13 @@
         <span class="text-[13px] text-ink-soft">减少动效</span>
         <input v-model="settings.reduceMotion" type="checkbox" class="h-4 w-4 accent-cinnabar" />
       </label>
+      <label class="flex items-center justify-between py-3">
+        <span class="min-w-0 text-[13px] text-ink-soft">
+          际遇自动抉择
+          <span class="ml-1 text-[10px] text-ink-faint">遇际遇不弹窗,直接按默认选项了结</span>
+        </span>
+        <input v-model="settings.autoEventChoice" type="checkbox" class="h-4 w-4 shrink-0 accent-cinnabar" />
+      </label>
       <div class="flex items-center justify-between py-3">
         <span class="text-[13px] text-ink-soft">夜间模式</span>
         <div role="group" aria-label="夜间模式" class="flex gap-1">

@@ -43,7 +43,7 @@ describe('dongfu store · sanitize', () => {
   it('非法产出小数与灵脉点数归零', () => {
     const dongfu = useDongfuStore()
     dongfu.frac = { herb: NaN, ore: Infinity, wudao: 3 }
-    dongfu.veinPoints = { gather: NaN, craft: -2, alchemy: 5, insight: 0 }
+    dongfu.veinPoints = { gather: NaN, craft: -2, alchemy: 5, insight: 0, fortune: 3, swift: NaN }
     dongfu.sanitize()
     expect(dongfu.frac.herb).toBe(0)
     expect(dongfu.frac.ore).toBe(0)

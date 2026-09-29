@@ -5,7 +5,7 @@
       <span class="text-[11px] text-ink-faint tabular">已投 {{ veinTotal }} 点</span>
     </div>
     <p class="mb-3 text-[11px] leading-relaxed text-ink-soft">
-      炼化灵石永久强化洞府灵脉,获得全局属性加成。四条脉平级,各自可投;
+      炼化灵石永久强化洞府灵脉,获得全局属性加成。各脉平级,各自可投;
       某脉的投点上限由<strong class="font-normal text-ink">该效果本身的极限</strong>决定 —— 到了顶再投也不再多出分毫。
     </p>
 

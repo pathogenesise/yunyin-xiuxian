@@ -33,6 +33,7 @@ import { useAdventureStore } from '@/stores/adventure'
 import type { LastBattleView } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useUiStore } from '@/stores/ui'
+import { useSettingsStore } from '@/stores/settings'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
 import { recordLoss, isNemesis, markAvenged, ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE } from './worldMemory'
 import { personalityEffects } from './petPersonality'
@@ -122,14 +123,30 @@ export function startExploration(regionId: string, mode: ExploreMode): boolean {
   return true
 }
 
+/**
+ * 结束一次历练。
+ *
+ * `defeat` 走的是**暂缓收场**:会话先留着(标 defeatReplay),只把总结播成 toast,
+ * 不立刻 setSession(null) —— 战斗面板整块挂在 sessionActive 上,一旦置空,
+ * 这一场刚解算完的逐回合过程连同战报就一起被销毁。首领挑战失败尤其刺眼:
+ * 玩家只知道「被打回来了」,不知道第几回合被哪一招带走、差多少血。
+ * 真正的清理由 finishRetreat 在回放播完(或玩家跳过)后完成。
+ * 另外两条(手动收兵 / 时限圆满)本来就是玩家自己按下或正常走完,立即收场无妨。
+ */
 export function stopExploration(reason: 'manual' | 'defeat' | 'complete'): void {
   const adventure = useAdventureStore()
   const ui = useUiStore()
   const s = adventure.session
   if (!s) return
   const region = regionDef(s.regionId)
-  adventure.setSession(null)
-  adventure.setPendingEvent(null, 0)
+  if (reason === 'defeat') {
+    // 会话还在,但这一趟已经结束:引擎据此不再推进(tickExploration 见 defeatReplay 分支)
+    adventure.setSession({ ...s, defeatReplay: true })
+    adventure.setPendingEvent(null, 0)
+  } else {
+    adventure.setSession(null)
+    adventure.setPendingEvent(null, 0)
+  }
   if (s.wins + s.losses >= 3 || reason === 'complete') {
     track('explores')
   }
@@ -145,6 +162,15 @@ export function stopExploration(reason: 'manual' | 'defeat' | 'complete'): void 
   } else {
     ui.toast(`你收拾行囊,提前结束了这次历练;此行${haul}`, 'info')
   }
+}
+
+/**
+ * 战败后的真正收场 —— 回放看完之后才调,把那一份会话清掉。
+ * 与 stopExploration('defeat') 分开:那一次是「宣布结束」,这一次是「真的收摊」。
+ */
+export function finishRetreat(): void {
+  const adventure = useAdventureStore()
+  if (adventure.session?.defeatReplay) adventure.setSession(null)
 }
 
 /**
@@ -467,6 +493,8 @@ export function tickExploration(now: number): void {
   const player = usePlayerStore()
   const s = adventure.session
   if (!s || player.dead) return
+  // 战败已宣布结束、只等回放播完:这一趟不再推进,否则会在原地继续打下去
+  if (s.defeatReplay) return
 
   // 待处理事件:阻塞战斗;超时自动按默认选项处理
   if (adventure.pendingEventId) {
@@ -492,7 +520,18 @@ export function tickExploration(now: number): void {
       // 事件标签同样走本世内容
       const ev = pickEventFor({ ...region, eventTags: [...placeContent(region.id).eventTags] })
       if (ev) {
-        adventure.setPendingEvent(ev.id, now)
+        /**
+         * 开启「际遇自动抉择」:不弹窗,直接按默认选项结算。
+         * 走的是 autoResolveEvent —— 与事件搁置超时(EVENT_AUTO_RESOLVE_SECONDS)
+         * 用的是同一个函数、同一套「优先 isDefault」的判据,故开启后与
+         * 「放着不管等它超时」结果完全一致,不另开一套判定。
+         */
+        if (useSettingsStore().autoEventChoice) {
+          autoResolveEvent(ev.id, region.tier)
+          adventure.setSession({ ...s, events: s.events + 1, nextBattleAt: nextBattleTime(now) })
+        } else {
+          adventure.setPendingEvent(ev.id, now)
+        }
         /**
          * 三档各报各的名。
          *

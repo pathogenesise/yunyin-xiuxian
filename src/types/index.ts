@@ -1050,4 +1050,13 @@ export interface AdventureSession {
   stoneGain: GNum
   expGain: GNum
   itemGain: number
+  /**
+   * 战败后暂缓收场:会话还留着,但这一趟已经结束,不再推进。
+   *
+   * 从前战败直接 setSession(null),而战斗面板整块挂在 sessionActive 上,
+   * 于是「首领挑战失败」连同逐回合过程一起被销毁 —— 战斗明明解算过、
+   * 战报(recordBattle)也确实写下来了,玩家却只被弹回历练主界面,
+   * 什么也没看见。现在改为:留着会话让回放播完,播完(或玩家跳过)再收场。
+   */
+  defeatReplay?: boolean
 }

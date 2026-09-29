@@ -11,10 +11,11 @@ import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
+import { useSettingsStore } from '@/stores/settings'
 import { gnZero, sub, toNum } from '@/utils/gnum'
 import { useResourcesStore } from '@/stores/resources'
 import { EXPLORE_BOSS_AFTER_WINS } from '@/data/constants'
-import { tickExploration, startExploration, winsUntilRegionBoss } from './exploration'
+import { tickExploration, startExploration, winsUntilRegionBoss, finishRetreat } from './exploration'
 import { startRetreat } from './earlyGameService'
 
 /**
@@ -25,7 +26,12 @@ import { startRetreat } from './earlyGameService'
  */
 const CAUTIOUS_LOSS_REDUCTION = 0.04
 
-const { protect, combatWin } = vi.hoisted(() => ({ protect: { value: false }, combatWin: { value: false } }))
+const { protect, combatWin, eventDue } = vi.hoisted(() => ({
+  protect: { value: false },
+  combatWin: { value: false },
+  /** 放行「这一程出不出事」那一掷,用来测际遇自动抉择 */
+  eventDue: { value: false }
+}))
 
 vi.mock('@/utils/random', async importOriginal => {
   const mod = await importOriginal<typeof import('@/utils/random')>()
@@ -37,8 +43,13 @@ vi.mock('@/utils/random', async importOriginal => {
       float: (a: number, _b: number) => a,
       pick: <T,>(arr: readonly T[]): T => arr[0]!,
       weighted: <T,>(arr: readonly T[]): T => arr[0]!,
+      // 际遇那一掷不能拿裸的 EXPLORE_EVENT_CHANCE 去比:实际掷的是
+      // EXPLORE_EVENT_CHANCE × (1 + eventLuck + mansionEventLuck)。这批用例
+      // 都在裸档(无词条、无星象加成),但仍按「落在基准附近就算这一程出事」判定,
+      // 免得星象哪天给了加成就把这两条用例悄悄作废
       chance: (p: number): boolean =>
-        protect.value === true && Math.abs(p - CAUTIOUS_LOSS_REDUCTION) < 1e-9
+        (eventDue.value && p > 0.1 && p < 0.2) ||
+        (protect.value === true && Math.abs(p - CAUTIOUS_LOSS_REDUCTION) < 1e-9)
     }
   }
 })
@@ -48,7 +59,15 @@ vi.mock('./combat', async importOriginal => {
   const mod = await importOriginal<typeof import('./combat')>()
   return {
     ...mod,
-    resolveCombat: () => (combatWin.value ? { win: true, rounds: 5, playerHpPct: 0.9 } : { win: false, rounds: 5, playerHpPct: 0.4 }),
+    resolveCombat: () => ({
+      win: combatWin.value,
+      rounds: 5,
+      playerHpPct: combatWin.value ? 0.9 : 0.4,
+      // 战报回放按 log 逐条播:这个 mock 少了它,战败保留面板那条断言读不到回合过程
+      log: combatWin.value
+        ? [{ t: 'atk', side: 'p', dmg: 10, php: 1, ehp: 0.9 }]
+        : [{ t: 'atk', side: 'e', dmg: 60, php: 0.4, ehp: 1 }]
+    }),
     makeEnemySnap: () => ({ hp: 100, def: 10, atk: 10 })
   }
 })
@@ -94,7 +113,7 @@ describe('灵兽性格 · 败北保护(lossReduction 接入 runBattle)', () => {
     expect(adventure.session?.losses).toBe(0)
   })
 
-  it('无灵兽败北照常:受重伤、计败绩、中止历练', () => {
+  it('无灵兽败北照常:受重伤、计败绩、暂缓收场', () => {
     const player = usePlayerStore()
     player.initCharacter('无护', { roots: [] } as never)
     const now = Date.now()
@@ -105,8 +124,31 @@ describe('灵兽性格 · 败北保护(lossReduction 接入 runBattle)', () => {
     const cultivation = useCultivationStore()
     const adventure = useAdventureStore()
     expect(cultivation.buffs.some(b => b.defId === 'injury')).toBe(true)
-    expect(adventure.session).toBeNull() // stopExploration('defeat') 已清空
+    // 战败不立刻清场:会话留着(标 defeatReplay)让回放播完 —— 从前这里直接置 null,
+    // 战斗面板随之销毁,首领挑战失败连过程都没得看
+    expect(adventure.session, '战败后应保留会话供回放').not.toBeNull()
+    expect(adventure.session?.defeatReplay, '并标记为待收场').toBe(true)
     expect(adventure.lastBattle?.result.win).toBe(false)
+    expect(adventure.lastBattle?.result.log.length, '战斗确有解算,回放有内容').toBeGreaterThan(0)
+  })
+
+  it('finishRetreat 才真正收场;收场后引擎不再推进', () => {
+    const player = usePlayerStore()
+    player.initCharacter('收场', { roots: [] } as never)
+    const now = Date.now()
+    forgeSession(now)
+    tickExploration(now)
+
+    const adventure = useAdventureStore()
+    expect(adventure.session?.defeatReplay).toBe(true)
+    const lossesBefore = adventure.session!.losses
+
+    // 待收场期间反复 tick:不该再打一场(否则回放刚播完又被新战覆盖)
+    tickExploration(now + 1000)
+    expect(adventure.session?.losses, '待收场期间不再推进历练').toBe(lossesBefore)
+
+    finishRetreat()
+    expect(adventure.session, '收场后回到历练主界面').toBeNull()
   })
 
   it('好战灵兽(lossReduction=0)败北不护:与无灵兽一致', () => {
@@ -123,7 +165,7 @@ describe('灵兽性格 · 败北保护(lossReduction 接入 runBattle)', () => {
     const cultivation = useCultivationStore()
     const adventure = useAdventureStore()
     expect(cultivation.buffs.some(b => b.defId === 'injury')).toBe(true)
-    expect(adventure.session).toBeNull()
+    expect(adventure.session?.defeatReplay).toBe(true)
   })
 })
 
@@ -154,10 +196,11 @@ describe('连胜(TASK-022 接线 · runBattle 胜负驱动 player.winStreak)', (
     const now = Date.now()
     forgeSession(now)
 
-    protect.value = true // 败北被护住:不算败 → 连胜保留
+    protect.value = true // 败北被护住:不算败 → 连胜保留,且历练继续
     tickExploration(now)
     expect(player.winStreak).toBe(3)
     expect(useAdventureStore().session).not.toBeNull()
+    expect(useAdventureStore().session?.defeatReplay, '被护住的不算结束').toBeFalsy()
 
     // 再来一场真正的败北(无灵兽保护):连胜清空
     player.setPet('pet_huoque') // fierce → lossReduction 0
@@ -290,5 +333,60 @@ describe('首领门槛 · 界面提示与战斗判定同源', () => {
 
   it('已靖地界:不再有首领,提示返回 null', () => {
     expect(winsUntilRegionBoss(0, true)).toBeNull()
+  })
+})
+
+/**
+ * 际遇自动抉择 —— 开启后不弹窗,直接按默认选项了结。
+ *
+ * 判据只有一条:开启时走 autoResolveEvent(与搁置超时同一个函数、同一套
+ * 「优先 isDefault」判据),关闭时照旧挂起等玩家选。
+ * 关掉时必须仍会弹窗 —— 那是默认行为,不该被开关的加入顺带改掉。
+ */
+describe('际遇自动抉择 · 开启后不弹窗', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    protect.value = false
+    combatWin.value = true
+    eventDue.value = false
+  })
+
+  it('关闭(默认):遇到际遇挂起待选,不自动了结', () => {
+    const player = usePlayerStore()
+    player.initCharacter('手动', { roots: [] } as never)
+    const now = Date.now()
+    forgeSession(now)
+    eventDue.value = true
+
+    tickExploration(now)
+
+    const adventure = useAdventureStore()
+    expect(adventure.pendingEventId, '关闭时应当弹窗待选').not.toBeNull()
+    expect(adventure.session!.events, '未了结,不计入次数').toBe(0)
+  })
+
+  it('开启:直接按默认选项结算,不计待选', () => {
+    const player = usePlayerStore()
+    player.initCharacter('自动', { roots: [] } as never)
+    useSettingsStore().autoEventChoice = true
+    const now = Date.now()
+    forgeSession(now)
+    eventDue.value = true
+
+    tickExploration(now)
+
+    const adventure = useAdventureStore()
+    expect(adventure.pendingEventId, '开启后不该挂起').toBeNull()
+    expect(adventure.session!.events, '已了结,计入次数').toBe(1)
+    // 与手动路径一致:了结后立刻排下一场,且不会因为 eventLuck 归零而停摆
+    expect(adventure.session!.nextBattleAt).toBeGreaterThan(now)
+  })
+
+  it('设置项可持久化:损坏值被净化成 false(宁可弹窗也不擅自了结)', () => {
+    const settings = useSettingsStore()
+    // @ts-expect-error 故障注入:存档里存了一个非布尔值
+    settings.autoEventChoice = 'yes'
+    settings.sanitize()
+    expect(settings.autoEventChoice).toBe(false)
   })
 })

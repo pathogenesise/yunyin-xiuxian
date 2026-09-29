@@ -9,20 +9,21 @@
         </p>
         <!-- 每秒在走的倒计时同样要定宽:与状态面板同一类抖动,修就修干净 -->
         <span class="tabular text-[12px] text-ink-soft">
-          余 <span class="countdown-slot">{{ formatCountdown(timeLeft) }}</span>
+          <template v-if="defeatReplay">此行已败</template>
+          <template v-else>余 <span class="countdown-slot">{{ formatCountdown(timeLeft) }}</span></template>
         </span>
       </div>
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         胜 {{ session?.wins ?? 0 }} 场 · 际遇 {{ session?.events ?? 0 }} 次 · 拾获 {{ session?.itemGain ?? 0 }} 件
-        <span v-if="huntIn > 0.4" class="text-ink-ghost"> · 下一场 {{ formatCountdown(huntIn) }}</span>
+        <span v-if="huntIn > 0.4 && !defeatReplay" class="text-ink-ghost"> · 下一场 {{ formatCountdown(huntIn) }}</span>
       </p>
       <!-- 本次所得:石头与修为此前只在挂机总结里出现,在线历练中玩家看不到这一趟赚了什么 -->
-      <p v-if="gains" class="mt-0.5 text-[10px] text-ink-faint tabular">
+      <p v-if="gains && !defeatReplay" class="mt-0.5 text-[10px] text-ink-faint tabular">
         本次所得 · 灵石 <span class="text-gold-ink">+{{ gains.stone }}</span> · 修为
         <span class="text-jade">+{{ gains.exp }}</span>
       </p>
       <!-- 目标感:未靖的地界,打完十胜就该遇首领;不给提示的话玩家不知道还要打多久 -->
-      <p v-if="bossHint" class="mt-0.5 text-[10px]" :class="bossSoon ? 'text-cinnabar' : 'text-gold-ink'">
+      <p v-if="bossHint && !defeatReplay" class="mt-0.5 text-[10px]" :class="bossSoon ? 'text-cinnabar' : 'text-gold-ink'">
         {{ bossHint }}
       </p>
     </div>
@@ -219,7 +220,13 @@
       </div>
     </div>
 
-    <button class="btn-ghost w-full" @click="stopExploration('manual')">收兵回府</button>
+    <button v-if="!defeatReplay" class="btn-ghost w-full" @click="stopExploration('manual')">收兵回府</button>
+    <!--
+      战败待收场:历练其实已经结束了(stopExploration('defeat') 已把会话标上 defeatReplay,
+      引擎也不再推进),这里只把最后一场的过程看完。给一个显式的离开出口,
+      免得回放播完后玩家被留在一个空面板上。
+    -->
+    <button v-else class="btn-ghost w-full" @click="finishRetreat">此行已毕,归去疗伤</button>
   </div>
 </template>
 
@@ -228,7 +235,7 @@
   import { useAdventureStore } from '@/stores/adventure'
   import { usePlayerStore } from '@/stores/player'
   import { useSettingsStore } from '@/stores/settings'
-  import { stopExploration, winsUntilRegionBoss } from '@/core/exploration'
+  import { stopExploration, finishRetreat, winsUntilRegionBoss } from '@/core/exploration'
   import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES } from '@/data/constants'
   import { formatCountdown, formatGN } from '@/utils/format'
   import { useNow } from '@/composables/useNow'
@@ -262,6 +269,12 @@
   const session = computed(() => adventure.session)
   const region = computed(() => adventure.currentRegion)
   const battle = computed(() => adventure.lastBattle)
+  /**
+   * 战败待收场 —— 这一趟已经结束,只是把回放看完。
+   * 倒计时、「下一场」「本次所得」「距首领还差几胜」在收场期间一律是废话:
+   * 玩家看着一个还在走的倒计时,会以为这一趟还在跑。
+   */
+  const defeatReplay = computed(() => session.value?.defeatReplay === true)
   const timeLeft = computed(() => (session.value ? Math.max(0, (session.value.endsAt - now.value) / 1000) : 0))
   const huntIn = computed(() => (session.value ? Math.max(0, (session.value.nextBattleAt - now.value) / 1000) : 0))
   const modeName = computed(() => (session.value ? EXPLORE_MODES[session.value.mode].name : ''))
@@ -404,6 +417,9 @@
       if (!entry) {
         stopPlayback()
         defeated.value = b.result.win ? 'e' : 'p'
+        // 战败:回放播完就把那一份会话收掉(A1 方案)。播完才收,首领挑战失败的
+        // 过程看得完;从前是战败瞬间连面板一起销毁,玩家什么也没看见
+        if (!b.result.win) finishRetreat()
         return
       }
       displayed.value = [...displayed.value.slice(-99), entry]
@@ -439,6 +455,8 @@
   /** 跳过播放,直接呈现战果 */
   function skipPlayback(): void {
     playBattle(true)
+    // 跳过不等于免收场:战败时若不在这里收,会话会一直留着、面板再也走不了
+    if (battle.value && !battle.value.result.win) finishRetreat()
   }
 
   watch(

@@ -1,7 +1,8 @@
 /**
  * 灵脉服务 —— Phase 30.3
- * 投点规则:四条脉平级,无主脉/副脉之分;单条可投上限由**效果本身的数值上限**折算
- * (见 data/veins 的 veinEffectCap),没有硬上限的效果(修炼速度)则只受灵石成本约束。
+ * 投点规则:各脉平级,无主脉/副脉之分;单条可投上限由**效果本身的数值上限**折算
+ * (见 data/veins 的 veinEffectCap),没有硬上限的效果(修炼速度、历练遇敌速度)
+ * 则只受灵石成本约束。
  */
 import type { GNum } from '@/types'
 import type { VeinId } from '@/data/veins'

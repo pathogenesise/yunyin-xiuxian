@@ -31,7 +31,7 @@ import { qualityDef } from '@/data/qualities'
 import { gn, gnZero } from '@/utils/gnum'
 
 /** 远超任一新上限的旧档点数(旧规则下副脉不限,几千点很正常) */
-const LEGACY_POINTS = { gather: 100000, craft: 5000, alchemy: 9999, insight: 8888 }
+const LEGACY_POINTS = { gather: 100000, craft: 5000, alchemy: 9999, insight: 8888, fortune: 4000, swift: 3000 }
 
 function loadLegacySave(): void {
   const dongfu = useDongfuStore()
@@ -53,9 +53,9 @@ describe('旧档兼容 · 灵脉超投点数', () => {
       expect(Number.isFinite(v), `${key} 非有限值`).toBe(true)
     }
     expect(Number.isFinite(dongfu.insightDiscount)).toBe(true)
-    expect(dongfu.veinTotal, '总点数如实保留,不做削减').toBe(
-      LEGACY_POINTS.gather + LEGACY_POINTS.craft + LEGACY_POINTS.alchemy + LEGACY_POINTS.insight
-    )
+    // 总点数从夹具本身求和,不写死数字:灵脉增删时这条断言不该跟着改
+    const expectedTotal = Object.values(LEGACY_POINTS).reduce((a, b) => a + b, 0)
+    expect(dongfu.veinTotal, '总点数如实保留,不做削减').toBe(expectedTotal)
     for (const def of VEINS) {
       const line = veinEffectText(def, 100000)
       expect(typeof line).toBe('string')
@@ -64,18 +64,23 @@ describe('旧档兼容 · 灵脉超投点数', () => {
     }
   })
 
-  it('超上限的部分不计数值:三条有硬上限的脉各停在硬线上', () => {
+  it('超上限的部分不计数值:有硬上限的脉各停在硬线上', () => {
     const dongfu = useDongfuStore()
     expect(dongfu.veinMods.forgeDiscount ?? 0).toBeCloseTo(VEIN_EFFECT_CAPS.forgeDiscount, 10)
     expect(dongfu.veinMods.alchemyYield ?? 0).toBeCloseTo(VEIN_EFFECT_CAPS.alchemyYield, 10)
     expect(dongfu.insightDiscount).toBeCloseTo(VEIN_EFFECT_CAPS.insightDiscount, 10)
-    // 没有硬上限的青木脉(修炼速度)照实计入
+    // 曜金灵脉(气运)有 VEIN 专用上限:堆到 4000 点也停在硬线上,不被推过
+    expect(dongfu.veinMods.luck ?? 0).toBeCloseTo(VEIN_EFFECT_CAPS.fortuneLuck, 10)
+    // 没有硬上限的青木脉(修炼速度)与疾风灵脉(历练遇敌)照实计入
     expect(dongfu.veinMods.cultivationSpeed ?? 0).toBeCloseTo(LEGACY_POINTS.gather * 0.004, 6)
+    expect(dongfu.veinMods.explorationSpeed ?? 0).toBeCloseTo(LEGACY_POINTS.swift * 0.001, 6)
     console.log(
       `旧档 10 万点 → 修炼速度 +${((dongfu.veinMods.cultivationSpeed ?? 0) * 100).toFixed(0)}% · ` +
         `强化减耗 +${((dongfu.veinMods.forgeDiscount ?? 0) * 100).toFixed(0)}% · ` +
         `双枚成丹 +${((dongfu.veinMods.alchemyYield ?? 0) * 100).toFixed(0)}% · ` +
-        `参悟省耗 −${(dongfu.insightDiscount * 100).toFixed(0)}%`
+        `参悟省耗 −${(dongfu.insightDiscount * 100).toFixed(0)}% · ` +
+        `气运 +${((dongfu.veinMods.luck ?? 0) * 100).toFixed(0)}% · ` +
+        `历练遇敌 +${((dongfu.veinMods.explorationSpeed ?? 0) * 100).toFixed(0)}%`
     )
   })
 
@@ -115,11 +120,15 @@ describe('旧档兼容 · 灵脉超投点数', () => {
     expect(investVein('craft'), '已超上限,不该再收').toBe(false)
     expect(investVein('alchemy')).toBe(false)
     expect(investVein('insight')).toBe(false)
+    expect(investVein('fortune'), '气运已超上限,不该再收').toBe(false)
     expect(dongfu.veinPoints.craft).toBe(LEGACY_POINTS.craft)
+    expect(dongfu.veinPoints.fortune, '气运点数原样保留,不被削减').toBe(LEGACY_POINTS.fortune)
     expect(useResourcesStore().spiritStone, '被挡下的投资不该扣灵石').toEqual(stoneBefore)
-    // 没有硬上限的那条仍可继续投
+    // 没有硬上限的那两条仍可继续投
     expect(investVein('gather'), '修炼速度无硬上限,应可继续投').toBe(true)
     expect(dongfu.veinPoints.gather).toBe(LEGACY_POINTS.gather + 1)
+    expect(investVein('swift'), '历练遇敌无硬上限,应可继续投').toBe(true)
+    expect(dongfu.veinPoints.swift).toBe(LEGACY_POINTS.swift + 1)
   })
 
   it('各脉上限点数 × 每点效果正好落在效果硬线上(不多不少)', () => {

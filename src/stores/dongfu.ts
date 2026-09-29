@@ -17,6 +17,19 @@ import {
 import { mergeMods } from '@/core/statsCalc'
 import { useResourcesStore } from './resources'
 
+/**
+ * 一份全零的灵脉点数表 —— 灵脉增删时只有这一处要跟着改。
+ *
+ * 旧档没有新脉的键(读回来是 undefined),若不补成 0,
+ * dongfu.veinTotal 少算、界面读数出 NaN。这里从数据表派生,
+ * 免得"VEINS 加了一条、默认值忘了加"这种错再犯一次。
+ */
+function emptyVeinPoints(): Record<VeinId, number> {
+  const out = {} as Record<VeinId, number>
+  for (const def of VEINS) out[def.id] = 0
+  return out
+}
+
 export const useDongfuStore = defineStore(
   'dongfu',
   () => {
@@ -37,7 +50,7 @@ export const useDongfuStore = defineStore(
      * 旧存档里还留着一个 veinMain 字段,读档后无人引用,故不再维护;
      * 它留在存档里也只是几个字节,不做迁移清理。
      */
-    const veinPoints = ref<Record<VeinId, number>>({ gather: 0, craft: 0, alchemy: 0, insight: 0 })
+    const veinPoints = ref<Record<VeinId, number>>(emptyVeinPoints())
 
     const buildingMods = computed<StatMods>(() => {
       const sources: StatMods[] = []
@@ -116,7 +129,7 @@ export const useDongfuStore = defineStore(
       for (const id of Object.keys(nextVein) as VeinId[]) {
         if (!Number.isFinite(nextVein[id]) || nextVein[id] < 0) nextVein[id] = 0
       }
-      veinPoints.value = nextVein
+      veinPoints.value = { ...emptyVeinPoints(), ...nextVein }
     }
 
     /** 灵脉投点(校验由 veinService 负责) */
@@ -133,7 +146,7 @@ export const useDongfuStore = defineStore(
       for (const def of BUILDINGS) nextLevels[def.id] = 0
       levels.value = nextLevels
       frac.value = { herb: 0, ore: 0, wudao: 0 }
-      veinPoints.value = { gather: 0, craft: 0, alchemy: 0, insight: 0 }
+      veinPoints.value = emptyVeinPoints()
     }
 
     /** 建筑产出(灵田/藏经阁),按秒推进 */
