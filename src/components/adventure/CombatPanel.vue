@@ -226,7 +226,7 @@
       引擎也不再推进),这里只把最后一场的过程看完。给一个显式的离开出口,
       免得回放播完后玩家被留在一个空面板上。
     -->
-    <button v-else class="btn-ghost w-full" @click="finishRetreat">此行已毕,归去疗伤</button>
+    <button v-else class="btn-ghost w-full" @click="leaveNow">此行已毕,归去疗伤</button>
   </div>
 </template>
 
@@ -236,7 +236,7 @@
   import { usePlayerStore } from '@/stores/player'
   import { useSettingsStore } from '@/stores/settings'
   import { stopExploration, finishRetreat, winsUntilRegionBoss } from '@/core/exploration'
-  import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES } from '@/data/constants'
+  import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES, DEFEAT_RETREAT_DELAY_MS } from '@/data/constants'
   import { formatCountdown, formatGN } from '@/utils/format'
   import { useNow } from '@/composables/useNow'
   import { detectBuild } from '@/core/buildDetect'
@@ -264,6 +264,8 @@
   const logBox = ref<HTMLElement | null>(null)
 
   let playTimer: number | undefined
+  /** 战败收场延迟定时器:回放播完再停 3 秒,让玩家看得到败因再回主界面 */
+  let retreatTimer: number | undefined
   let floatSeq = 1
 
   const session = computed(() => adventure.session)
@@ -393,6 +395,29 @@
     }
   }
 
+  /**
+   * 战败收场:等 DEFEAT_RETREAT_DELAY_MS 再真正收摊。
+   * 回放播完之后不立即回主界面 —— 玩家刚看完败因,立刻被弹走会显得唐突;
+   * 留三秒给他消化这一战(按钮「此行已毕」仍在,可提前离开)。
+   */
+  function scheduleRetreat(): void {
+    if (retreatTimer !== undefined) return
+    retreatTimer = window.setTimeout(finishRetreat, DEFEAT_RETREAT_DELAY_MS)
+  }
+
+  function clearRetreatTimer(): void {
+    if (retreatTimer !== undefined) {
+      window.clearTimeout(retreatTimer)
+      retreatTimer = undefined
+    }
+  }
+
+  /** 玩家提前离开:取消延迟定时器,立即收场 */
+  function leaveNow(): void {
+    clearRetreatTimer()
+    finishRetreat()
+  }
+
   function playBattle(instant = false): void {
     const b = battle.value
     if (!b) return
@@ -417,9 +442,10 @@
       if (!entry) {
         stopPlayback()
         defeated.value = b.result.win ? 'e' : 'p'
-        // 战败:回放播完就把那一份会话收掉(A1 方案)。播完才收,首领挑战失败的
-        // 过程看得完;从前是战败瞬间连面板一起销毁,玩家什么也没看见
-        if (!b.result.win) finishRetreat()
+        // 战败:回放播完,留三秒消化再收场。从前是战败瞬间连面板一起销毁,
+        // 首领挑战失败的过程一点也看不见;补充延迟是为了回主界面之前,
+        // 玩家有时间看清败因(「此行已毕」按钮可提前走)
+        if (!b.result.win) scheduleRetreat()
         return
       }
       displayed.value = [...displayed.value.slice(-99), entry]
@@ -455,8 +481,9 @@
   /** 跳过播放,直接呈现战果 */
   function skipPlayback(): void {
     playBattle(true)
-    // 跳过不等于免收场:战败时若不在这里收,会话会一直留着、面板再也走不了
-    if (battle.value && !battle.value.result.win) finishRetreat()
+    // 跳过不等于免收场:战败时若不在这里收,会话会一直留着、面板再也走不了。
+    // 与正常播完同一节奏:延迟三秒再收,玩家仍可看战果一眼
+    if (battle.value && !battle.value.result.win) scheduleRetreat()
   }
 
   watch(
@@ -470,5 +497,8 @@
     if (battle.value) playBattle(true)
   })
 
-  onUnmounted(stopPlayback)
+  onUnmounted(() => {
+    stopPlayback()
+    clearRetreatTimer()
+  })
 </script>

@@ -59,6 +59,11 @@ export function autoRecycleReason(item: EquipmentInstance): string | null {
   const settings = useSettingsStore()
   if (!settings.smartKeep.enabled) return null
   const q = qualityDef(item.quality)
+  // 「此品质起一律保留」是玩家在收纳弹窗里许下的硬承诺:rank >= minQuality 的件,
+  // 无论是否命中[一键分解]勾选,都不得自动回收 —— 从前 decomposeRanks 的判定
+  // 排在品质保留线之前,玩家勾了「灵品起保留」、又一键分解勾了地品,拾到的地品
+  // (rank 5 >= 3)会被「所勾地品」抢先回收,界面上的承诺就成了摆设(玩家报障)。
+  if (q.rank >= settings.smartKeep.minQuality) return null
   if (settings.decomposeRanks.includes(q.rank)) return `所勾${q.name}`
   const verdict = keepVerdict(item)
   return verdict.keep ? null : verdict.reason

@@ -241,6 +241,11 @@ export const DIMINISH_KEYS = [
 /** 战报播放基础间隔(毫秒),实际 = 基础 / 播放倍速 */
 export const COMBAT_PLAYBACK_BASE_MS = 460
 export const COMBAT_PLAYBACK_MIN_MS = 90
+/**
+ * 战败回放播完后,再等这么久才自动回到历练主界面。
+ * 刚看完败因立刻被弹走显得唐突,留三秒消化;「此行已毕」按钮可提前离开。
+ */
+export const DEFEAT_RETREAT_DELAY_MS = 3000
 
 // ============ Phase 30.4 属性软阈值 ============
 /**

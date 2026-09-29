@@ -12,7 +12,7 @@ import { BAG_CAPACITY } from '@/data/constants'
 import { useSettingsStore } from '@/stores/settings'
 import { useInventoryStore } from '@/stores/inventory'
 import { acquireEquipment } from './loot'
-import { compareEvictable, hasInvestment, keepVerdict, perfectRolls, shouldAutoRecycle } from './smartKeep'
+import { autoRecycleReason, compareEvictable, hasInvestment, keepVerdict, perfectRolls, shouldAutoRecycle } from './smartKeep'
 
 /** 夹具一律用「不带套」的青云道袍,免得套件规则混进别的判据 */
 function mk(uid: string, quality: QualityId = 'mortal', opts: Partial<EquipmentInstance> = {}): EquipmentInstance {
@@ -91,10 +91,20 @@ describe('智能收纳 · 自动裁决的边界', () => {
     expect(keepVerdict(perfect).keep).toBe(false)
   })
 
-  it('智能收纳开启时,「一键分解」勾选的品质档仍优先 —— 显式废料声明压过保留规则', () => {
+  it('一键分解勾选只影响未达品质保留线的件 —— 达线的件永不自动回收', () => {
+    // 玩家报障:勾了「灵品起保留」(minQuality=3)又一个键分解勾了地品(rank 5),
+    // 拾到的地品(5 >= 3)被「所勾地品」抢先回收,品质保留线成了摆设。
+    // 现判据:rank >= minQuality 的件先被硬性保留,一键分解的勾选管不到它。
+    useSettingsStore().decomposeRanks = [5]
+    const earth = mk('earth_kept', 'earth') // 地品 rank 5 >= minQuality 3
+    expect(keepVerdict(earth).keep, '地品在保留线上').toBe(true)
+    expect(shouldAutoRecycle(earth), '一键分解勾的地品不得覆盖品质保留线').toBe(false)
+    expect(autoRecycleReason(earth), '不应被回收').toBeNull()
+
+    // 未达保留线的件仍受一键分解管辖:凡品勾了就回收
     useSettingsStore().decomposeRanks = [0]
-    const setPiece = mk('set2', 'mortal', { templateId: 'w_xuantie', level: 3 })
-    expect(shouldAutoRecycle(setPiece)).toBe(true)
+    const mortal = mk('mortal_ok', 'mortal', { level: 3 }) // 练过的凡品,仍是显式废料声明
+    expect(shouldAutoRecycle(mortal), '未达保留线的件,一键分解仍优先').toBe(true)
   })
 
   it('总闸:智能收纳未启用时,一键分解勾选档也不自动回收', () => {
