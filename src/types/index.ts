@@ -1029,8 +1029,11 @@ export interface OfflineSummary {
   /**
    * 离线装备汇总:只报总数 + 按品质分档,不列逐件。
    * 明细去行囊页看(分页)。为空表示本次无装备产出。
+   * total 只记**实际入包**的件 —— 被智能收纳化尘的不再混进总数,看 recycledEquips。
    */
   equipmentSummary?: { total: number; byQuality: { quality: string; name: string; count: number }[] }[]
+  /** 智能收纳在离线期间化尘的装备件数(不入包,不再混进 equipmentSummary.total) */
+  recycledEquips?: number
   /** 期间未入包装备化作的器灵尘总量 */
   recycledDust: number
   notes: string[]
