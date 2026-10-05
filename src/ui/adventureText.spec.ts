@@ -7,10 +7,11 @@ import { personalityEffects } from '@/core/petPersonality'
 import { departButtonText } from './adventureText'
 
 describe('出发按钮与结算同一套数', () => {
-  it('三档基础行程分别为 4、8、12 小时', () => {
-    expect(EXPLORE_MODES.normal.durationSec).toBe(4 * 3600)
-    expect(EXPLORE_MODES.deep.durationSec).toBe(8 * 3600)
-    expect(EXPLORE_MODES.risky.durationSec).toBe(12 * 3600)
+  it('四档基础行程:寻常 30 分钟 / 深入 1 小时 / 涉险 2 小时 / 长线云游 4 小时', () => {
+    expect(EXPLORE_MODES.normal.durationSec).toBe(1800)
+    expect(EXPLORE_MODES.deep.durationSec).toBe(3600)
+    expect(EXPLORE_MODES.risky.durationSec).toBe(7200)
+    expect(EXPLORE_MODES.prolonged.durationSec).toBe(14400)
   })
 
   it('行程按灵兽之性折算,与 startExploration 同一公式', () => {
@@ -32,8 +33,8 @@ describe('出发按钮与结算同一套数', () => {
   })
 
   it('按钮文案带上四个结算数', () => {
-    const line = departButtonText({ durationSec: 4 * 3600, rewardMult: 1.4, dangerMult: 1.45, battleGapSec: 12 })
-    expect(line).toContain('4小时0分')
+    const line = departButtonText({ durationSec: 1800, rewardMult: 1.4, dangerMult: 1.45, battleGapSec: 12 })
+    expect(line).toContain('30分0秒')
     expect(line).toContain('收益 ×1.4')
     expect(line).toContain('遇险 ×1.45')
     expect(line).toContain('遇敌约 12秒')
