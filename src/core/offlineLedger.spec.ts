@@ -13,16 +13,34 @@
  *
  * 故障注入:把 summary.qi / summary.ageYears 去掉,或把 ageYears 记成 0,本文件立刻红。
  */
-import { describe, expect, it, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+
+/** 记下每一次入账的结果:腾位那条用例要拿它对账(透传,不改行为) */
+const acquired = vi.hoisted(() => [] as { bagged: boolean; evicted: boolean; dust: number }[])
+vi.mock('./loot', async orig => {
+  const mod = await orig<typeof import('./loot')>()
+  return {
+    ...mod,
+    acquireEquipment: (...args: Parameters<typeof mod.acquireEquipment>) => {
+      const res = mod.acquireEquipment(...args)
+      acquired.push({ bagged: res.bagged, evicted: res.evicted, dust: res.dust })
+      return res
+    }
+  }
+})
+
 import { settleOffline } from './offline'
+import { salvageOf } from './salvage'
+import { useSettingsStore } from '@/stores/settings'
 import { useGameStore } from '@/stores/game'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useAdventureStore } from '@/stores/adventure'
+import { useInventoryStore } from '@/stores/inventory'
 import { gn } from '@/utils/gnum'
-import { EXPLORE_MODES } from '@/data/constants'
+import { EXPLORE_MODES, BAG_CAPACITY } from '@/data/constants'
 
 const GAP_HOURS = 60
 const HOUR_MS = 3600 * 1000
@@ -69,10 +87,102 @@ describe('离线总结 · 变动了多少就报多少', () => {
     setActivePinia(createPinia())
   })
 
+  it('装备清单如实标注可看性:入包件带真实 uid,已化尘的不带', () => {
+    setupBusySave()
+    // 60h  normal 档产出约 500 件逐件 acquire,单测超时 —— 压到 4h(产出约数十件),
+    // 口径不变(入包带 uid 可点开、化尘不带),速度可接受。
+    const game = useGameStore()
+    const adventure = useAdventureStore()
+    game.lastActiveAt = Date.now() - 4 * HOUR_MS
+    adventure.session = {
+      ...(adventure.session as object),
+      startedAt: Date.now() - 4 * HOUR_MS,
+      endsAt: Date.now() + 999 * HOUR_MS
+    } as typeof adventure.session
+    const summary = settleOffline(Date.now())!
+    const inventory = useInventoryStore()
+    const bagged = summary.equipment.filter(e => !e.recycled)
+    const recycled = summary.equipment.filter(e => e.recycled)
+    // 这一档打得凶,包里至少该拾得装备;若断言因夹具变动而失效,先一眼看得出
+    expect(bagged.length, '4 小时离线,归来清单里该有入包的装备').toBeGreaterThan(0)
+    for (const eq of bagged) {
+      expect(eq.uid, '入包的装备该能点开详情,uid 不能缺').toBeTruthy()
+      expect(inventory.findItem(eq.uid!), 'uid 需能在背包里找到对应实例,否则点开是空的').toBeTruthy()
+    }
+    for (const eq of recycled) {
+      expect(eq.uid, '已化尘的装备已不在包,不该再留 uid').toBeUndefined()
+    }
+  })
+
+  it('行囊已满归来:装不下的件都标回收且不带 uid(让回收断言真有事可断)', () => {
+    setupBusySave()
+    const inventory = useInventoryStore()
+    // 塞满行囊(120 件旧物、未锁),新掉落无处可放 —— 无智能收纳时一律化尘
+    for (let i = 0; i < BAG_CAPACITY; i += 1) {
+      inventory.items.push({ uid: `bagfull${i}`, templateId: 'b_mabu', quality: 'mortal', tier: 1, level: 0, affixes: [] })
+    }
+    const summary = settleOffline(Date.now())!
+    const recycled = summary.equipment.filter(e => e.recycled)
+    const bagged = summary.equipment.filter(e => !e.recycled)
+    expect(recycled.length, '行囊塞满,新掉落与抑制区产出都应没处放、化作尘').toBeGreaterThan(0)
+    for (const eq of recycled) {
+      expect(eq.uid, '化尘的件已不在包,不该留 uid').toBeUndefined()
+    }
+    // 满包且无智能收纳:没有任何件真的入包,清单里不该再有「可点开」的件
+    expect(bagged.length).toBe(0)
+  })
+
+  /**
+   * 智能收纳腾位:新件值得留、包已满时,挤掉包里最差的一件旧物化尘再入包。
+   * 此时入账结果是 bagged:true,而 dust 记的是那件旧物 —— 结算若只在 !bagged 时计尘,
+   * 归来卷轴就少报了这份尘,件数也少算(审查讨论指出)。
+   * 注入:offline.ts / suppress.ts 改回 `if (!res.bagged) recycledDust += res.dust` → 本条红。
+   */
+  it('智能收纳腾位归来:被挤掉的旧件化出的尘与件数都要报', () => {
+    setupBusySave()
+    const settings = useSettingsStore()
+    settings.smartKeep = { ...settings.smartKeep, enabled: true, minQuality: 1, keepCoreAffix: false, keepComboPiece: false, keepSetPiece: false, keepPerfectRolls: false }
+    const inventory = useInventoryStore()
+    // 塞满凡品旧物(未锁、无投入,收纳判「无缘」可挤);良品以上的新掉落会把它们挤出去。
+    // 60h  normal 档产出约 500 件,塞 BAG_CAPACITY=3000 件旧物会让每件新掉落都触发
+    // 全包腾位扫描(3000 件 × keepVerdict × 排序),单测超时 —— 故只塞 200 件旧物
+    // 再把离线时长压到 2h(产出约数十件),腾位逻辑与账本口径不变,速度可接受。
+    const JUNK_N = 200
+    const junk = Array.from({ length: JUNK_N }, (_, i) => ({ uid: `junk${i}`, templateId: 'b_mabu', quality: 'mortal' as const, tier: 1, level: 0, affixes: [] }))
+    inventory.items = junk.map(j => ({ ...j }))
+    // 行囊按 BAG_CAPACITY 判满:补足到满包,腾位才有"挤出去"可跑
+    for (let i = JUNK_N; i < BAG_CAPACITY; i += 1) {
+      inventory.items.push({ uid: `fill${i}`, templateId: 'b_mabu', quality: 'mortal', tier: 1, level: 0, affixes: [] })
+    }
+    const game = useGameStore()
+    const adventure = useAdventureStore()
+    game.lastActiveAt = Date.now() - 2 * HOUR_MS
+    adventure.session = {
+      ...(adventure.session as object),
+      startedAt: Date.now() - 2 * HOUR_MS,
+      endsAt: Date.now() + 999 * HOUR_MS
+    } as typeof adventure.session
+    acquired.length = 0
+    const summary = settleOffline(Date.now())!
+    const removed = junk.filter(j => !inventory.findItem(j.uid))
+    expect(removed.length, '这一档该有新件把旧物挤出去,否则判据没跑到东西').toBeGreaterThan(0)
+    expect(summary.evicted, '腾位化掉的旧件数').toBe(removed.length)
+    const evictedDust = removed.reduce((sum, j) => sum + salvageOf(j).dust, 0)
+    const producedRecycledDust = acquired.filter(a => !a.bagged).reduce((sum, a) => sum + a.dust, 0)
+    expect(summary.recycledDust, '回收化尘报少了:腾位化掉的旧件没算进去').toBe(producedRecycledDust + evictedDust)
+  })
+
   it('60 小时归来:资源差额与摘要逐项对得上,且每项变动都有交代', () => {
     setupBusySave()
     const player = usePlayerStore()
     const resources = useResourcesStore()
+    // 本用例只对资源差额(修为/灵石/灵气/材料/寿元),装备只是顺带结算 ——
+    // 预填满行囊让数百件掉落走满包化尘快速路径(无腾位扫描),否则逐件入包+成就扫描超时。
+    // 满包不影响资源差额断言(化尘只进 dust,本用例不断 dust)。
+    const inventory = useInventoryStore()
+    for (let i = 0; i < BAG_CAPACITY; i += 1) {
+      inventory.items.push({ uid: `prefill${i}`, templateId: 'b_mabu', quality: 'mortal', tier: 1, level: 0, affixes: [] })
+    }
     const before = {
       exp: { ...player.exp },
       stone: { ...resources.spiritStone },

@@ -9,6 +9,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { rng } from '@/utils/random'
 import {
   afterWin,
+  acquireArtifact,
   acquireEquipment,
   ARTIFACT_NEAR_BONUS,
   ARTIFACT_NEAR_WINDOW,
@@ -68,7 +69,7 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     }
   })
 
-  it('智能收纳开启时,凡良(分解勾选档)拾取即化尘,不入行囊,器灵尘到账', () => {
+  it('智能收纳开启时,低于保留线的凡良拾取即化尘,不入行囊,器灵尘到账', () => {
     useSettingsStore().smartKeep.enabled = true
     const resources = useResourcesStore()
     for (const q of ['mortal', 'fine'] as const) {
@@ -82,7 +83,7 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
     }
   })
 
-  it('总闸:智能收纳未开启时,凡良(默认分解勾选档)照常入包,不再自动回收', () => {
+  it('总闸:智能收纳未开启时,任何时候凡良都照常入包,不再自动回收', () => {
     expect(useSettingsStore().smartKeep.enabled).toBe(false)
     for (const q of ['mortal', 'fine'] as const) {
       const item = mk(q)
@@ -107,19 +108,23 @@ describe('自动回收 · 装备入包前的第一道闸', () => {
   it('智能收纳开启后,低于保留线又无核心词条的精品也会化尘', () => {
     useSettingsStore().smartKeep.enabled = true
     const resources = useResourcesStore()
-    const item = mk('excellent') // 精品 rank2,非勾选档 → 交由智能收纳裁决
+    const item = mk('excellent') // 精品 rank2,低于保留线 → 交由智能收纳裁决
     const got = acquireEquipment(item)
     expect(bagUids()).not.toContain(item.uid)
     expect(got.line).toContain('道途未成')
     expect(resources.dust).toBeGreaterThanOrEqual(DECOMPOSE_DUST[2] ?? 1)
   })
 
-  it('勾选档回收要写明是所勾品质,不写成与道无缘', () => {
-    useSettingsStore().smartKeep.enabled = true
-    const item = mk('mortal')
-    const got = acquireEquipment(item)
-    expect(got.line).toContain(`所勾${qualityDef('mortal').name}`)
-    expect(got.line).not.toContain('与道无缘')
+  it('手动「一键分解」勾到全套,也不影响自动收纳的取舍 —— 该留的照留', () => {
+    const settings = useSettingsStore()
+    settings.smartKeep.enabled = true
+    settings.decomposeRanks = [0, 1, 2, 3, 4, 5]
+    for (const q of ['spirit', 'profound'] as const) {
+      const item = mk(q) // 灵/玄品 ≥ 保留线(灵品):手动勾选档再宽也动它不得
+      const got = acquireEquipment(item)
+      expect(bagUids(), q).toContain(item.uid)
+      expect(got.line, q).not.toContain('自动回收')
+    }
   })
 
   it('新手馈赠(forceKeep)不受回收规则影响,必入包', () => {
@@ -326,5 +331,50 @@ describe('装备见闻 · 入账那一刻就记下成色', () => {
     inv.items = [...inv.items, { uid: 'used-2', templateId: 'w_qingshuang', quality: 'heaven', tier: 3, level: 0, affixes: [] }]
     expect(upgradeEquipment('used-2'), '强化应当成功(素材已给足)').toBe(true)
     expect(lore.equipSeen('w_qingshuang')?.u, '强化过也算上手').toBe(1)
+  })
 })
+
+/**
+ * 逆旅「独行」· 到手法宝默认祭上的问题(玩家反馈,两条):
+ * 「PC网页版转世立契,一世不用法器,但是解锁法器的时候系统会默认装备,契约直接失效了」
+ * 「轮回时选择'整世不祭炼一件法宝'契约,下一世得到第一个法宝会默认装备,
+ *   就算没有手动祭炼也会打破契约」
+ *
+ * 立下 artifact 禁忌之题时,系统不该替他「祭出」第一个法宝 ——
+ * 破题必须是玩家自己的选择,不能是默认装备替他说了算。
+ */
+describe('逆旅「独行」· 到手法宝不默认祭上', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  function vow(broken = false): import('@/data/samsara').LifeVow {
+    return { themeId: 'lt_zejian', at: 0, base: {}, baseBranches: 0, baseAvenged: 0, broken }
+  }
+
+  it('未立题时,首个法宝照旧自动祭上(原行为)', () => {
+    acquireArtifact('af_muyu')
+    const inv = useInventoryStore()
+    expect(inv.artifacts).toHaveLength(1)
+    expect(inv.equippedArtifacts, '首个法宝默认祭上').toEqual(['af_muyu'])
+  })
+
+  it('立下「整世不祭法宝」之题后,到手法宝只入囊、不默认祭上', () => {
+    usePlayerStore().setVow(vow(false))
+    acquireArtifact('af_muyu')
+    const inv = useInventoryStore()
+    expect(inv.artifacts, '法宝在囊中').toHaveLength(1)
+    expect(inv.equippedArtifacts, '立誓不祭法宝时不得自动祭上').toEqual([])
+  })
+
+  it('已破题或题目不忌法宝:照旧自动祭上(不得好心办坏事)', () => {
+    usePlayerStore().setVow(vow(true))
+    acquireArtifact('af_muyu')
+    expect(useInventoryStore().equippedArtifacts, '破题后恢复默认行为').toEqual(['af_muyu'])
+
+    setActivePinia(createPinia())
+    usePlayerStore().setVow({ ...vow(false), themeId: 'lt_feisheng' }) // 不忌法宝的题
+    acquireArtifact('af_muyu')
+    expect(useInventoryStore().equippedArtifacts, '题目无关法宝时照常祭上').toEqual(['af_muyu'])
+  })
 })

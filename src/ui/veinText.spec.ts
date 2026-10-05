@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { VEINS, INSIGHT_DISCOUNT_PER_POINT, INSIGHT_EFFECT_NAME, VEIN_EFFECT_CAPS } from '@/data/veins'
 import { formatPercent } from '@/utils/format'
 import { STAT_NAMES } from './statNames'
-import { effectiveVeinPoints, veinEffectText, veinPeakToast, veinShortToast } from './veinText'
+import { effectiveVeinPoints, veinBatchDoneToast, veinEffectText, veinPeakToast, veinShortToast } from './veinText'
 import type { AnyStatKey } from '@/types'
 
 describe('灵脉效果行与每点加成同源', () => {
@@ -46,5 +46,14 @@ describe('灵脉投点提示 · 文言报清到顶与灵石', () => {
     expect(veinPeakToast()).not.toContain('主脉')
     expect(veinShortToast()).toContain('灵石')
     expect(veinShortToast()).not.toContain('不足')
+  })
+})
+
+describe('灵脉连投总结账', () => {
+  it('连投报点数与总耗,不带主脉措辞', () => {
+    const line = veinBatchDoneToast('赤炎灵脉', 12, '1.2万')
+    expect(line).toContain('连注 12 点')
+    expect(line).toContain('1.2万')
+    expect(line).not.toContain('主脉')
   })
 })

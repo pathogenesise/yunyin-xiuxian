@@ -2,8 +2,7 @@
   <BaseModal :open="open" title="数值体系" @close="$emit('close')">
     <div class="space-y-3 text-[12px] leading-relaxed">
       <p class="text-ink-faint">
-        每个大境界,数值按复利增长;而"净耗时"增长得更慢 —— 字段里的倍率都取自代码常数,
-        不是手写的漂亮话。
+        每高一层境界,所需多寡自有其法;此处所写,皆按修行实账而来,不掺虚言。
       </p>
 
       <!-- 各数值轴的复利倍率 -->
@@ -35,7 +34,7 @@
       <!-- 积余:卡境不浪费 -->
       <!-- 花费同样复利:不是线性涨价 -->
       <div class="card-ink px-3 py-2">
-        <p class="text-[10px] text-ink-faint">花费曲线(同为复利,非线性)</p>
+        <p class="text-[10px] text-ink-faint">花费同按倍率逐级加码(越到后头越重,并非固定加价)</p>
         <div class="mt-1.5 space-y-1">
           <div v-for="c in COST_CURVES" :key="c.id" class="flex items-start gap-2">
             <span class="w-[92px] shrink-0 text-ink-soft">{{ c.name }}</span>
@@ -77,7 +76,7 @@
         </div>
         <p class="mt-1.5 text-[10px] leading-relaxed text-ink-soft">{{ SORCERY_SUMMARY }}</p>
         <p class="mt-1 text-[10px] text-ink-faint">
-          四门的数字同样取自各自模块(问卦代价、卦的时长档位、星象加成、八门之数),此处不手写。
+          四门代价如下,数字皆与修行现场一一对应;此处所列,即实打实之数。
         </p>
       </div>
 

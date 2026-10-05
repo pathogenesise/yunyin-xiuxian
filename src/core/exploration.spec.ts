@@ -11,7 +11,6 @@ import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
-import { useSettingsStore } from '@/stores/settings'
 import { gnZero, sub, toNum } from '@/utils/gnum'
 import { useResourcesStore } from '@/stores/resources'
 import { EXPLORE_BOSS_AFTER_WINS } from '@/data/constants'
@@ -333,60 +332,5 @@ describe('首领门槛 · 界面提示与战斗判定同源', () => {
 
   it('已靖地界:不再有首领,提示返回 null', () => {
     expect(winsUntilRegionBoss(0, true)).toBeNull()
-  })
-})
-
-/**
- * 际遇自动抉择 —— 开启后不弹窗,直接按默认选项了结。
- *
- * 判据只有一条:开启时走 autoResolveEvent(与搁置超时同一个函数、同一套
- * 「优先 isDefault」判据),关闭时照旧挂起等玩家选。
- * 关掉时必须仍会弹窗 —— 那是默认行为,不该被开关的加入顺带改掉。
- */
-describe('际遇自动抉择 · 开启后不弹窗', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    protect.value = false
-    combatWin.value = true
-    eventDue.value = false
-  })
-
-  it('关闭(默认):遇到际遇挂起待选,不自动了结', () => {
-    const player = usePlayerStore()
-    player.initCharacter('手动', { roots: [] } as never)
-    const now = Date.now()
-    forgeSession(now)
-    eventDue.value = true
-
-    tickExploration(now)
-
-    const adventure = useAdventureStore()
-    expect(adventure.pendingEventId, '关闭时应当弹窗待选').not.toBeNull()
-    expect(adventure.session!.events, '未了结,不计入次数').toBe(0)
-  })
-
-  it('开启:直接按默认选项结算,不计待选', () => {
-    const player = usePlayerStore()
-    player.initCharacter('自动', { roots: [] } as never)
-    useSettingsStore().autoEventChoice = true
-    const now = Date.now()
-    forgeSession(now)
-    eventDue.value = true
-
-    tickExploration(now)
-
-    const adventure = useAdventureStore()
-    expect(adventure.pendingEventId, '开启后不该挂起').toBeNull()
-    expect(adventure.session!.events, '已了结,计入次数').toBe(1)
-    // 与手动路径一致:了结后立刻排下一场,且不会因为 eventLuck 归零而停摆
-    expect(adventure.session!.nextBattleAt).toBeGreaterThan(now)
-  })
-
-  it('设置项可持久化:损坏值被净化成 false(宁可弹窗也不擅自了结)', () => {
-    const settings = useSettingsStore()
-    // @ts-expect-error 故障注入:存档里存了一个非布尔值
-    settings.autoEventChoice = 'yes'
-    settings.sanitize()
-    expect(settings.autoEventChoice).toBe(false)
   })
 })

@@ -73,6 +73,10 @@
  *      窄屏上句号就会独自占一行 —— 量的是渲染结果,比在源码里认标点准。
  *   三十六 敌人卡最挤的一档:名字最长 9 字 + 满标签(首领/宿敌/3 特性)+ 星级。
  *      巡页用的档里敌人名字都短、认知层为 0(特性根本不显示),这一档从前没被量过。
+ *   三十七 开炉炼丹弹窗(议题 #21):真打开量 —— 丹名单行、信息栏不被右列挤窄、
+ *      正文之外没有第二个滚动盒、正文超长时上下有渐隐提示。
+ *   三十八 词条转移面板(议题 #22):最挤的一档(九条词条的神品源件、满条带封存的目标)
+ *      三档宽度真走一遍,每步过通用尺子,确认后器灵尘照价签扣。
  *
  * 判据是「横向溢出」这一类——它正是窄屏上最常见的排版事故。
  * 说明:这是无头 Chromium 的视口模拟,不是真机;字体渲染与安全区(刘海/手势条)
@@ -137,7 +141,15 @@ const ROUTES = [
  * 本来就由下面 watchPageErrors 分流不计。自检从此不再随别人的 CDN 起伏。
  */
 const browser = await chromium.launch({
-  args: ['--allow-file-access-from-files', '--disable-web-security', '--host-resolver-rules=MAP sdk.51.la ~NOTFOUND']
+  // --no-sandbox / --disable-dev-shm-usage:容器里 headless 常崩(无用户命名空间、/dev/shm 只有 64M),
+  // 崩起来样式是一个个怪异(但真实)的失败 —— 见 ui-smoke 里同一处注释,这里一并防住
+  args: [
+    '--allow-file-access-from-files',
+    '--disable-web-security',
+    '--no-sandbox',
+    '--disable-dev-shm-usage',
+    '--host-resolver-rules=MAP sdk.51.la ~NOTFOUND'
+  ]
 })
 const failures = []
 let checked = 0
@@ -739,7 +751,7 @@ for (const vp of VIEWPORTS) {
     location.hash = '#/settings'
   })
   await page.waitForTimeout(800)
-  const warned = await page.evaluate(() => document.body.innerText.includes('上次写入存档失败'))
+  const warned = await page.evaluate(() => document.body.innerText.includes('上次存档没能存下'))
   checked += 1
   if (!warned) failures.push('[375] /settings → 存档写失败时设置页没有提示(静默丢档)')
   if (pageErrors.length) failures.push(`[375] 存档失败场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
@@ -1699,11 +1711,12 @@ for (const vp of VIEWPORTS) {
   if (downloaded && !/\.save$/.test(downloaded)) failures.push(`[390] 存读场景:导出的文件名不像存档(${downloaded})`)
 
   // 动一下不会自己变的数:投一点灵脉,把灵石花掉
-  await page.goto(INDEX + '#' + '/', { waitUntil: 'load' })
+  // 灵脉投资已从弹窗改为东府页展开区(默认折叠):走到东府页,点开折叠头再投点。
+  await page.goto(INDEX + '#' + '/dongfu', { waitUntil: 'load' })
   await page.waitForTimeout(900)
   await page.getByRole('button', { name: /灵脉投资/ }).first().click({ timeout: 3000 }).catch(() => {})
   await page.waitForTimeout(400)
-  const invest = page.locator('.modal-panel button.btn-ghost:not([disabled])').first()
+  const invest = page.locator('#vein-panel button.btn-ghost:not([disabled])').first()
   let spent = null
   if ((await invest.count()) === 0) failures.push('[390] 存读场景:灵脉弹窗里没有可投的脉(判据没跑到东西)')
   else {
@@ -1830,7 +1843,8 @@ for (const vp of VIEWPORTS) {
     if (!armed) failures.push('[390] 收纳场景:找不到「依此规则清理行囊」按钮')
     await page.waitForTimeout(300)
     const warn = await page.evaluate(() => (document.querySelector('.modal-panel')?.innerText || '').replace(/\n+/g, ' '))
-    const promisedCount = Number((/共\s*(\d+)\s*件/.exec(warn) || [])[1] ?? NaN)
+    // 确认框文案随版本走动:老句「共 N 件」→ 新句「将化尘 N 件,入炉可得…」。两式都认,免得尺子被改词带翻
+    const promisedCount = Number((/将化尘\s*(\d+)\s*件/.exec(warn) || /共\s*(\d+)\s*件/.exec(warn) || [])[1] ?? NaN)
     if (promisedCount !== 2) {
       failures.push(`[390] 收纳场景:该清的只有 2 件废物,确认框写的是 ${promisedCount} 件 —— 练过/成套/近满的件被算进了清理名单(${warn.slice(0, 90)})`)
     }
@@ -1842,13 +1856,13 @@ for (const vp of VIEWPORTS) {
       [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
     )
     if (after !== 3) failures.push(`[390] 收纳场景:清理后行囊剩 ${after} 件(应为 3 —— 那 3 件有投入的必须留下)`)
-    if (!/收纳毕:2 件/.test(toast)) failures.push(`[390] 收纳场景:清理后的交代不对(${toast || '无提示'})`)
+    if (!/收纳既毕,2 件无缘之物化尘/.test(toast)) failures.push(`[390] 收纳场景:清理后的交代不对(${toast || '无提示'})`)
     for (const [uid, name] of [['k_set', '玄铁重剑'], ['k_roll', '桃木簪']]) {
       if (!body.includes(name)) failures.push(`[390] 收纳场景:${name}(${uid})被自动清理了`)
     }
     if (!/\+3/.test(body)) failures.push('[390] 收纳场景:练过的那件(+3)被自动清理了')
     if (after === 3 && promisedCount === 2) {
-      console.log(`\n智能收纳:行囊 5 件 → 确认框「共 ${promisedCount} 件」→ 清理后 ${after} 件(练过/成套/近满三件都留下)`)
+      console.log(`\n智能收纳:行囊 5 件 → 确认框「${promisedCount} 件」→ 清理后 ${after} 件(练过/成套/近满三件都留下)`)
     }
   }
   if (pageErrors.length) failures.push(`[390] 收纳场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
@@ -1954,13 +1968,13 @@ for (const vp of VIEWPORTS) {
       const after = await bagCount()
       const afterToast = await toasts()
       if (after !== 0) failures.push(`[390] 分解场景:点了「分 解」行囊还剩 ${after} 件(两件精品都该拆掉)`)
-      if (!/已分解\s*2\s*件/.test(afterToast)) failures.push(`[390] 分解场景:点「分 解」之后没有交代(${afterToast || '无提示'})`)
+      if (!/炉中化去 2 件/.test(afterToast)) failures.push(`[390] 分解场景:点「分 解」之后没有交代(${afterToast || '无提示'})`)
       const promised = Number((/得器灵尘×(\d+)/.exec(afterToast) || [])[1] ?? NaN)
       const dustAfter = await dustCount()
       if (promised !== 88) {
         failures.push(`[390] 分解场景:两件精品(其中一件 +4,记账投入尘 100)该退 88 尘,提示写的是 ${promised}`)
       }
-      if (!/退灵石\s*6,400/.test(afterToast)) failures.push(`[390] 分解场景:练过的件没退灵石(记了 8000,该退 6400)—— ${afterToast}`)
+      if (!/灵石退还\s*6,400/.test(afterToast)) failures.push(`[390] 分解场景:练过的件没退灵石(记了 8000,该退 6400)—— ${afterToast}`)
       if (dustBefore === null || dustAfter === null || dustAfter - dustBefore !== promised) {
         failures.push(`[390] 分解场景:提示说给 ${promised} 尘,器灵尘那一栏 ${dustBefore} → ${dustAfter}(所见非所得)`)
       }
@@ -2112,7 +2126,7 @@ for (const vp of VIEWPORTS) {
   await page.goto(INDEX + '#' + '/dongfu', { waitUntil: 'load' })
   await page.waitForTimeout(900)
   // 正则留出空白余量:卡片上的代价换行(数 + 量词 nowrap)会在「·」后断行
-  const buildBtn = page.locator('main button', { hasText: /建\s*造\s*·|升\s*级\s*·/ }).first()
+  const buildBtn = page.locator('main button', { hasText: /起\s*造\s*·|再\s*营\s*·/ }).first()
   if ((await buildBtn.count()) === 0) {
     failures.push('[390] 营造场景:洞府页没有可动工的建筑(判据没跑到东西)')
   } else {
@@ -2128,7 +2142,7 @@ for (const vp of VIEWPORTS) {
     else if (oreBefore.value === null || oreAfter.value === null || oreBefore.value - oreAfter.value !== oreCost) {
       failures.push(`[390] 营造场景:卡片写「${label}」,玄铁实际 ${oreBefore.text} → ${oreAfter.text}(所见非所付)`)
     }
-    if (!/升至|落成|建造/.test(toast)) failures.push(`[390] 营造场景:动工之后没有任何交代(${toast || '无提示'})`)
+    if (!/营造再进|落成/.test(toast)) failures.push(`[390] 营造场景:动工之后没有任何交代(${toast || '无提示'})`)
     console.log(`\n洞府营造:${label} → 玄铁 ${oreBefore.text} → ${oreAfter.text}(应扣 ${Number.isFinite(oreCost) ? oreCost : '?'})`)
   }
   if (pageErrors.length) failures.push(`[390] 营造场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
@@ -2367,7 +2381,7 @@ for (const vp of VIEWPORTS) {
     const toast = await page.evaluate(() =>
       [...document.querySelectorAll('.pointer-events-none.fixed button')].map(b => (b.textContent || '').trim()).join('|')
     )
-    const promised = Number((/分解得器灵尘×(\d+)/.exec(toast) || [])[1] ?? NaN)
+    const promised = Number((/此器化尘,得器灵尘×(\d+)/.exec(toast) || [])[1] ?? NaN)
     const dustAfterSplit = await readDust()
     const stillInBag = await page.evaluate(uid => !!document.querySelector(`main button[data-uid="${uid}"]`), BAG_UID)
     if (Number.isFinite(promised)) {
@@ -2377,7 +2391,7 @@ for (const vp of VIEWPORTS) {
       if (stillInBag) failures.push('[390] 锻造场景:分解之后那件还留在背包里')
       console.log(`\n背包账目:强化扣尘 ${costLine}(对上) · 分解得尘 ${promised}(对上,且件已出包)`)
     } else {
-      failures.push(`[390] 锻造场景:分解没有给出「分解得器灵尘×N」的交代(${toast || '无提示'})`)
+      failures.push(`[390] 锻造场景:分解没有给出「此器化尘,得器灵尘×N」的交代(${toast || '无提示'})`)
     }
   }
   if (pageErrors.length) failures.push(`[390] 锻造场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
@@ -2627,6 +2641,364 @@ for (const vp of VIEWPORTS) {
   await ctx.close()
 }
 
+// ---- 第三十七件事:开炉炼丹弹窗的窄屏排版(议题 #21) ----
+/*
+ * 这扇弹窗从没被打开量过:巡页只量页面,弹窗不开就不存在;夹具也没有丹方,
+ * 就算打开也只是「尚无丹方」的空态。于是批量炼丹加了「连炼 ×5」之后,右侧按钮列变宽,
+ * 窄屏上丹名被压成竖排,方子列表自带的滚动框把下一张卡片切成一条圆角 —— 全绿通过,
+ * 由玩家先看到(议题 #21)。
+ *
+ * 夹具备六张方子(含五字丹名「玄冥护体丹」「千年延寿丹」)与几项练过的技艺,三档宽度各开一次:
+ *   一 通用尺子(竖排 / 量词分家 / 孤字标点 / 可点元素 ≥28px)对开着的弹窗再量一遍;
+ *   二 丹名单行,方子信息栏不窄于卡片的六成(右侧不许再并排一列定宽的东西);
+ *   三 弹窗里除正文外不许再有第二个会滚的盒子(两层滚动,内层底边就会切卡片);
+ *   四 正文超长时底边要有渐隐提示;滚到底后底边提示消失、顶边提示出现。
+ */
+for (const vp of [
+  { width: 320, height: 568, tag: '320', dpr: 2 },
+  { width: 375, height: 812, tag: '375', dpr: 3 },
+  { width: 390, height: 844, tag: '390', dpr: 3 }
+]) {
+  const tag = `[${vp.tag}-craft]`
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const now = Date.now()
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: now - 86400000, lastActiveAt: now, totalPlaySec: 600, createRerolls: 8, createProfile: null },
+    player: {
+      name: '开炉自检',
+      major: 4,
+      sub: 2,
+      exp: gn(1, 3),
+      age: 120,
+      dead: false,
+      reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] },
+      linggen: { roots: [{ element: 'fire', aptitude: 80 }], gradeName: '单灵根', growthMult: 1.2 }
+    },
+    resources: { spiritStone: gn(3.2, 7), qi: 500, wudao: 50, herb: 2400, ore: 100, page: 10, dust: 40 },
+    inventory: { items: [], equipped: {}, pills: { p_jvqidan: 3 }, artifacts: [], equippedArtifacts: [] },
+    lore: {
+      materialLore: {},
+      materialSeen: {},
+      // 六张方子:一阶到高阶、含两个五字丹名(最长的名字),熟练度各不相同(把握数位数不同)
+      recipeLore: { p_jvqidan: 1, p_huichun: 0.6, p_pojing: 0.4, p_xuanming: 0.3, p_yanshou: 0.5, p_qianshou: 0.2 },
+      blueprintLore: {},
+      skillExp: { herbLore: 400, pairing: 120, condense: 60, nurture: 900, flame: 1500, smithing: 30 },
+      enemyLore: {},
+      enemySeen: {},
+      studyFrac: 0,
+      seeded: true
+    },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: false, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'dark' }
+  }
+  await ctx.addInitScript(
+    data => {
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(1200)
+  await clearOverlays(page)
+  await page.getByRole('tab', { name: '丹药' }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(400)
+  await page.locator('main button', { hasText: '开炉炼丹' }).first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(700)
+  checked += 1
+  if (SHOTS) await page.screenshot({ path: `${SHOTS_DIR}/craft-${vp.tag}-top.png` }).catch(() => {})
+
+  const craft = await page.evaluate(() => {
+    const panel = [...document.querySelectorAll('.modal-panel')].find(p => (p.querySelector('h3')?.textContent || '').includes('开炉'))
+    if (!panel) return null
+    const body = panel.querySelector('[data-modal-body]')
+    const cards = [...panel.querySelectorAll('.card-ink')]
+    const names = cards.map(card => {
+      const name = card.querySelector('.font-kai')
+      const info = card.querySelector('.min-w-0.grow')
+      const nr = name?.getBoundingClientRect()
+      const lh = name ? parseFloat(getComputedStyle(name).lineHeight) || 16 : 16
+      return {
+        label: (name?.textContent || '').trim(),
+        lines: nr ? Math.round(nr.height / lh) : 0,
+        infoRatio: info ? info.getBoundingClientRect().width / card.getBoundingClientRect().width : 0
+      }
+    })
+    // 正文之外还会滚的盒子:overflow-y 是 auto/scroll,且内容确实超出了它
+    const nestedScrollers = [...panel.querySelectorAll('*')]
+      .filter(el => el !== body && /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1)
+      .map(el => `${el.tagName.toLowerCase()}.${String(el.className).split(' ').slice(0, 3).join('.')}(${el.clientHeight}/${el.scrollHeight}px)`)
+    return { hasBody: !!body, cards: names, nestedScrollers }
+  })
+
+  if (!craft) {
+    failures.push(`${tag} 开炉场景:点了「开炉炼丹」弹窗没出来`)
+  } else if (craft.cards.length < 6) {
+    failures.push(`${tag} 开炉场景:方子只画出 ${craft.cards.length} 张(夹具备了 6 张,lore 分片没读出来?)`)
+  } else {
+    for (const c of craft.cards) {
+      if (c.lines > 1) failures.push(`${tag} 丹名被折成 ${c.lines} 行:«${c.label}»`)
+      if (c.infoRatio < 0.6) failures.push(`${tag} 方子信息栏只占卡片 ${Math.round(c.infoRatio * 100)}% 宽(右侧又并排了定宽的列):«${c.label}»`)
+    }
+    if (craft.nestedScrollers.length) failures.push(`${tag} 弹窗正文里还套着会滚的盒子:${craft.nestedScrollers.join(' | ')}`)
+    if (!craft.hasBody) failures.push(`${tag} 找不到弹窗正文(data-modal-body),渐隐判据没跑到东西`)
+
+    // 通用尺子:弹窗开着再量一遍(竖排 / 量词分家 / 孤字 / 过小的可点元素都会落进来)
+    const info = await measurePage(page)
+    for (const p of problemsOf(info)) failures.push(`${tag} 开炉弹窗 → ${p}`)
+    const audit = await auditModalControls(page)
+    if (audit?.small.length) failures.push(`${tag} 开炉弹窗里可点元素过小:${audit.small.join(' | ')}`)
+    if (audit?.unnamed.length) failures.push(`${tag} 开炉弹窗里有 ${audit.unnamed.length} 个无名控件`)
+
+    // 渐隐提示:正文超长时,在顶 → 只亮底边;滚到底 → 只亮顶边
+    const edgeState = () =>
+      page.evaluate(() => {
+        const panel = [...document.querySelectorAll('.modal-panel')].find(p => (p.querySelector('h3')?.textContent || '').includes('开炉'))
+        const body = panel?.querySelector('[data-modal-body]')
+        const shown = sel => {
+          const el = panel?.querySelector(sel)
+          return !!el && getComputedStyle(el).display !== 'none'
+        }
+        return {
+          overflow: body ? body.scrollHeight - body.clientHeight : 0,
+          top: shown('.modal-edge-top'),
+          bottom: shown('.modal-edge-bottom'),
+          found: !!panel?.querySelector('.modal-edge-top') && !!panel?.querySelector('.modal-edge-bottom')
+        }
+      })
+    const atTop = await edgeState()
+    if (!atTop.found) {
+      failures.push(`${tag} 开炉弹窗没有渐隐提示层(.modal-edge-top / .modal-edge-bottom)`)
+    } else if (atTop.overflow <= 2) {
+      failures.push(`${tag} 开炉场景:正文没超长(${atTop.overflow}px),渐隐判据没跑到东西 —— 夹具方子太少?`)
+    } else {
+      if (!atTop.bottom) failures.push(`${tag} 正文下面还有 ${atTop.overflow}px,底边却没有渐隐提示`)
+      if (atTop.top) failures.push(`${tag} 正文在顶上,顶边却亮着渐隐提示`)
+      await page.evaluate(() => {
+        const panel = [...document.querySelectorAll('.modal-panel')].find(p => (p.querySelector('h3')?.textContent || '').includes('开炉'))
+        const body = panel?.querySelector('[data-modal-body]')
+        if (body) body.scrollTop = body.scrollHeight
+      })
+      await page.waitForTimeout(300)
+      const atBottom = await edgeState()
+      if (atBottom.bottom) failures.push(`${tag} 滚到底了,底边渐隐提示还亮着`)
+      if (!atBottom.top) failures.push(`${tag} 滚到底了,顶边没有渐隐提示(上面还有内容)`)
+    }
+    if (SHOTS) await page.screenshot({ path: `${SHOTS_DIR}/craft-${vp.tag}-bottom.png` }).catch(() => {})
+  }
+  if (pageErrors.length) failures.push(`${tag} 开炉场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
+// ---- 第三十八件事:词条转移面板(议题 #22)真走一遍,并对账 ----
+/*
+ * 夹具摆出最挤的一档:源件是神品武器、九条词条(含最长的效果句与重名的「破妄」);
+ * 目标是已装备的天品武器、七条满、封着一条;另有一件已有「洞虚」且更高的(置灰),
+ * 再加八件候选,逼出「全部 N 件」。三档宽度各走一遍:
+ *   选「洞虚」→ 展开全部候选 → 选已装备那件 → 只有「顶替「破甲」」成立且已预选
+ *   → 「转 移」→ 确认态写清顶替什么、源件失去什么 → 「确认转移」→ 器灵尘照价签扣。
+ * 每一步都过通用尺子(竖排 / 量词分家 / 孤字 / 可点 ≥28px / 正文外无第二个滚动盒)。
+ */
+for (const vp of [
+  { width: 320, height: 568, tag: '320', dpr: 2 },
+  { width: 375, height: 812, tag: '375', dpr: 3 },
+  { width: 390, height: 844, tag: '390', dpr: 3 }
+]) {
+  const tag = `[${vp.tag}-transfer]`
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const now = Date.now()
+  const roll9 = ids => ids.map(id => ({ id, roll: 0.9 }))
+  const extras = ['w_zhuqing', 'w_xuantie', 'w_qingshuang', 'w_hanfeng', 'w_zhuqing', 'w_xuantie', 'w_qingshuang', 'w_hanfeng'].map((templateId, i) => ({
+    uid: `tf_x${i}`,
+    templateId,
+    quality: i % 2 ? 'immortal' : 'heaven',
+    tier: 25,
+    level: 0,
+    affixes: [{ id: 'atk1', roll: 0.5 }]
+  }))
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: now - 86400000, lastActiveAt: now, totalPlaySec: 600, createRerolls: 8, createProfile: null },
+    player: {
+      name: '转移自检',
+      major: 12,
+      sub: 3,
+      exp: gn(1, 3),
+      age: 300,
+      dead: false,
+      reincarnation: { count: 1, daoFruit: 3, talents: [], insight: 50, lives: [], vow: null, trial: null, bonds: [] },
+      linggen: { roots: [{ element: 'metal', aptitude: 90 }], gradeName: '单灵根', growthMult: 1.2 }
+    },
+    resources: { spiritStone: gn(1, 40), qi: 5000, wudao: 200, herb: 100, ore: 100, page: 20, dust: 999999 },
+    inventory: {
+      items: [
+        { uid: 'tf_src', templateId: 'w_hanfeng', quality: 'divine', tier: 25, level: 0, affixes: roll9(['exe2', 'bs2', 'fm2', 'lh2', 'pen3', 'dmg1', 'ac2', 'cdmg2', 'ls2']) },
+        {
+          uid: 'tf_main',
+          templateId: 'w_zidian',
+          quality: 'heaven',
+          tier: 25,
+          level: 3,
+          affixes: [
+            { id: 'pen1', roll: 0.5 },
+            { id: 'atk1', roll: 0.5 },
+            { id: 'def1', roll: 0.5 },
+            { id: 'hp1', roll: 0.5 },
+            { id: 'cult1', roll: 0.5 },
+            { id: 'gain1', roll: 0.5 },
+            { id: 'crit1', roll: 0.5 }
+          ],
+          sealedAffixIds: ['atk1']
+        },
+        { uid: 'tf_dup', templateId: 'w_qingshuang', quality: 'heaven', tier: 25, level: 0, affixes: [{ id: 'pen3', roll: 0.97 }] },
+        ...extras
+      ],
+      equipped: { weapon: 'tf_main' },
+      pills: {},
+      artifacts: [],
+      equippedArtifacts: []
+    },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: false, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'dark' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__transferSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__transferSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(1200)
+  await clearOverlays(page)
+
+  /** 每一步都过的尺子:通用排版判据 + 弹窗控件 + 正文外无第二个滚动盒 */
+  const rulers = async step => {
+    checked += 1
+    const info = await measurePage(page)
+    for (const p of problemsOf(info)) failures.push(`${tag} ${step} → ${p}`)
+    const audit = await auditModalControls(page)
+    if (audit?.small.length) failures.push(`${tag} ${step}:可点元素过小 ${audit.small.join(' | ')}`)
+    if (audit?.unnamed.length) failures.push(`${tag} ${step}:${audit.unnamed.length} 个无名控件`)
+    const nested = await page.evaluate(() => {
+      const panel = document.querySelector('.modal-panel')
+      const body = panel?.querySelector('[data-modal-body]')
+      return panel
+        ? [...panel.querySelectorAll('*')]
+            .filter(el => el !== body && /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1)
+            .map(el => `${el.tagName.toLowerCase()}(${el.clientHeight}/${el.scrollHeight}px)`)
+        : []
+    })
+    if (nested.length) failures.push(`${tag} ${step}:正文里还套着会滚的盒子 ${nested.join(' | ')}`)
+    if (SHOTS) await page.screenshot({ path: `${SHOTS_DIR}/transfer-${vp.tag}-${step}.png` }).catch(() => {})
+  }
+  const radios = group => page.locator(`.modal-panel [role=group][aria-label="${group}"] button`)
+  const dustOnPage = () =>
+    page.evaluate(() => {
+      const m = /器灵尘\s*(\d+)/.exec(document.querySelector('main')?.innerText || '')
+      return m ? Number(m[1]) : null
+    })
+
+  await page.locator('main button[data-uid="tf_src"]').first().click({ timeout: 3000 }).catch(() => {})
+  await page.waitForTimeout(600)
+  const entry = page.locator('.modal-panel footer button', { hasText: '转移词条' }).first()
+  if ((await entry.count()) === 0) {
+    failures.push(`${tag} 转移场景:源件详情里没有「转移词条」入口(夹具没读出来?)`)
+  } else {
+    // 先把详情滚到底再进转移:同一个滚动盒整块换内容,不回顶的话「转出」开头几条会在视口上方
+    await page.evaluate(() => {
+      const body = document.querySelector('.modal-panel [data-modal-body]')
+      if (body) body.scrollTop = body.scrollHeight
+    })
+    await page.waitForTimeout(200)
+    await entry.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(500)
+    const firstRowHidden = await page.evaluate(() => {
+      const body = document.querySelector('.modal-panel [data-modal-body]')
+      const first = document.querySelector('.modal-panel [role=group][aria-label="转出"] button')
+      if (!body || !first) return null
+      return first.getBoundingClientRect().top < body.getBoundingClientRect().top - 1
+    })
+    if (firstRowHidden !== false) failures.push(`${tag} 进转移时正文没回顶:「转出」第一条在视口上方(或没渲染)`)
+    const outCount = await radios('转出').count()
+    if (outCount !== 9) failures.push(`${tag} 转出列了 ${outCount} 条(源件九条)`)
+    await rulers('1-转出')
+
+    await radios('转出').filter({ hasText: '洞虚' }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(400)
+    const shown = await radios('转入').count()
+    const more = page.locator('.modal-panel button', { hasText: /全部 \d+ 件/ }).first()
+    if (shown !== 8) failures.push(`${tag} 候选先列 ${shown} 件(应先列 8 件)`)
+    if ((await more.count()) === 0) failures.push(`${tag} 候选 10 件却没有「全部 N 件」`)
+    else await more.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(300)
+    const all = await radios('转入').count()
+    if (all !== 10) failures.push(`${tag} 展开后候选 ${all} 件(应为 10)`)
+    const dupDisabled = await radios('转入').filter({ hasText: '已有此条' }).first().isDisabled().catch(() => false)
+    if (!dupDisabled) failures.push(`${tag} 已有更高「洞虚」的那件没置灰`)
+    await rulers('2-转入')
+
+    await radios('转入').filter({ hasText: '已装备' }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(500)
+    const slots = await page.evaluate(() =>
+      [...document.querySelectorAll('.modal-panel [role=group][aria-label="位置"] button')].map(el => ({
+        text: (el.textContent || '').replace(/\s+/g, ''),
+        disabled: el.disabled,
+        checked: el.getAttribute('aria-pressed') === 'true',
+        dashed: getComputedStyle(el).borderTopStyle === 'dashed'
+      }))
+    )
+    const append = slots.find(s => s.text.startsWith('新增'))
+    const pen = slots.find(s => s.text.includes('顶替「破甲」'))
+    if (!append || !append.disabled || !append.text.includes('词条已满')) failures.push(`${tag} 满条目标的「新增」没挡下/没写「词条已满」`)
+    if (!pen || pen.disabled || !pen.checked) failures.push(`${tag} 唯一成立的「顶替「破甲」」没预选`)
+    // 被挡的卡要一眼看得出(虚线框),不能与可选的长得一样、点了没反应
+    if (slots.some(s => s.disabled !== s.dashed)) failures.push(`${tag} 被挡的落位没有置灰(与可选的长得一样)`)
+    const stacked = slots.filter(s => s.text.includes('属性重叠')).length
+    if (stacked !== 6) failures.push(`${tag} 递减属性那几条应写「属性重叠」,实际 ${stacked} 条`)
+    const sealOn = await page.locator('.modal-panel input[type=checkbox]').first().isChecked().catch(() => false)
+    if (!sealOn) failures.push(`${tag} 「同时封存」默认没勾上`)
+    await rulers('3-位置')
+
+    const footer = (await page.locator('.modal-panel footer').innerText().catch(() => '')).replace(/\s+/g, ' ')
+    const price = /尘×(\d+)/.exec(footer)
+    const dustBefore = await dustOnPage()
+    await page.locator('.modal-panel footer button', { hasText: /转\s*移/ }).last().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(400)
+    const armedText = (await page.locator('.modal-panel footer').innerText().catch(() => '')).replace(/\s+/g, '')
+    if (!armedText.includes('洞虚') || !armedText.includes('顶替「破甲」') || !armedText.includes('源件失去「洞虚」')) {
+      failures.push(`${tag} 确认态没写清:${armedText.slice(0, 60)}`)
+    }
+    await rulers('4-确认')
+    await page.locator('.modal-panel footer button', { hasText: '确认转移' }).first().click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(700)
+    const dustAfter = await dustOnPage()
+    if (!price || dustBefore === null || dustAfter === null) {
+      failures.push(`${tag} 转移场景:读不到价签或器灵尘(价签 ${price?.[1]} · 前 ${dustBefore} · 后 ${dustAfter})`)
+    } else if (dustBefore - dustAfter !== Number(price[1])) {
+      failures.push(`${tag} 价签写尘×${price[1]},实扣 ${dustBefore - dustAfter}`)
+    }
+    const toast = await page.evaluate(() => document.body.innerText.includes('「洞虚」已转入'))
+    if (!toast) failures.push(`${tag} 转完没有「「洞虚」已转入」提示`)
+    const left = await radios('转出').count()
+    if (left !== 8) failures.push(`${tag} 转完源件应剩 8 条、面板留在转移模式,实际列 ${left} 条`)
+    if (vp.tag === '390') {
+      console.log(`\n词条转移:「洞虚」→ 已装备的那件,顶替「破甲」· 价签尘×${price?.[1]} · 器灵尘 ${dustBefore} → ${dustAfter}`)
+    }
+  }
+  if (pageErrors.length) failures.push(`${tag} 转移场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
+}
+
 // ---- 第十八件事:切后台/离开页面时,待刷的存档要立刻落盘 ----
 /*
  * 写盘是节流的(省电,见 savePersistence.spec),于是「刚做的改动」可能还躺在队列里;
@@ -2675,12 +3047,20 @@ for (const vp of VIEWPORTS) {
     return typeof v === 'number' ? v : v.m * Math.pow(10, v.e)
   }
   const investOnce = async () => {
-    await page.getByRole('button', { name: /灵脉投资/ }).first().click({ timeout: 3000 }).catch(() => {})
-    await page.waitForTimeout(400)
-    await page.locator('.modal-panel button.btn-ghost:not([disabled])').first().click({ timeout: 3000 }).catch(() => {})
+    // 灵脉投资已从弹窗改为东府页展开区:先走到东府页,点开折叠头(已展开则不重复收拢),再点投点钮。
+    await page.goto(INDEX + '#' + '/dongfu', { waitUntil: 'load' })
+    await page.waitForTimeout(700)
+    const expanded = await page
+      .getByRole('button', { name: /灵脉投资/ })
+      .first()
+      .getAttribute('aria-expanded')
+      .catch(() => null)
+    if (expanded !== 'true') {
+      await page.getByRole('button', { name: /灵脉投资/ }).first().click({ timeout: 3000 }).catch(() => {})
+      await page.waitForTimeout(400)
+    }
+    await page.locator('#vein-panel button.btn-ghost:not([disabled])').first().click({ timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(500)
-    await page.keyboard.press('Escape')
-    await page.waitForTimeout(300)
     return readFormatted(page, '灵石')
   }
   checked += 1
@@ -2852,9 +3232,9 @@ for (const vp of VIEWPORTS) {
     const card = [...document.querySelectorAll('.card-ink')].find(c => (c.textContent || '').includes('存档版本'))
     return (card?.innerText || '').replace(/\n+/g, ' ')
   })
-  if (!/分片损坏/.test(notice)) failures.push('[390] 坏档场景:设置页没有常驻交代(只说一次两秒的提示,玩家回头找不到原因)')
+  if (!/未能读全|损坏/.test(notice)) failures.push('[390] 坏档场景:设置页没有常驻交代(只说一次两秒的提示,玩家回头找不到原因)')
   if (!/资源/.test(notice)) failures.push(`[390] 坏档场景:设置页没说出坏的是哪一片 —— ${notice.slice(0, 80)}`)
-  if (!/corrupt\./.test(notice)) failures.push('[390] 坏档场景:设置页没说出原档备份在哪(玩家/帮他的人找不回来)')
+  if (!/原档.*(本机|删除)|留在本机/.test(notice)) failures.push('[390] 坏档场景:设置页没说出原档去向(玩家/帮他的人找不回来)')
   if (pageErrors.length) failures.push(`[390] 坏档场景页面异常:${[...new Set(pageErrors)].join(' | ')}`)
   console.log(`
 坏档开局:界面照常起来 · 启动提示「${bootToasts.split("|")[0] || "无"}」 · 设置页「${notice.slice(0, 46)}…」`)
@@ -2982,6 +3362,107 @@ for (const vp of VIEWPORTS) {
     }
     await ctx.close()
   }
+}
+
+// ---- 第二十六B件事:弹窗触控巡逻 —— 主动开常见的窗,把内部控件过一遍尺子 ----
+/*
+ * 「打开才存在」的控件是页面层巡页的盲区:巡页只量「当前恰好开着的弹窗」,
+ * 而玩家每天点开的分解/收纳/炼丹/装备详情等,从没在打开态被量过 28px 与可访问名。
+ * 此前实测就在这里放过三处 27px 的按钮(换装/重铸词条/自动重铸)。
+ * 判据不猜弹窗会不会被内容顶掉:开出来有数据就量、量到过小就红、开不开说明夹具没
+ * 铺够那扇窗,记为「判据没跑到东西」留给人工核对 —— 不因为某一扇打不开就连累其它几扇。
+ */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+  const SAVE_SECRET = 'yunyin-xiuxian::dao-in-the-clouds::v1'
+  const enc = o => CryptoJS.AES.encrypt(JSON.stringify(o), SAVE_SECRET).toString()
+  const gn = (m, e) => ({ m, e })
+  const slices = {
+    game: { started: true, saveVersion: 2, createdAt: Date.now(), lastActiveAt: Date.now(), totalPlaySec: 0, createRerolls: 8, createProfile: null },
+    player: { name: '弹窗巡逻', major: 5, sub: 3, exp: gn(1, 2), age: 40, lifespanBonusYears: 0, dead: false, reincarnation: { count: 0, daoFruit: 0, talents: [], insight: 0, lives: [], vow: null, trial: null, bonds: [] }, linggen: { roots: [{ element: 'wood', aptitude: 70 }], gradeName: '单灵根', growthMult: 1.1 } },
+    resources: { spiritStone: gn(1, 6), qi: 1000, wudao: 100, herb: 20, ore: 20, page: 5, dust: 50 },
+    inventory: {
+      items: [
+        { uid: 'p_1', templateId: 'w_zhuqing', quality: 'excellent', tier: 3, level: 1, affixes: [{ affixId: 'a_gongji', value: 5 }] },
+        { uid: 'p_2', templateId: 'b_mabu', quality: 'excellent', tier: 3, level: 0, affixes: [] }
+      ],
+      equipped: {},
+      pills: {},
+      artifacts: [],
+      equippedArtifacts: []
+    },
+    endgame: { daoPath: null, daoSource: 0, souls: [], equippedSouls: [] },
+    settings: { privacyAccepted: true, sfxOn: false, musicOn: false, musicVol: 0, sfxVol: 0, reduceMotion: true, battleSpeed: 4, decomposeRanks: [], smartKeep: { enabled: true, minQuality: 3, keepCoreAffix: true, keepComboPiece: true }, theme: 'light' }
+  }
+  await ctx.addInitScript(
+    data => {
+      if (localStorage.getItem('__patrolSeeded')) return
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
+      localStorage.setItem('__patrolSeeded', '1')
+    },
+    Object.fromEntries(Object.entries(slices).map(([k, v]) => [`yunyin.${k}`, enc(v)]))
+  )
+  const page = await ctx.newPage()
+  const pageErrors = []
+  watchPageErrors(page, pageErrors)
+  await page.goto(INDEX + '#' + '/inventory', { waitUntil: 'load' })
+  await page.waitForTimeout(2400)
+  checked += 1
+
+  /** 点开一扇窗 → 量内部控件 → 关掉。哪扇没开出来单独记账,不连坐。 */
+  const patrol = async (name, click) => {
+    const hit = await click()
+    if (!hit) {
+      // 入口点不开多半是夹具没铺够那扇窗的前置(收纳要有可清物、炼丹要有丹方)——
+      // 这是判据覆盖度的问题,不是产品缺陷,只留一句说明,不判失败
+      console.log(`弹窗巡逻:${name} · 入口没出现(夹具未铺该窗前置,留待人工核对)`)
+      return
+    }
+    await page.waitForTimeout(450)
+    const audit = await auditModalControls(page)
+    // 弹出态再上一次排版尺子(竖排 / 量词分家 / 孤字 / 过小的可点元素):
+    // 这几扇窗平时不常开,开着的时候才是它们最容易偷偷溢出/挤行的时刻
+    const info = await measurePage(page)
+    for (const p of problemsOf(info)) failures.push(`[弹窗巡逻] ${name} 弹窗 → ${p}`)
+    await page.keyboard.press('Escape').catch(() => {})
+    await page.waitForTimeout(250)
+    if (!audit || audit.count === 0) {
+      failures.push(`[弹窗巡逻] ${name}:开出来了但面板里一个控件都没数到`)
+      return
+    }
+    if (!audit.label) failures.push(`[弹窗巡逻] ${name} 弹窗没有可访问名(读屏只会念「对话框」)`)
+    if (audit.unnamed.length) failures.push(`[弹窗巡逻] ${name} 里有 ${audit.unnamed.length} 个无名控件:${audit.unnamed.join(' | ')}`)
+    if (audit.small.length) failures.push(`[弹窗巡逻] ${name} 里可点元素过小(<28px):${audit.small.join(' | ')}`)
+    console.log(`弹窗巡逻:${name} · ${audit.count} 控件${audit.small.length ? ' · 过小:' + audit.small.join(' | ') : ' · 触控达标'}`)
+  }
+
+  await patrol('分解', async () => {
+    const btn = page.locator('main button', { hasText: /^分\s*解$/ }).first()
+    if ((await btn.count()) === 0) return false
+    await btn.click({ timeout: 3000 }).catch(() => {})
+    return true
+  })
+  await patrol('收纳', async () => {
+    const btn = page.locator('main button', { hasText: /^收\s*纳/ }).first()
+    if ((await btn.count()) === 0) return false
+    await btn.click({ timeout: 3000 }).catch(() => {})
+    return true
+  })
+  await patrol('装备详情', async () => {
+    // 装备已在夹具里,点第一件看详情
+    const card = page.locator('main button[data-uid]').first()
+    if ((await card.count()) === 0) return false
+    await card.click({ timeout: 3000 }).catch(() => {})
+    return true
+  })
+  await patrol('开炉炼丹', async () => {
+    const btn = page.locator('main button', { hasText: /开\s*炉\s*炼\s*丹/ }).first()
+    if ((await btn.count()) === 0) return false
+    await btn.click({ timeout: 3000 }).catch(() => {})
+    return true
+  })
+  if (pageErrors.length) failures.push(`[弹窗巡逻] 页面异常:${[...new Set(pageErrors)].join(' | ')}`)
+  await ctx.close()
 }
 
 await browser.close()

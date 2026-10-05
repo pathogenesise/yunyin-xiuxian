@@ -88,7 +88,7 @@
         <p
           v-for="note in panelCaveats"
           :key="note.key"
-          class="mt-0.5 text-[9px] leading-relaxed text-ink-ghost"
+          class="mt-0.5 text-[9px] leading-relaxed text-ink-faint"
         >
           {{ note.label }}:{{ note.caveat }}
         </p>
@@ -103,12 +103,12 @@
               {{ signedPercent(c.value) }}
             </span>
           </p>
-          <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
+          <p class="mt-1 text-[9px] leading-relaxed text-ink-faint">
             明细之和就是上面那个数;标「另乘」的不并入百分比,而是单独乘在攻防血上。
           </p>
         </div>
         <p v-if="softCappedNotes.length" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">
-          标「软」者已达软上限:{{ softCappedNotes.join('、') }}。极限堆叠到此后收益递减,不是面板被削。
+          标「软」的,已堆到好处将尽之处:{{ softCappedNotes.join('、') }}。再叠上去收效渐微,并非面板出了岔子。
         </p>
       </div>
     </section>
@@ -137,6 +137,18 @@
     </button>
 
     <RouterLink to="/titles" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
+      <!--
+        相伴灵兽的"脸":有伴时亮出一枚玉印,未伴时也留一枚灰底虚位印 ——
+        9 张入口卡里只有这一张带前导图标,若用 v-if 直接消失,无宠物时的
+        文字起点会偏左、与同组其它卡对不齐(排版上像缺了一块)。
+      -->
+      <span
+        class="grid h-9 w-9 shrink-0 place-items-center rounded-md"
+        :class="currentPetIcon ? 'bg-jade/10 text-jade' : 'bg-ink/5 text-ink-faint'"
+      >
+        <GameIcon v-if="currentPetIcon" :name="currentPetIcon" :size="18" />
+        <span v-else class="font-kai text-[13px]">未</span>
+      </span>
       <span class="min-w-0 grow">
         <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">名号与灵兽</span>
         <span class="block truncate text-[10px] text-ink-faint">
@@ -291,7 +303,7 @@
           >
             {{ t!.name }}
           </button>
-          <span v-if="!ownedTalents.length" class="text-[11px] text-ink-ghost">转世后可觉醒先天之姿</span>
+          <span v-if="!ownedTalents.length" class="text-[11px] text-ink-faint">转世后可觉醒先天之姿</span>
         </div>
         <p v-if="talentTap && tappedTalent" class="mt-1.5 text-[10px] leading-relaxed text-ink-faint">
           <span :style="{ color: TALENT_GRADE_COLORS[tappedTalent.grade] }">{{ tappedTalent.name }}</span>
@@ -321,7 +333,7 @@
         >
           <span class="flex items-baseline justify-between">
             <span class="font-kai text-[14px] text-ink">{{ t.seal }} · {{ t.name }}</span>
-            <span class="tabular text-[12px]" :class="player.reincarnation.daoFruit >= t.cost ? 'text-cinnabar' : 'text-ink-ghost'">
+            <span class="tabular text-[12px]" :class="player.reincarnation.daoFruit >= t.cost ? 'text-cinnabar' : 'text-ink-faint'">
               {{ t.cost }} 道果
             </span>
           </span>
@@ -369,7 +381,7 @@
             <p class="text-[12px] leading-relaxed text-gold-ink">{{ herIntent.line }}</p>
             <p class="mt-1 text-[10px] text-ink-faint">她所求:{{ herIntent.wish }}</p>
             <!-- 意图由经历催生,不是凭空的:把「因何而起」摆出来 -->
-            <p v-if="herIntentSparks" class="text-[10px] text-ink-ghost">因何而起:{{ herIntentSparks }}</p>
+            <p v-if="herIntentSparks" class="text-[10px] text-ink-faint">因何而起:{{ herIntentSparks }}</p>
             <div class="mt-2.5 flex gap-2">
               <button
                 v-for="r in INTENT_CHOICES"
@@ -387,7 +399,7 @@
         <template v-if="pendingEvent && !bond.fallen && !bond.departed">
           <div class="mt-4 border-t border-ink/10 pt-3">
             <p class="font-kai text-[13px] tracking-widest text-ink">{{ pendingEvent.title }}</p>
-            <p class="text-[10px] text-ink-ghost">因何而来:{{ pendingEventTriggers }}</p>
+            <p class="text-[10px] text-ink-faint">因何而来:{{ pendingEventTriggers }}</p>
             <p class="mt-1 text-[11px] leading-relaxed text-ink-soft">{{ pendingEvent.text }}</p>
             <p class="mt-1.5 text-[11px] text-azure">{{ pendingEvent.herWish }}</p>
             <p class="text-[10px] text-ink-faint">{{ pendingEvent.herLimit }}</p>
@@ -444,7 +456,7 @@
         </p>
       </div>
       <div v-else class="space-y-2.5">
-        <p class="text-[12px] leading-relaxed text-ink-faint">师承是凡界修行者给你的"额外成长思想"。拜入师门,获一条方向性词条;行为与师承相合,师尊自有嘉许,不设惩罚。</p>
+        <p class="text-[12px] leading-relaxed text-ink-faint">师承,是你在凡界遇见的良师相赠的一份心法。拜入门下,得一条相合之增益;言行与师道相契,师尊自有嘉许 —— 纵偶有不契,也不至受罚。</p>
         <button
           v-for="m in mentorChoices()"
           :key="m!.id"
@@ -508,6 +520,7 @@
   import { rebirthDecisionHint } from '@/ui/rebirthText'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
+  import GameIcon from '@/components/common/GameIcon.vue'
 
   const player = usePlayerStore()
 
@@ -567,6 +580,7 @@
 
   const currentTitleName = computed(() => (player.titleId ? titleDef(player.titleId)?.name : undefined))
   const currentPetName = computed(() => (player.petId ? petDef(player.petId)?.name : undefined))
+  const currentPetIcon = computed(() => (player.petId ? petDef(player.petId)?.icon : undefined))
   const ownedTalents = computed(() => player.reincarnation.talents.map(id => talentDef(id)).filter(t => t !== undefined))
 
   const collectHave = computed(

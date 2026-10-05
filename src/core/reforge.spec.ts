@@ -100,6 +100,17 @@ describe('重铸动作 · 条数与数值一起重掷', () => {
     res.addSmall('dust', 100_000)
   }
 
+  it('模板缺失(坏档)不洗:没有价、不扣账 —— 抽取池要按部位过滤,不知部位就不洗', () => {
+    const broken: EquipmentInstance = { ...base, uid: 'broken', templateId: 'no_such_template' }
+    expect(reforgeCost(broken)).toBeNull()
+    setup(broken)
+    const res = useResourcesStore()
+    const dustBefore = res.dust
+    expect(reforgeEquipment('broken', true)).toBe(false)
+    expect(res.dust).toBe(dustBefore)
+    expect(useInventoryStore().findItem('broken')!.affixes).toEqual(broken.affixes)
+  })
+
   it('条数按品质区间重掷:上限拉满时,词条数真的变多', () => {
     const inst: EquipmentInstance = {
       ...base,

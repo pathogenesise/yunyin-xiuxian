@@ -69,3 +69,86 @@ describe('同源审计 · 历练收益账', () => {
     expect(src).toMatch(/expGain:\s*add\(session\.expGain/)
   })
 })
+
+/** 全部运行时源码(.ts / .vue,不含用例):「谁都不许再写一份」要扫全仓 */
+const ALL_SOURCES = import.meta.glob(['../**/*.ts', '../**/*.vue', '!../**/*.spec.ts'], {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>
+
+/** 去掉注释:注释里讲清这件事本身是好事,不算「又写了一份」 */
+function stripComments(src: string): string {
+  return src
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+}
+
+describe('同源审计 · 词条能长在哪(议题 #22)', () => {
+  /**
+   * 掉落、重铸、自动重铸候选、词条转移四处都要问「这条词条能不能长在这件上」。
+   * 从前前三处各抄一份「slots + minRank」,转移若再抄第四份,界面亮着、服务不认的事故就回来了。
+   *
+   * 判据是词级通则,不认某一种写法:运行时代码里**读** slots / minRank 字段
+   * (`.slots`、`?.minRank`、解构 `{ slots, minRank }`)只许在 data/affixes.ts —— 换成
+   * `(a.minRank ?? 0) <= rank`、`a.slots?.includes(...)`、先解构再比,一样会红。
+   * 只为显示读一下(「需仙品」)的那一处登记在 READ_ONLY,写清为什么不算判据。
+   * 故障注入:把详情弹窗 affixOptions 改回内联的 minRank 过滤 → 只有这一条红。
+   */
+  it('部位与品质门槛只在 data/affixes.ts 判一次(affixFitBlock),别处不许再读这两个字段', () => {
+    expect(Object.keys(ALL_SOURCES).length, 'glob 没扫到源码,断言会假绿').toBeGreaterThan(100)
+    const READS = /(?:\?\.|\.)(?:slots|minRank)\b|\{[^}]*\b(?:slots|minRank)\b[^}]*\}\s*=/
+    /** 只读来显示、不做判断的地方:文件 → 允许出现的那一行(整行比对,改了就得重新过目) */
+    const READ_ONLY: Record<string, string[]> = {
+      /**
+       * 词条图是查用的词典:把「能长在哪、几品起」当参考信息显给玩家看,
+       * 不喂任何「能不能长在这件上」的判断 —— 判断仍只走 affixFitBlock。
+       * 若哪天有人拿这些字段去决定掉落/重铸/转移,整页登记销账,红回来。
+       */
+      '/ui/affixInfoText.ts': [
+        "if (!def.slots || def.slots.length === 0) return '全部位'",
+        "return def.slots.map(s => EQUIP_SLOT_NAMES[s] ?? s).join('·')",
+        'if (def.minRank === undefined) return null',
+        'return `需${QUALITIES.find(q => q.rank === def.minRank)?.name ?? `${def.minRank} 品`}起`'
+      ],
+      '/ui/affixTransferText.ts': ['const minRank = affixDef(affixId)?.minRank ?? 0']
+    }
+    const paths = Object.keys(ALL_SOURCES)
+    expect(
+      Object.keys(READ_ONLY).filter(suffix => !paths.some(p => p.endsWith(suffix))),
+      'READ_ONLY 里登记的文件已不存在,销账'
+    ).toEqual([])
+    const offenders = Object.entries(ALL_SOURCES)
+      .filter(([path]) => !path.endsWith('/data/affixes.ts'))
+      .flatMap(([path, src]) => {
+        const allowed = Object.entries(READ_ONLY).find(([suffix]) => path.endsWith(suffix))?.[1] ?? []
+        return stripComments(src)
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => READS.test(line) && !allowed.includes(line))
+          .map(line => `${path} → ${line}`)
+      })
+    expect(offenders, '这些地方又读了词条的部位/品质门槛,判断改走 affixFitBlock').toEqual([])
+  })
+
+  /**
+   * 转移的价签与实扣必须是同一个数:界面只认 planTransfer 给的 cost,不自己按阶算灵石、
+   * 不自己调封存价。故障注入:页脚里加一处 stoneByTier( → 只有这一条红。
+   */
+  it('词条转移的界面只认 planTransfer 的价,不自己算', () => {
+    const ui = ['useAffixTransfer.ts', 'AffixTransferPanel.vue', 'AffixTransferFooter.vue'].map(name => {
+      const hit = Object.entries(ALL_SOURCES).find(([path]) => path.split('/').pop() === name)
+      if (!hit) throw new Error(`审计读不到 ${name}`)
+      return [name, stripComments(hit[1])] as const
+    })
+    for (const [name, src] of ui) {
+      expect(src, `${name} 自己算价 = 价签与实扣两套账`).not.toMatch(
+        /stoneByTier\s*\(|sealCost\s*\(|expectedRollsToHit\s*\(|REFORGE_(STONE|DUST)_BASE|TRANSFER_PRICE_RATE/
+      )
+    }
+    const flow = ui.find(([name]) => name === 'useAffixTransfer.ts')![1]
+    expect(flow, '价与可否必须来自 planTransfer').toMatch(/planTransfer\s*\(/)
+    expect(flow, '付不付得起必须来自 transferShort').toMatch(/transferShort\s*\(/)
+  })
+})

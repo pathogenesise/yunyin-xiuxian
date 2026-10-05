@@ -1,6 +1,8 @@
 <template>
-  <BaseModal :open="inst !== undefined" :title="template?.name ?? ''" top @close="close">
-    <div v-if="inst && template && resolved">
+  <BaseModal ref="modalRef" :open="inst !== undefined" :title="template?.name ?? ''" top @close="close">
+    <!-- 词条转移(议题 #22):同一扇弹窗内切换正文与页脚,不再叠一层 -->
+    <AffixTransferPanel v-if="transferOpen && inst" :flow="transfer" @view="viewTarget" />
+    <div v-else-if="inst && template && resolved">
       <div class="flex items-center gap-2">
         <QualityTag :quality="inst.quality" />
         <!-- 界域 + 阶位:同一句「23 阶」在人间界与仙界完全不是一回事,故写清是哪一界 -->
@@ -17,6 +19,17 @@
         </button>
       </div>
       <p class="mt-2 text-[12px] leading-relaxed text-ink-faint">{{ template.desc }}</p>
+      <!-- 装备标记(玩家反馈:同名装备想按不同流派区分) -->
+      <div class="mt-2 flex items-center gap-2">
+        <input
+          v-model="noteDraft"
+          :maxlength="4"
+          placeholder="加个标记区分流派(≤4字)"
+          class="min-w-0 grow rounded-md border border-ink/15 bg-paper-deep/60 px-2 py-1 text-[12px] text-ink outline-none placeholder:text-ink-faint focus:border-azure"
+          @change="applyNote"
+        />
+        <button v-if="noteDraft" class="-my-1 px-1 py-1 text-[11px] text-ink-faint active:opacity-60" @click="clearNote">清除</button>
+      </div>
       <!--
         共鸣是机制而非数值,但装备卡片此前一个字都不提:玩家在「要不要换掉这件」时,
         看不到它身上拴着一条会断的机制(见 core/equipSet)。
@@ -53,7 +66,7 @@
           <span>词 条</span>
           <span class="text-[10px] tracking-normal tabular">
             {{ inst.affixes.length }} / {{ affixCap }} 条
-            <span class="ml-1 text-ink-ghost">({{ qualityName }}上限)</span>
+            <span class="ml-1 text-ink-faint">({{ qualityName }}上限)</span>
           </span>
         </p>
         <!--
@@ -71,7 +84,7 @@
             v-for="(line, i) in resolved.affixLines"
             :key="line.id"
             class="flex items-center gap-2 py-1.5 pl-2 pr-1.5"
-            :class="i > 0 ? 'border-t border-violet-ink/12' : ''"
+            :class="i > 0 ? 'border-t border-violet-ink/10' : ''"
             :style="{ borderLeft: `2px solid ${AFFIX_RARITY_META[line.rarity].color}` }"
           >
             <span class="shrink-0 font-kai text-[12px]" :style="{ color: AFFIX_RARITY_META[line.rarity].color }">
@@ -93,8 +106,8 @@
             </button>
           </li>
         </ul>
-        <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
-          排序:稀有度(传世 → 常见)→ 掷点;左侧色边即这一条的成色
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
+          这条儿按珍贵而排,左侧色边即它的成色
         </p>
       </template>
       <template v-if="buildPreview">
@@ -105,8 +118,8 @@
             <template v-if="buildPreview.before">
               <span class="text-ink-soft">{{ buildPreview.before.displayName }} {{ Math.round(buildPreview.before.affinity * 100) }}%</span>
             </template>
-            <template v-else><span class="text-ink-ghost">未成路</span></template>
-            <span class="mx-1 text-ink-ghost">→</span>
+            <template v-else><span class="text-ink-faint">未成路</span></template>
+            <span class="mx-1 text-ink-faint">→</span>
             <template v-if="buildPreview.after">
               <span
                 class="font-kai"
@@ -126,8 +139,30 @@
           <span class="tabular">器灵尘×{{ upCost.dust }} · 灵石 {{ formatGN(upCost.stone) }}</span>
         </p>
         <p class="mt-1 text-[11px] tabular text-azure">{{ equipNextLevelText(inst.level) }}</p>
+        <!--
+          连升:逐级成本一次算清(预览与执行共用 upgradeBatchPlan),省掉逐级一按。
+          花的是累计总账,按一下不该就此了结 —— 二步确认与分解/散去同款。
+        -->
+        <div v-if="batchPlan.levels > 0" class="mt-2 flex items-center gap-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
+          <template v-if="batchConfirm !== inst.uid">
+            <div class="min-w-0 flex-1">
+              <p class="text-[10px] text-ink-faint">
+                连升至 <span class="font-kai text-[12px] text-cinnabar">+{{ inst.level + batchPlan.levels }}</span> 级
+              </p>
+              <p class="mt-0.5 text-[9px] text-ink-faint tabular">共 器灵尘×{{ batchPlan.dust }} · 灵石 {{ formatGN(batchPlan.stone) }}</p>
+            </div>
+            <button class="btn-ghost shrink-0 !px-3 !py-2 !text-[11px]" @click="batchConfirm = inst.uid">连 升</button>
+          </template>
+          <template v-else>
+            <p class="min-w-0 flex-1 text-[10px] leading-relaxed text-cinnabar">
+              一步连升 {{ batchPlan.levels }} 级,花上面那笔总账 —— 仍要?
+            </p>
+            <button class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="batchConfirm = null">再想想</button>
+            <button class="btn-seal shrink-0 !px-2.5 !py-2 !text-[11px]" @click="runBatchUpgrade">连 升</button>
+          </template>
+        </div>
       </template>
-      <p v-if="salvage" class="mt-1 flex items-center justify-between text-[11px] text-ink-ghost">
+      <p v-if="salvage" class="mt-1 flex items-center justify-between text-[11px] text-ink-faint">
         <span>分解返还{{ inst.level > 0 ? `(${salvageRefundPhrase()})` : '' }}</span>
         <span class="tabular">
           器灵尘×{{ salvage.dust }}
@@ -137,20 +172,20 @@
       <!-- 修士实验室:反事实换装推演(真仙可用) -->
       <template v-if="canWhatIf">
         <div class="ink-divider my-3" />
-        <button v-if="!whatIf" class="btn-ghost w-full !py-1.5 !text-[12px]" @click="runWhatIf">天机推演 · 若换此装,四天局面如何?</button>
+        <button v-if="!whatIf" class="btn-ghost w-full !py-2 !text-[12px]" @click="runWhatIf">天机推演 · 若换此装,四天局面如何?</button>
         <template v-else>
           <p class="mb-1.5 font-kai text-[12px] tracking-[0.3em] text-ink-faint">天机推演</p>
           <p class="text-[11px] text-ink-soft tabular">
             构筑:{{ whatIf.buildBefore?.displayName ?? '未成路' }}
-            <span class="text-ink-ghost">→</span>
+            <span class="text-ink-faint">→</span>
             {{ whatIf.buildAfter?.displayName ?? '流派散去' }}
           </p>
           <div class="mt-1 space-y-0.5">
             <p v-for="w in whatIf.worlds" :key="w.name" class="flex justify-between text-[11px]">
               <span class="text-ink-faint">{{ w.name }}</span>
               <span class="tabular">
-                <span class="text-ink-ghost">{{ w.beforeText }}</span>
-                <span class="mx-1 text-ink-ghost">→</span>
+                <span class="text-ink-faint">{{ w.beforeText }}</span>
+                <span class="mx-1 text-ink-faint">→</span>
                 <span :class="w.trend === 'up' ? 'text-jade' : w.trend === 'down' ? 'text-cinnabar' : 'text-ink-soft'">
                   {{ w.afterText }}
                 </span>
@@ -163,13 +198,94 @@
           <p class="mt-0.5 text-[10px] text-ink-faint">推演只述局面,不替你定夺。</p>
         </template>
       </template>
+
+      <!--
+        自动重铸:洗到指定词条即停(玩家反馈,可多选、可给最低值)。
+        注意它**不属于**上方的天机推演(修士实验室) —— 那是真仙+未装备才有的
+        v-if="canWhatIf" 段;重铸是凡人也在用的功能,若嵌在里面,普通玩家点开
+        开关只会变字、词条格子与「开洗」永远不渲染(实测即玩家反馈的「没生效」)。
+      -->
+      <div v-if="autoOpen && reforgeCostVal" class="mt-3 rounded-md border border-ink/15 bg-paper-deep/50 px-3 py-2">
+        <p class="mb-1 text-[11px] text-ink-soft">点词条看效果与区间,在弹框里设为目标(任一命中即停 · 已选 {{ autoTargets.length }}/3)</p>
+        <!-- 四档品质成组:传世在前、空组不占位 —— 一眼分出「撞大运的目标」与「随手可得」;
+             组色用词条自身的品质色(与装备卡片同源),选中的下一颗整颗亮成「你的目标章」 -->
+        <div class="max-h-40 space-y-1.5 overflow-y-auto pr-0.5">
+          <div v-for="group in rarityGroups" :key="group.rarity">
+            <p class="flex items-center gap-1.5 text-[9px] tracking-widest" :style="{ color: AFFIX_RARITY_META[group.rarity].color }">
+              <span class="h-px w-3 shrink-0" :style="{ background: AFFIX_RARITY_META[group.rarity].color }"></span>
+              {{ AFFIX_RARITY_META[group.rarity].name }} · {{ group.items.length }} 条
+            </p>
+            <div class="mt-1 grid grid-cols-3 gap-1">
+              <!-- 点词条名即弹框看它的效果与区间;设为目标改在弹框里做(玩家反馈:不要词条表,点哪条看哪条) -->
+              <button
+                v-for="af in group.items"
+                :key="af.id"
+                class="rounded px-1 py-1 text-[10px] leading-tight"
+                :class="isAutoTarget(af.id) ? 'border' : 'bg-ink/4'"
+                :style="isAutoTarget(af.id)
+                  ? { borderColor: AFFIX_RARITY_META[af.rarity].color, color: AFFIX_RARITY_META[af.rarity].color }
+                  : { color: 'var(--color-ink-faint)' }"
+                :title="`查看「${af.name}」效果与区间`"
+                @click="openCodex(af.id)"
+              >
+                <span v-if="isAutoTarget(af.id)" class="mr-0.5">选</span>{{ af.name }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-if="autoTargets.length" class="mt-1.5 space-y-0.5">
+          <!-- 已选目标回声品质色:它从哪一档领出来,这里就还它本来的颜色 -->
+          <p v-for="t in autoTargets" :key="t.affixId" class="flex items-center gap-2 text-[10px]">
+            <!-- 点已选词条名:钉开那张词条图,回来看清效果与区间再决定要不要留着这条目标 -->
+            <button
+              type="button"
+              class="w-10 shrink-0 truncate text-left font-kai"
+              :style="{ color: targetColor(t.affixId) }"
+              :title="`查看词条:${affixDef(t.affixId)?.name ?? t.affixId}`"
+              @click="openCodex(t.affixId)"
+            >
+              {{ affixDef(t.affixId)?.name ?? t.affixId }}
+            </button>
+            <input v-model.number="t.minRoll" type="range" min="0" max="1" step="0.05" class="grow accent-cinnabar" />
+            <span class="w-12 shrink-0 text-right tabular text-ink-faint">≥{{ Math.round((t.minRoll ?? 0) * 100) }}%</span>
+          </p>
+        </div>
+        <div class="mt-1.5 flex items-center gap-2">
+          <span class="text-[10px] text-ink-faint tabular">至多洗</span>
+          <input
+            v-model.number="autoBudget"
+            type="number"
+            min="1"
+            max="500"
+            class="w-16 rounded border border-ink/15 bg-paper/70 px-1 py-0.5 text-[11px] tabular"
+          />
+          <span class="text-[10px] text-ink-faint tabular">次 · 每洗 {{ formatGN(reforgeCostVal.stone) }} 尘×{{ reforgeCostVal.dust }}</span>
+          <button
+            class="btn-seal ml-auto !px-3 !py-1 !text-[11px]"
+            :disabled="!autoTargets.length"
+            :title="autoTargets.length ? undefined : '先点一条要洗到的词条'"
+            @click="runAutoReforge"
+          >
+            开 洗
+          </button>
+        </div>
+      </div>
     </div>
     <template #footer>
-      <div class="flex flex-col gap-2">
+      <AffixTransferFooter v-if="transferOpen && inst" :flow="transfer" @back="transferOpen = false" />
+      <div v-else class="flex flex-col gap-2">
         <!-- 重铸与词条锁定 (Phase 30.1) -->
+        <!--
+          空皮先交代去向:一件凡品掷出零条、或全锁定的装备,重铸与锁定整块会一起消失 ——
+          玩家找不到「自动重铸」,只会觉得它没生效。这里把「为什么没有」说破。
+          正常玩法锁不满(锁满即不能再洗),词条全锁的那一格是给
+          旧档/异常数据兜底,别把「一颗词条也无」错安到它有词条的头上。
+        -->
         <template v-if="reforgeCostVal || lockableLeft > 0">
           <div class="flex gap-2 text-[11px]">
-            <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-1" @click="doReforge">
+            <!-- 重铸是装备培养高频动作:!py-1 盒高仅 27px,低于 28px 可点阈值(弹窗内控件,巡页判据按「恰好打开的弹窗」才量得到它)。
+                 !py-2 抬到 35px;锁定格是静态展示,但同排按钮提高后也跟着对齐,视觉仍是一整行 -->
+            <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-2" @click="doReforge">
               重铸词条
               <span class="ml-1 tabular text-[10px] text-ink-faint">
                 {{ formatGN(reforgeCostVal.stone) }} · 尘×{{ reforgeCostVal.dust }}
@@ -189,17 +305,33 @@
           <p v-if="reforgeCostVal" class="text-center text-[10px] leading-relaxed text-ink-faint">
             重掷未锁定的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,锁定的不动 · 不限次数,成本随阶数与锁定数走
           </p>
-        </template>
         <!--
           状态行独立于上面的按钮区:「已锁满」时按钮区整体隐去(无可洗、无可锁),
           但玩家恰恰最需要看见"解锁一条即可再洗"这句话 —— 它若跟着一起消失,
           锁满这一件就变成一个没有出路的死结,比改之前更难懂。
         -->
-        <p v-if="inst" class="text-center text-[10px] text-ink-ghost tabular">
+        <p v-if="inst" class="text-center text-[10px] text-ink-faint tabular">
           已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已锁定 {{ lockedCount }}/{{ affixCap }}(品质上限)
           <span v-if="lockedCount < affixCap" class="ml-1">· 未锁满仍可重铸,再点「已锁」即解锁且不另计灵石</span>
           <span v-else class="ml-1">· 已锁满,解锁一条即可再洗</span>
         </p>
+          <!-- 自动重铸与词条转移并成一行:页脚不加高(320×568 下正文本就只剩一小截) -->
+          <div class="flex gap-2">
+            <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-2 !text-[11px]" @click="autoOpen = !autoOpen">
+              {{ autoOpen ? '收起自动重铸' : '自动重铸' }}
+            </button>
+            <button v-if="canTransferOut" class="btn-ghost flex-1 !py-2 !text-[11px]" @click="openTransfer">
+              {{ TRANSFER_LABELS.entry }}
+            </button>
+          </div>
+        </template>
+        <template v-else-if="inst">
+          <p class="text-center text-[10px] leading-relaxed text-ink-faint">
+            {{ inst.affixes.length === 0 ? '此物一颗词条也无,无从重铸,也无可锁定。想炼它,先有纹可刻。' : '词条已尽数锁定,无从重铸' }}
+          </p>
+          <!-- 全锁定的旧档件也能把词条转出去 -->
+          <button v-if="canTransferOut" class="btn-ghost w-full !py-2 !text-[11px]" @click="openTransfer">{{ TRANSFER_LABELS.entry }}</button>
+        </template>
         <div class="flex gap-2">
           <button class="btn-seal flex-1" @click="toggleEquip">{{ isEquipped ? '卸 下' : '装 备' }}</button>
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
@@ -222,43 +354,98 @@
       </div>
     </template>
   </BaseModal>
+
+  <!-- 词条信息:点哪条弹哪条 —— 名/效果/数值区间/部位/门槛;设目标也在这扇框(顶层弹框盖在详情之上) -->
+  <AffixInfoSheet
+    :open="codexOpen"
+    :affix-id="codexAffixId ?? ''"
+    :targetable="true"
+    :selected="codexSelected"
+    :can-select="codexCanSelect"
+    @toggle-target="onCodexToggleTarget"
+    @close="codexOpen = false"
+  />
 </template>
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { ref, watch } from 'vue'
+  import { nextTick, ref, watch } from 'vue'
   import { useUiStore } from '@/stores/ui'
   import { useInventoryStore } from '@/stores/inventory'
   import { equipmentTemplate, EQUIP_SLOT_NAMES } from '@/data/equipment'
   import { equipSetDef, setCounts } from '@/core/equipSet'
   import { worldNameOfTier } from '@/core/formulas'
   import { resolveEquipStats } from '@/core/equipGen'
-  import { decomposeEquipment, equipLevelCap, equipUpgradeCost, upgradeEquipment } from '@/core/forge'
+  import {
+    decomposeEquipment,
+    equipLevelCap,
+    equipUpgradeCost,
+    upgradeEquipment,
+    upgradeBatchPlan,
+    upgradeEquipmentBatch,
+    type UpgradeBatchPlan
+  } from '@/core/forge'
   import { salvageOf, salvageRefundPhrase } from '@/core/salvage'
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
-  import { reforgeEquipment, reforgeCost, toggleAffixLock, lockCapacity, lockCost } from '@/core/reforge'
+  import { autoReforge, reforgeEquipment, reforgeCost, toggleAffixLock, lockCapacity, lockCost, type ReforgeTarget } from '@/core/reforge'
+  import { AFFIXES, affixDef, affixFitBlock, affixesByRarity } from '@/data/affixes'
   import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
   import { formatGN } from '@/utils/format'
-  import { isZero, sub, gnZero } from '@/utils/gnum'
+  import { gnZero, isZero, sub } from '@/utils/gnum'
+  import { playSfx } from '@/core/audio'
   import type { AnyStatKey, GNum } from '@/types'
   import { AFFIX_RARITY_META, STAT_NAMES, statValueText } from '@/ui/statNames'
   import { equipNextLevelText } from '@/ui/equipText'
+  import { TRANSFER_LABELS } from '@/ui/affixTransferText'
+  import { useAffixTransfer } from '@/composables/useAffixTransfer'
   import BaseModal from '@/components/common/BaseModal.vue'
   import QualityTag from '@/components/common/QualityTag.vue'
+  import AffixInfoSheet from './AffixInfoSheet.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
+  import AffixTransferPanel from './AffixTransferPanel.vue'
+  import AffixTransferFooter from './AffixTransferFooter.vue'
 
   const ui = useUiStore()
   const inventory = useInventoryStore()
   const player = usePlayerStore()
 
   const inst = computed(() => (ui.equipDetailUid ? inventory.findItem(ui.equipDetailUid) : undefined))
+
+  /** 装备标记(玩家反馈:同名装备想按不同流派区分)。草稿随当前件走,空串 = 清除 */
+  const noteDraft = ref('')
+  watch(
+    () => inst.value?.note,
+    (n, old) => {
+      // 只在来源变化时同步草稿;自己写回(applyNote)引发的同一值回灌不迭代
+      if (n === noteDraft.value || n === old) return
+      noteDraft.value = n ?? ''
+    },
+    { immediate: true }
+  )
+
+  function applyNote(): void {
+    if (!inst.value) return
+    const note = noteDraft.value.trim()
+    inventory.replaceItem({ ...inst.value, note: note.length > 0 ? note.slice(0, 4) : undefined })
+  }
+
+  function clearNote(): void {
+    noteDraft.value = ''
+    applyNote()
+  }
   const template = computed(() => (inst.value ? equipmentTemplate(inst.value.templateId) : undefined))
   const resolved = computed(() => (inst.value ? resolveEquipStats(inst.value) : null))
   const isEquipped = computed(() => (inst.value && template.value ? inventory.equipped[template.value.slot] === inst.value.uid : false))
   const upCost = computed(() => (inst.value ? equipUpgradeCost(inst.value.uid) : null))
+  /** 连升计划:受余额与上限约束,预览与执行同一份(升不动时 levels=0,隐藏整块) */
+  const batchPlan = computed<UpgradeBatchPlan>(() =>
+    inst.value ? upgradeBatchPlan(inst.value.uid) : { levels: 0, dust: 0, stone: gnZero(), atCap: false }
+  )
+  /** 连升二步确认态;换件自动复位(见 closeAuto 的 watch) */
+  const batchConfirm = ref<string | null>(null)
   /** 分解返还:底材 + 强化投入的八成(练过的件拆了不至于血本无归,先把账摆出来) */
   const salvage = computed(() => (inst.value ? salvageOf(inst.value) : null))
 
@@ -277,15 +464,31 @@
 
   // ---- 重铸与词条锁定 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))
+  /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
+  const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
+  const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))
+
   /** 锁定一词的当前价(第 n 条 = 基础 × n);已全部锁定时不再显示 */
   const lockCostVal = computed(() => (inst.value ? lockCost(inst.value) : gnZero()))
   /** 还能再锁几条:不强制留可重掷位,故 = 词条数 − 已锁定数 */
   const lockableLeft = computed(() => (inst.value ? lockCapacity(inst.value) : 0))
   /** 已锁定条数:与「品质上限」比,满即洗不动 */
   const lockedCount = computed(() => (inst.value ? (inst.value.sealedAffixIds ?? []).length : 0))
-  /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
-  const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
-  const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))
+
+  /** 词条信息弹框:点哪条就钉哪条(词条表已按反馈移除,这是看词条信息的唯一入口) */
+  const codexOpen = ref(false)
+  const codexAffixId = ref<string | null>(null)
+  function openCodex(affixId: string): void {
+    codexAffixId.value = affixId
+    codexOpen.value = true
+  }
+
+  /** 弹框里这条当前是不是自动重铸目标;目标未满三才有「再设」(满的位子只留给取消) */
+  const codexSelected = computed(() => codexAffixId.value !== null && isAutoTarget(codexAffixId.value))
+  const codexCanSelect = computed(() => autoTargets.value.length < 3)
+  function onCodexToggleTarget(id: string): void {
+    toggleAutoTarget(id)
+  }
 
   function isAffixLocked(affixId: string): boolean {
     return (inst.value?.sealedAffixIds ?? []).includes(affixId)
@@ -299,6 +502,83 @@
     if (inst.value) reforgeEquipment(inst.value.uid)
   }
 
+  // ---- 自动重铸(玩家反馈:一键重铸多次,洗到指定词条就停) ----
+  const autoOpen = ref(false)
+  const autoBudget = ref(50)
+  /** 停止条件:任一命中即停;minRoll 给「数值范围」那一嘴 */
+  const autoTargets = ref<ReforgeTarget[]>([])
+
+  /**
+   * 可选的停止词条:当前装备**真能洗到**的那些 —— 与重铸抽取池同规则
+   * (槽位匹配 + 品质门槛不高于当前),而不是全 113 条里按权重取前 24。
+   * 否则连「想洗的词条在 24 名开外」都选不进去,自动重铸就等于承诺了
+   * 一份它兑现不了的面板。
+   */
+  const affixOptions = computed(() => {
+    if (!inst.value) return []
+    const tpl = equipmentTemplate(inst.value.templateId)
+    const q = inst.value && qualityDef(inst.value.quality)
+    if (!tpl || !q) return []
+    return [...AFFIXES].filter(a => affixFitBlock(a, tpl.slot, q.rank) === null).sort((a, b) => b.weight - a.weight)
+  })
+
+  function isAutoTarget(id: string): boolean {
+    return autoTargets.value.some(t => t.affixId === id)
+  }
+
+  /** 候选按四档品质成组(传世→常见,空组不占位);组内延续 affixOptions 的权重序 */
+  const rarityGroups = computed(() => affixesByRarity(affixOptions.value))
+
+  /** 已选目标的名字颜色:它从哪一档领出,就用哪一档的品质色 */
+  function targetColor(id: string): string {
+    return AFFIX_RARITY_META[affixDef(id)?.rarity ?? 'common'].color
+  }
+
+  function toggleAutoTarget(id: string): void {
+    if (isAutoTarget(id)) autoTargets.value = autoTargets.value.filter(t => t.affixId !== id)
+    // 默认先求「高值」(≥50%);拉到底 0% 即回到「出现就行」
+    else if (autoTargets.value.length < 3) autoTargets.value = [...autoTargets.value, { affixId: id, minRoll: 0.5 }]
+  }
+
+  function closeAuto(): void {
+    autoOpen.value = false
+    autoTargets.value = []
+  }
+
+  function runAutoReforge(): void {
+    if (!inst.value) return
+    const targets = autoTargets.value
+    const budget = Math.min(500, Math.max(1, Math.floor(autoBudget.value || 0)))
+    const out = autoReforge(inst.value.uid, targets, budget)
+    const cost = `花 ${formatGN(out.stone)} · 尘×${out.dust}`
+    // 「没洗到目标」不等于「没洗动」:每次重铸词条都尽数重掷,结账要报清现在这一身落在哪
+    const wanted = autoTargets.value.map(t => affixDef(t.affixId)?.name ?? t.affixId).join('、')
+    const now = out.affixIds.map(id => affixDef(id)?.name ?? id).join('、') || '空'
+    if (out.stop === 'target' && out.hit) {
+      playSfx('success') // 结账一声:洗到了
+      ui.toast(
+        `洗出「${affixDef(out.hit.id)?.name ?? out.hit.id}」值 ${Math.round(out.hit.roll * 100)}% —— 共洗 ${out.rolls} 次,${cost}`,
+        'success'
+      )
+    } else if (out.stop === 'budget') {
+      playSfx('warn')
+      ui.toast(`定好的次数用完了:连洗 ${out.rolls} 次,未能撞上「${wanted}」。如今这一身是:${now},${cost}`, 'warn')
+    } else if (out.stop === 'broke') {
+      playSfx('warn')
+      if (out.rolls === 0) {
+        ui.toast(`灵石或器灵尘未足,难开这一炉,${cost}`, 'warn')
+      } else {
+        ui.toast(`灵石/器灵尘见底,洗了 ${out.rolls} 次即止;今一身为 ${now},${cost}`, 'warn')
+      }
+    } else {
+      // frozen 是「没得洗」不是「没洗成」,不响;这一档兼两种收法:无位可洗(锁满/无词条),或装备已不在行囊
+      const gone = inst.value !== undefined && !inventory.findItem(inst.value.uid)
+      ui.toast(gone ? '此物已不在行囊,重铸无从谈起' : '此物词条已尽数锁定,无从重铸', 'info')
+    }
+    // 结账即收板:结果已写在 toast 与装备词条上,想再调条件重开一次即可
+    closeAuto()
+  }
+
   // ---- 修士实验室:反事实换装推演 ----
   const whatIf = ref<WhatIfReport | null>(null)
   const canWhatIf = computed(() => endgameUnlocked() && !isEquipped.value && inst.value !== undefined)
@@ -310,6 +590,40 @@
   watch(inst, () => {
     whatIf.value = null
   })
+
+  // ---- 词条转移(议题 #22):本件作源件,挑一条转到另一件上 ----
+  const transferOpen = ref(false)
+  const transfer = useAffixTransfer(() => (transferOpen.value ? (inst.value?.uid ?? null) : null))
+  const canTransferOut = computed(() => (inst.value?.affixes.length ?? 0) > 0)
+
+  function openTransfer(): void {
+    closeAuto()
+    transferOpen.value = true
+  }
+
+  /** 转移面板里点「前往」:退出转移,详情切到那一件 */
+  function viewTarget(uid: string): void {
+    transferOpen.value = false
+    ui.equipDetailUid = uid
+  }
+
+  // 换了一件(或关掉)就从头来:转移模式、自动重铸的勾选、分解与连升的二步确认都不该串到下一件上
+  watch(
+    () => inst.value?.uid,
+    () => {
+      transferOpen.value = false
+      closeAuto()
+      decomposeArm.value = null
+      batchConfirm.value = null
+    }
+  )
+
+  // 详情与转移互切、换看另一件:正文整块换了,滚动盒却没重挂 —— 回到顶上,免得开头几行在视口外
+  const modalRef = ref<InstanceType<typeof BaseModal> | null>(null)
+  watch(
+    () => [transferOpen.value, inst.value?.uid] as const,
+    () => void nextTick(() => modalRef.value?.scrollToTop())
+  )
 
   /** 换装流派预览:契合度 当前 → 装备后 */
   const buildPreview = computed(() => {
@@ -392,6 +706,12 @@
 
   function doUpgrade(): void {
     if (inst.value) upgradeEquipment(inst.value.uid)
+  }
+
+  function runBatchUpgrade(): void {
+    if (!inst.value) return
+    batchConfirm.value = null
+    upgradeEquipmentBatch(inst.value.uid)
   }
 
   const decomposeArm = ref<string | null>(null)

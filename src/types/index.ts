@@ -264,6 +264,13 @@ export interface EquipmentInstance {
   sealedAffixIds?: string[]
   /** 累计强化投入(分解时按八成返还;老档无此账,按标价补算) */
   invested?: { dust: number; stone: GNum }
+  /**
+   * 玩家自定的短标记(玩家反馈:「同名装备想按不同流派区分」)。
+   * 至多 4 个汉字,详情弹窗里改;格卡与部位行都带出。老档/未标记件为 undefined。
+   */
+  note?: string
+  /** 被转入过词条的次数(词条转移,议题 #22)。只增不减;智能收纳据此当作有投入。老档/未转入件为 undefined */
+  transferCount?: number
 }
 
 // ============ 法宝 ============
@@ -400,6 +407,12 @@ export interface BuffDef {
 export interface BuffInstance {
   defId: string
   endsAt: number
+  /**
+   * 本命累积时长(毫秒):同一状态重复施加时 endsAt 是叠加后的终点,
+   * 但「到底叠了几份」单看 endsAt 算不出(过去每一份已流逝多少不得而知)。
+   * added 在每次施加时累加单份时长,UI 得以报「已叠 N 份」;旧档无此字段时缺省。
+   */
+  added?: number
 }
 
 // ============ 境界 ============
@@ -480,7 +493,7 @@ export interface EnemyDef {
 }
 
 // ============ 区域 ============
-export type ExploreMode = 'normal' | 'deep' | 'risky'
+export type ExploreMode = 'normal' | 'deep' | 'risky' | 'prolonged'
 
 export interface RegionDef {
   id: string
@@ -1018,24 +1031,13 @@ export interface OfflineSummary {
   battles: number
   wins: number
   events: number
-  /**
-   * 产出装备清单(旧口径,逐件)。
-   *
-   * 12h 离线约 1500 件,逐件清单会撑爆总结 —— 现只保留作兼容(镇压区在线路径
-   * 的旧测试仍读它),新口径看 equipmentSummary(总数 + 按品质分档)。
-   * 新代码不得再向此数组 push 历练批量件。
-   */
-  equipment: { name: string; quality: QualityId; recycled?: boolean }[]
-  /**
-   * 离线装备汇总:只报总数 + 按品质分档,不列逐件。
-   * 明细去行囊页看(分页)。为空表示本次无装备产出。
-   * total 只记**实际入包**的件 —— 被智能收纳化尘的不再混进总数,看 recycledEquips。
-   */
-  equipmentSummary?: { total: number; byQuality: { quality: string; name: string; count: number }[] }[]
-  /** 智能收纳在离线期间化尘的装备件数(不入包,不再混进 equipmentSummary.total) */
-  recycledEquips?: number
-  /** 期间未入包装备化作的器灵尘总量 */
+  /** 产出装备清单;回收(自动回收/满包化尘)的件以 recycled 标注。
+      入包的件带实例 uid —— 归来弹窗靠它把名字点开成装备详情;已化尘的件已不在包里,故无 uid */
+  equipment: { name: string; quality: QualityId; recycled?: boolean; uid?: string }[]
+  /** 期间化尘所得的器灵尘总量(自动回收/满包化尘/腾位化掉的旧件) */
   recycledDust: number
+  /** 智能收纳为新件腾位、化掉的旧件数(它们不在 equipment 产出清单里) */
+  evicted: number
   notes: string[]
 }
 

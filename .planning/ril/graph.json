@@ -1,8 +1,8 @@
 {
   "ril_version": 1,
-  "round": 228,
+  "round": 246,
   "created_at": "2026-09-09T11:22:32+00:00",
-  "updated_at": "2026-09-19T08:20:22+00:00",
+  "updated_at": "2026-10-04T01:00:00.000+00:00",
   "nodes": {
     "ISS-001": {
       "id": "ISS-001",
@@ -583,7 +583,7 @@
       "version": 1,
       "created_at": "2026-09-09T16:07:51+00:00",
       "updated_at": "2026-09-09T16:07:51+00:00",
-      "touched_round": 210,
+      "touched_round": 230,
       "summary": "历练系统(exploration.ts + offline.ts 会话结算)"
     },
     "CHG-010": {
@@ -1041,7 +1041,7 @@
       "created_at": "2026-09-10T11:51:42+00:00",
       "updated_at": "2026-09-10T11:51:42+00:00",
       "touched_round": 11,
-      "commit": Infinity,
+      "commit": "Infinity",
       "summary": "Esc 关闭弹窗 + 图鉴计数口径对齐"
     },
     "HYP-003": {
@@ -1545,7 +1545,7 @@
       "version": 1,
       "created_at": "2026-09-11T02:43:18+00:00",
       "updated_at": "2026-09-11T02:43:18+00:00",
-      "touched_round": 204,
+      "touched_round": 230,
       "summary": "掉落/拾取系统(loot.ts + equipGen + smartKeep)"
     },
     "TASK-027": {
@@ -3597,10 +3597,10 @@
     "HYP-015": {
       "id": "HYP-015",
       "type": "hypothesis",
-      "status": "active",
-      "version": 3,
+      "status": "stale",
+      "version": 4,
       "created_at": "2026-09-11T17:31:16+00:00",
-      "updated_at": "2026-09-15T10:55:24+00:00",
+      "updated_at": "2026-09-28T02:42:55+00:00",
       "touched_round": 186,
       "confidence": 0.95,
       "summary": "凡是同一件事有两处算法(在线/离线、预估/实战、展示/结算),新机制接进来时必漏一处 —— 判据:抽成一个函数,并让「另一处不得再出现原常数」成为红线"
@@ -4716,7 +4716,7 @@
       "updated_at": "2026-09-11T21:16:09+00:00",
       "touched_round": 94,
       "summary": "高界每界域补两件法宝(26→32):青锋仙剑/云纹仙印(仙界)、镇神印/神雷珠(神界)、混沌青莲/虚界梭(混沌海);contentDensity 增判据「法宝件数 > 法宝位数」",
-      "commit": Infinity
+      "commit": "Infinity"
     },
     "ISS-069": {
       "id": "ISS-069",
@@ -11837,7 +11837,7 @@
       "created_at": "2026-09-16T00:28:24+00:00",
       "updated_at": "2026-09-16T00:28:24+00:00",
       "touched_round": 200,
-      "commit": Infinity,
+      "commit": "Infinity",
       "summary": "celestialStats 恢复凡界装备 + 器魂叠加;敌人参照改本界锚点(powerScale);新增 celestialJudgement(道之理解 + 境界压制);四天/三试炼加 anchorTier,变数天界锚 32;五处造敌统一;界面写明「此界宜 X 及以上」;四份判据重写;README 与器魂文案改口"
     },
     "ISS-205": {
@@ -12001,10 +12001,10 @@
     "HYP-096": {
       "id": "HYP-096",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-17T13:52:34+00:00",
-      "updated_at": "2026-09-17T13:52:34+00:00",
+      "updated_at": "2026-09-28T02:42:55+00:00",
       "touched_round": 209,
       "confidence": 0.95,
       "summary": "历练修为失效挂机的根因是「按玩家自身数值缩放」的百分比口径 × 遭遇自动高频:奖励随需求指数上涨,而遭遇的代价(12 秒)恒定 —— 与丹药那处同源(已改),故同一把尺子(等效闭关时长)可以同时治两处。"
@@ -12098,10 +12098,10 @@
     "TASK-193": {
       "id": "TASK-193",
       "type": "task",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-17T14:05:43+00:00",
-      "updated_at": "2026-09-17T14:05:43+00:00",
+      "updated_at": "2026-09-28T02:42:55+00:00",
       "touched_round": 204,
       "category": "maintainability",
       "severity": 0.3,
@@ -12173,10 +12173,10 @@
     "HYP-097": {
       "id": "HYP-097",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-17T14:20:52+00:00",
-      "updated_at": "2026-09-17T14:20:52+00:00",
+      "updated_at": "2026-09-28T02:42:55+00:00",
       "touched_round": 205,
       "confidence": 0.7,
       "summary": "界外十二境的高闲置/瓶颈读数的根因是审计口径缺一环:只算了建筑升级与装备强化两个出口,没算天道熔炉(界外唯一成规模的资源出口 → 道源),而不是界外资源真的没人要。"
@@ -12184,10 +12184,10 @@
     "HYP-098": {
       "id": "HYP-098",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-17T14:20:52+00:00",
-      "updated_at": "2026-09-17T14:20:52+00:00",
+      "updated_at": "2026-09-28T02:42:55+00:00",
       "touched_round": 205,
       "confidence": 0.75,
       "summary": "界外灵石被读成瓶颈的根因是丹方计价层级(2×minRealm+1,最高 41)越过了区域层级上限(32),而非灵石收入不足:把丹方价格按同一层级重折后,界外灵石收支会回到收入侧。"
@@ -12503,10 +12503,10 @@
     "HYP-099": {
       "id": "HYP-099",
       "type": "hypothesis",
-      "status": "active",
-      "version": 1,
+      "status": "stale",
+      "version": 2,
       "created_at": "2026-09-18T05:20:14+00:00",
-      "updated_at": "2026-09-18T05:20:14+00:00",
+      "updated_at": "2026-09-28T02:42:55+00:00",
       "touched_round": 210,
       "confidence": 0.95,
       "summary": "根因不在「首领的出现概率」,而在解锁的语义:它是一次性事件,不是不变量。凡「下游在击败之后才进数据表」都会永久卡住 —— 判据(前置已靖 → 此地已开)只写进了击败那一刻的那次调用,没有写进读档。"
@@ -13566,6 +13566,887 @@
       "source": "src/ui/signedPercent.spec.ts",
       "summary": "modsText 历练遇敌带不缩短行程;exploration 时长与间隔分列",
       "confidence": 1
+    },
+    "TASK-222": {
+      "id": "TASK-222",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-28T03:01:33+00:00",
+      "updated_at": "2026-09-28T03:04:17+00:00",
+      "touched_round": 230,
+      "category": "maintainability",
+      "severity": 0.6,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "开发者腔文案收口第二波:装备详情/数值体系/渡劫说明/设置页/图鉴/流派得分等 19 处「给程序员看的口吻」改说人话,并修掉 BuildView 里会随阈值暴露的格式"
+    },
+    "CHG-248": {
+      "id": "CHG-248",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T03:04:17+00:00",
+      "updated_at": "2026-09-28T03:04:17+00:00",
+      "touched_round": 230,
+      "commit": "cccc1ed",
+      "summary": "开发者腔文案收口 19 处(TASK-222):装备详情/数值体系/渡劫/设置/图鉴/流派,去工程术语,含 BuildView 阈值不虚构"
+    },
+    "TASK-223": {
+      "id": "TASK-223",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-28T03:40:30+00:00",
+      "updated_at": "2026-09-28T03:41:29+00:00",
+      "touched_round": 230,
+      "category": "maintainability",
+      "severity": 0.55,
+      "confidence": 0.9,
+      "effort": 2,
+      "summary": "排版/视觉打磨:闭关按钮溢出、首页法球窄屏挤压、装备角标叠盖、灵脉操作列挤压、圆角一致性、图鉴占位降噪、天劫账单换行、突破印章、离线档位拆行、输入框可选字、chip-ink-wrap 覆写类"
+    },
+    "CHG-249": {
+      "id": "CHG-249",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T03:41:29+00:00",
+      "updated_at": "2026-09-28T03:41:29+00:00",
+      "touched_round": 230,
+      "commit": "b46d605",
+      "summary": "排版视觉打磨一批(TASK-223):法球 size prop/闭关按钮/角标/灵脉操作列/圆角一致/图鉴降噪/突破印章/离线档位/输入框可选字"
+    },
+    "HYP-104": {
+      "id": "HYP-104",
+      "type": "hypothesis",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T04:58:47+00:00",
+      "updated_at": "2026-09-28T04:58:47+00:00",
+      "touched_round": 229,
+      "confidence": 0.9,
+      "summary": "ui-smoke 崩溃根因:home 的 orbSize 用了 <script setup> 顶层裸 {} 花括号块做 matchMedia 副作用初始化 —— 被编译器提升重排后在某归档状态下把组件初始化打崩(44c9826 引入、平铺修复)"
+    },
+    "EV-221": {
+      "id": "EV-221",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T04:59:09+00:00",
+      "updated_at": "2026-09-28T04:59:09+00:00",
+      "touched_round": 229,
+      "source": "ui-smoke-15pages",
+      "summary": "修复后 ui-smoke 全绿「无运行时异常」(15 页 74 次点击);基线 94f5717/b46d605/cccc1ed 均绿,仅 43c9826 崩溃",
+      "confidence": 1.0
+    },
+    "TASK-224": {
+      "id": "TASK-224",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-28T06:14:51+00:00",
+      "updated_at": "2026-09-28T06:17:06+00:00",
+      "touched_round": 230,
+      "category": "correctness",
+      "severity": 0.6,
+      "confidence": 0.95,
+      "effort": 1,
+      "summary": "320px 洞府建筑卡 meta 行竖排:锁定建筑「未启用」+徽标在窄卡并排放不下,justify-between 把文字压成逐字竖排(w=10 h=45);改 flex-wrap + shrink-0"
+    },
+    "EV-222": {
+      "id": "EV-222",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T06:14:51+00:00",
+      "updated_at": "2026-09-28T06:14:51+00:00",
+      "touched_round": 230,
+      "source": "probe-dongfu",
+      "summary": "探针实测:修复前最后一张锁卡 span w=10 h=45(flex 0 1 auto),修复后全部 span w=30 h=15(flex 0 0 auto),竖排消失",
+      "confidence": 1.0
+    },
+    "CHG-250": {
+      "id": "CHG-250",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T06:17:06+00:00",
+      "updated_at": "2026-09-28T06:17:06+00:00",
+      "touched_round": 230,
+      "commit": "e5a6aa2",
+      "summary": "BuildingCard meta 行 flex-wrap + shrink-0,修 320px 竖排(被 layout-check 抓到、探针实证)"
+    },
+    "TASK-225": {
+      "id": "TASK-225",
+      "type": "task",
+      "status": "resolved",
+      "version": 3,
+      "created_at": "2026-09-28T07:10:13+00:00",
+      "updated_at": "2026-09-28T07:34:18+00:00",
+      "touched_round": 230,
+      "category": "correctness",
+      "severity": 0.5,
+      "confidence": 0.95,
+      "effort": 1,
+      "priority": 5,
+      "summary": "Inventory 一键穿齐「穿齐 →」触控靶面:纯 10px 文字行高 15px,盒高 27px 低于 28px 阈值(layout-check 报 27px);负外边距配正内边距同升到 8px,盒高 31px,流中占位仍 15px"
+    },
+    "EV-223": {
+      "id": "EV-223",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T07:10:26+00:00",
+      "updated_at": "2026-09-28T07:10:26+00:00",
+      "touched_round": 230,
+      "source": "scripts/probe-touch.mjs 探针",
+      "summary": "playwright 探针实测「穿齐 →」按钮 boundingBox 高度:修复前 py-1.5 为 27px(viewport 390×844);改 py-2/-my-2 后 31px,≥28px 阈值;按钮在种子档(已装备 h_xuantie 玄铁冠 s_tiebi 套装件)下浮现",
+      "confidence": 1.0
+    },
+    "ISS-243": {
+      "id": "ISS-243",
+      "type": "issue",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-28T07:11:39+00:00",
+      "updated_at": "2026-10-01T05:16:50.223759+00:00",
+      "touched_round": 230,
+      "severity": 0.5,
+      "summary": "Inventory 一键穿齐「穿齐 →」触控靶面不足:text-[10px] 行高 15px、py-1.5 使盒高仅 27px,低于 28px 可点阈值;负外边距-正内边距方案使命中区与行高脱钩",
+      "component": "InventoryView"
+    },
+    "CHG-251": {
+      "id": "CHG-251",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T07:15:23+00:00",
+      "updated_at": "2026-09-28T07:15:23+00:00",
+      "touched_round": 230,
+      "commit": "fc59497",
+      "summary": "Inventory 一键穿齐触控靶面:py-1.5→py-2 + -my-1.5→-my-2,盒高 27→31px 过 28px 判据;探针 + ui-smoke 实证无回归"
+    },
+    "EV-224": {
+      "id": "EV-224",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T07:34:05+00:00",
+      "updated_at": "2026-09-28T07:34:05+00:00",
+      "touched_round": 230,
+      "source": "scripts/layout-check.mjs 全量运行",
+      "summary": "layout-check 全量重跑:失败集 8 条与基线一致(时序脆弱,不入 CI:settings 存档写失败静默+存读/收纳/分解/营造/锻造/落盘场景);「可点元素过小 15px 穿齐 →」一条已从失败集清零 —— TASK-225 修复被排版自检实证捕获",
+      "validates": "2026-09-28T15:40:00Z",
+      "confidence": 1.0
+    },
+    "TASK-226": {
+      "id": "TASK-226",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-28T07:40:09+00:00",
+      "updated_at": "2026-09-28T07:46:17+00:00",
+      "touched_round": 230,
+      "category": "correctness",
+      "severity": 0.55,
+      "confidence": 0.9,
+      "effort": 2,
+      "priority": 7,
+      "summary": "离线历练装备掉落漏乘探险模式倍率(explorationMode.rewardMult):灵石/修为都乘了 modeDef.rewardMult*regionEventReward,唯装备行只有 regionEventReward —— 进取/疾驰模式对离线装备掉落无效,挂机装备数系统性偏低,违反「与在线同源」;offlineParity.spec.ts:81 的文本断言还将此 bug 固化"
+    },
+    "CHG-252": {
+      "id": "CHG-252",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T07:46:17+00:00",
+      "updated_at": "2026-09-28T07:46:17+00:00",
+      "touched_round": 230,
+      "commit": "b5d2a25",
+      "summary": "offline.ts 装备掉落行补乘 modeDef.rewardMult,离线普通战装备与灵石/修为/在线 afterWin 同源;offlineParity.spec 断言收紧为含模式倍率的完整乘式(先红后绿)"
+    },
+    "ISS-244": {
+      "id": "ISS-244",
+      "type": "issue",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-28T07:46:41+00:00",
+      "updated_at": "2026-10-01T05:16:50.223759+00:00",
+      "touched_round": 230,
+      "severity": 0.5,
+      "summary": "离线历练普通战装备掉落漏乘探险模式倍率:灵石/修为都乘 modeDef.rewardMult*regionEventReward,唯装备行只有 regionEventReward,高收益探索模式对离线装备掉落无效(在线/离线不同源)",
+      "component": "COMP-006"
+    },
+    "TASK-227": {
+      "id": "TASK-227",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-28T07:47:55+00:00",
+      "updated_at": "2026-09-28T08:52:06+00:00",
+      "touched_round": 230,
+      "category": "correctness",
+      "severity": 0.45,
+      "confidence": 0.9,
+      "effort": 2,
+      "priority": 6,
+      "summary": "离线历练材料掉落欠同源:功法残页(page)在线 afterWin 乘 rewardMult(=mode×regEvent,0.12×mode×reg),离线只乘 doubleMult(wins×0.15)——「进取/疾驰」模式同样对离线残页无效;另 herb 离线期望1.0 vs 在线0.5、ore 离线0.5 vs 在线0.35,概率与在线不同源但可能是刻意简化,残页漏 rewardMult 是真欠同源"
+    },
+    "CHG-253": {
+      "id": "CHG-253",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T08:52:06+00:00",
+      "updated_at": "2026-09-28T08:52:06+00:00",
+      "touched_round": 230,
+      "commit": "bc14795",
+      "summary": "offline.ts 残页掉落补乘模式倍率(PAGE_DROP_CHANCE*1.5*modeDef.rewardMult*regionEventReward*doubleMult),与在线 page 期望同源;补 PAGE_DROP_CHANCE import;offlineParity.spec 增断言先红后绿"
+    },
+    "ISS-245": {
+      "id": "ISS-245",
+      "type": "issue",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-28T08:52:06+00:00",
+      "updated_at": "2026-10-01T05:16:50.223759+00:00",
+      "touched_round": 230,
+      "severity": 0.4,
+      "summary": "离线普通战功法残页掉落漏乘模式倍率与期望量(写死0.15,无 mode×reg;在线为 0.12×mode×reg×1.5)",
+      "component": "COMP-006"
+    },
+    "DEC-054": {
+      "id": "DEC-054",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T08:55:39+00:00",
+      "updated_at": "2026-09-28T08:55:39+00:00",
+      "touched_round": 230,
+      "rationale": "离线材料掉落保持写死的简化期望(herb 1.0、ore 0.5):在线 herb 概率 0.5×均值2=1.0 恰好一致,ore 0.35×均值1.5=0.525 与离线 0.5 差 5%;在线概率是 loot.ts 硬编码(无常量),要真同源须先提炼 HERB/ORE_DROP_CHANCE 常量并联动两处 —— 收益仅 5% 玄铁偏差,投入不成比例;且材料行历史自创建来即此近似,非破损(对比:装备/残页漏模式倍率是结构性缺失,已修)",
+      "alternatives_rejected": "对齐 ore 期望 0.525(风险:动量测试/loot 引用未抽常量,牵一发动全身);把 herb/ore/page 全部同源化重构(超出单轮收敛范围)"
+    },
+    "CHG-254": {
+      "id": "CHG-254",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T09:28:35+00:00",
+      "updated_at": "2026-09-28T09:28:35+00:00",
+      "touched_round": 230,
+      "commit": "bcd327b",
+      "summary": "新增 offlineModeReward.spec.ts:真跑 settleOffline 断言残页随 deep 模式(×1.4)≥ normal(×1),补文本契约盲区 —— TASK-226/227 修复的数值回归锁"
+    },
+    "EV-225": {
+      "id": "EV-225",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T09:28:35+00:00",
+      "updated_at": "2026-09-28T09:28:35+00:00",
+      "touched_round": 230,
+      "source": "vitest offlineModeReward.spec",
+      "summary": "真跑验证:deep 模式离线残页累计 ≥ normal(修复前相等)—— 模式倍率修复在行为层生效,不止字面",
+      "confidence": 1.0
+    },
+    "EV-226": {
+      "id": "EV-226",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T10:22:31+00:00",
+      "updated_at": "2026-09-28T10:22:31+00:00",
+      "touched_round": 230,
+      "source": "主线程于 2026-09-28 人工自查(巡检 subagent 冻结后)",
+      "summary": "五类正确性巡检无新缺陷:①离线/在线灵气回复同源(player.qiRegenPerSec 共用,engine.ts:137=offline.ts:106)②类型系统+字典兜底保证 id 引用闭合(eventEngine buffDef判空返回null)③写失败机制完整(storage.ts 四层:检测/订阅/重试/恢复)④藏经阁独立常数非失守⑤突破失败 toast 反馈覆盖 —— 上一轮深挖后的防护在",
+      "confidence": 1.0
+    },
+    "DEC-055": {
+      "id": "DEC-055",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T10:27:02+00:00",
+      "updated_at": "2026-09-28T10:27:02+00:00",
+      "touched_round": 230,
+      "rationale": "sw.js networkFirst 的 503 fallback「离线且无缓存副本」虽是工程腔,但仅在对玩家从未缓存+无网络的极端路径出现,语义已正确;改一句文案需 bump CACHE_VERSION 触发全量重缓存,风险>收益,保留现状",
+      "alternatives_rejected": "人话化该文案并 bump CACHE_VERSION(回归风险);额外包一层 offline.html(过度设计)"
+    },
+    "EV-227": {
+      "id": "EV-227",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T10:38:05+00:00",
+      "updated_at": "2026-09-28T10:38:05+00:00",
+      "touched_round": 230,
+      "source": "主线程静态交叉核对 2026-09-28",
+      "summary": "成就系统四类判定全闭合,无「永远无法达成」的成就:counter 键(pillsCrafted←pillService:228,含双参数 track)✓realm_ 系 custom(progress.ts evalCond regex)✓lifespanLow/lifespan10k/stone1m 由 checkStateAchievements(:145-147)显式触发✓quality 由 checkQuality✓ —— 初判悬空的六个键全部澄清,非死成就",
+      "confidence": 1.0
+    },
+    "EV-228": {
+      "id": "EV-228",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T10:39:42+00:00",
+      "updated_at": "2026-09-28T10:39:42+00:00",
+      "touched_round": 230,
+      "source": "layout-check 全量回归 2026-09-28(第三轮)",
+      "summary": "离线装备/残页倍率改动后 layout-check 失败集 8 条与既往基线完全一致(时序脆弱场景:settings 缺失提示+六场景),无新增布局/场景回归 —— 核心结算改动布局侧安全",
+      "confidence": 1.0
+    },
+    "CHG-255": {
+      "id": "CHG-255",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T13:42:21+00:00",
+      "updated_at": "2026-09-28T13:42:21+00:00",
+      "touched_round": 230,
+      "commit": 3620961,
+      "summary": "offlineModeReward.spec 重写为确定性版本:vi.mock 固定 rng+sampleWinRate 使结算链路确定,断言改区间[×1.3,×1.5]包住取整噪声;修 regionId 误(qingshan→qingyun)与假绿;test-report.mjs 补 offlineModeReward 分类(Economy)修 CI 未过"
+    },
+    "EV-229": {
+      "id": "EV-229",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T13:43:07+00:00",
+      "updated_at": "2026-09-28T13:43:07+00:00",
+      "touched_round": 230,
+      "source": "vitest offlineModeReward.spec 重写后 + test:report + PR CI 2026-09-28",
+      "summary": "重写后确定性成立:连跑 3 次稳定(wins/battles 固定)、全量 1972 绿、test:report Economy 164 过无未分类、PR#19 CI SUCCESS(单元测试/类型/lint/构建);反证推导:缺 mode 倍率时 deep==normal 必然<1.3× 断言必红 —— 回归锁真实有效",
+      "confidence": 1.0
+    },
+    "DEC-056": {
+      "id": "DEC-056",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T13:43:07+00:00",
+      "updated_at": "2026-09-28T13:43:07+00:00",
+      "touched_round": 230,
+      "rationale": "凡 settleOffline 这类含模块级 rng(Math.random 不可种)的结算,数值断言必须 vi.mock 固定 rng+胜率,使链路确定;断言用区间(包 Math.round 取整噪声)而非精确比;regionId 等 seed 参数要先核数据表,防假绿",
+      "alternatives_rejected": "保留 30 局累计赌概率(flexky);给 settleOffline 加 rng 注入参数(动核心 API);精确 1.4 断言(round 假红)"
+    },
+    "EV-230": {
+      "id": "EV-230",
+      "type": "evidence",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-28T13:48:14+00:00",
+      "updated_at": "2026-09-28T13:48:14+00:00",
+      "touched_round": 230,
+      "source": "全仓同类测试排查 2026-09-28(grep settleOffline/tickExploration/afterWin 调用 facet + 断言类型甄别)",
+      "summary": "12 个真跑含 rng 内核却无随机控制的 spec 逐个澄清:文本契约(offlineParity/offlineScope/offlineCap/battleFactor/highTierSmoke/offlineLedger/singleSourceAudit)或纯函数断言(petLuck mock equipGen 断 luck 参数/PDF pillValue 静态数据/pillValue toBe 数据完整性/dangerFactorFor 纯数学)—— 全仓无第二处依赖 rng 结果做确定性断言且不可控的假绿/flaky 测试,DEC-056 纪律已闭环",
+      "confidence": 1.0
+    },
+    "TASK-228": {
+      "id": "TASK-228",
+      "type": "task",
+      "status": "resolved",
+      "version": 3,
+      "created_at": "2026-09-29T02:14:36+00:00",
+      "updated_at": "2026-09-29T02:48:58+00:00",
+      "touched_round": 230,
+      "category": "core-feature",
+      "severity": 0.5,
+      "confidence": 0.9,
+      "effort": 2,
+      "priority": 6,
+      "summary": "buildingUpgradeInfo 只查境界/峰值/洞府辖限,不查灵石玄铁够不够:升不起时按钮仍可点、点了弹一句「灵石或玄铁未足」的宽泛 toast,差多少不列 —— 违 xian agents 纪律「付不起置灰+列差多少」;补资源检查与 reason=尚差 X 石,按钮自动显示"
+    },
+    "CHG-256": {
+      "id": "CHG-256",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T02:48:58+00:00",
+      "updated_at": "2026-09-29T02:48:58+00:00",
+      "touched_round": 230,
+      "commit": "cb86560",
+      "summary": "buildingService.buildingUpgradeInfo 补资源检查(reason=尚差 X 石·玄铁 Y 块),BuildingCard 直显;buildingService.spec 4 条 TDD 先红后绿;全量 1976 绿,320px 探针无溢出"
+    },
+    "TASK-229": {
+      "id": "TASK-229",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T05:53:09+00:00",
+      "updated_at": "2026-09-29T05:53:09+00:00",
+      "touched_round": 230,
+      "category": "core-feature",
+      "severity": 0.4,
+      "confidence": 0.9,
+      "effort": 2,
+      "priority": 4,
+      "summary": "BuffDialog 不露叠 N:同一状态重复施加为时长叠加(endsAt 累加),玩家只见剩余与单份「全程」——叠 2 颗聚灵丹剩 40 分/全程 20 分 费解;给 buff 实例加 added(本命累计),详情显「已叠 N 份」+全程改显累计"
+    },
+    "CHG-257": {
+      "id": "CHG-257",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T05:53:09+00:00",
+      "updated_at": "2026-09-29T05:53:09+00:00",
+      "touched_round": 230,
+      "commit": "dc4b18e",
+      "summary": "BuffInstance 加可选 added,addBuff 累加;BuffDialog 新增「已叠 N 份」+全程/进度条改用累计(TDD cultivation.spec 先红后绿,全量 1978 绿)"
+    },
+    "ISS-246": {
+      "id": "ISS-246",
+      "type": "issue",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-09-29T07:17:14+00:00",
+      "updated_at": "2026-10-01T05:16:50.223759+00:00",
+      "touched_round": 230,
+      "summary": "正文弱化档与强调色在浅色卡片底上欠对比度(ink-faint 3.47 jade 2.95 amber 2.84 azure 3.77 violet 4.13 均<4.5;qinghua 与 azure 同值异名是死token),已随 palette 判据上线提档修复",
+      "severity": 0.75
+    },
+    "ISS-247": {
+      "id": "ISS-247",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T07:17:32+00:00",
+      "updated_at": "2026-09-29T12:04:09+00:00",
+      "touched_round": 230,
+      "summary": "调色板遗留对比度欠账:ghost 档在纸上 <3(1.66/2.24)却仍以 text-ink-ghost 承载 134 处小字;强调档 azure 3.77/jade/gold/amber 在浅色卡片底只达大字AA,小字仍读不清;dark 下 cinnabar 作按钮底托奶油白字仅 3.81",
+      "severity": 0.62
+    },
+    "TASK-230": {
+      "id": "TASK-230",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T07:17:54+00:00",
+      "updated_at": "2026-09-29T07:42:34+00:00",
+      "touched_round": 230,
+      "category": "correctness",
+      "summary": "printtext-ink-ghost 134 处是「纸上的第四档墨」:承载可读小字处(如 BuffDialog 效果标题、BuildingCard 下次产出)提为 ink-faint(4.71/5.03);纯装饰占位(空态/箭头/未成/计数)换装饰手段或 opacity,最终撤 ghost 档",
+      "severity": 0.6,
+      "confidence": 1,
+      "effort": 4
+    },
+    "TASK-231": {
+      "id": "TASK-231",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T07:17:57+00:00",
+      "updated_at": "2026-09-29T07:42:34+00:00",
+      "touched_round": 230,
+      "category": "correctness",
+      "summary": "强调档两主题三底提到 4.5:azure(3.77/4.70)与 gold-ink、amber-ink 在浅色卡片底只达大字 AA,小字仍模糊;提完从 WEAK 挪进 palette.spec 的 STRONG 组",
+      "severity": 0.5,
+      "confidence": 1,
+      "effort": 2
+    },
+    "TASK-232": {
+      "id": "TASK-232",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T07:18:00+00:00",
+      "updated_at": "2026-09-29T12:04:09+00:00",
+      "touched_round": 230,
+      "category": "core-feature",
+      "summary": "dark 主题印面方案:btn-seal 现用 cinnabar(201 85 78),托奶油白字仅 3.81 欠 AA;沿用 xian 思路 dark 按钮底改用深朱(cinnabar-deep 系),亮朱留给正文/图标,并让 dark 正文朱回 4.5",
+      "severity": 0.55,
+      "confidence": 1,
+      "effort": 3
+    },
+    "CHG-258": {
+      "id": "CHG-258",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T07:18:29+00:00",
+      "updated_at": "2026-09-29T07:18:29+00:00",
+      "touched_round": 230,
+      "commit": "f8db023",
+      "summary": "调色板判据上线(src/ui/palette.spec.ts)+ 文本色提档:ink-faint 双主题/violet/jade/amber 浅色提档,qinghua 死 token(与 azure 同值)从 style.css/tailwind/privacy 撤除;断言正文档双主题三底≥4.5 等"
+    },
+    "DEC-057": {
+      "id": "DEC-057",
+      "type": "decision",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T07:18:33+00:00",
+      "updated_at": "2026-09-29T07:18:33+00:00",
+      "touched_round": 230,
+      "rationale": "调色文字对比度按角色分档判据:正文档(墨三阶+紫)双主题三底≥4.5 锁死;强调档(标题/图标/大字)≥3 防跌破,提过 4.5 后挪进正文档;ghost 为装饰层(<3)层级单调,逐步撤档。对齐姊妹工程 xian 已收货的 palette.spec 纪律,取代人眼抽查",
+      "alternatives_rejected": "一次把全调色板拉到 4.5(观感全局大改、ghost 134 处一次迁移风险高、dak 朱按钮与正文需求冲突需专用印面方案,改为分批按角色推进)"
+    },
+    "CHG-259": {
+      "id": "CHG-259",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T07:42:01+00:00",
+      "updated_at": "2026-09-29T07:42:01+00:00",
+      "touched_round": 230,
+      "commit": "1f9ee60",
+      "summary": "强调档(azure/gold-ink/amber-ink/jade)light 提档至正文档,privacy 抄色同步,palette.spec 的 STRONG 扩到九档(含 indigo),WEAK 只剩 cinnabar 两档"
+    },
+    "CHG-260": {
+      "id": "CHG-260",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T07:42:01+00:00",
+      "updated_at": "2026-09-29T07:42:01+00:00",
+      "touched_round": 230,
+      "commit": "3fcb2c9",
+      "summary": "ghost 撤档(含 8fd0cd9 迁移 commit):24 文件 134 处 text-ink-ghost 全迁 text-ink-faint,style.css/tailwind/privacy 删 ghost 定义与转发,palette.spec 断言 ink-ghost 不得复活"
+    },
+    "CHG-261": {
+      "id": "CHG-261",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T12:04:09+00:00",
+      "updated_at": "2026-09-29T12:04:09+00:00",
+      "touched_round": 230,
+      "commit": "a112f9a",
+      "summary": "夜主题印面改深朱:dark cinnabar-deep 212→163 70 64,新增 dark .btn-seal 覆盖用 deep,奶油白字 3.81→5.31;palette.spec 新增印面 3 断言"
+    },
+    "ISS-248": {
+      "id": "ISS-248",
+      "type": "issue",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T15:58:24+00:00",
+      "updated_at": "2026-09-29T16:45:39+00:00",
+      "touched_round": 230,
+      "summary": "数据层裸 hex 颜色与调色板脱钩:qualities/linggen/SpiritRootReveal 手抄 hex(良品=旧jade、精品=旧azure、金=旧gold、雷=旧violet),改 token 后不同步——换肤换不到、漂了不报错(xian 判据四的同类坑)",
+      "severity": 0.6
+    },
+    "CHG-262": {
+      "id": "CHG-262",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-29T16:45:38+00:00",
+      "updated_at": "2026-09-29T16:45:38+00:00",
+      "touched_round": 230,
+      "commit": "6205b98",
+      "summary": "数据层颜色改引调色板变量:qualities/linggen/talents/SpiritRootReveal 撞 token 的裸 hex 改 var(--color-*) 引用(修漂移),EquipmentCard/InventoryView 的 hex-alpha 拼接改 tint()(utils/colorToken.ts)"
+    },
+    "TASK-233": {
+      "id": "TASK-233",
+      "type": "task",
+      "status": "resolved",
+      "version": 2,
+      "created_at": "2026-09-29T16:45:39+00:00",
+      "updated_at": "2026-09-30T02:55:49+00:00",
+      "touched_round": 230,
+      "category": "maintainability",
+      "summary": "palette.spec 补数据层 hex 判据:src/data 与组件内联色表(quality/linggen/talents/GRADES)只许出现白名单 hex(凡玄仙天等无 token 象征色),新增裸 hex 即红——防「再抄 token 值进数据层」。待 PR #20 合并后做,避免与 palette.spec 同文件冲突",
+      "severity": 0.5,
+      "confidence": 1,
+      "effort": 1
+    },
+    "CHG-263": {
+      "id": "CHG-263",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-30T02:55:49+00:00",
+      "updated_at": "2026-09-30T02:55:49+00:00",
+      "touched_round": 230,
+      "commit": "dfebeb5",
+      "summary": "数据层 hex 白名单判据接入 palette.spec,并当场抓到修掉 souls.ts 四处旧 token 手抄(魂质品阶 清晰/凝实/通灵/显形 → var(--color-*) 引用)"
+    },
+    "CHG-264": {
+      "id": "CHG-264",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-09-30T17:27:41+00:00",
+      "updated_at": "2026-09-30T17:27:41+00:00",
+      "touched_round": 230,
+      "commit": "f2b55d3",
+      "summary": "palette.spec 补「色阶分得开」判据:CIE76 ΔE>=10(品阶9色/五行11色),对齐 xian 判据五,防压深后相邻档糊成一团;实测最小ΔE 15.3/12.8"
+    },
+    "TASK-234": {
+      "id": "TASK-234",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-10-01T04:57:04.516147+00:00",
+      "updated_at": "2026-10-01T04:57:04.516147+00:00",
+      "touched_round": 230,
+      "category": "maintainability",
+      "summary": "layout-check 判据跟随文言化 UI 同步(8 条):写盘失败/收纳/分解/退灵石/锻造分解/营造按钮的旧文案(上次写入存档失败/已分解/退灵石/分解得器灵尘/建造升至)已因文案人话化失配;灵脉投资从弹窗重构为东府页展开区后,存读/落盘两条场景还在 home 页找 modal,导致「判据没跑到东西」与落盘节流假红。全部改为匹配新文案与 #vein-panel 结构,取意图不锁字面(对齐 TASK-222 先例)",
+      "severity": 0.3,
+      "confidence": 1,
+      "effort": 1
+    },
+    "CHG-265": {
+      "id": "CHG-265",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-01T04:57:04.516147+00:00",
+      "updated_at": "2026-10-01T04:57:04.516147+00:00",
+      "touched_round": 230,
+      "commit": "1b6ebb5",
+      "summary": "layout-check 判据与文言化 UI 对齐:6 条文案匹配串改为当前 src 用语(守意图不锁字面),存读/落盘两场景灵脉投资改走东府页展开区(aria-expanded 幂等开合);落盘节流假红消除(此前未真正投到脉)。layout-check 全绿(exit 0)"
+    },
+    "TASK-235": {
+      "id": "TASK-235",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-10-01T05:16:50.223759+00:00",
+      "updated_at": "2026-10-01T05:16:50.223759+00:00",
+      "touched_round": 230,
+      "category": "maintainability",
+      "summary": "RIL 记账卫生:ISS-243(穿齐触控靶面)/244(离线装备漏乘模式倍率)/245(离线残页漏乘模式倍率)/246(弱化档欠对比)代码均已由 CHG-251/252/253/258 修复并有回归佐证(layout-check 触控 28px 判据 / offline 乘式 / palette 对比度判据),唯独 issue 节点状态滞留在 active,把审计视线钉在已闭问题上。翻为 resolved 认领闭环",
+      "severity": 0.2,
+      "confidence": 1,
+      "effort": 1
+    },
+    "TASK-236": {
+      "id": "TASK-236",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-10-01T11:16:59.201197+00:00",
+      "updated_at": "2026-10-01T11:16:59.201197+00:00",
+      "touched_round": 230,
+      "category": "quality",
+      "summary": "offset 弹窗触控巡逻判据:layout-check 补「主动点开常见弹窗量内部控件」通(分解/收纳/装备详情/炼丹),28px + 可访问名;入口点不开只留说明不连坐。实测抓过三处 27px 按钮(换装/重铸/自动重铸)",
+      "severity": 0.4,
+      "confidence": 1,
+      "effort": 2
+    },
+    "CHG-266": {
+      "id": "CHG-266",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-01T11:16:59.201197+00:00",
+      "updated_at": "2026-10-01T11:16:59.201197+00:00",
+      "touched_round": 230,
+      "commit": "da3600a",
+      "summary": "layout-check 弹窗触控巡逻:主动开分解/收纳/装备详情/炼丹四扇常见窗,打开态量内部控件(28px/无名),入口点不开只说明不连坐;对齐 HYP-056/057「打开才存在」边界"
+    },
+    "TASK-237": {
+      "id": "TASK-237",
+      "type": "task",
+      "status": "resolved",
+      "version": 1,
+      "created_at": "2026-10-01T12:53:23.984577+00:00",
+      "updated_at": "2026-10-01T12:53:23.984577+00:00",
+      "touched_round": 230,
+      "category": "quality",
+      "summary": "layout-check 弹窗巡逻实测抓到的「连炼 ×5 / 炼制」27px 触控欠账:!py-1.5 盒高 27px 低于 28px 阈值,批量炼丹是高频操作;!py-2 抬到 35px,同弹窗窄屏方子卡布局判据随之解除",
+      "severity": 0.4,
+      "confidence": 1,
+      "effort": 1
+    },
+    "CHG-267": {
+      "id": "CHG-267",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-01T12:53:23.984577+00:00",
+      "updated_at": "2026-10-01T12:53:23.984577+00:00",
+      "touched_round": 230,
+      "commit": "0477ea2",
+      "summary": "开炉弹窗连炼/炼制 !py-1.5→!py-2(27→35px);layout-check 全绿"
+    },
+    "CHG-268": {
+      "id": "CHG-268",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-01T14:31:06.889693+00:00",
+      "updated_at": "2026-10-01T14:31:06.889693+00:00",
+      "touched_round": 231,
+      "commit": "c49ad2e",
+      "summary": "本世之界水墨舆图:卷首题签朱印/纸面晕染/路段三态/指路墨环/图例/地界卡互文/卷末纸本;ui-smoke-layout-check 双绿"
+    },
+    "CHG-269": {
+      "id": "CHG-269",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-01T22:43:03.461204+00:00",
+      "updated_at": "2026-10-01T22:43:03.461204+00:00",
+      "touched_round": 232,
+      "commit": "45ed900",
+      "summary": "空态叙事:全站空位统一哑印 .empty-seal(修仙录七处/天界/藏品/灵兽/卷首扉页);TS-lint-kai-palette 全绿"
+    },
+    "CHG-270": {
+      "id": "CHG-270",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-01T23:45:42.875203+00:00",
+      "updated_at": "2026-10-01T23:45:42.875203+00:00",
+      "touched_round": 233,
+      "commit": "c8ca847",
+      "summary": "仙路旅途:21 境横向刻度(realmLadder 纯函数+组件+修炼页接入);顺手清算死资产 qi-ring(被修炼法球三层环取代)"
+    },
+    "CHG-271": {
+      "id": "CHG-271",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-02T03:06:35.439024+00:00",
+      "updated_at": "2026-10-02T03:06:35.439024+00:00",
+      "touched_round": 234,
+      "commit": "08f6a14",
+      "summary": "归来卷轴:离线收益分三组(修为金标置顶)、拾得装备带 uid 可点开详情;TDD 账目断言入包有 uid/化尘无"
+    },
+    "CHG-272": {
+      "id": "CHG-272",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-02T08:53:13.849516+00:00",
+      "updated_at": "2026-10-02T08:53:13.849516+00:00",
+      "touched_round": 235,
+      "commit": "9638704",
+      "summary": "智能收纳两条自留线:品质线九档全列、阶级线 keepMinTier(阶到线不分品质皆留,与品质线或兜底);用户反馈 CHG"
+    },
+    "CHG-273": {
+      "id": "CHG-273",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-02T11:11:29.203946+00:00",
+      "updated_at": "2026-10-02T11:11:29.203946+00:00",
+      "touched_round": 236,
+      "commit": "a26d294",
+      "summary": "智能收纳清理预告:依当前尺度列出将化的件(清单+理由+入炉收益,与下手同一份名单),满包时报顶位对象;确认文案改词(自我迭代,续 CHG-272)"
+    },
+    "CHG-274": {
+      "id": "CHG-274",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-02T11:57:45.680830+00:00",
+      "updated_at": "2026-10-02T11:57:45.680830+00:00",
+      "touched_round": 237,
+      "commit": "9a6f5f7",
+      "summary": "自动重铸候选按词条品质分组:传世/珍稀/稀有/常见四档分栏上色,选中亮目标章,已选回声品质色实时 N/3(用户反馈 CHG,续 CHG-272 收纳域)"
+    },
+    "CHG-275": {
+      "id": "CHG-275",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-02T17:03:30.575317+00:00",
+      "updated_at": "2026-10-02T17:03:30.575317+00:00",
+      "touched_round": 238,
+      "commit": "489b0ca",
+      "summary": "强化连升:upgradeBatchPlan 纯算一次算清累计总账(受上限与余额约束),upgradeEquipmentBatch 逐级 quiet 一次升到位,UI 预览+二步确认,换件复位(自我迭代功能优化)"
+    },
+    "CHG-276": {
+      "id": "CHG-276",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T00:41:34.271085+00:00",
+      "updated_at": "2026-10-03T00:41:34.271085+00:00",
+      "touched_round": 239,
+      "commit": "ba8336a",
+      "summary": "炼丹连开计划 craftBatchPlan:按料保底算清能开几炉(炉炉皆成也够,双短板取小),丹方行料足时「炼满×N」一键开满、二步确认报总账(自我迭代功能优化)"
+    },
+    "CHG-277": {
+      "id": "CHG-277",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T02:10:20.708722+00:00",
+      "updated_at": "2026-10-03T02:10:20.708722+00:00",
+      "touched_round": 240,
+      "commit": "b03e529",
+      "summary": "炼器有声:强化/连升/分解/祭炼/重铸/词条转移补成败音效(成功=success、不足=warn、批量只一声、quiet 不响,全局音效闸保护)(自我迭代体验优化)"
+    },
+    "CHG-278": {
+      "id": "CHG-278",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T04:04:43.602+00:00",
+      "updated_at": "2026-10-03T04:04:43.602+00:00",
+      "touched_round": 241,
+      "commit": "ef1e61c",
+      "summary": "祭炼连升:法宝一口气连炼多重的批量计划(逐重累加成本、满重或余额缺口即止;预览与执行同源 upgradeArtifactBatch,一次总账一声响;单炼按钮保留)(自我迭代体验优化)"
+    },
+    "CHG-279": {
+      "id": "CHG-279",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T08:22:00.000+00:00",
+      "updated_at": "2026-10-03T08:22:00.000+00:00",
+      "touched_round": 242,
+      "commit": "08aa002",
+      "summary": "灵脉连投与改立主脉二步确认:一口气注满(该脉上限/总容量/灵石三者取短,总价=点数×恒定单价,总账与预览分毫不差),迁脉按下前把原主脉超额点回落副限的后果摆出来(数字读 constants)(自我迭代体验优化)"
+    },
+    "CHG-280": {
+      "id": "CHG-280",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T09:10:00.000+00:00",
+      "updated_at": "2026-10-03T09:10:00.000+00:00",
+      "touched_round": 242,
+      "commit": "1ad571f",
+      "summary": "词条图:113 条词条收进一张查用的词典(名/效果/数值区间/可出部位/品质门槛,区间两端=affixValue(roll 0/1));自动重铸面板点名即查、图鉴新增词条页签(展示读登记 READ_ONLY,判断仍只走 affixFitBlock)(玩家反馈:词条数值区间和名字有没有表)"
+    },
+    "CHG-281": {
+      "id": "CHG-281",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T09:58:00.000+00:00",
+      "updated_at": "2026-10-03T09:58:00.000+00:00",
+      "touched_round": 243,
+      "commit": "f8dd3e0",
+      "summary": "词条详情改「点哪条弹哪条」:自动重铸面板点词条名即弹该条详情(名/效果/数值区间/部位/门槛),设目标移到弹框页脚(满三禁再设),词条表降为纯词典;表内翻页同步父层使目标开关数得准(玩家反馈修正 CHG-280 的交互:不要词条表当详情入口)"
+    },
+    "CHG-282": {
+      "id": "CHG-282",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-03T10:40:00.000+00:00",
+      "updated_at": "2026-10-03T10:40:00.000+00:00",
+      "touched_round": 244,
+      "commit": "3487f25",
+      "summary": "词条信息收斂为「点哪条弹哪条」:词条表全删已(图鉴页签/面板头入口/成对组件),affixCodexText 更名 affixInfoText;BaseModal 新增 topmost 档(z-70,与 toast 同层)供词条弹框盖在详情(top/z-60)之上 —— 修「层级不对弹在下面」(玩家反馈再修正 CHG-281)"
+    },
+    "CHG-283": {
+      "id": "CHG-283",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-04T00:00:00.000+00:00",
+      "updated_at": "2026-10-04T00:00:00.000+00:00",
+      "touched_round": 245,
+      "commit": "a9c96fa",
+      "summary": "建筑连升:buildingBatchPlan 只算不动手(级数到品类满级/洞府辖限/余额三者最短,判据与 buildingUpgradeInfo 同源),upgradeBuildingBatch 一次连升按计划总账一扣一升、分文不少,二步确认后再动手;一次连升按实际级数计「升级建筑」次数(track n=plan.levels,防成就/主线只靠连升毕业不了);0 级计划不扣分、带拒因。探明「期初减期末 != 计划总账」的根因:测试首触 track 时一次性成就/主线顺带入账(+454.86 石),非尾差"
+    },
+    "CHG-284": {
+      "id": "CHG-284",
+      "type": "change",
+      "status": "active",
+      "version": 1,
+      "created_at": "2026-10-04T01:00:00.000+00:00",
+      "updated_at": "2026-10-04T01:00:00.000+00:00",
+      "touched_round": 246,
+      "commit": "cb29591",
+      "summary": "构筑快照存满即置灰:满 6 栏时「存当前构筑」灭掉、改成「快照已满」,不再先开命名弹框敲完名字才被 captureLoadout 弹 warn(置灰纪律,横幅 X/6 仍把余额摊在眼前);service 层容量守卫兜底原样保留"
     }
   },
   "edges": [
@@ -19923,6 +20804,258 @@
       "to": "HYP-103",
       "type": "validates",
       "created_at": "2026-09-19T08:20:11+00:00"
+    },
+    {
+      "from": "EV-221",
+      "to": "HYP-104",
+      "type": "validates",
+      "created_at": "2026-09-28T04:59:33+00:00"
+    },
+    {
+      "from": "CHG-248",
+      "to": "TASK-222",
+      "type": "implements",
+      "created_at": "2026-09-28T05:39:59+00:00"
+    },
+    {
+      "from": "CHG-249",
+      "to": "TASK-223",
+      "type": "implements",
+      "created_at": "2026-09-28T05:39:59+00:00"
+    },
+    {
+      "from": "CHG-250",
+      "to": "TASK-224",
+      "type": "implements",
+      "created_at": "2026-09-28T06:19:40+00:00"
+    },
+    {
+      "from": "TASK-225",
+      "to": "ISS-243",
+      "type": "addresses",
+      "created_at": "2026-09-28T07:12:03+00:00"
+    },
+    {
+      "from": "ISS-243",
+      "to": "COMP-010",
+      "type": "located_in",
+      "created_at": "2026-09-28T07:14:39+00:00"
+    },
+    {
+      "from": "CHG-251",
+      "to": "TASK-225",
+      "type": "implements",
+      "created_at": "2026-09-28T07:15:23+00:00"
+    },
+    {
+      "from": "CHG-251",
+      "to": "ISS-243",
+      "type": "resolves",
+      "created_at": "2026-09-28T07:15:23+00:00"
+    },
+    {
+      "from": "CHG-252",
+      "to": "TASK-226",
+      "type": "implements",
+      "created_at": "2026-09-28T07:46:17+00:00"
+    },
+    {
+      "from": "TASK-226",
+      "to": "ISS-244",
+      "type": "addresses",
+      "created_at": "2026-09-28T07:46:41+00:00"
+    },
+    {
+      "from": "CHG-252",
+      "to": "ISS-244",
+      "type": "resolves",
+      "created_at": "2026-09-28T07:46:41+00:00"
+    },
+    {
+      "from": "ISS-244",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-28T07:46:41+00:00"
+    },
+    {
+      "from": "CHG-253",
+      "to": "TASK-227",
+      "type": "implements",
+      "created_at": "2026-09-28T08:52:06+00:00"
+    },
+    {
+      "from": "TASK-227",
+      "to": "ISS-245",
+      "type": "addresses",
+      "created_at": "2026-09-28T08:52:29+00:00"
+    },
+    {
+      "from": "CHG-253",
+      "to": "ISS-245",
+      "type": "resolves",
+      "created_at": "2026-09-28T08:52:29+00:00"
+    },
+    {
+      "from": "ISS-245",
+      "to": "COMP-006",
+      "type": "located_in",
+      "created_at": "2026-09-28T08:52:29+00:00"
+    },
+    {
+      "from": "DEC-054",
+      "to": "TASK-227",
+      "type": "governs",
+      "created_at": "2026-09-28T08:56:01+00:00"
+    },
+    {
+      "from": "CHG-254",
+      "to": "TASK-226",
+      "type": "implements",
+      "created_at": "2026-09-28T09:28:35+00:00"
+    },
+    {
+      "from": "CHG-254",
+      "to": "TASK-227",
+      "type": "implements",
+      "created_at": "2026-09-28T09:28:35+00:00"
+    },
+    {
+      "from": "CHG-255",
+      "to": "TASK-226",
+      "type": "implements",
+      "created_at": "2026-09-28T13:42:21+00:00"
+    },
+    {
+      "from": "CHG-255",
+      "to": "TASK-227",
+      "type": "implements",
+      "created_at": "2026-09-28T13:42:21+00:00"
+    },
+    {
+      "from": "DEC-056",
+      "to": "TASK-226",
+      "type": "governs",
+      "created_at": "2026-09-28T13:43:41+00:00"
+    },
+    {
+      "from": "CHG-256",
+      "to": "TASK-228",
+      "type": "implements",
+      "created_at": "2026-09-29T02:48:58+00:00"
+    },
+    {
+      "from": "CHG-257",
+      "to": "TASK-229",
+      "type": "implements",
+      "created_at": "2026-09-29T05:53:09+00:00"
+    },
+    {
+      "from": "CHG-258",
+      "to": "ISS-246",
+      "type": "resolves",
+      "created_at": "2026-09-29T07:18:51+00:00"
+    },
+    {
+      "from": "TASK-230",
+      "to": "ISS-247",
+      "type": "addresses",
+      "created_at": "2026-09-29T07:18:51+00:00"
+    },
+    {
+      "from": "TASK-231",
+      "to": "ISS-247",
+      "type": "addresses",
+      "created_at": "2026-09-29T07:18:52+00:00"
+    },
+    {
+      "from": "TASK-232",
+      "to": "ISS-247",
+      "type": "addresses",
+      "created_at": "2026-09-29T07:18:52+00:00"
+    },
+    {
+      "from": "DEC-057",
+      "to": "TASK-230",
+      "type": "governs",
+      "created_at": "2026-09-29T07:18:52+00:00"
+    },
+    {
+      "from": "DEC-057",
+      "to": "TASK-231",
+      "type": "governs",
+      "created_at": "2026-09-29T07:18:52+00:00"
+    },
+    {
+      "from": "DEC-057",
+      "to": "TASK-232",
+      "type": "governs",
+      "created_at": "2026-09-29T07:18:52+00:00"
+    },
+    {
+      "from": "CHG-259",
+      "to": "TASK-231",
+      "type": "implements",
+      "created_at": "2026-09-29T07:42:35+00:00"
+    },
+    {
+      "from": "CHG-260",
+      "to": "TASK-230",
+      "type": "implements",
+      "created_at": "2026-09-29T07:42:35+00:00"
+    },
+    {
+      "from": "CHG-261",
+      "to": "TASK-232",
+      "type": "implements",
+      "created_at": "2026-09-29T12:04:09+00:00"
+    },
+    {
+      "from": "CHG-261",
+      "to": "ISS-247",
+      "type": "resolves",
+      "created_at": "2026-09-29T12:04:09+00:00"
+    },
+    {
+      "from": "CHG-262",
+      "to": "ISS-248",
+      "type": "resolves",
+      "created_at": "2026-09-29T16:45:39+00:00"
+    },
+    {
+      "from": "TASK-233",
+      "to": "ISS-248",
+      "type": "addresses",
+      "created_at": "2026-09-29T16:46:14+00:00"
+    },
+    {
+      "from": "CHG-263",
+      "to": "TASK-233",
+      "type": "implements",
+      "created_at": "2026-09-30T02:55:49+00:00"
+    },
+    {
+      "from": "CHG-265",
+      "to": "TASK-234",
+      "type": "implements",
+      "created_at": "2026-10-01T04:57:04.516147+00:00"
+    },
+    {
+      "from": "CHG-265",
+      "to": "TASK-235",
+      "type": "implements",
+      "created_at": "2026-10-01T05:17:42.465013+00:00"
+    },
+    {
+      "from": "CHG-266",
+      "to": "TASK-236",
+      "type": "implements",
+      "created_at": "2026-10-01T11:16:59.201197+00:00"
+    },
+    {
+      "from": "CHG-267",
+      "to": "TASK-237",
+      "type": "implements",
+      "created_at": "2026-10-01T12:53:23.984577+00:00"
     }
   ]
 }

@@ -56,7 +56,7 @@
           <div class="flex items-center gap-2 pt-1">
             <span class="font-kai text-[11px] tracking-[0.3em] text-ink-soft">{{ group.world.name }}</span>
             <span class="h-px grow bg-ink/10" />
-            <span class="text-[10px] text-ink-ghost">{{ group.rows.length }} 处</span>
+            <span class="text-[10px] text-ink-faint">{{ group.rows.length }} 处</span>
           </div>
         <div
           v-for="row in group.rows"
@@ -75,7 +75,7 @@
           <div class="flex items-start gap-3">
             <span
               class="grid h-10 w-10 shrink-0 place-items-center rounded-md"
-              :class="row.suppressed ? 'bg-gold-ink/15 text-gold-ink' : row.canEnter ? 'bg-indigo-ink/10 text-indigo-ink' : 'bg-ink/6 text-ink-ghost'"
+              :class="row.suppressed ? 'bg-gold-ink/15 text-gold-ink' : row.canEnter ? 'bg-indigo-ink/10 text-indigo-ink' : 'bg-ink/6 text-ink-faint'"
             >
               <GameIcon :name="row.suppressed ? 'shield-check' : row.canEnter ? row.def.icon : 'lock'" :size="18" />
             </span>
@@ -104,7 +104,7 @@
                 敌人的「层级补偿」此前只落在数值里:玩家看到的只是一只小怪,打起来却像换了一身装备。
                 此处与战后归因同源(regionFoeOrigin)—— 出行方式与灵兽之性那一半在出行弹窗里摊开。
               -->
-              <p v-if="row.foeOrigin.parts.length" data-region-foe-origin class="mt-0.5 text-[10px] leading-relaxed text-ink-ghost">
+              <p v-if="row.foeOrigin.parts.length" data-region-foe-origin class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">
                 此地之敌:{{ foeOriginPartsText(row.foeOrigin) }}
               </p>
             </div>
@@ -190,7 +190,7 @@
                 均受伤 {{ Math.round(row.progress.avgDamagePct * 100) }}%(需≤{{ Math.round(row.progress.maxAvgDamagePct * 100) }}%)
               </span>
             </template>
-            <span v-else class="ml-1.5 text-ink-ghost">尚无战绩</span>
+            <span v-else class="ml-1.5 text-ink-faint">尚无战绩</span>
           </p>
           <!-- 进不去时,理由指向眼下就能去的那一段,不让玩家自己排先后 -->
           <p v-if="row.blockReason" class="mt-1 text-[11px] text-cinnabar">{{ row.blockReason }}</p>
@@ -240,19 +240,19 @@
         </template>
         <p v-else class="text-[11px] text-ink-faint">尚未成流派,此地对各路数一视同仁。</p>
         <div class="ink-divider my-2" />
-        <p class="text-[10px] text-ink-faint">此地相性(机制契合度,并非胜率):</p>
+        <p class="text-[10px] text-ink-faint">此地与你的路数合不合(未必等于胜算):</p>
         <p class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
           <span v-for="rec in preview.recs" :key="rec.style.id" class="text-[11px] text-ink-soft tabular">
             {{ rec.style.name }}
             <span class="text-gold-ink">{{ starsText(rec.adaptation.stars) }}</span>
           </span>
         </p>
-        <p class="mt-1.5 text-[10px] text-ink-ghost tabular">
+        <p class="mt-1.5 text-[10px] text-ink-faint tabular">
           战力 {{ formatGN(player.finalStats.power) }} · 装备成色、词条与临场随机仍定成败
         </p>
       </div>
       <p class="text-[12px] text-ink-faint">此行欲作何打算?</p>
-      <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">行程论这一程走多久;「历练遇敌」只令同程妖踪更密,不能缩地成寸。</p>
+      <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">行程论这一程走多久;「历练遇敌」只令同程妖踪更密,不能缩地成寸。</p>
       <div class="mt-3 space-y-2">
         <button
           v-for="m in MODE_LIST"
@@ -262,7 +262,7 @@
         >
           <span>
             <span class="font-kai text-[14px] tracking-widest text-ink">{{ EXPLORE_MODES[m.id].name }}</span>
-            <span class="ml-2 text-[11px]" :class="m.id === 'risky' ? 'text-cinnabar' : 'text-ink-faint'">{{ m.risk }}</span>
+            <span class="ml-2 text-[11px]" :class="m.id === 'risky' || m.id === 'prolonged' ? 'text-cinnabar' : 'text-ink-faint'">{{ m.risk }}</span>
           </span>
           <!--
             收益一直是亮着的,危险却是暗的:三档里敌人差了 2.1 倍,玩家却只看得到钱。
@@ -366,7 +366,8 @@
   const MODE_LIST: { id: ExploreMode; risk: string }[] = [
     { id: 'normal', risk: '安稳' },
     { id: 'deep', risk: '小险' },
-    { id: 'risky', risk: '大凶' }
+    { id: 'risky', risk: '大凶' },
+    { id: 'prolonged', risk: '极险' }
   ]
 
   const currentBuild = computed(() => detectBuild(player.finalStats.mods))
@@ -427,10 +428,18 @@
     return firstLocked < 0 ? rows : rows.slice(0, firstLocked + 1)
   })
 
-  /** 按界域分组展示:人间界/仙界/神界/混沌海的历练地界各自成段,便于在高界导航 */
+  /**
+   * 按界域分组展示:人间界/仙界/神界/混沌海的历练地界各自成段,便于在高界导航。
+   *
+   * 展示序 = 倒序(玩家反馈:「历练列表应该倒序排列,每次都要往下活动很久」)。
+   * 进阶路线上每次新解锁的地界排在最上 —— 高界玩家常年只在列表底部那两格的苦,
+   * 就是「新地界追着玩家跑」而不是要玩家去捞它。判定截断(visibleRows)仍在
+   * **数据序**(由低到高)上算:谜一样的「下一个地界」谁也不提前剧透,
+   * 只是摆出来的时候反着排罢了。
+   */
   const groupedRows = computed(() => {
     const groups: { world: WorldDef; rows: typeof regionRows.value }[] = []
-    for (const row of visibleRows.value) {
+    for (const row of [...visibleRows.value].reverse()) {
       const world = worldOf(row.def.minRealm)
       const hit = groups.find(g => g.world.id === world.id)
       if (hit) hit.rows.push(row)

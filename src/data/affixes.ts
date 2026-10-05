@@ -187,6 +187,18 @@ export function affixDef(id: string): AffixDef | undefined {
 }
 
 /**
+ * 一条词条能否长在某部位、某品质的装备上 —— 掉落生成、重铸抽取、自动重铸候选、
+ * 词条转移共用这一处。返回挡住它的那一项('slot' 部位不符 / 'rank' 品质不够),能落返回 null。
+ *
+ * 此前三处各抄一份「slots + minRank」:界面亮着、服务不认的事故就从这种分叉里来。
+ */
+export function affixFitBlock(def: AffixDef, slot: EquipSlot, rank: number): 'slot' | 'rank' | null {
+  if (def.slots !== undefined && !def.slots.includes(slot)) return 'slot'
+  if (def.minRank !== undefined && rank < def.minRank) return 'rank'
+  return null
+}
+
+/**
  * 词条稀有度的高低序(0 最常见,3 最难得)。
  *
  * 它一直只活在数据里(reforge 按它加权抽取),界面上从没露过面 ——
@@ -198,6 +210,35 @@ export const AFFIX_RARITY_RANK: Record<AffixRarity, number> = {
   rare: 1,
   epic: 2,
   legendary: 3
+}
+
+/** 按品质归类后的一档 */
+export interface AffixRarityGroup {
+  rarity: AffixRarity
+  items: AffixDef[]
+}
+
+/**
+ * 把一列词条按品质分成组:传世在前、空组不占位、组内保序。
+ * 自动重铸候选从平铺网格改成按档分组时用它 —— 顺序不硬编码,
+ * 随 AFFIX_RARITY_RANK 走,稀有度调序时这里自动跟上。
+ */
+export function affixesByRarity(affixes: readonly AffixDef[]): AffixRarityGroup[] {
+  const order = (Object.keys(AFFIX_RARITY_RANK) as AffixRarity[]).sort(
+    (a, b) => AFFIX_RARITY_RANK[b] - AFFIX_RARITY_RANK[a]
+  )
+  const buckets = new Map<AffixRarity, AffixDef[]>()
+  for (const af of affixes) {
+    const arr = buckets.get(af.rarity)
+    if (arr) arr.push(af)
+    else buckets.set(af.rarity, [af])
+  }
+  const out: AffixRarityGroup[] = []
+  for (const r of order) {
+    const items = buckets.get(r)
+    if (items) out.push({ rarity: r, items })
+  }
+  return out
 }
 
 /** 词条实际数值 = min + (max - min) × roll */

@@ -62,3 +62,8 @@ export function veinPeakToast(veinName = '此脉'): string {
 export function veinShortToast(): string {
   return '灵石未足,难注此脉'
 }
+
+/** 连投的总结账:一点一点报太吵,连投只报一次总况(stoneText 由调用方 formatGN 好) */
+export function veinBatchDoneToast(name: string, points: number, stoneText: string): string {
+  return `「${name}」连注 ${points} 点,共耗灵石 ${stoneText}`
+}

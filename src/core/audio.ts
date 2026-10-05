@@ -146,6 +146,15 @@ let initPromise: Promise<void> | null = null
 let unlocked = false
 let bgmPlaying = false
 let lastClickAt = 0
+/**
+ * 设备起不来的降级旗:起一次失败就整段静音续行,不再每次点击各抛一条。
+ *
+ * 浏览器里 BaseAudioContext.resume() 在无可用音频设备时以
+ * InvalidStateError("Failed to start the audio device") 拒绝 —— 旧代码两处
+ * `void T.start()` 裸调用不带 catch,拒绝一路漏成 unhandledrejection,
+ * 玩家每点一下(全局 onPointerDown 都调 unlockAudio)就多一条,×4 就是这么来的
+ */
+let audioDead = false
 
 let musicBus: ToneNS.Gain | null = null
 let sfxBus: ToneNS.Gain | null = null
@@ -371,19 +380,45 @@ export function configureAudio(p: AudioPrefs): void {
   applyPrefs()
 }
 
+/** 一次启动的 Promise:首取未定局期间,再来的交互直接让位,不各自挂回执 */
+let startPromise: Promise<void> | null = null
+
+/**
+ * 恢复音频上下文。Tone.start() 的 Promise 在此吞掉失败,并把整段音频标记为
+ * 已死 —— 设备没就绪不是能重试的,每次点击再试只会制造一屏未处理拒绝。
+ * 在途护栏:全局 onPointerDown 每次交互都会进来,若正在启动就让位给那一次
+ * 共享尝试,失败只由它记一记(单次告警、单次置死)。
+ */
+function safeStart(): void {
+  if (!T || audioDead || startPromise) return
+  startPromise = T.start()
+    .then(() => {
+      // 恢复成功才让循环起声;失败走 catch 直接置死
+      if (prefs.musicOn) startBgm()
+    })
+    .catch(() => {
+      audioDead = true
+      bgmPlaying = false
+      // 降级为静音续行:一句警告入日志,不再进 diag 留档
+      console.warn('[音频] 音频设备未就绪,静音续行(配乐与音效停用)')
+    })
+    .finally(() => {
+      startPromise = null
+    })
+}
+
 /** 首次用户交互时调用,加载引擎并解锁声音;每次交互重入无副作用 */
 export function unlockAudio(): void {
   if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') return
   unlocked = true
   if (T) {
     // 已就绪:在手势调用栈内直接恢复上下文
-    void T.start()
-    if (prefs.musicOn) startBgm()
+    safeStart()
     return
   }
   initPromise ??= init()
     .then(() => {
-      void T!.start()
+      safeStart()
       applyPrefs()
     })
     .catch(err => {
@@ -392,7 +427,7 @@ export function unlockAudio(): void {
 }
 
 export function startBgm(): void {
-  if (!T || bgmPlaying || !prefs.musicOn) return
+  if (!T || bgmPlaying || !prefs.musicOn || audioDead) return
   bgmPlaying = true
   T.getTransport().start('+0.1')
 }
@@ -411,7 +446,7 @@ function gliss(notes: string[], step: number, vel = 0.55): void {
 }
 
 export function playSfx(name: SfxName): void {
-  if (!prefs.sfxOn || !unlocked || !T) return
+  if (!prefs.sfxOn || !unlocked || !T || audioDead) return
   const now = T.now()
   switch (name) {
     case 'click': {

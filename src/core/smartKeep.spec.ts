@@ -12,7 +12,7 @@ import { BAG_CAPACITY } from '@/data/constants'
 import { useSettingsStore } from '@/stores/settings'
 import { useInventoryStore } from '@/stores/inventory'
 import { acquireEquipment } from './loot'
-import { autoRecycleReason, compareEvictable, hasInvestment, keepVerdict, perfectRolls, shouldAutoRecycle } from './smartKeep'
+import { compareEvictable, hasInvestment, keepVerdict, perfectRolls, shouldAutoRecycle, sweepTargets } from './smartKeep'
 
 /** 夹具一律用「不带套」的青云道袍,免得套件规则混进别的判据 */
 function mk(uid: string, quality: QualityId = 'mortal', opts: Partial<EquipmentInstance> = {}): EquipmentInstance {
@@ -33,6 +33,7 @@ function smartOn(): void {
   useSettingsStore().smartKeep = {
     enabled: true,
     minQuality: 3,
+    keepMinTier: 0,
     keepCoreAffix: true,
     keepComboPiece: true,
     keepPerfectRolls: true,
@@ -46,11 +47,12 @@ describe('智能收纳 · 自动裁决的边界', () => {
     smartOn()
   })
 
-  it('练过的件(强化/重铸/封存)一律当藏,且不进自动回收闸', () => {
+  it('练过的件(强化/重铸/封存/转入词条)一律当藏,且不进自动回收闸', () => {
     const cases: [string, Partial<EquipmentInstance>][] = [
       ['强化过', { level: 5 }],
       ['重铸过', { reforgeCount: 2 }],
-      ['封存过词条', { sealedAffixIds: ['atk1'] }]
+      ['封存过词条', { sealedAffixIds: ['atk1'] }],
+      ['转入过词条', { transferCount: 1 }]
     ]
     for (const [why, patch] of cases) {
       const item = mk(`l_${why}`, 'mortal', patch)
@@ -91,23 +93,53 @@ describe('智能收纳 · 自动裁决的边界', () => {
     expect(keepVerdict(perfect).keep).toBe(false)
   })
 
-  it('一键分解勾选只影响未达品质保留线的件 —— 达线的件永不自动回收', () => {
-    // 玩家报障:勾了「灵品起保留」(minQuality=3)又一个键分解勾了地品(rank 5),
-    // 拾到的地品(5 >= 3)被「所勾地品」抢先回收,品质保留线成了摆设。
-    // 现判据:rank >= minQuality 的件先被硬性保留,一键分解的勾选管不到它。
-    useSettingsStore().decomposeRanks = [5]
-    const earth = mk('earth_kept', 'earth') // 地品 rank 5 >= minQuality 3
-    expect(keepVerdict(earth).keep, '地品在保留线上').toBe(true)
-    expect(shouldAutoRecycle(earth), '一键分解勾的地品不得覆盖品质保留线').toBe(false)
-    expect(autoRecycleReason(earth), '不应被回收').toBeNull()
-
-    // 未达保留线的件仍受一键分解管辖:凡品勾了就回收
-    useSettingsStore().decomposeRanks = [0]
-    const mortal = mk('mortal_ok', 'mortal', { level: 3 }) // 练过的凡品,仍是显式废料声明
-    expect(shouldAutoRecycle(mortal), '未达保留线的件,一键分解仍优先').toBe(true)
+  it('阶级自留线:阶数到了,品质再低也当藏(硬保底,先于品质)', () => {
+    const settings = useSettingsStore()
+    settings.smartKeep.keepMinTier = 8
+    // 连凡品(rank 0 < 品质线 3)、无任何识宝命中 —— 单凭阶数 8 就该留
+    expect(keepVerdict(mk('t8', 'mortal', { tier: 8 })).keep).toBe(true)
+    expect(keepVerdict(mk('t8', 'mortal', { tier: 8 })).reason).toMatch(/阶/)
+    expect(keepVerdict(mk('t12', 'mortal', { tier: 12 })).keep).toBe(true)
+    expect(keepVerdict(mk('t12', 'mortal', { tier: 12 })).reason).toMatch(/阶/)
   })
 
-  it('总闸:智能收纳未启用时,一键分解勾选档也不自动回收', () => {
+  it('离线批量口径:批量直写同样先过智能收纳裁决 —— 低阶化尘、达保留线的入包', () => {
+    // 智能收纳开启 + 灵品线:凡品件判无缘(化尘),灵品件判留(入包)。
+    // 在线 acquireEquipment 与离线批量走同一 keepVerdict,此处钉住裁决本身。
+    expect(shouldAutoRecycle(mk('off_low', 'mortal')), '未达保留线的凡品应回收').toBe(true)
+    expect(shouldAutoRecycle(mk('off_high', 'spirit')), '达保留线的灵品应保留').toBe(false)
+    expect(keepVerdict(mk('off_high', 'spirit')).keep).toBe(true)
+  })
+
+  it('阶级自留线未设(0)时,行为与从前一致 —— 阶数不掺和裁决', () => {
+    // beforeEach 里 keepMinTier 已是 0,凡品(tier 3)不进品质线、也不进阶级线 → 无缘
+    expect(keepVerdict(mk('t3', 'mortal')).keep).toBe(false)
+  })
+
+  it('两线是「或」:未达阶级线的珍品仍由品质线兜住,未达任何线的才化尘', () => {
+    const settings = useSettingsStore()
+    settings.smartKeep.keepMinTier = 8
+    settings.smartKeep.keepCoreAffix = false
+    settings.smartKeep.keepComboPiece = false
+    settings.smartKeep.keepSetPiece = false
+    settings.smartKeep.keepPerfectRolls = false
+    // tier 3 玄品:未达阶线(8),但品质 ≥ 3 → 留
+    expect(keepVerdict(mk('hq', 'spirit', { tier: 3 })).keep).toBe(true)
+    // tier 3 凡品:两条线都不达、识宝全关 → 化尘
+    expect(keepVerdict(mk('lq', 'mortal', { tier: 3 })).keep).toBe(false)
+  })
+
+  it('「一键分解」勾选的品质档与自动裁决彻底隔离 —— 手动筛的是行囊,落包不看它', () => {
+    // 即便手动把「全套分解」勾满,智能收纳要留的件一个也不会被勾选档卷走
+    useSettingsStore().decomposeRanks = [0, 1, 2, 3, 4, 5]
+    // 练过的成套件:是玩家投入又命中套件 —— 手动档再宽也碰不得
+    const invested = mk('set2', 'mortal', { templateId: 'w_xuantie', level: 3 })
+    expect(shouldAutoRecycle(invested)).toBe(false)
+    // 素而无缘的件仍归自动回收 —— 那是智能收纳自己的裁决,与勾选档无关
+    expect(shouldAutoRecycle(mk('plain'))).toBe(true)
+  })
+
+  it('总闸:智能收纳未启用时,什么都不会被自动回收(手动勾选档也无从借道)', () => {
     const settings = useSettingsStore()
     settings.smartKeep.enabled = false
     settings.decomposeRanks = [0, 1]
@@ -140,5 +172,36 @@ describe('智能收纳 · 自动裁决的边界', () => {
     expect(compareEvictable(weak, strong)).toBeLessThan(0)
     expect(compareEvictable(weak, higherTier)).toBeLessThan(0)
     expect(compareEvictable(weak, betterQuality)).toBeLessThan(0)
+  })
+
+  describe('清理预告 sweepTargets —— 依当前规则列出将化的件(弱者在前,带理由)', () => {
+    it('无缘件全数入选并带理由;上锁者豁免', () => {
+      const plain1 = mk('p1', 'mortal', { tier: 1 })
+      const plain2 = mk('p2', 'mortal', { tier: 4 })
+      const locked = mk('lk', 'mortal', { locked: true })
+      const targets = sweepTargets([plain1, plain2, locked])
+      expect(targets.length).toBe(2)
+      expect(targets.every(t => t.reason.length > 0)).toBe(true)
+      expect(targets.some(t => t.item.uid === 'lk')).toBe(false)
+    })
+
+    it('已留之件(淬养/成套/词条近满/品质线/阶级线)一支不落进名单', () => {
+      const invested = mk('lv', 'mortal', { level: 5 })
+      const setPiece = mk('set1', 'mortal', { templateId: 'w_xuantie' }) // 铁壁共鸣套件
+      const perfect = mk('pf', 'excellent', { affixes: [{ id: 'atk1', roll: 0.95 }, { id: 'def1', roll: 0.88 }] })
+      const qualityKept = mk('hq', 'spirit')
+      const settings = useSettingsStore()
+      settings.smartKeep.keepMinTier = 8
+      const tierKept = mk('t8', 'mortal', { tier: 8 })
+      expect(sweepTargets([invested, setPiece, perfect, qualityKept, tierKept])).toEqual([])
+    })
+
+    it('排序与挤位同一把尺:弱者在前,已留之件不占位', () => {
+      const weak = mk('w1', 'mortal', { tier: 1 })
+      const tall = mk('w3', 'mortal', { tier: 9 })
+      const keptByQuality = mk('q1', 'spirit', { tier: 1 }) // 品质线已留,不进名单
+      const uids = sweepTargets([tall, keptByQuality, weak]).map(t => t.item.uid)
+      expect(uids).toEqual(['w1', 'w3'])
+    })
   })
 })

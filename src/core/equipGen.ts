@@ -5,7 +5,7 @@ import type { AffixRarity, AnyStatKey, EquipmentInstance, EquipSlot, GNum, Quali
 import type { RandomService } from '@/utils/random'
 import { uid } from '@/utils/id'
 import { gnZero, mulN, add } from '@/utils/gnum'
-import { AFFIXES, AFFIX_RARITY_RANK, affixDef, affixValue } from '@/data/affixes'
+import { AFFIXES, AFFIX_RARITY_RANK, affixDef, affixFitBlock, affixValue } from '@/data/affixes'
 import { EQUIPMENT_TEMPLATES, equipmentTemplate } from '@/data/equipment'
 import { QUALITIES, qualityDef } from '@/data/qualities'
 import {
@@ -19,6 +19,11 @@ import { powerScale } from './formulas'
 
 export interface GenOptions {
   slot?: EquipSlot
+  /**
+   * 品质下限。**只要给了(哪怕是 0)就不吃品质窗口** —— 那是首领/秘境/际遇的剧情例外。
+   * 普通掉落别传:在线普通战曾传 0,窗口整个失效,低阶高品比离线、比审计多掉一截
+   * (dropQualityWindow.spec 守着)。
+   */
   minQualityRank?: number
   /** 气运(提高高品质权重) */
   luck?: number
@@ -140,12 +145,7 @@ export function generateEquipment(tier: number, rng: RandomService, opts: GenOpt
   let guard = 0
   while (chosen.length < affixCount && guard < 50) {
     guard += 1
-    const candidates = AFFIXES.filter(
-      a =>
-        !used.has(a.id) &&
-        (a.minRank === undefined || quality.rank >= a.minRank) &&
-        (a.slots === undefined || a.slots.includes(template.slot))
-    )
+    const candidates = AFFIXES.filter(a => !used.has(a.id) && affixFitBlock(a, template.slot, quality.rank) === null)
     if (candidates.length === 0) break
     const picked = rng.weighted(candidates, a => a.weight)
     used.add(picked.id)

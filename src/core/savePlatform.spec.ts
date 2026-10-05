@@ -6,8 +6,8 @@
  *
  * 两条分支都必须是可用的存档出口,不能因为平台差异退化成静默失败。
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 /** node 测试环境无 localStorage,导出路径内部(buildExportPayload)要读它,补一个最小桩 */
 class MemStorage {
@@ -42,6 +42,14 @@ vi.mock('@capacitor/filesystem', () => ({
 vi.mock('@capacitor/share', () => ({
   Share: { canShare: mocks.canShare, share: mocks.share }
 }))
+
+vi.mock('file-saver', () => ({ saveAs: () => undefined }))
+
+/** node 无剪贴板:Web 分支的剪贴板兜底走可选路径,给一个可追踪桩即可 */
+Object.defineProperty(globalThis, 'navigator', {
+  value: { clipboard: { writeText: async () => undefined } },
+  configurable: true
+})
 
 vi.mock('@capacitor/core', async () => {
   const actual = await vi.importActual<typeof import('@capacitor/core')>('@capacitor/core')

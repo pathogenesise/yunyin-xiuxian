@@ -27,16 +27,11 @@ export default {
         ink: {
           DEFAULT: withAlpha('--color-ink-rgb'),
           soft: withAlpha('--color-ink-soft-rgb'),
-          faint: withAlpha('--color-ink-faint-rgb'),
-          ghost: withAlpha('--color-ink-ghost-rgb')
+          faint: withAlpha('--color-ink-faint-rgb')
         },
         cinnabar: {
           DEFAULT: withAlpha('--color-cinnabar-rgb'),
           deep: withAlpha('--color-cinnabar-deep-rgb')
-        },
-        qinghua: {
-          DEFAULT: withAlpha('--color-qinghua-rgb'),
-          light: withAlpha('--color-qinghua-light-rgb')
         },
         'indigo-ink': withAlpha('--color-indigo-ink-rgb'),
         'gold-ink': withAlpha('--color-gold-ink-rgb'),

@@ -1,7 +1,7 @@
 <template>
   <button
     class="relative aspect-square rounded-md border transition-transform active:scale-95"
-    :style="{ borderColor: quality.color + '55', background: quality.color + '0f' }"
+    :style="{ borderColor: tint(quality.color, 0.33), background: tint(quality.color, 0.06) }"
     :data-uid="props.item.uid"
     @click="emit('open', props.item.uid)"
   >
@@ -31,6 +31,18 @@
     <span v-if="props.item.level > 0" class="absolute bottom-0.5 right-1 text-[9px] leading-none text-gold-ink tabular">
       +{{ props.item.level }}
     </span>
+    <!--
+      自定标记:格子背包里也认得出「这件是哪个流派」(玩家反馈,≤4字)。
+      三枚底角标(共 / 标记 / +N)共处底边,标记不再是居中飘 80% 宽 —— 那会把
+      左「共」右「+N」都盖住(共鸣件 + 强化 + 带标记一件集齐时糊成一团)。
+      改为左右各让出 24px(left-6/right-6),文字居中截断,三枚各就各位。
+    -->
+    <span
+      v-if="props.item.note"
+      class="absolute bottom-0.5 left-6 right-6 truncate text-center text-[8px] leading-none text-ink-faint"
+    >
+      {{ props.item.note }}
+    </span>
   </button>
 </template>
 
@@ -39,6 +51,7 @@
   import type { EquipmentInstance } from '@/types'
   import { equipmentTemplate } from '@/data/equipment'
   import { qualityDef } from '@/data/qualities'
+  import { tint } from '@/utils/colorToken'
   import { equipSetDef } from '@/core/equipSet'
   import GameIcon from '@/components/common/GameIcon.vue'
 

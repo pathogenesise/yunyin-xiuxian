@@ -2,15 +2,21 @@
   <div class="stagger-in space-y-4 px-4 pb-6 pt-4">
     <!-- 境界与突破(修为圆满时整卡蓄势充能) -->
     <div class="card-ink px-4 py-4" :class="player.expFull ? 'card-charged' : ''">
-      <div class="text-center">
-        <p class="font-kai text-[11px] tracking-[0.5em] text-ink-faint">{{ player.worldName }}</p>
-        <p class="font-kai text-[30px] tracking-[0.3em] text-ink">{{ player.realm.name }}</p>
-        <p class="mt-0.5 font-kai text-[14px] tracking-[0.4em] text-cinnabar">{{ player.subName }}</p>
-        <p class="mt-1 text-[11px] text-ink-faint">{{ player.realm.desc }}</p>
-        <!-- 可解释性:这一境取自何处、因何承接(典籍 / 网文常用 / 道家本源) -->
-        <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
-          「{{ player.realm.basis }}」{{ player.realm.lore }}
-        </p>
+      <!-- 法球主视觉:修为环随修行转动,闭关时点亮、圆满时蓄势 —— 第一眼就是"这一页在干什么" -->
+      <div class="flex flex-col items-center gap-3">
+        <CultivationOrb :active="retreating" :full="player.expFull" :progress="player.expProgress">
+          <span class="font-kai text-[18px]">道</span>
+        </CultivationOrb>
+        <div class="text-center">
+          <p class="font-kai text-[11px] tracking-[0.5em] text-ink-faint">{{ player.worldName }}</p>
+          <p class="font-kai text-[30px] tracking-[0.3em] text-ink">{{ player.realm.name }}</p>
+          <p class="mt-0.5 font-kai text-[14px] tracking-[0.4em] text-cinnabar">{{ player.subName }}</p>
+          <p class="mt-1 text-[11px] text-ink-faint">{{ player.realm.desc }}</p>
+          <!-- 可解释性:这一境取自何处、因何承接(典籍 / 网文常用 / 道家本源) -->
+          <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
+            「{{ player.realm.basis }}」{{ player.realm.lore }}
+          </p>
+        </div>
       </div>
       <div class="mt-4">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
@@ -41,7 +47,7 @@
             {{ signedPercent(row.value) }}
           </span>
         </p>
-        <p class="mt-1 text-[9px] leading-relaxed text-ink-ghost">
+        <p class="mt-1 text-[9px] leading-relaxed text-ink-faint">
           这些都是修炼速度的百分比加成,相加后乘在基础上 —— 与人物页属性明细同源。
         </p>
       </div>
@@ -99,71 +105,91 @@
               <template v-if="tribPlan.risks.length"> · {{ tribPlan.risks[0] }}</template>
             </p>
           </template>
-          <p v-else class="text-[16px] font-kai leading-tight text-ink-ghost">非大关</p>
+          <p v-else class="text-[16px] font-kai leading-tight text-ink-faint">非大关</p>
         </div>
       </div>
 
       <!-- Phase 32.0 劫势详情(决意前评估:风险维度 + 建议,信息给足,决定留给玩家) -->
       <div v-if="tribPlan" class="mt-2 rounded-md border border-violet-ink/25 bg-violet-ink/5 px-3 py-2">
-        <p class="text-[11px] text-violet-ink">{{ tribPlan.desc }}</p>
-        <p class="mt-1.5 text-[10px] text-ink-faint tabular">
-          准备:
-          <span class="text-ink-soft">{{ PREP_NAMES.guard }} {{ PREP_STARS[tribPlan.prep.guard] }}</span>
-          · {{ PREP_NAMES.sustain }} {{ PREP_STARS[tribPlan.prep.sustain] }}
-          · {{ PREP_NAMES.resist }} {{ PREP_STARS[tribPlan.prep.resist] }}
-          · {{ PREP_NAMES.burst }} {{ PREP_STARS[tribPlan.prep.burst] }}
-        </p>
-        <!--
-          天劫是**按最大生命百分比**扣血的(见 core/formulas.tribulationWaveDamage),
-          攻伐不进公式;防御与气血只能按「本境裸修为」折算成抗性与开劫水位,且两条都有上限。
-          摊开读数是因为玩家最容易在这里误判:一身厚血厚防站在劫前,却不知道自己缺什么。
-        -->
-        <p class="mt-1 text-[10px] text-ink-faint tabular">
-          此劫只认百分比 —— 天劫抗性 {{ formatPercent(tribLedger.resist, 0) }}(防御折算
-          {{ formatPercent(tribLedger.statResist, 0) }})· 减伤 {{ formatPercent(tribLedger.reduction, 0) }} · 每波恢复
-          {{ formatPercent(tribLedger.sustain, 1) }} · 开劫护持 {{ formatPercent(tribLedger.guard, 0) }}(气血折算
-          {{ formatPercent(tribLedger.statGuard, 0) }})
-        </p>
-        <p class="mt-0.5 text-[10px] text-ink-ghost">
-          攻伐不进天劫公式;防御与气血按本境裸修为折算成上面的抗性与护持,各有上限 —— 血再厚也只能硬抗一部分,剩下的仍要抗性/减伤/恢复来补。进阶成功率与突破准备也只作用于小进阶,大关不看它们。
-        </p>
-        <!--
-          界膜之劫:这一版对跨界那一关的规则加难(见 data/constants 的
-          TRIB_WORLD_STEP_STAT_FOLD)。必须**在决意之前**说清楚 ——
-          上一版玩家吃过"护持明明写着有,过劫时却像没有"的亏,
-          那种误会不该靠失败去发现。
-        -->
-        <div v-if="worldStep" class="mt-2 rounded-md border border-cinnabar/30 bg-cinnabar/5 px-2.5 py-2">
-          <p class="text-[10px] leading-relaxed text-cinnabar/90">
-            界膜之劫:跨界这一关血肉之厚一概不算 —— 防御与气血折算出的抗性、开劫护持在此作废,只认词条与准备。
+        <!-- 总评:劫名一眼可读,形态(逐道加重/起手最重)挪到行尾 —— 不再以十行小字开场 -->
+        <div class="flex items-baseline gap-2">
+          <p class="grow text-[12px] font-kai leading-snug text-violet-ink">{{ tribPlan.desc }}</p>
+          <span class="shrink-0 text-[10px] text-ink-faint">{{ tribPlan.def.waveShape === 'frontLoaded' ? '起手两道最重' : '逐道加重' }}</span>
+        </div>
+
+        <!-- 准备四维:一行四格星级槽,缺口一眼可见(0 星置灰,不熟也不糊弄) -->
+        <div class="mt-2 grid grid-cols-4 gap-1.5">
+          <div v-for="(name, key) in PREP_NAMES" :key="key" class="rounded bg-paper-deep/60 px-0.5 py-1 text-center">
+            <p class="text-[9px] text-ink-faint">{{ name }}</p>
+            <p class="tabular text-[12px] font-kai" :class="tribPlan.prep[key] === 0 ? 'text-ink-faint' : 'text-ink-soft'">{{ PREP_STARS[tribPlan.prep[key]] }}</p>
+          </div>
+        </div>
+
+        <div class="ink-divider my-2" />
+        <!-- 此劫账单:四项百分比指标两两并排,别有十逗号长句了 -->
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+          <p class="flex flex-col gap-0.5 text-[10px] tabular">
+            <span class="text-ink-faint">天劫抗性</span>
+            <span class="text-ink-soft leading-tight">
+              {{ formatPercent(tribLedger.resist, 0) }}
+              <span class="text-ink-faint">(防御折 {{ formatPercent(tribLedger.statResist, 0) }})</span>
+            </span>
+          </p>
+          <p class="flex items-baseline justify-between gap-2 text-[10px] tabular">
+            <span class="text-ink-faint">每波恢复</span>
+            <span class="text-ink-soft">{{ formatPercent(tribLedger.sustain, 1) }}</span>
+          </p>
+          <p class="flex items-baseline justify-between gap-2 text-[10px] tabular">
+            <span class="text-ink-faint">减伤</span>
+            <span class="text-ink-soft">{{ formatPercent(tribLedger.reduction, 0) }}</span>
+          </p>
+          <p class="flex flex-col gap-0.5 text-[10px] tabular">
+            <span class="text-ink-faint">开劫护持</span>
+            <span class="text-ink-soft leading-tight">
+              {{ formatPercent(tribLedger.guard, 0) }}
+              <span class="text-ink-faint">(气血折 {{ formatPercent(tribLedger.statGuard, 0) }})</span>
+            </span>
           </p>
         </div>
-        <!-- 天威本身的长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
-        <p v-if="tribWeatherLine" class="mt-0.5 text-[10px] text-cinnabar/80">{{ tribWeatherLine }}</p>
-        <p v-if="tribWave" class="mt-0.5 text-[10px] text-ink-faint tabular">
-          共 {{ tribWave.waves }} 道,单波 {{ formatPercent(tribWave.min, 0) }}–{{ formatPercent(tribWave.max, 0) }} 最大生命(合计约
-          {{ formatPercent(tribWave.total, 0) }}),
-          {{ tribPlan.def.waveShape === 'frontLoaded' ? '起手两道最重' : '逐道加重' }}
+        <p class="mt-2 text-[9px] leading-relaxed text-ink-faint">
+          攻伐之力不助渡劫;防御与气血按当下境界另算,再厚也只能硬抗一隅,余者靠抗性、减伤与恢复;晋升与准备只能帮小进阶,渡劫大关不认。
         </p>
-        <p class="mt-1 text-[10px] text-ink-soft">主要风险:<span class="text-cinnabar/80">{{ tribPlan.risks.join('; ') }}</span></p>
-        <p class="mt-1 text-[10px] text-ink-faint">{{ tribPlan.advice }}</p>
+
+        <!-- 界膜之劫:跨界规则加难(见 TRIB_WORLD_STEP_STAT_FOLD),决意之前必须说清 -->
+        <div v-if="worldStep" class="mt-2 rounded-md border border-cinnabar/30 bg-cinnabar/5 px-2.5 py-2">
+          <p class="text-[10px] leading-relaxed text-cinnabar/90">界膜之劫:跨界这一关血肉之厚一概不算 —— 防御与气血折算出的抗性、开劫护持在此作废,只认词条与准备。</p>
+        </div>
+        <!-- 天威长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
+        <p v-if="tribWeatherLine" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">{{ tribWeatherLine }}</p>
+        <p v-if="tribWave" class="mt-1 text-[10px] text-ink-faint tabular">
+          共 {{ tribWave.waves }} 道,单波 {{ formatPercent(tribWave.min, 0) }}–{{ formatPercent(tribWave.max, 0) }} 最大生命(合计约 {{ formatPercent(tribWave.total, 0) }})
+        </p>
+
+        <div class="ink-divider my-1.5" />
+        <p class="text-[10px] leading-relaxed text-ink-faint"><span class="text-ink-soft">主要风险:</span>{{ tribPlan.risks.join('; ') }}</p>
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">{{ tribPlan.advice }}</p>
         <!-- Phase 32.2:灵根解开的那条路——说明这道劫为何对你不太一样(留一线,不是免死) -->
-        <p v-if="reliefRoots.length" class="mt-1 text-[10px] text-jade">
-          灵根相应:{{ reliefRoots.map(e => ELEMENTS[e].name).join('、') }}——此劫为你留了一线,能走到哪一步仍看自身准备
+        <p v-if="reliefRoots.length" class="mt-1.5 text-[10px] leading-relaxed text-jade">
+          灵根相应:{{ reliefRoots.map(e => ELEMENTS[e].name).join('、') }} —— 此劫为你留了一线,能走到哪一步仍看自身准备。
         </p>
       </div>
-      <p class="mt-1 text-[11px] text-ink-faint tabular">
+      <p class="mt-1 flex items-center gap-1.5 text-[11px] text-ink-faint tabular">
         耗灵气 {{ formatNum(btInfo.qiCost) }}
-        <template v-if="btInfo.needTribulation">
-          ·
-          <span class="text-violet-ink">此乃大关,需渡天劫</span>
-        </template>
-        <template v-else-if="btInfo.isMajor">· 大境界之槛</template>
+        <!-- 大关/大槛落在小印章上,与全页「静/备/主/秘」一套印章语言呼应,不再是一行朱砂裸字 -->
+        <span v-if="btInfo.needTribulation" class="rounded bg-violet-ink/10 px-1.5 py-0.5 text-[10px] leading-none text-violet-ink">
+          大关 · 渡劫
+        </span>
+        <span v-else-if="btInfo.isMajor" class="rounded bg-ink/6 px-1.5 py-0.5 text-[10px] leading-none text-ink-faint">
+          大境界之槛
+        </span>
       </p>
 
       <!-- Phase 28 突破准备:静坐调息 / 服聚气丹(无劫突破时,一次性加成) -->
-      <div v-if="!btInfo.needTribulation" class="mt-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
-        <div class="flex items-center justify-between text-[10px] text-ink-faint">
+      <div v-if="!btInfo.needTribulation" class="mt-2 flex items-start gap-2.5 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
+        <!-- 备:与全页印章同语言,一眼认出这是突破前的准备板 -->
+        <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-jade/15 font-kai text-[12px] text-jade">备</span>
+        <div class="min-w-0 grow">
+          <div class="flex items-center justify-between text-[10px] text-ink-faint">
           <span>突破准备(一次有效)</span>
           <!--
             倒计时一律走 formatCountdown(定宽),不用 formatDuration:
@@ -187,6 +213,7 @@
             {{ prepPill.label }} · {{ prepPillCost }}灵石 +{{ Math.round(prepPill.bonusRate * 100) }}%
           </button>
         </div>
+        </div>
       </div>
       <button
         class="btn-seal mt-3 w-full !py-3"
@@ -198,26 +225,41 @@
       </button>
     </div>
 
-    <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止历练(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
-    <div class="card-ink px-4 py-3">
-      <div class="flex items-center justify-between">
-        <span class="text-[11px] text-ink-soft">闭关参悟</span>
-        <span v-if="retreating" class="text-[10px] text-amber-ink tabular">
-          闭关中 · <span class="countdown-slot">{{ formatCountdown(retreatRemaining) }}</span>
-        </span>
+    <!-- 仙路旅途:从凡到仙的 21 境全景 —— 局部有「下一步」,这张是纵向视野:已至几境、距尽头还有多远 -->
+    <section>
+      <SectionTitle title="仙路" :hint="`已至 ${player.major + 1}/${REALMS.length} 境`" />
+      <div class="card-ink mt-2 px-3.5 py-3">
+        <RealmLadder :major="player.major" />
       </div>
-      <p class="mt-0.5 text-[10px] text-ink-faint">
-        静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出历练。
-      </p>
-      <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full !py-1.5 text-[11px]" @click="beginRetreat">
-        闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%(期间无法历练)
-      </button>
+    </section>
+
+    <!-- Phase 28 闭关:5 分钟 +150% 修炼,期间禁止历练(数值唯一来源 = buffs.ts retreat + earlyGameService) -->
+    <div class="card-ink flex items-start gap-3 px-4 py-3" :class="retreating ? 'bg-amber-ink/6' : ''">
+      <!-- 静修印:与全页印章同一块语言;闭关中转为琥珀并在原地呼吸,静而有觉 -->
+      <span
+        class="grid h-9 w-9 shrink-0 place-items-center rounded-md font-kai text-[15px]"
+        :class="retreating ? 'animate-breathe bg-amber-ink/15 text-amber-ink' : 'bg-jade/15 text-jade'"
+      >静</span>
+      <div class="min-w-0 grow">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] text-ink-soft">闭关参悟</span>
+          <span v-if="retreating" class="text-[10px] text-amber-ink tabular">
+            闭关中 · <span class="countdown-slot">{{ formatCountdown(retreatRemaining) }}</span>
+          </span>
+        </div>
+        <p class="mt-0.5 text-[10px] text-ink-faint">
+          静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出历练。
+        </p>
+        <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full !py-1.5 text-[11px]" @click="beginRetreat">
+          闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%
+        </button>
+      </div>
     </div>
 
-    <!-- 状态 -->
-    <section v-if="activeBuffs.length">
+    <!-- 状态:无增益时给出空态,不再整段消失(会让玩家以为这功能不存在) -->
+    <section>
       <SectionTitle title="状态" />
-      <div class="mt-2 flex flex-wrap gap-2">
+      <div v-if="activeBuffs.length" class="mt-2 flex flex-wrap gap-2">
         <!--
           状态胶囊每秒刷新一次,倒数文本必须定宽:formatCountdown 逐位补零,
           再给它一个固定宽度的槽位(文字右对齐)—— 否则「10分0秒 → 10分1秒」
@@ -236,6 +278,11 @@
           <span class="countdown-slot">{{ formatCountdown(b.remain) }}</span>
         </button>
       </div>
+      <!-- 空态:什么状态都没有时,告诉玩家这个区域存在、以及怎么点亮它 -->
+      <div v-else class="mt-2 flex items-center gap-2 rounded-md border border-dashed border-ink/15 bg-ink/4 px-3 py-2">
+        <GameIcon name="sparkles" :size="12" class="shrink-0 text-ink-faint" />
+        <span class="text-[10px] leading-relaxed text-ink-faint">暂无增益加身 —— 服丹药 · 修功法 · 遇奇缘,都会为这段道途续上状态。</span>
+      </div>
     </section>
 
     <!-- 丹药速服 -->
@@ -246,6 +293,7 @@
           v-for="p in quickPills"
           :key="p.def!.id"
           class="card-ink flex items-center gap-2 px-3 py-2 text-left active:scale-98"
+          :style="{ borderLeft: `2px solid ${qualityDef(p.def!.quality).color}` }"
           @click="usePill(p.def!.id)"
         >
           <GameIcon :name="p.def!.icon" :size="16" :style="{ color: qualityDef(p.def!.quality).color }" />
@@ -260,7 +308,8 @@
 
     <!-- 功法 -->
     <section>
-      <SectionTitle title="功法" :hint="`残页 ${resources.page}`" />
+      <!-- 玩家反馈:看功法列表时只报残页,悟道点要开弹窗才看得见 —— 这里一并报 -->
+      <SectionTitle title="功法" :hint="`残页 ${resources.page} · 悟道点 ${formatGN(resources.wudao)}`" />
       <div class="mt-2 space-y-2">
         <!-- 主修 -->
         <button
@@ -278,23 +327,29 @@
           <GameIcon name="flame" :size="15" class="text-cinnabar/70" />
         </button>
 
-        <!-- 已习得列表(限高滚动,功法过多不撑爆页面) -->
+        <!-- 已习得列表(限高滚动,功法过多不撑爆页面);行首门类印章 + 品质条目,不再是一排裸文字 -->
         <div class="card-ink max-h-64 divide-y divide-ink/7 overflow-y-auto px-1">
           <button
             v-for="def in learnedList"
             :key="def!.id"
-            class="flex w-full items-center gap-3 px-2.5 py-2.5 text-left active:bg-ink/4"
+            class="flex w-full items-center gap-2.5 px-2.5 py-2 text-left active:bg-ink/4"
             @click="ui.gongfaDetailId = def!.id"
           >
-            <span class="font-kai text-[13px]" :style="{ color: qualityDef(def!.quality).color }">{{ def!.name }}</span>
-            <span class="text-[10px] text-ink-faint">{{ cultivation.learned[def!.id] }} 层</span>
+            <!-- 门类印章:与主修卡「主」字同一块语言,辅/秘一眼可辨 -->
+            <span
+              class="grid h-8 w-8 shrink-0 place-items-center rounded-md font-kai text-[13px]"
+              :class="def!.type === 'secret' ? 'bg-violet-ink/15 text-violet-ink' : def!.type === 'main' ? 'bg-cinnabar/10 text-cinnabar' : 'bg-jade/15 text-jade'"
+            >{{ def!.type === 'secret' ? '秘' : def!.type === 'main' ? '主' : '辅' }}</span>
+            <!-- 品质染名的功法名 -->
+            <span class="min-w-0 grow truncate font-kai text-[13px]" :style="{ color: qualityDef(def!.quality).color }">{{ def!.name }}</span>
+            <span class="shrink-0 text-[10px] text-ink-faint">{{ cultivation.learned[def!.id] }} 层</span>
             <!-- Phase 31 A3:已选分支显示道名;确有歧路可择时才招手,否则只报「圆满」 -->
-            <span v-if="branchName(def!.id)" class="text-[10px] text-gold-ink">
+            <span v-if="branchName(def!.id)" class="max-w-24 shrink-0 truncate rounded bg-gold-ink/10 px-1.5 py-0.5 text-[10px] text-gold-ink">
               {{ branchName(def!.id) }}
             </span>
-            <span v-else-if="canEnlighten(def!.id)" class="text-[10px] text-azure">待悟道 →</span>
-            <span v-else-if="isFull(def!.id)" class="text-[10px] text-ink-ghost">圆满</span>
-            <span class="ml-auto text-[10px]" :class="equipStateOf(def!.id) ? 'text-jade' : 'text-ink-ghost'">
+            <span v-else-if="canEnlighten(def!.id)" class="shrink-0 rounded bg-azure/10 px-1.5 py-0.5 text-[10px] text-azure">待悟道 →</span>
+            <span v-else-if="isFull(def!.id)" class="shrink-0 rounded bg-ink/6 px-1.5 py-0.5 text-[10px] text-ink-faint">圆满</span>
+            <span class="shrink-0 text-[10px]" :class="equipStateOf(def!.id) ? 'text-jade' : 'text-ink-faint'">
               {{ equipStateOf(def!.id) || '未装配' }}
             </span>
           </button>
@@ -321,6 +376,7 @@
   import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
   import { useResourcesStore } from '@/stores/resources'
+  import CultivationOrb from '@/components/common/CultivationOrb.vue'
   import { useCultivationStore } from '@/stores/cultivation'
   import { useInventoryStore } from '@/stores/inventory'
   import { useUiStore } from '@/stores/ui'
@@ -361,6 +417,8 @@
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'
+  import RealmLadder from '@/components/cultivation/RealmLadder.vue'
+  import { REALMS } from '@/data/realms'
   import GameIcon from '@/components/common/GameIcon.vue'
   import GongfaDialog from '@/components/cultivation/GongfaDialog.vue'
   import BuffDialog from '@/components/cultivation/BuffDialog.vue'

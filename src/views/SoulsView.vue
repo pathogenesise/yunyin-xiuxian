@@ -19,7 +19,7 @@
         <button class="-my-1.5 py-1.5 text-left text-[12px] text-ink-faint" @click="goBack(router, { name: 'celestial' })">← 天界</button>
         <p class="font-kai text-[15px] tracking-[0.3em] text-ink">器 魂</p>
         <div class="text-right">
-          <span class="block text-[10px] leading-tight text-ink-ghost">道源</span>
+          <span class="block text-[10px] leading-tight text-ink-faint">道源</span>
           <span class="block tabular font-kai text-[15px] leading-tight text-cinnabar">{{ formatNum(endgame.daoSource) }}</span>
         </div>
       </div>
@@ -63,7 +63,7 @@
                 卸下
               </button>
             </template>
-            <span v-else class="text-[10px] text-ink-ghost">空</span>
+            <span v-else class="text-[10px] text-ink-faint">空</span>
           </div>
         </div>
         <p v-if="activeModText" class="mt-2 px-1 text-[10px] leading-relaxed text-gold-ink">合计:{{ activeModText }}</p>
@@ -109,19 +109,21 @@
             <p class="truncate text-[12px]" :style="{ color: soulColor(soul) }">{{ soulLabel(soul) }}</p>
             <p class="text-[10px] text-ink-faint">凝自「{{ soul.fromName }}」 · {{ soulModText(soul) }}</p>
           </div>
+          <!-- 灵魂列表靠持有才渲染,巡页夹具无灵魂时这些钮根本不存在 —— 以前的 28px 尺子碰不到它。
+               !py-1 盒高约 21px;统一 !py-2 抬到 35px,与同行其它确认态按钮同高 -->
           <div class="flex shrink-0 gap-1">
-            <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="wearSoul(soul.uid)">装配</button>
+            <button class="btn-ghost !px-2.5 !py-2 !text-[11px]" @click="wearSoul(soul.uid)">装配</button>
             <template v-if="pendingDissolveUid !== soul.uid">
-              <button class="btn-ghost !px-2 !py-1 !text-[11px] !text-ink-faint" @click="pendingDissolveUid = soul.uid">散去</button>
+              <button class="btn-ghost !px-2 !py-2 !text-[11px] !text-ink-faint" @click="pendingDissolveUid = soul.uid">散去</button>
             </template>
             <template v-else>
-              <button class="btn-seal !px-2 !py-1 !text-[11px]" @click="doDissolve(soul.uid)">确 散</button>
-              <button class="btn-ghost !px-2 !py-1 !text-[11px]" @click="pendingDissolveUid = null">取 消</button>
+              <button class="btn-seal !px-2 !py-2 !text-[11px]" @click="doDissolve(soul.uid)">确 散</button>
+              <button class="btn-ghost !px-2 !py-2 !text-[11px]" @click="pendingDissolveUid = null">取 消</button>
             </template>
           </div>
         </div>
       </div>
-      <p v-else class="px-4 py-6 text-center text-[11px] leading-relaxed text-ink-ghost">
+      <p v-else class="px-4 py-6 text-center text-[11px] leading-relaxed text-ink-faint">
         并无闲置形意。
         <br />
         <span class="text-[10px]">凝出的器魂若已尽数装配,此处便空着</span>
@@ -146,18 +148,18 @@
           <!-- 入炉二步确认:毁的是原器,不按一个「入 炉」就直接交代了 -->
           <button
             v-if="pendingRefineUid !== row.inst.uid"
-            class="btn-ghost !px-3 !py-1 !text-[11px]"
+            class="btn-ghost !px-3 !py-2 !text-[11px]"
             @click="pendingRefineUid = row.inst.uid"
           >
             入 炉
           </button>
           <div v-else class="flex shrink-0 items-center gap-1.5">
-            <button class="btn-seal !px-2.5 !py-1 !text-[11px]" @click="doRefine(row.inst.uid)">凝 炼</button>
-            <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="pendingRefineUid = null">取 消</button>
+            <button class="btn-seal !px-2.5 !py-2 !text-[11px]" @click="doRefine(row.inst.uid)">凝 炼</button>
+            <button class="btn-ghost !px-2.5 !py-2 !text-[11px]" @click="pendingRefineUid = null">取 消</button>
           </div>
         </div>
       </div>
-      <p v-else class="px-4 py-6 text-center text-[11px] leading-relaxed text-ink-ghost">
+      <p v-else class="px-4 py-6 text-center text-[11px] leading-relaxed text-ink-faint">
         行囊中无可凝之器。
         <br />
         <span class="text-[10px]">已穿戴、已上锁、或无任何词条的法器都入不得炉</span>

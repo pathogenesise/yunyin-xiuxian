@@ -33,7 +33,7 @@
           <p
             v-for="note in coreCaveats"
             :key="note.key"
-            class="text-[9px] leading-relaxed text-ink-ghost"
+            class="text-[9px] leading-relaxed text-ink-faint"
           >
             {{ note.label }}:{{ note.caveat }}
           </p>
@@ -59,35 +59,35 @@
               </span>
               <span v-if="dimKey === l.key" class="mt-1 block rounded-md bg-paper/70 px-2 py-1.5">
                 <span class="block text-[10px] text-ink-soft">
-                  {{ l.name }}得分 {{ l.score.toFixed(2) }} · 跨 {{ powerRating.thresholds[l.key].join(' / ') }} 逐级加星
+                  {{ l.name }}得分 {{ l.score.toFixed(2) }} · 一至五星,分高星足
                 </span>
                 <span v-for="t in l.terms" :key="t.label" class="mt-0.5 flex justify-between text-[10px]">
                   <span class="text-ink-faint">{{ t.label }}</span>
                   <span class="tabular text-azure">+{{ t.contribution.toFixed(2) }}</span>
                 </span>
-                <span v-if="!l.terms.length" class="block text-[10px] text-ink-ghost">这一维还没有词条撑着。</span>
-                <span class="mt-1 block text-[9px] leading-relaxed text-ink-ghost">
-                  贡献之和就是得分 —— 星级只看得分跨过哪一档。
+                <span v-if="!l.terms.length" class="block text-[10px] text-ink-faint">这一维还没有词条撑着。</span>
+                <span class="mt-1 block text-[9px] leading-relaxed text-ink-faint">
+                  底下各项相加,便得出这一维的得分;星随得分而升。
                 </span>
               </span>
             </button>
           </div>
           <p class="mt-1 text-[10px] text-ink-faint">点一维看它由哪些词条凑出来。</p>
-          <p class="mt-1 text-[10px] leading-relaxed text-ink-ghost">
+          <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
             同一星级的两个构筑谁更强,由环境与相性决定 —— 所以这里给的是形状,不是名次。
           </p>
         </div>
         <!-- 组合技:两条道路交汇处的一式神通 -->
         <div v-if="comboInfo" class="mt-2.5 rounded-md px-3 py-2" :class="comboInfo.active ? 'bg-violet-ink/8' : 'bg-ink/4'">
           <p class="flex items-center gap-2">
-            <span class="font-kai text-[13px]" :class="comboInfo.active ? 'text-violet-ink' : 'text-ink-ghost'">
+            <span class="font-kai text-[13px]" :class="comboInfo.active ? 'text-violet-ink' : 'text-ink-faint'">
               组合技「{{ comboInfo.art.name }}」
             </span>
-            <span class="text-[10px]" :class="comboInfo.active ? 'text-jade' : 'text-ink-ghost'">
+            <span class="text-[10px]" :class="comboInfo.active ? 'text-jade' : 'text-ink-faint'">
               {{ comboInfo.active ? '已成' : `副体系至 ${Math.round(COMBO_SECONDARY_MIN * 100)}% 契合可成` }}
             </span>
           </p>
-          <p class="mt-0.5 text-[11px] leading-relaxed" :class="comboInfo.active ? 'text-ink-soft' : 'text-ink-ghost'">
+          <p class="mt-0.5 text-[11px] leading-relaxed" :class="comboInfo.active ? 'text-ink-soft' : 'text-ink-faint'">
             {{ comboInfo.art.desc }}
           </p>
           <p class="mt-0.5 text-[10px] text-cinnabar/80">代价:{{ comboInfo.art.costText }}</p>
@@ -101,7 +101,7 @@
           -->
           <p class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[11px]">
             <span class="font-kai whitespace-nowrap text-ink-soft">构筑韧性</span>
-            <span class="text-[10px] text-ink-ghost">(主派核心封印之下)</span>
+            <span class="text-[10px] text-ink-faint">(主派核心封印之下)</span>
             <span
               class="ml-auto shrink-0 whitespace-nowrap tabular"
               :class="resilience.retention >= 0.45 ? 'text-jade' : 'text-cinnabar'"
@@ -124,7 +124,14 @@
     <div class="card-ink px-4 py-3">
       <p class="mb-1.5 flex items-center justify-between">
         <span class="text-[11px] text-ink-faint">把顺手的整套功法 / 法宝 / 装备存起来,一键切换</span>
-        <button class="-my-1 py-1.5 text-[11px] text-cinnabar/90 active:opacity-60" @click="openSave">+ 存当前构筑</button>
+        <!-- 满栏即置灰:别再让人点了存名字才被弹「已满」教训(与卡牌置灰同一纪律)。
+             已满时点不了,标题横幅「X/6」仍把余额摊在眼前 -->
+        <button
+          :disabled="loadouts.list.length >= MAX_LOADOUTS"
+          class="-my-1 py-1.5 text-[11px]"
+          :class="loadouts.list.length >= MAX_LOADOUTS ? 'cursor-not-allowed text-ink-faint/50' : 'text-cinnabar/90 active:opacity-60'"
+          @click="openSave"
+        >{{ loadouts.list.length >= MAX_LOADOUTS ? '快照已满' : '+ 存当前构筑' }}</button>
       </p>
       <div v-if="loadouts.list.length" class="space-y-1.5">
         <div v-for="lo in loadouts.list" :key="lo.id" class="flex items-center gap-2 rounded-md bg-paper-deep/70 px-2.5 py-1.5">
@@ -132,11 +139,14 @@
             {{ lo.seal }}
           </span>
           <span class="min-w-0 grow truncate font-kai text-[12px] text-ink">{{ lo.name }}</span>
-          <button class="btn-ghost !px-2.5 !py-1 !text-[11px]" @click="applyLoadout(lo.id)">换装</button>
+          <!-- 换装与删除确认态同卡:!py-1 盒高仅 27px(config 充其量 1px 差,但判据 <28 即红),
+               且卡片只在「有构筑」时才出现 —— 页面层巡页夹具没铺 loadouts 永远量不到它(HYP-056 边界)。
+               !py-2 抬到 35px,与旁边确认态按钮同高,视觉一排齐整 -->
+          <button class="btn-ghost !px-2.5 !py-2 !text-[11px]" @click="applyLoadout(lo.id)">换装</button>
           <!-- 删除二步确认:一套构筑是心血,误触垃圾桶不该直接没 -->
           <template v-if="confirmDelete !== lo.id">
             <button
-              class="-m-1.5 flex min-h-[28px] min-w-[28px] items-center justify-center p-1.5 text-ink-ghost active:text-cinnabar"
+              class="-m-1.5 flex min-h-[28px] min-w-[28px] items-center justify-center p-1.5 text-ink-faint active:text-cinnabar"
               aria-label="删除构筑"
               @click="confirmDelete = lo.id"
             >
@@ -144,8 +154,10 @@
             </button>
           </template>
           <template v-else>
-            <button class="btn-seal !px-2 !py-0.5 !text-[10px]" @click="doDeleteLoadout(lo.id)">确信删除</button>
-            <button class="text-[10px] text-ink-faint active:text-ink" @click="confirmDelete = null">取消</button>
+            <!-- 确认态是同一条行内替换:纯 10px 文字盒高仅 15px 拇指点不中(layout-check 页面层量不到这段「打开才存在」的控件),
+                 与删除钮同法 —— 负外边距配正内边距把触面抬到 28px+,视觉占位不变 -->
+            <button class="btn-seal -my-4 !px-2 !py-2.5 !text-[10px]" @click="doDeleteLoadout(lo.id)">确信删除</button>
+            <button class="-my-4 py-2.5 text-[10px] text-ink-faint active:text-ink" @click="confirmDelete = null">取消</button>
           </template>
         </div>
       </div>
@@ -174,8 +186,8 @@
               <span class="text-ink-faint">{{ row.worldName }}</span>
               <span class="tabular">
                 <span class="text-ink-soft">今 {{ row.aText }}</span>
-                <span class="mx-1 text-ink-ghost">|</span>
-                <span :class="row.trend === 'down' ? 'text-jade' : row.trend === 'up' ? 'text-cinnabar' : 'text-ink-ghost'">
+                <span class="mx-1 text-ink-faint">|</span>
+                <span :class="row.trend === 'down' ? 'text-jade' : row.trend === 'up' ? 'text-cinnabar' : 'text-ink-faint'">
                   彼 {{ row.bText }}
                 </span>
               </span>

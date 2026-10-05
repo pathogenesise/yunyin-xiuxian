@@ -1,6 +1,11 @@
 <template>
   <div class="stagger-in space-y-4 px-4 pb-6 pt-4">
-    <SectionTitle title="修仙录" hint="这一部,只写你自己" />
+    <!-- 卷首扉页:修仙录不是清单,是「这一部只写你自己」的一册 —— 开卷先落一枚「我」印 -->
+    <div class="card-ink paper-grain relative overflow-hidden px-4 pb-4 pt-5 text-center">
+      <span class="seal-solid" aria-hidden="true">我</span>
+      <h1 class="mt-2.5 font-kai text-[20px] tracking-[0.3em] text-ink">修 仙 录</h1>
+      <p class="mt-1 text-[10px] tracking-[0.25em] text-ink-faint">这一部,只写你自己</p>
+    </div>
 
     <!-- 修行画像 -->
     <div v-if="profile" class="card-ink px-4 py-3">
@@ -43,7 +48,11 @@
       </div>
       <p class="mt-1.5 text-[9px] text-ink-faint">画像全部来自真实道痕统计,不可人工修饰。</p>
     </div>
-    <p v-else class="card-ink px-4 py-6 text-center text-[11px] text-ink-faint">道痕未满{{ cnNumber(PROFILE_MIN_MARKS) }}则,画像尚不成形。</p>
+    <p v-else class="card-ink px-4 py-6 text-center">
+      <span class="empty-seal" aria-hidden="true">像</span>
+      <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">道痕未满{{ cnNumber(PROFILE_MIN_MARKS) }}则</span>
+      <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">画像尚不成形 —— 走远些,才照见自己</span>
+    </p>
 
     <!-- 轮回录(Phase 32.5):第 N 世与第 1 世的实质区别 -->
     <SectionTitle title="轮回录" :hint="`宿慧 ${insight}`" />
@@ -51,7 +60,7 @@
       <p class="flex items-center gap-2">
         <span class="font-kai text-[14px] tracking-widest text-ink">{{ stage.name }}</span>
         <span class="text-[10px] text-ink-faint tabular">第 {{ player.reincarnation.count + 1 }} 世</span>
-        <span v-if="toNextStage !== null" class="ml-auto shrink-0 text-[10px] text-ink-ghost tabular">
+        <span v-if="toNextStage !== null" class="ml-auto shrink-0 text-[10px] text-ink-faint tabular">
           再积 {{ toNextStage }} 宿慧入下一境地
         </span>
         <span v-else class="ml-auto shrink-0 text-[10px] text-gold-ink">此道已至尽头</span>
@@ -100,12 +109,16 @@
         <p v-for="l in lifeRows" :key="l.index" class="flex items-center gap-2 py-2 text-[12px]">
           <span class="w-11 shrink-0 font-kai text-ink-faint tabular">第{{ l.index }}世</span>
           <span class="text-ink-soft">{{ l.realmLabel }}</span>
-          <span class="text-[10px] text-ink-ghost tabular">寿 {{ l.age }} 载</span>
+          <span class="text-[10px] text-ink-faint tabular">寿 {{ l.age }} 载</span>
           <span v-if="l.themeName" class="text-[10px]" :class="l.resultColor">{{ l.themeName }}·{{ l.resultText }}</span>
           <span class="ml-auto shrink-0 tabular text-[10px] text-gold-ink">宿慧 +{{ l.insight }}</span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-faint">此为初世。你尚未死过一次,也就还没有什么可以回忆。</p>
+      <p v-else class="py-5 text-center">
+        <span class="empty-seal" aria-hidden="true">初</span>
+        <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">此为初世</span>
+        <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">你尚未死过一次,也就还没有什么可以回忆</span>
+      </p>
     </div>
 
     <!-- 修行节点 -->
@@ -118,7 +131,11 @@
           <p class="text-[10px] text-ink-faint">{{ row.desc }}</p>
         </div>
       </div>
-      <p v-else class="py-4 text-center text-[11px] text-ink-faint">此录尚白。天界之行,自会留名。</p>
+      <p v-else class="py-5 text-center">
+        <span class="empty-seal" aria-hidden="true">白</span>
+        <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">此录尚白</span>
+        <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">天界之行,自会留名</span>
+      </p>
     </div>
 
     <!-- 征战录(Phase 30.9 S2):宿敌与雪耻 -->
@@ -133,7 +150,11 @@
           </span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-faint">尚无宿敌。此录待你的血与道来填。</p>
+      <p v-else class="py-5 text-center">
+        <span class="empty-seal" aria-hidden="true">敌</span>
+        <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">尚无宿敌</span>
+        <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">此录待你的血与道来填</span>
+      </p>
     </div>
 
     <!-- 行迹录(Phase 30.9 S3):事件余波 -->
@@ -149,19 +170,27 @@
           </span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-faint">尚无未了之缘。缘起于路上,不在名录里。</p>
+      <p v-else class="py-5 text-center">
+        <span class="empty-seal" aria-hidden="true">缘</span>
+        <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">尚无未了之缘</span>
+        <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">缘起于路上,不在名录里</span>
+      </p>
     </div>
 
     <SectionTitle title="行迹录" :hint="`际遇回响 ${lossRows.length} 则`" />
     <div class="card-ink divide-y divide-ink/6 px-4">
       <template v-if="lossRows.length">
         <p v-for="l in lossRows" :key="l.eventId + l.at" class="flex items-center gap-2 py-2 text-[12px]">
-          <span class="text-[10px] text-ink-ghost">{{ formatDate(l.at) }}</span>
+          <span class="text-[10px] text-ink-faint">{{ formatDate(l.at) }}</span>
           <span class="text-ink-soft">{{ l.eventName }}</span>
           <span class="ml-auto shrink-0 text-[10px] text-ink-faint">{{ l.note }}</span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-ghost">世界尚未记住你的足迹。</p>
+      <p v-else class="py-5 text-center">
+        <span class="empty-seal" aria-hidden="true">迹</span>
+        <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">行迹未著</span>
+        <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">走过,自会有人记得你的来时路</span>
+      </p>
     </div>
 
     <!-- 我的纪录 -->
@@ -171,10 +200,14 @@
         <p v-for="r in recordRows" :key="r.id" class="flex items-center gap-2 py-2 text-[12px]">
           <span class="text-ink-faint">{{ r.name }}</span>
           <span class="ml-auto tabular font-kai text-[13px] text-gold-ink">{{ r.valueText }}</span>
-          <span class="shrink-0 text-[10px] text-ink-ghost">第{{ r.life }}世 · {{ r.note }}</span>
+          <span class="shrink-0 text-[10px] text-ink-faint">第{{ r.life }}世 · {{ r.note }}</span>
         </p>
       </template>
-      <p v-else class="py-4 text-center text-[11px] text-ink-faint">纪录待创。破界之时,自见分晓。</p>
+      <p v-else class="py-5 text-center">
+        <span class="empty-seal" aria-hidden="true">创</span>
+        <span class="mt-2.5 block font-kai text-[12px] tracking-[0.2em] text-ink-soft">纪录待创</span>
+        <span class="mt-1 block text-[10px] leading-relaxed text-ink-faint">破界之时,自见分晓</span>
+      </p>
     </div>
   </div>
 </template>
@@ -224,7 +257,7 @@
   }
   const RESULT_COLORS: Record<'done' | 'unfinished' | 'broken', string> = {
     done: 'text-cinnabar',
-    unfinished: 'text-ink-ghost',
+    unfinished: 'text-ink-faint',
     broken: 'text-amber-ink'
   }
 

@@ -16,18 +16,15 @@
   --color-paper-dark-rgb: 221 213 194;
   --color-ink-rgb: 41 39 34;
   --color-ink-soft-rgb: 74 70 61;
-  --color-ink-faint-rgb: 133 127 112;
-  --color-ink-ghost-rgb: 185 178 160;
+  --color-ink-faint-rgb: 104 99 88;
   --color-cinnabar-rgb: 168 63 57;
   --color-cinnabar-deep-rgb: 140 51 46;
-  --color-qinghua-rgb: 79 118 153;
-  --color-qinghua-light-rgb: 109 177 201;
   --color-indigo-ink-rgb: 62 92 99;
-  --color-gold-ink-rgb: 156 122 60;
-  --color-jade-rgb: 110 139 116;
-  --color-azure-rgb: 79 118 153;
-  --color-violet-ink-rgb: 123 94 167;
-  --color-amber-ink-rgb: 176 125 43;
+  --color-gold-ink-rgb: 124 94 42;
+  --color-jade-rgb: 80 109 88;
+  --color-azure-rgb: 65 103 139;
+  --color-violet-ink-rgb: 114 85 158;
+  --color-amber-ink-rgb: 135 93 25;
 
   --color-paper: rgb(var(--color-paper-rgb));
   --color-paper-deep: rgb(var(--color-paper-deep-rgb));
@@ -35,11 +32,8 @@
   --color-ink: rgb(var(--color-ink-rgb));
   --color-ink-soft: rgb(var(--color-ink-soft-rgb));
   --color-ink-faint: rgb(var(--color-ink-faint-rgb));
-  --color-ink-ghost: rgb(var(--color-ink-ghost-rgb));
   --color-cinnabar: rgb(var(--color-cinnabar-rgb));
   --color-cinnabar-deep: rgb(var(--color-cinnabar-deep-rgb));
-  --color-qinghua: rgb(var(--color-qinghua-rgb));
-  --color-qinghua-light: rgb(var(--color-qinghua-light-rgb));
   --color-indigo-ink: rgb(var(--color-indigo-ink-rgb));
   --color-gold-ink: rgb(var(--color-gold-ink-rgb));
   --color-jade: rgb(var(--color-jade-rgb));
@@ -374,6 +368,14 @@ html,
 body {
   height: var(--app-shell-height);
   overscroll-behavior: none;
+  /*
+   * 文档层**永不可滚**(玩家反馈, iOS 网页 + 装到桌面):
+   * 双击把页面拽到顶、露出底下一截白条 —— 那截白条就是「100vh/100dvh 比可视区
+   * 高一截,文档多出可滚余量」的现形;而启发式布局脚本口径(scripts/layout-check.mjs
+   * 「两栏钉死」)测的是"别再把可滚区间造出来",这里直接堵死 —— 双层保险。
+   * 真正能滚的只有 main(它自己 overflow-y-auto),文档层从此永不越轨。
+   */
+  overflow: hidden;
 }
 
 body {
@@ -382,6 +384,24 @@ body {
   background: linear-gradient(160deg, #34312a 0%, #4a463d 45%, #2d2b25 100%);
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  /*
+   * iOS Safari / 装到主页的双击缩放与 300ms 点击延时:快速连点会被吞成一次双击
+   * (玩家反馈「快速点击时容易误触」)。manipulation = 保留平移、只禁双击缩放,
+   * 连点不再有「等第二下」的窗口;点按直发 click。滚动区(main)不受影响。
+   */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * body 全局禁选是给游戏界面用的,但别把输入框也卷进去:
+ * 「加个标记」「自动重铸次数」这些字的选取/光标拖动,在禁选下一部分
+ * webview 会失灵(尤其安卓内嵌),玩家打完的字想改一改都难。
+ */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ================= 夜间主题 =================
@@ -394,12 +414,9 @@ html[data-theme='dark'] {
   --color-paper-dark-rgb: 51 48 43;
   --color-ink-rgb: 232 226 210;
   --color-ink-soft-rgb: 198 191 169;
-  --color-ink-faint-rgb: 151 144 123;
-  --color-ink-ghost-rgb: 107 101 87;
+  --color-ink-faint-rgb: 168 161 140;
   --color-cinnabar-rgb: 201 85 78;
-  --color-cinnabar-deep-rgb: 212 105 95;
-  --color-qinghua-rgb: 124 159 195;
-  --color-qinghua-light-rgb: 143 195 217;
+  --color-cinnabar-deep-rgb: 163 70 64;
   --color-indigo-ink-rgb: 147 179 185;
   --color-gold-ink-rgb: 200 163 90;
   --color-jade-rgb: 147 175 149;
@@ -529,6 +546,29 @@ html[data-theme='dark'] {
   background: var(--color-cinnabar-deep);
 }
 
+/*
+ * 夜主题印面换深朱:亮朱(201 85 78)当底托奶油白字只有 3.81:1,手机上
+ * 「突破」「闭关」这类关键按钮的字会糊;深朱(163 70 64)白字 5.31:1。
+ * 浅色印面保持 cinnabar,它在白纸上已是 5.42:1 —— 两套主题各自选能托住
+ * 白字的那枚,判据见 src/ui/palette.spec.ts「印面」一节。
+ */
+html[data-theme='dark'] .btn-seal {
+  background: var(--color-cinnabar-deep);
+}
+
+/* 卷首题印(本世之界):与 .btn-seal 同一套印面 —— 奶油字、内阴影、夜主题深朱
+   全在这里收编,模板只留布局;判据见 src/ui/palette.spec.ts「调色板 · 印面」 */
+.world-seal {
+  background: var(--color-cinnabar);
+  color: #f6f1e5;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.14),
+    0 2px 6px rgb(140 51 46 / 0.35);
+}
+html[data-theme='dark'] .world-seal {
+  background: var(--color-cinnabar-deep);
+}
+
 .btn-seal:disabled {
   /*
    * 禁用态**不是装饰态**:按钮上的字往往正是「为什么不让我点」
@@ -586,6 +626,18 @@ html[data-theme='dark'] {
   border: 1px solid currentColor;
   line-height: 1.5;
   white-space: nowrap;
+}
+
+/*
+ * chip-ink 默认 nowrap 是防「你/好」被拆断;可真要占满整行时(如闭关按钮,
+ * 卡片内宽 ~208px 塞不下「闭关 · 5分钟 修炼 +150%」一长串),钉死不换行就会
+ * 让文字戳破圆角胶囊的两端。这里给一个显式换行覆写:需要长文案占行时
+ * 加 .chip-ink-wrap,并把「数+量词」各自 nowrap,换行只发生在分隔符处。
+ */
+.chip-ink-wrap {
+  white-space: normal;
+  text-align: left;
+  justify-content: flex-start;
 }
 
 /*
@@ -686,14 +738,6 @@ html[data-theme='dark'] {
 .brush-bar {
   transform-origin: top;
   animation: bar-grow 0.4s 0.1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-/* 灵气环:围绕主视觉的旋转法阵 */
-.qi-ring {
-  position: absolute;
-  border-radius: 999px;
-  border: 1px dashed currentColor;
-  pointer-events: none;
 }
 
 /* 受击震颤:战斗中挨打的一方短促晃动(暴击更重) */
@@ -866,6 +910,60 @@ html[data-theme='dark'] {
   animation: drift 18s ease-in-out infinite alternate-reverse;
 }
 
+/* 本世之界;眼下将赴的那一处 —— 节点外圈潺潺脉动,替玩家在图上指路。
+   SVG 里圈会缩放,得先把 transform 基点钉回圆心(fill-box) */
+.node-focus {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 1.9s ease-out infinite;
+}
+@keyframes node-pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
+/* 空态哑印:章节无物时,一枚单字印 + 一句指引 —— 空得有分量,却不抢戏。
+   字形压成浅墨、边框细淡,是「还没写」的留白,不是内容;
+   微转 2° 像一枚盖歪的闲章,替句子补上一点手泽。 */
+.empty-seal {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgb(var(--color-ink-rgb) / 0.18);
+  border-radius: 6px;
+  font-family: var(--font-kai);
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  /* 0.38 太淡:暗色纸面上 2.79:1,远看是糊点不是章;提到 0.55(约 3.5:1),
+     仍是「还没写」的哑地位,却立得起来 */
+  color: rgb(var(--color-ink-rgb) / 0.55);
+  transform: rotate(-2deg);
+}
+
+/* 卷首私印(修仙录扉页):墨色实印 —— 与空态哑印相对,是「已落款」的分量。
+   地界卷首那枚是朱泥(世界印),这枚走墨:墨书配墨印,两卷各得其章 */
+.seal-solid {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  background: rgb(var(--color-ink-rgb) / 0.85);
+  color: rgb(var(--color-paper-rgb));
+  font-family: var(--font-kai);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  transform: rotate(-2deg);
+}
+
 /* 蓄势涟漪:大事将成的按钮外圈 */
 .pulse-ready {
   position: relative;
@@ -984,6 +1082,29 @@ html[data-theme='dark'] {
 
 .modal-fade-leave-to .modal-panel {
   transform: scale(0.97);
+}
+
+/*
+ * 弹窗正文的上下渐隐(BaseModal):那一头还有内容时才出现。
+ * 颜色走 --color-paper-rgb,夜间主题自动跟随;渐变终点写成同色零透明,
+ * 不用 transparent —— 老内核会按 rgba(0,0,0,0) 插值,中段发灰。
+ * z-index 压过正文里自带 z-10 的卡片;不吃点击,底下的按钮照常可点。
+ */
+.modal-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5rem;
+  pointer-events: none;
+  z-index: 20;
+}
+.modal-edge-top {
+  top: 0;
+  background: linear-gradient(to bottom, rgb(var(--color-paper-rgb)), rgb(var(--color-paper-rgb) / 0));
+}
+.modal-edge-bottom {
+  bottom: 0;
+  background: linear-gradient(to top, rgb(var(--color-paper-rgb)), rgb(var(--color-paper-rgb) / 0));
 }
 
 @media (prefers-reduced-motion: reduce) {

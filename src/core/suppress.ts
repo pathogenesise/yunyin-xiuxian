@@ -173,8 +173,8 @@ export function suppressRateFor(regionId: string): SuppressRate | null {
  */
 export interface SuppressedYield {
   stone: GNum
-  equipment: { name: string; quality: QualityId; recycled?: boolean }[]
-  /** 未入包(自动回收/满包化尘)装备化作的器灵尘(由 acquireEquipment 记账) */
+  equipment: { name: string; quality: QualityId; recycled?: boolean; uid?: string }[]
+  /** 化尘所得的器灵尘(自动回收/满包化尘/腾位化掉的旧件;由 acquireEquipment 记账) */
   recycledDust: number
   /** 各地界的物产累计(灵草/玄铁/残页/器灵尘) */
   resources: { id: SuppressResource; name: string; amount: number }[]
@@ -243,11 +243,18 @@ export function settleSuppressedRegions(dt: number, service: RandomService = rng
     // 测试只能去 mock 全局 Math.random,而 rng 在构造时就把原函数抓走了 —— 注入才是可测的那条路
     const equipCount = Math.floor(equipChance) + (service.chance(equipChance - Math.floor(equipChance)) ? 1 : 0)
     for (let i = 0; i < equipCount; i += 1) {
-      const equip = generateEquipment(region.tier, service, { luck: 0, minQualityRank: 0 })
+      // 不传品质下限:传了(哪怕是 0)品质窗口就失效,镇压产出会比历练掉落更容易出低阶高品
+      const equip = generateEquipment(region.tier, service, { luck: 0 })
       const res = acquireEquipment(equip, { quiet: true }) // quiet=true 避免镇压收益刷屏
       // 所得清单如实记下每一件产出:入包与否都列,未入包(自动回收/满包化尘)标注回收
-      total.equipment.push({ name: equipmentTemplate(equip.templateId)?.name ?? '未知', quality: equip.quality, recycled: !res.bagged })
-      if (!res.bagged) total.recycledDust += res.dust
+      total.equipment.push({
+        name: equipmentTemplate(equip.templateId)?.name ?? '未知',
+        quality: equip.quality,
+        recycled: !res.bagged,
+        uid: res.bagged ? equip.uid : undefined
+      })
+      // 腾位时新件入了包、旧件化了尘:那份尘与那件旧物都要记上,只看 bagged 会漏报
+      total.recycledDust += res.dust
     }
   }
 

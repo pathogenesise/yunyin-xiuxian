@@ -16,6 +16,11 @@ export function upgradeDoneToast(name: string, level: number): string {
   return `「${name}」再经一锤,已至 +${level}`
 }
 
+/** 连升的总结账:一锤一锤报太吵,连升只报一次总况(stoneText 由调用方 formatGN 好) */
+export function upgradeBatchDoneToast(levels: number, newLevel: number, dust: number, stoneText: string): string {
+  return `连升 ${levels} 级,如今 +${newLevel},共耗器灵尘×${dust} · 灵石 ${stoneText}`
+}
+
 export function salvageYieldText(dust: number, stoneText?: string): string {
   return stoneText ? `器灵尘×${dust} · 灵石退还 ${stoneText}` : `器灵尘×${dust}`
 }
@@ -40,4 +45,9 @@ export function artifactShortToast(): string {
 
 export function artifactDoneToast(name: string): string {
   return `「${name}」祭炼又进一重`
+}
+
+/** 祭炼连升的总结账:一重一重报太吵,连炼只报一次总况(stoneText 由调用方 formatGN 好) */
+export function artifactBatchDoneToast(levels: number, newLevel: number, wudao: number, stoneText: string): string {
+  return `连炼 ${levels} 重,已至第 ${newLevel} 重,共耗悟道×${wudao} · 灵石 ${stoneText}`
 }

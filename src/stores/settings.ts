@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { persistConfig } from '@/utils/storage'
 import { asArray, asFiniteNumber, asRecord } from '@/utils/saveShape'
+import { MAX_EQUIP_TIER } from '@/data/equipment'
 
 export const useSettingsStore = defineStore(
   'settings',
@@ -13,22 +14,20 @@ export const useSettingsStore = defineStore(
     const musicVol = ref(50)
     const sfxVol = ref(70)
     const reduceMotion = ref(false)
+    /**
+     * 遇事勿扰(玩家反馈「手动关闭际遇事件触发」):历练撞见际遇/机缘/奇缘时,
+     * 不再弹窗 —— 立刻按默认好愿了结(与超时自动处置同一条路),奖励照拿、不卡手。
+     */
+    const dndEvents = ref(false)
     /** 战报播放速度倍率 */
     const battleSpeed = ref<1 | 2 | 4>(1)
-    /**
-     * 际遇自动抉择 —— 开启后遇到际遇不再弹窗,直接按默认选项结算。
-     *
-     * 默认关闭:际遇的取舍本就是决策的一部分,替他按掉等于替玩家做主。
-     * 想挂机刷本时再开 —— 用的正是超时兜底那一条(优先 isDefault 选项),
-     * 故与"放着不管等它超时"结果一致,不会另开一套判定。
-     */
-    const autoEventChoice = ref(false)
     /** 一键分解勾选的品质 rank 列表(持久化,免得每次重勾) */
     const decomposeRanks = ref<number[]>([0, 1])
     /** 智能收纳(Phase 26):行囊自动去留规则(字段口径见 SmartKeepConfig,不另抄一份) */
     const smartKeep = ref<import('@/core/smartKeep').SmartKeepConfig>({
       enabled: false,
       minQuality: 3,
+      keepMinTier: 0,
       keepCoreAffix: true,
       keepComboPiece: true,
       keepPerfectRolls: true,
@@ -53,8 +52,8 @@ export const useSettingsStore = defineStore(
       musicVol.value = Math.min(100, asFiniteNumber(musicVol.value, 50, 0))
       sfxVol.value = Math.min(100, asFiniteNumber(sfxVol.value, 70, 0))
       if (![1, 2, 4].includes(battleSpeed.value)) battleSpeed.value = 1
-      autoEventChoice.value = autoEventChoice.value === true
       if (!['auto', 'light', 'dark'].includes(theme.value)) theme.value = 'auto'
+      dndEvents.value = dndEvents.value === true
       lastExportAt.value = asFiniteNumber(lastExportAt.value, 0, 0)
       installNoticeDismissed.value = installNoticeDismissed.value === true
       decomposeRanks.value = asArray<number>(decomposeRanks.value).filter(n => typeof n === 'number' && Number.isFinite(n))
@@ -62,6 +61,7 @@ export const useSettingsStore = defineStore(
       smartKeep.value = {
         enabled: sk.enabled === true,
         minQuality: Math.floor(asFiniteNumber(sk.minQuality, 3, 0)),
+        keepMinTier: Math.max(0, Math.min(MAX_EQUIP_TIER, Math.floor(asFiniteNumber(sk.keepMinTier, 0, 0)))),
         keepCoreAffix: sk.keepCoreAffix !== false,
         keepComboPiece: sk.keepComboPiece !== false,
         keepPerfectRolls: sk.keepPerfectRolls !== false,
@@ -75,8 +75,8 @@ export const useSettingsStore = defineStore(
       musicVol,
       sfxVol,
       reduceMotion,
+      dndEvents,
       battleSpeed,
-      autoEventChoice,
       decomposeRanks,
       smartKeep,
       privacyAccepted,

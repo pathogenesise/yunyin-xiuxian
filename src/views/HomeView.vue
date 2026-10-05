@@ -36,10 +36,15 @@
           <!-- 风味句不负责报数:加减从天时定义现算,避免「火属 / 雷属」这类并未生效的承诺 -->
           <p class="mt-0.5 text-[10px] leading-relaxed text-ink-soft tabular">{{ weatherLine }}</p>
         </div>
-        <!-- 修炼法球 · 灵气法阵环绕 -->
-        <div class="relative mr-1 -mt-1 h-35 w-35 shrink-0">
-          <CultivationOrb :active="true" :full="player.expFull" :progress="player.expProgress">
-            <span class="text-[17px]">☯</span>
+        <!--
+          修炼法球 · 灵气法阵环绕。
+          窄屏并排时 140px 的法球会占到主卡大半宽,把左侧的天气/风味句压成极窄高列;
+          380px 以下改用 108px 法球(内部粒子/八卦环随 size 比例缩放,不是简单 blur),
+          给左侧文本让出地方。
+        -->
+        <div class="relative mr-1 -mt-1 h-35 w-35 shrink-0 max-[380px]:h-[108px] max-[380px]:w-[108px]">
+          <CultivationOrb :active="true" :full="player.expFull" :progress="player.expProgress" :size="orbSize">
+            <span class="text-[17px] max-[380px]:text-[13px]">☯</span>
           </CultivationOrb>
         </div>
       </div>
@@ -92,7 +97,7 @@
         <div class="space-y-1.5">
           <div v-for="t in dailyRows" :key="t.id" class="flex items-start justify-between gap-2 text-[12px]">
             <span class="min-w-0">
-              <span :class="t.done ? 'text-ink-ghost line-through' : 'text-ink-soft'">{{ t.desc }}</span>
+              <span :class="t.done ? 'text-ink-faint line-through' : 'text-ink-soft'">{{ t.desc }}</span>
               <span v-if="!t.done && rewardPreview(t.reward)" class="mt-0.5 block text-[10px] tabular text-azure">
                 {{ rewardPreview(t.reward) }}
               </span>
@@ -105,46 +110,30 @@
       </div>
     </section>
 
-    <!-- 洞府入口 -->
+    <!-- 洞府入口(灵脉已统合进洞府页,入口副题带上一句免得找不到);右侧带实况:离线可攒 + 已营座数 -->
     <RouterLink to="/dongfu" class="card-ink flex items-center justify-between gap-3 px-4 py-3 active:scale-99">
       <span class="min-w-0 flex-1">
         <span class="block font-kai text-[14px] tracking-widest text-ink">洞府营造</span>
-        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">经营家业,道途更稳</span>
+        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">灵脉 · 经营家业,道途更稳</span>
+      </span>
+      <span class="flex shrink-0 flex-col items-end gap-0.5 text-[10px]">
+        <span class="tabular text-gold-ink">离线 {{ offlineHrs }} 时</span>
+        <span class="tabular text-ink-faint">已营 {{ builtCount }}/{{ BUILDINGS.length }}</span>
       </span>
       <span class="shrink-0 text-[12px] text-ink-faint">›</span>
     </RouterLink>
-
-    <!-- 灵脉投资:金丹后开放,紧随洞府营造 -->
-    <button
-      v-if="player.major >= VEIN_UNLOCK_MAJOR"
-      class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-99"
-      @click="veinOpen = true"
-    >
-      <span class="min-w-0 flex-1">
-        <span class="block font-kai text-[14px] tracking-widest text-ink">灵脉投资</span>
-        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">引灵脉入洞府,择一主脉而修</span>
-      </span>
-      <span class="shrink-0 text-[12px] text-ink-faint">›</span>
-    </button>
-
-    <!-- 灵脉弹窗:组件自带标题卡,故不画标题;但对话框自己仍要有可访问名 -->
-    <BaseModal :open="veinOpen" title="" aria-label="灵脉" wide @close="veinOpen = false">
-      <VeinInvestCard />
-      <template #footer>
-        <button class="btn-seal w-full" @click="veinOpen = false">收 起</button>
-      </template>
-    </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
+  import { useDongfuStore } from '@/stores/dongfu'
   import { useAdventureStore } from '@/stores/adventure'
   import { useCultivationStore } from '@/stores/cultivation'
   import { useQuestsStore } from '@/stores/quests'
+  import { BUILDINGS } from '@/data/buildings'
   import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
-  import { VEIN_UNLOCK_MAJOR } from '@/data/constants'
   import { LIFESPAN_WARN_RATIO } from '@/data/constants'
   import { WORLD_BREAK_MAJOR } from '@/data/realms'
   import { todayWeather } from '@/core/weather'
@@ -154,18 +143,31 @@
   import { weatherEffectText } from '@/ui/weatherText'
   import { generateCurrentGoal, type Goal } from '@/core/goal'
   import SectionTitle from '@/components/common/SectionTitle.vue'
-  import BaseModal from '@/components/common/BaseModal.vue'
-  import VeinInvestCard from '@/components/dongfu/VeinInvestCard.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import CultivationOrb from '@/components/common/CultivationOrb.vue'
   import InstallToHomeNotice from '@/components/common/InstallToHomeNotice.vue'
 
   const player = usePlayerStore()
-  /** 灵脉投资弹窗 —— 卡片自洞府页移来,紧随洞府营造 */
-  const veinOpen = ref(false)
+  const dongfu = useDongfuStore()
   const adventure = useAdventureStore()
   const cultivation = useCultivationStore()
   const quests = useQuestsStore()
+
+  // 法球尺寸:380px 以下卡片内宽骤减,法球随断点同步缩到 108px(与模板容器 max-[380px] 一致)。
+  // 不能只算一次:横竖屏切换、窗口拖拽都会改 matchMedia 结果,故监听 change 让 orbSize 跟着变,
+  // 否则容器(纯 CSS 断点)已缩、法球(JS size)仍是 140px,两者脱节会溢出。
+  const narrower = ref(false)
+  const orbSize = computed<number>(() => (narrower.value ? 108 : 140))
+  // 直接平铺、不用 {} 作用域块 —— 该块内容在 script setup 里会被编译器提升重排,花括号反而碍事
+  const orbMq = window.matchMedia('(max-width: 380px)')
+  narrower.value = orbMq.matches
+  orbMq.addEventListener('change', e => {
+    narrower.value = e.matches
+  })
+
+  /** 洞府入口右侧实况:离线可攒小时 + 已营座数(与洞府页纪要同源现算) */
+  const offlineHrs = computed(() => dongfu.offlineCapHours)
+  const builtCount = computed(() => BUILDINGS.filter(b => (dongfu.levels[b.id] ?? 0) > 0).length)
 
   // Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页)
   const currentGoal = computed<Goal | null>(() => generateCurrentGoal(player))

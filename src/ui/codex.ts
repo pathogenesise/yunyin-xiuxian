@@ -45,6 +45,8 @@ export interface CodexEntry {
   desc: string
   /** 一行补充信息(阶位 / 所属功法等) */
   meta: string
+  /** 章形图标(灵兽册/法宝谱改用图标章,不再是一串干文字) */
+  icon?: string
   color?: string
   /** 收录深度:0 未收录,≥1 已收录 */
   stage: number
@@ -415,6 +417,7 @@ export function artifactCodex(): CodexCat {
   const levelOf = new Map(inventory.artifacts.map(a => [a.defId, a.level]))
   const entries = ARTIFACTS.map(def => ({
     ...describeArtifact(def, levelOf.get(def.id) ?? 0, owned.has(def.id)),
+    icon: def.icon,
     foot: { label: '收录时间', value: collectedTimeText(quests.collectedAt[`artifact:${def.id}`]) }
   })).sort((a, b) => b.stage - a.stage)
   const seen = entries.filter(e => e.stage >= 1).length

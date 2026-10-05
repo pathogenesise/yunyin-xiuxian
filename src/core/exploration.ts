@@ -32,8 +32,8 @@ import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import type { LastBattleView } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
-import { useUiStore } from '@/stores/ui'
 import { useSettingsStore } from '@/stores/settings'
+import { useUiStore } from '@/stores/ui'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
 import { recordLoss, isNemesis, markAvenged, ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE } from './worldMemory'
 import { personalityEffects } from './petPersonality'
@@ -519,19 +519,19 @@ export function tickExploration(now: number): void {
     if (rng.chance(exploreEventChance(region.id, player.finalStats.mods))) {
       // 事件标签同样走本世内容
       const ev = pickEventFor({ ...region, eventTags: [...placeContent(region.id).eventTags] })
-      if (ev) {
-        /**
-         * 开启「际遇自动抉择」:不弹窗,直接按默认选项结算。
-         * 走的是 autoResolveEvent —— 与事件搁置超时(EVENT_AUTO_RESOLVE_SECONDS)
-         * 用的是同一个函数、同一套「优先 isDefault」的判据,故开启后与
-         * 「放着不管等它超时」结果完全一致,不另开一套判定。
+      if (ev && useSettingsStore().dndEvents) {
+        /*
+         * 遇事勿扰(玩家反馈「手动关闭际遇事件触发」)关闭弹窗:
+         * 撞见际遇/机缘/奇缘时按超时同一条路(默认好愿)当场结清 ——
+         * 奖励照拿、不卡手、也不把这一 Tick 的战斗窗口吞掉。
          */
-        if (useSettingsStore().autoEventChoice) {
-          autoResolveEvent(ev.id, region.tier)
-          adventure.setSession({ ...s, events: s.events + 1, nextBattleAt: nextBattleTime(now) })
-        } else {
-          adventure.setPendingEvent(ev.id, now)
-        }
+        autoResolveEvent(ev.id, region.tier)
+        const cur = adventure.session
+        if (cur) adventure.setSession({ ...cur, events: cur.events + 1, nextBattleAt: nextBattleTime(now) })
+        return
+      }
+      if (ev) {
+        adventure.setPendingEvent(ev.id, now)
         /**
          * 三档各报各的名。
          *

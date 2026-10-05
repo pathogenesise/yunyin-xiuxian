@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  artifactBatchDoneToast,
   artifactCapToast,
   artifactDoneToast,
   batchDecomposeToast,
   decomposeToast,
   salvageYieldText,
+  upgradeBatchDoneToast,
   upgradeCapToast,
   upgradeDoneToast,
   upgradeShortToast
@@ -19,6 +21,11 @@ describe('炼器提示 · 文言仍报清尘与石', () => {
     expect(upgradeDoneToast('玄铁剑', 3)).toBe('「玄铁剑」再经一锤,已至 +3')
   })
 
+  it('连升只报一次总况:级数、现阶、尘、石都在', () => {
+    expect(upgradeBatchDoneToast(3, 4, 60, '120')).toBe('连升 3 级,如今 +4,共耗器灵尘×60 · 灵石 120')
+    expect(upgradeBatchDoneToast(1, 1, 10, '0')).toContain('连升 1 级')
+  })
+
   it('分解单件与批量都报器灵尘,有石才提退还', () => {
     expect(decomposeToast(12)).toBe('此器化尘,得器灵尘×12')
     expect(decomposeToast(12, '1.2万', '八成')).toContain('灵石退还 1.2万(八成)')
@@ -30,5 +37,9 @@ describe('炼器提示 · 文言仍报清尘与石', () => {
     expect(artifactCapToast()).toContain('再祭无益')
     expect(artifactDoneToast('紫电')).toContain('祭炼')
     expect(artifactDoneToast('紫电')).not.toContain('炼化')
+  })
+
+  it('祭炼连升只报一次总况:重数、现重、悟道、石都在', () => {
+    expect(artifactBatchDoneToast(3, 5, 32, '240')).toBe('连炼 3 重,已至第 5 重,共耗悟道×32 · 灵石 240')
   })
 })

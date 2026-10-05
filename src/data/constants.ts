@@ -293,6 +293,17 @@ export const REFORGE_DUST_BASE = 30
 export const SEAL_STONE_BASE = 200
 
 /**
+ * 词条转移定价(议题 #22):在目标件上「保留其余词条、把这一条洗出来」的期望花费 × 此率。
+ *
+ * 1 次 = 一次无封存重铸(灵石按目标阶 REFORGE_STONE_BASE,尘 REFORGE_DUST_BASE),
+ * 保留 n 条时每洗一次再乘 (1 + REFORGE_SEAL_LOAD × n),次数由 reforge.expectedRollsToHit 解析求得。
+ * 判据:转移价须落在该期望价的 0.4~1.1 倍 —— 高了无人用,低了封存路径作废
+ * (affixTransferEconomy.spec 用真重铸对账)。数值高低不进价:转移的价值正在于数值确定。
+ * 灵石只按目标阶计:按源件阶计,在低阶件上洗出再转到高阶件就成了套利。
+ */
+export const TRANSFER_PRICE_RATE = 0.6
+
+/**
  * 敌人相对玩家裸装的补偿系数:随层级指数跟随。
  *
  * Phase 33.2:原为 0.9 + 0.18×(tier-1) 且封顶 2.2,tier 9 之后完全冻结——
@@ -503,9 +514,12 @@ export const FORTUNE_CHANCE = 0.02
 /** 事件搁置超过该秒数后自动按默认选项处理 */
 export const EVENT_AUTO_RESOLVE_SECONDS = 120
 export const EXPLORE_MODES = {
-  normal: { name: '寻常游历', durationSec: 4 * 3600, rewardMult: 1, dangerMult: 1 },
-  deep: { name: '深入探寻', durationSec: 8 * 3600, rewardMult: 1.4, dangerMult: 1.45 },
-  risky: { name: '涉险求机', durationSec: 12 * 3600, rewardMult: 1.9, dangerMult: 2.1 }
+  normal: { name: '寻常游历', durationSec: 1800, rewardMult: 1, dangerMult: 1 },
+  deep: { name: '深入探寻', durationSec: 3600, rewardMult: 1.4, dangerMult: 1.45 },
+  risky: { name: '涉险求机', durationSec: 7200, rewardMult: 1.9, dangerMult: 2.1 },
+  // 玩家反馈「挂机1小时2小时可以有更长时间的选择」:档位曲线顺延一步(2h→4h)。
+  // 凶险比奖励涨得更快(2.6 > 2.4),长挂不白嫖 —— 与既有档位同一套取舍
+  prolonged: { name: '长线云游', durationSec: 14400, rewardMult: 2.4, dangerMult: 2.6 }
 } as const
 /** 战败重伤 Buff 持续秒数 */
 export const INJURY_DURATION = 150

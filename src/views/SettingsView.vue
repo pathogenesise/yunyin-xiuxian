@@ -10,7 +10,7 @@
           <input v-model="settings.musicOn" type="checkbox" class="h-4 w-4 accent-cinnabar" />
         </label>
         <div v-if="settings.musicOn" class="mt-2 flex items-center gap-2">
-          <span class="text-[10px] text-ink-ghost">轻</span>
+          <span class="text-[10px] text-ink-faint">轻</span>
           <input v-model.number="settings.musicVol" type="range" min="0" max="100" aria-label="背景音乐音量" class="grow accent-cinnabar" />
           <span class="w-7 text-right text-[10px] tabular text-ink-faint">{{ settings.musicVol }}</span>
         </div>
@@ -21,7 +21,7 @@
           <input v-model="settings.sfxOn" type="checkbox" class="h-4 w-4 accent-cinnabar" />
         </label>
         <div v-if="settings.sfxOn" class="mt-2 flex items-center gap-2">
-          <span class="text-[10px] text-ink-ghost">轻</span>
+          <span class="text-[10px] text-ink-faint">轻</span>
           <input v-model.number="settings.sfxVol" type="range" min="0" max="100" aria-label="音效音量" class="grow accent-cinnabar" />
           <span class="w-7 text-right text-[10px] tabular text-ink-faint">{{ settings.sfxVol }}</span>
         </div>
@@ -30,13 +30,15 @@
         <span class="text-[13px] text-ink-soft">减少动效</span>
         <input v-model="settings.reduceMotion" type="checkbox" class="h-4 w-4 accent-cinnabar" />
       </label>
-      <label class="flex items-center justify-between py-3">
-        <span class="min-w-0 text-[13px] text-ink-soft">
-          际遇自动抉择
-          <span class="ml-1 text-[10px] text-ink-faint">遇际遇不弹窗,直接按默认选项了结</span>
-        </span>
-        <input v-model="settings.autoEventChoice" type="checkbox" class="h-4 w-4 shrink-0 accent-cinnabar" />
-      </label>
+      <div class="py-3">
+        <label class="flex items-center justify-between">
+          <span class="text-[13px] text-ink-soft">遇事勿扰</span>
+          <input v-model="settings.dndEvents" type="checkbox" class="h-4 w-4 accent-cinnabar" />
+        </label>
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
+          历练撞见际遇/机缘/奇缘不再弹窗,自动按默认好愿了结 —— 奖励照拿,只是不再卡手。
+        </p>
+      </div>
       <div class="flex items-center justify-between py-3">
         <span class="text-[13px] text-ink-soft">夜间模式</span>
         <div role="group" aria-label="夜间模式" class="flex gap-1">
@@ -85,7 +87,7 @@
       </p>
       <!-- 写盘失败时这里必须说话:玩家可能正玩得兴起,却不知道进度没进档 -->
       <p v-if="saveFailed" class="rounded-md border border-cinnabar/40 bg-cinnabar/8 px-2 py-1.5 text-[11px] leading-relaxed text-cinnabar">
-        上次写入存档失败 —— 浏览器存储可能已满。请先「导出存档」留一份,再清理浏览器数据或换设备导入。
+        上次存档没能存下 —— 本机容量可能已满。请先「导出存档」留一份,再清理本机空间或换设备导入。
       </p>
       <!--
         坏掉的分片只说一次(启动时一条 2.4 秒的提示)是不够的:
@@ -96,10 +98,9 @@
         v-if="corruptedNotice.length"
         class="rounded-md border border-cinnabar/40 bg-cinnabar/8 px-2 py-1.5 text-[11px] leading-relaxed text-cinnabar"
       >
-        启动时发现 {{ corruptedNotice.length }} 个存档分片损坏,已隔离修复:{{
+        启动时发现有档案未能读全,已尽力修复,损失的只是未能同步的那一段:{{
           corruptedNotice.map(id => STORE_NAMES[id] ?? id).join('、')
-        }}。损坏的原档没有删除,仍留在本机(键名
-        <span class="break-all">{{ corruptKeys }}</span>)—— 若手上还有导出的备份,可在此导入恢复。
+        }}。原档并未删除,仍留在本机 —— 若有导出备份,可在下方导入复原。
         <button class="mt-1 block text-ink-faint underline" @click="ui.corruptedNotice = []">知道了</button>
       </p>
       <div class="grid grid-cols-2 gap-2">
@@ -121,18 +122,18 @@
     <SectionTitle title="诊断" />
     <div class="card-ink space-y-2 px-4 py-3">
       <p class="text-[11px] leading-relaxed text-ink-faint">
-        <template v-if="diag.errors.length">最近记录了 {{ diag.errors.length }} 条异常(最多留 {{ DIAG_MAX }} 条)</template>
-        <template v-else>未记录到异常。真出问题时这里会自动留一条,可连同「导出存档」一起发给我们。</template>
+        <template v-if="diag.errors.length">最近留存的差错 {{ diag.errors.length }} 笔(至多 {{ DIAG_MAX }} 笔)</template>
+        <template v-else>还没出过岔子。若有意外,这里会自行记下一笔,可连同「导出存档」一起发给我们。</template>
       </p>
       <p v-if="latestError" class="rounded-md bg-ink/4 px-2 py-1.5 text-[10px] leading-relaxed text-ink-soft">
         <span class="tabular text-ink-faint">{{ formatClock(latestError.at) }}</span>
         <span v-if="latestError.count > 1" class="ml-1 text-ink-faint">×{{ latestError.count }}</span>
         <span class="ml-1 break-all">{{ latestError.message }}</span>
-        <span v-if="latestError.route" class="ml-1 text-ink-ghost">{{ latestError.route }}</span>
+        <span v-if="latestError.route" class="ml-1 text-ink-faint">{{ latestError.route }}</span>
       </p>
       <div v-if="diag.errors.length" class="grid grid-cols-2 gap-2">
-        <button class="btn-ghost !text-[12px]" @click="copyDiag">复制异常记录</button>
-        <button class="btn-ghost !text-[12px]" @click="diag.clear()">清空记录</button>
+        <button class="btn-ghost !text-[12px]" @click="copyDiag">复制差错留档</button>
+        <button class="btn-ghost !text-[12px]" @click="diag.clear()">清空留档</button>
       </div>
     </div>
 
@@ -192,7 +193,7 @@
   import { exportSaveToDevice } from '@/core/savePlatform'
   import { formatLastExport, shouldPromptBackup } from '@/core/saveBackup'
   import { formatDuration } from '@/utils/format'
-  import { SAVE_VERSION, STORE_NAMES, saveWriteFailure, storageKey, subscribeSaveWriteFailure } from '@/utils/storage'
+  import { SAVE_VERSION, STORE_NAMES, saveWriteFailure, subscribeSaveWriteFailure } from '@/utils/storage'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
@@ -210,8 +211,6 @@
   const saveFailed = ref(saveWriteFailure() !== null)
   /** 被隔离的分片(启动时 preflightScan 记下的那份) */
   const corruptedNotice = computed<string[]>(() => ui.corruptedNotice)
-  /** 原档留在哪些备份键里 —— 说得出键名,玩家(或帮他的人)才找得回来 */
-  const corruptKeys = computed(() => corruptedNotice.value.map(id => `corrupt.${storageKey(id)}`).join('、'))
 
   /** 最近一条异常(诊断块里只展示这一条,其余随复制/导出带走) */
   const latestError = computed(() => diag.errors[diag.errors.length - 1] ?? null)
