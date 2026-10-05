@@ -97,13 +97,16 @@
               {{ line.before }}<span class="tabular font-medium text-ink">{{ line.value }}</span>{{ line.after }}
             </span>
             <button
-              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] active:scale-90 active:opacity-60"
-              :class="isAffixLocked(line.id) ? 'text-jade' : 'text-azure'"
-              :aria-label="`${isAffixLocked(line.id) ? '解锁' : '锁定'}词条${line.name}`"
-              @click="doToggleAffixLock(line.id)"
+              v-if="canSealAffix(line.id)"
+              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
+              :aria-label="`封存词条${line.name}`"
+              @click="doSealAffix(line.id)"
             >
-              {{ isAffixLocked(line.id) ? '已锁' : '锁定' }}
+              封存
             </button>
+            <span v-else-if="isAffixSealed(line.id)" class="shrink-0 text-jade" role="img" aria-label="这条词条已封存">
+              <GameIcon name="lock" :size="12" />
+            </span>
           </li>
         </ul>
         <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
@@ -274,47 +277,37 @@
     <template #footer>
       <AffixTransferFooter v-if="transferOpen && inst" :flow="transfer" @back="transferOpen = false" />
       <div v-else class="flex flex-col gap-2">
-        <!-- 重铸与词条锁定 (Phase 30.1) -->
+        <!-- 重铸与封存 (Phase 30.1) -->
         <!--
-          空皮先交代去向:一件凡品掷出零条、或全锁定的装备,重铸与锁定整块会一起消失 ——
+          空皮先交代去向:一件凡品掷出零条、或全封存的装备,重铸与封存整块会一起消失 ——
           玩家找不到「自动重铸」,只会觉得它没生效。这里把「为什么没有」说破。
-          正常玩法锁不满(锁满即不能再洗),词条全锁的那一格是给
+          正常玩法封不完整(每件至少留一个可重掷位),词条全封的那一格是给
           旧档/异常数据兜底,别把「一颗词条也无」错安到它有词条的头上。
         -->
-        <template v-if="reforgeCostVal || lockableLeft > 0">
+        <template v-if="reforgeCostVal || sealCostVal">
           <div class="flex gap-2 text-[11px]">
             <!-- 重铸是装备培养高频动作:!py-1 盒高仅 27px,低于 28px 可点阈值(弹窗内控件,巡页判据按「恰好打开的弹窗」才量得到它)。
-                 !py-2 抬到 35px;锁定格是静态展示,但同排按钮提高后也跟着对齐,视觉仍是一整行 -->
+                 !py-2 抬到 35px;封存格是静态展示,但同排按钮提高后也跟着对齐,视觉仍是一整行 -->
             <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-2" @click="doReforge">
               重铸词条
               <span class="ml-1 tabular text-[10px] text-ink-faint">
                 {{ formatGN(reforgeCostVal.stone) }} · 尘×{{ reforgeCostVal.dust }}
               </span>
             </button>
-            <div
-              v-if="lockableLeft > 0"
-              class="flex flex-1 items-center justify-center rounded-md border border-azure/20 bg-azure/5 px-2 py-1 text-azure"
-            >
-              锁定一词 {{ formatGN(lockCostVal) }}
+            <div v-if="sealCostVal" class="flex flex-1 items-center justify-center rounded-md border border-azure/20 bg-azure/5 px-2 py-2 text-azure">
+              封存一词 {{ formatGN(sealCostVal) }}
             </div>
           </div>
           <!--
-            重铸到底做什么,得在按下之前说清:条数与数值一并重掷(锁定的不动),
-            不限次数、成本只随「阶数」与「锁定数」走 —— 与旧版"越洗越贵、上限十次"不同。
+            重铸到底做什么,得在按下之前说清:条数与数值一并重掷(封存的不动),
+            不限次数、成本只随「阶数」与「封存数」走 —— 与旧版"越洗越贵、上限十次"不同。
           -->
           <p v-if="reforgeCostVal" class="text-center text-[10px] leading-relaxed text-ink-faint">
-            重掷未锁定的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,锁定的不动 · 不限次数,成本随阶数与锁定数走
+            重掷未封存的词条:条数(≤{{ affixCap }} 条)与数值一并重掷,封存的不动 · 不限次数,成本随阶数与封存数走
           </p>
-        <!--
-          状态行独立于上面的按钮区:「已锁满」时按钮区整体隐去(无可洗、无可锁),
-          但玩家恰恰最需要看见"解锁一条即可再洗"这句话 —— 它若跟着一起消失,
-          锁满这一件就变成一个没有出路的死结,比改之前更难懂。
-        -->
-        <p v-if="inst" class="text-center text-[10px] text-ink-faint tabular">
-          已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已锁定 {{ lockedCount }}/{{ affixCap }}(品质上限)
-          <span v-if="lockedCount < affixCap" class="ml-1">· 未锁满仍可重铸,再点「已锁」即解锁且不另计灵石</span>
-          <span v-else class="ml-1">· 已锁满,解锁一条即可再洗</span>
-        </p>
+          <p v-if="inst" class="text-center text-[10px] text-ink-faint tabular">
+            已重铸 {{ inst.reforgeCount ?? 0 }} 次 · 已封存 {{ (inst.sealedAffixIds ?? []).length }}/{{ sealCapacity(inst) }}
+          </p>
           <!-- 自动重铸与词条转移并成一行:页脚不加高(320×568 下正文本就只剩一小截) -->
           <div class="flex gap-2">
             <button v-if="reforgeCostVal" class="btn-ghost flex-1 !py-2 !text-[11px]" @click="autoOpen = !autoOpen">
@@ -327,15 +320,15 @@
         </template>
         <template v-else-if="inst">
           <p class="text-center text-[10px] leading-relaxed text-ink-faint">
-            {{ inst.affixes.length === 0 ? '此物一颗词条也无,无从重铸,也无可锁定。想炼它,先有纹可刻。' : '词条已尽数锁定,无从重铸' }}
+            {{ inst.affixes.length === 0 ? '此物一颗词条也无,无从重铸,也无可封存。想炼它,先有纹可刻。' : '词条已尽数封存,无从重铸' }}
           </p>
-          <!-- 全锁定的旧档件也能把词条转出去 -->
+          <!-- 全封存的旧档件也能把词条转出去 -->
           <button v-if="canTransferOut" class="btn-ghost w-full !py-2 !text-[11px]" @click="openTransfer">{{ TRANSFER_LABELS.entry }}</button>
         </template>
         <div class="flex gap-2">
           <button class="btn-seal flex-1" @click="toggleEquip">{{ isEquipped ? '卸 下' : '装 备' }}</button>
           <button v-if="upCost" class="btn-ghost flex-1" @click="doUpgrade">强 化</button>
-          <!-- 分解二步确认:一件淬养过的装备(强化/词条锁定/重铸)误触垃圾桶不该直接没 -->
+          <!-- 分解二步确认:一件淬养过的装备(强化/封存/重铸)误触垃圾桶不该直接没 -->
           <template v-if="decomposeArm !== inst?.uid">
             <button
               class="btn-ghost px-3"
@@ -389,7 +382,7 @@
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
-  import { autoReforge, reforgeEquipment, reforgeCost, toggleAffixLock, lockCapacity, lockCost, type ReforgeTarget } from '@/core/reforge'
+  import { autoReforge, reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost, type ReforgeTarget } from '@/core/reforge'
   import { AFFIXES, affixDef, affixFitBlock, affixesByRarity } from '@/data/affixes'
   import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
@@ -462,18 +455,20 @@
     return { def, count, active: count >= def.required }
   })
 
-  // ---- 重铸与词条锁定 (Phase 30.1) ----
+  // ---- 重铸与封存 (Phase 30.1) ----
   const reforgeCostVal = computed(() => (inst.value ? reforgeCost(inst.value) : null))
+  const sealCostVal = computed(() => (inst.value ? sealCost(inst.value) : null))
   /** 这一件按品质能有多少条词条:上限来自品质表,不在界面里另写一份 */
   const affixCap = computed(() => (inst.value ? qualityDef(inst.value.quality).affixes[1] : 0))
   const qualityName = computed(() => (inst.value ? qualityDef(inst.value.quality).name : ''))
 
-  /** 锁定一词的当前价(第 n 条 = 基础 × n);已全部锁定时不再显示 */
-  const lockCostVal = computed(() => (inst.value ? lockCost(inst.value) : gnZero()))
-  /** 还能再锁几条:不强制留可重掷位,故 = 词条数 − 已锁定数 */
-  const lockableLeft = computed(() => (inst.value ? lockCapacity(inst.value) : 0))
-  /** 已锁定条数:与「品质上限」比,满即洗不动 */
-  const lockedCount = computed(() => (inst.value ? (inst.value.sealedAffixIds ?? []).length : 0))
+  function isAffixSealed(affixId: string): boolean {
+    return (inst.value?.sealedAffixIds ?? []).includes(affixId)
+  }
+
+  function canSealAffix(affixId: string): boolean {
+    return inst.value !== undefined && sealCostVal.value !== null && !isAffixSealed(affixId)
+  }
 
   /** 词条信息弹框:点哪条就钉哪条(词条表已按反馈移除,这是看词条信息的唯一入口) */
   const codexOpen = ref(false)
@@ -490,12 +485,8 @@
     toggleAutoTarget(id)
   }
 
-  function isAffixLocked(affixId: string): boolean {
-    return (inst.value?.sealedAffixIds ?? []).includes(affixId)
-  }
-
-  function doToggleAffixLock(affixId: string): void {
-    if (inst.value) toggleAffixLock(inst.value.uid, affixId)
+  function doSealAffix(affixId: string): void {
+    if (inst.value) sealAffix(inst.value.uid, affixId)
   }
 
   function doReforge(): void {
@@ -571,9 +562,9 @@
         ui.toast(`灵石/器灵尘见底,洗了 ${out.rolls} 次即止;今一身为 ${now},${cost}`, 'warn')
       }
     } else {
-      // frozen 是「没得洗」不是「没洗成」,不响;这一档兼两种收法:无位可洗(锁满/无词条),或装备已不在行囊
+      // frozen 是「没得洗」不是「没洗成」,不响;这一档兼两种收法:无位可洗(全封存/无词条),或装备已不在行囊
       const gone = inst.value !== undefined && !inventory.findItem(inst.value.uid)
-      ui.toast(gone ? '此物已不在行囊,重铸无从谈起' : '此物词条已尽数锁定,无从重铸', 'info')
+      ui.toast(gone ? '此物已不在行囊,重铸无从谈起' : '此物已无未封存词条,无从重铸', 'info')
     }
     // 结账即收板:结果已写在 toast 与装备词条上,想再调条件重开一次即可
     closeAuto()

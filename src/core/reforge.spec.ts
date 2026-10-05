@@ -7,14 +7,13 @@
  *   二 **成本只随两件事走**:它有多高阶(与强化/封存同一条 stoneByTier 经济)、
  *      你封存了几个词条(封存是保护,保护得越多,重掷剩下部分越贵)。
  * 而「重铸」的动作也换了:旧版只**换掉一条**词条、条数不动;现在把未封存的
- * 词条推倒重来 —— **条数按品质区间重掷**(以锁定数为保底,锁住的一条都不少),
- * 数值全部重掷。能不能继续洗由「锁定数 < 品质条数上限」决定,不由「还剩几条没锁」决定。
+ * 词条推倒重来 —— **条数按品质区间重掷**(至少给一条新的),数值全部重掷。
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
-import { reforgeCost, reforgeEquipment, lockCapacity, lockCost, toggleAffixLock, reforgeAffixCap } from './reforge'
+import { reforgeCost, reforgeEquipment, sealCapacity, sealCost, sealAffix } from './reforge'
 import { REFORGE_DUST_BASE, REFORGE_SEAL_LOAD, REFORGE_STONE_BASE } from '@/data/constants'
 import { qualityDef } from '@/data/qualities'
 import { rng } from '@/utils/random'
@@ -72,19 +71,10 @@ describe('重铸成本 · 只看阶数与封存数', () => {
     expect(two.dust).toBe(Math.round(REFORGE_DUST_BASE * (1 + 2 * REFORGE_SEAL_LOAD)))
   })
 
-  it('锁满该品质的条数上限才没得重铸 —— 锁定只是保护,不是封禁', () => {
-    // base 是精品(2~3 条,上限 3),这里只锁 2 条:还差 1 条才到上限,必须仍能洗
-    expect(reforgeCost({ ...base, sealedAffixIds: ['atk1', 'def1'] }), '锁 2 条未达上限 3,还能洗').not.toBeNull()
-    // 上限口径锁定在品质表上,不写死数字
-    expect(reforgeCost({ ...base, sealedAffixIds: ['atk1', 'def1', 'hp1'] }), '锁满 3 条才洗不动').toBeNull()
-    expect(lockCapacity(base), '未锁定时两条都还能锁').toBe(2)
-    expect(lockCapacity({ ...base, sealedAffixIds: ['atk1'] }), '锁 1 条后还剩 1 条').toBe(1)
-    // 全部锁住后没有「不能再锁」这一说:只是不再有任何可锁的词条
-    expect(lockCapacity({ ...base, sealedAffixIds: ['atk1', 'def1', 'hp1'] })).toBe(0)
-    // 价格随已锁定数递增,解锁不另计灵石(故没有 unlockCost 这个入口)
-    const after1 = stoneOf(lockCost({ ...base, sealedAffixIds: ['atk1'] }))
-    const after2 = stoneOf(lockCost({ ...base, sealedAffixIds: ['atk1', 'def1'] }))
-    expect(after2).toBeGreaterThan(after1)
+  it('全部封存就没得重铸了 —— 这是唯一一种"不能再炼"', () => {
+    expect(reforgeCost({ ...base, sealedAffixIds: ['atk1', 'def1'] })).toBeNull()
+    expect(sealCapacity(base), '封存上限 = 词条数 − 1(至少留一个可重掷位)').toBe(1)
+    expect(sealCost({ ...base, sealedAffixIds: ['atk1'] })).toBeNull()
   })
 })
 
@@ -115,7 +105,7 @@ describe('重铸动作 · 条数与数值一起重掷', () => {
     const inst: EquipmentInstance = {
       ...base,
       uid: 'count-up',
-      quality: 'profound', // 玄品:3~5 条
+      quality: 'profound', // 玄品:3~4 条
       affixes: [{ id: 'atk1', roll: 0.5 }]
     }
     setup(inst)
@@ -207,77 +197,14 @@ describe('重铸动作 · 条数与数值一起重掷', () => {
     expect(useInventoryStore().findItem('poor')!.reforgeCount).toBe(0)
   })
 
-  it('锁定要付费,且再点一次可解除(不另计灵石)', () => {
-    const inst: EquipmentInstance = { ...base, uid: 'lock' }
+  it('封存要付费,且封满之后不再可封', () => {
+    const inst: EquipmentInstance = { ...base, uid: 'seal' }
     useInventoryStore().items = [inst]
     const res = useResourcesStore()
     res.addStone(gn(1e30))
-    expect(toggleAffixLock('lock', 'atk1')).toBe(true)
-    expect(useInventoryStore().findItem('lock')!.sealedAffixIds).toEqual(['atk1'])
-    const stoneAfterLock = res.spiritStone
-    expect(toggleAffixLock('lock', 'atk1'), '再点一次应解除锁定').toBe(true)
-    expect(useInventoryStore().findItem('lock')!.sealedAffixIds).toEqual([])
-    expect(res.spiritStone, '解锁不收灵石').toEqual(stoneAfterLock)
-  })
-
-  it('锁到只剩一条可重掷时,那条也锁得上,且锁满上限前始终能洗', () => {
-    // 回归:旧规则要求「至少留一条可重掷」,于是「5 条锁 3 条 → 重铸后总数掉到 4 条」
-    // 时第 4 条再也锁不上。现在不强制留位;能否重铸改由「锁定数 < 品质上限」决定。
-    const inst: EquipmentInstance = {
-      ...base,
-      uid: 'last-slot',
-      quality: 'profound', // 玄品 3~5 条,上限 5
-      affixes: [
-        { id: 'atk1', roll: 0.5 },
-        { id: 'def1', roll: 0.5 },
-        { id: 'hp1', roll: 0.5 },
-        { id: 'crit1', roll: 0.5 },
-        { id: 'hp2', roll: 0.5 }
-      ],
-      sealedAffixIds: ['atk1', 'def1', 'hp1']
-    }
-    useInventoryStore().items = [inst]
-    useResourcesStore().addStone(gn(1e30))
-    expect(lockCapacity(inst), '5 条锁 3 条,还剩 2 条可锁').toBe(2)
-    expect(reforgeCost(inst), '锁 3 条未达上限 5,还能洗').not.toBeNull()
-    expect(toggleAffixLock('last-slot', 'crit1')).toBe(true)
-    expect(toggleAffixLock('last-slot', 'hp2'), '第 5 条也必须锁得上').toBe(true)
-    const full = useInventoryStore().findItem('last-slot')!
-    expect(full.sealedAffixIds).toHaveLength(5)
-    // 锁满 5 条 = 撞上限:此时才真的不能重铸,但仍可逐条解锁,解一条立刻恢复
-    expect(reforgeCost(full)).toBeNull()
-    expect(toggleAffixLock('last-slot', 'crit1')).toBe(true)
-    expect(reforgeCost(useInventoryStore().findItem('last-slot')!)).not.toBeNull()
-  })
-
-  it('上限 7 条的装备锁了 6 条仍能洗 —— 回归:旧判据把这种件卡死了', () => {
-    // 玩家报的 case:天品上限 7,一件只有 6 条且 6 条全锁,按钮消失且没有任何出路。
-    // 判据是「锁定数 vs 品质上限」,不是「还有没有未锁定的词条」。
-    const inst: EquipmentInstance = {
-      ...base,
-      uid: 'six-of-seven',
-      quality: 'heaven', // 天品 4~7 条,上限 7
-      affixes: [
-        { id: 'atk1', roll: 0.5 },
-        { id: 'def1', roll: 0.5 },
-        { id: 'hp1', roll: 0.5 },
-        { id: 'crit1', roll: 0.5 },
-        { id: 'atk2', roll: 0.5 },
-        { id: 'def2', roll: 0.5 }
-      ],
-      sealedAffixIds: ['atk1', 'def1', 'hp1', 'crit1', 'atk2', 'def2']
-    }
-    setup(inst)
-    expect(reforgeAffixCap(inst), '天品上限为 7').toBe(7)
-    expect(reforgeCost(inst), '锁 6 条未达上限 7,必须仍可重铸').not.toBeNull()
-    expect(reforgeEquipment('six-of-seven'), '洗得动').toBe(true)
-    const after = useInventoryStore().findItem('six-of-seven')!
-    expect(after.sealedAffixIds, '锁定的 6 条一条不少').toHaveLength(6)
-    // 条数不再被「锁定数 + 1」顶到 7:掷出多少就是多少,可以维持 6 条只换数值
-    expect(after.affixes.length, '条数仍落在品质区间内').toBeGreaterThanOrEqual(4)
-    expect(after.affixes.length, '且不超上限').toBeLessThanOrEqual(7)
-    // 新词条不锁,判据仍为真 —— 可以接着洗下去
-    expect(reforgeCost(after), '新掷出的那条不锁,就仍能洗').not.toBeNull()
+    expect(sealAffix('seal', 'atk1')).toBe(true)
+    expect(useInventoryStore().findItem('seal')!.sealedAffixIds).toEqual(['atk1'])
+    expect(sealAffix('seal', 'def1'), '只剩一条可重掷位,封不了').toBe(false)
   })
 })
 
@@ -286,13 +213,7 @@ describe('界面与判定同源 · 条数上限不写死', () => {
 
   it('词条条数上限取自品质表,不在模板里写死数字', () => {
     expect(dialog, '上限应读 qualityDef(...).affixes[1]').toContain('qualityDef(inst.value.quality).affixes[1]')
-    expect(dialog, '还能锁几条应读 lockCapacity(与判定同一处)').toContain('lockCapacity(')
+    expect(dialog, '封存上限应读 sealCapacity(与判定同一处)').toContain('sealCapacity(')
     expect(dialog, '不该再出现「重铸次数 x/10」这类写死的分母').not.toMatch(/重铸次数\s*\{\{/)
-  })
-
-  it('界面写「锁定」而不是「封存」,并明说可解锁', () => {
-    expect(dialog).toContain('锁定')
-    expect(dialog, '锁错了要能解开,界面得说出来').toContain('解锁')
-    expect(dialog, '模板里不该再留「封存」这个词').not.toContain('封存')
   })
 })
