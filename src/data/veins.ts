@@ -45,9 +45,16 @@ export interface VeinDef {
   perPoint: StatMods
   /**
    * 本脉效果所受的那条数值上限,读的是**同一个键**(悟道脉走专用折扣通道,
-   * 其余走 perPoint 里的键)。null = 该效果没有硬上限,故本脉没有投资上限。
+   * 其余走 perPoint 里的键)。null = 该效果没有硬上限 —— 此时看 pointCap,
+   * 有则按点数封顶(如疾风 20000 点),无则只受灵石成本约束(如青木)。
    */
   capKey: VeinEffectKey | null
+  /**
+   * 效果无硬上限时的点数封顶(如疾风 20000 点)。效果本身不停在硬线上,
+   * 数值照实计入 —— 封的是继续投点,不是封数值。
+   * 有 capKey 的脉不读它。
+   */
+  pointCap?: number
 }
 
 export const VEINS: VeinDef[] = [
@@ -97,9 +104,12 @@ export const VEINS: VeinDef[] = [
     seal: '疾',
     desc: '风疾过野,同程妖踪更密',
     perPoint: { explorationSpeed: 0.001 },
-    // explorationSpeed 消费点(exploreBattleGapSec)不钳制,故无投资上限,只受灵石成本约束。
-    // 每点压到 0.1%:到 1.0(等于间隔减半)需 1000 点,与旧脉同量级。
-    capKey: null
+    // explorationSpeed 消费点(exploreBattleGapSec)不钳制:每点压到 0.1%,
+    // 到 1.0(等于间隔减半)需 1000 点。无硬上限,但不设点数封顶会出事 ——
+    // 3500 万点(×35050 遭遇)在重进离线结算时把主线程撑爆,故封 20000 点
+    // (速度 20.0,间隔 12/21 ≈ 0.57s;离线 8h 封顶约 100 万场,低端机可承受)。
+    capKey: null,
+    pointCap: 20000
   }
 ]
 

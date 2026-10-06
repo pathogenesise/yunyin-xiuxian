@@ -2,7 +2,8 @@
  * 灵脉投资服务的核心契约:
  *   - 四条脉平级,没有主脉/副脉之分,也没有「改立主脉」这回事
  *   - 单条可投上限由**效果本身的数值上限**折算,不是另设的灵脉规则
- *   - 没有硬上限的效果(修炼速度)视作没有投资上限
+ *   - 没有硬上限但设了点数封顶的(如疾风 20000 点)按点数封顶;
+ *     两者皆无的(如青木修炼速度)视作没有投资上限
  * 这里把服务契约锁死,杜绝 UI 与服务再分叉。
  */
 import { setActivePinia, createPinia } from 'pinia'
@@ -24,8 +25,9 @@ describe('灵脉投资', () => {
 
   it('四条脉平级:任何一条都可长期投,没有主脉/副脉之分', () => {
     const dongfu = useDongfuStore()
-    // 修炼速度无硬上限 ⇒ 无上限;其余三条按各自效果上限折算
+    // 修炼速度无硬上限 ⇒ 无上限;疾风有点数封顶;其余按各自效果上限折算
     expect(veinCap('gather')).toBeNull()
+    expect(veinCap('swift')).toBe(20000)
     expect(veinCap('craft')).toBe(Math.floor(VEIN_EFFECT_CAPS.forgeDiscount / 0.003))
     expect(veinCap('alchemy')).toBe(Math.floor(VEIN_EFFECT_CAPS.alchemyYield / 0.005))
     expect(veinCap('insight')).toBe(Math.floor(VEIN_EFFECT_CAPS.insightDiscount / INSIGHT_DISCOUNT_PER_POINT))

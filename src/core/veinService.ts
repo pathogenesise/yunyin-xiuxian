@@ -1,8 +1,8 @@
 /**
  * 灵脉服务 —— Phase 30.3
  * 投点规则:各脉平级,无主脉/副脉之分;单条可投上限由**效果本身的数值上限**折算
- * (见 data/veins 的 veinEffectCap),没有硬上限的效果(修炼速度、历练遇敌速度)
- * 则只受灵石成本约束。
+ * (见 data/veins 的 veinEffectCap),没有硬上限但设了点数封顶的(如疾风 20000 点)
+ * 按点数封顶,两者皆无的(如青木修炼速度)只受灵石成本约束。
  *
  * 连投(veinInvestPlan/investVeinBatch)沿用上游「计划纯算、执行一笔总账」:
  * 上限取「该脉效果上限余量」与「灵石可买数」较小者 —— 无主脉/总容量之说。
@@ -30,10 +30,16 @@ export function veinsUnlocked(): boolean {
 /**
  * 某条脉当前可投上限(点数);null = 没有上限。
  *
- * 上限不是另设的灵脉规则,而是「该脉每点效果 × 点数 ≤ 效果硬上限」直接折算出来的:
- * 炼器脉每点 0.3% 省耗、硬上限六成,即 200 点封顶;修炼速度无硬上限,故不封顶。
+ * 两条路,判据与数值都走同一处:
+ *   · 有 capKey 的脉:「该脉每点效果 × 点数 ≤ 效果硬上限」直接折算
+ *     (炼器脉每点 0.3% 省耗、硬上限六成,即 200 点封顶);
+ *   · 无 capKey 但有 pointCap 的脉(如疾风 20000 点):点数封顶,
+ *     数值照实计入 —— 封的是继续投点,不是封数值;
+ *   · 两者皆无(如青木):不封顶,只受灵石成本约束。
  */
 export function veinCap(id: VeinId): number | null {
+  const def = veinDef(id)
+  if (def.pointCap !== undefined && def.capKey === null) return def.pointCap
   const per = veinPerPointEffect(id)
   const cap = veinEffectCap(id)
   if (cap === null || per === null || per <= 0) return null

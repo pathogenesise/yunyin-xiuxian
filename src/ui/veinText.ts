@@ -19,7 +19,8 @@ import { modsText } from './statNames'
 
 /**
  * 某条脉在 given 点数下**真正生效**的点数:封顶在效果上限那条线上。
- * 无上限的效果原样返回。
+ * 点数封顶(pointCap,如疾风)的脉不封数值 —— 封的是继续投点,数值照实计入;
+ * 超投旧档的数值也原样保留,只挡新增。
  */
 export function effectiveVeinPoints(id: VeinDef['id'], points: number): number {
   const def = veinDef(id)

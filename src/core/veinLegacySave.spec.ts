@@ -71,7 +71,8 @@ describe('旧档兼容 · 灵脉超投点数', () => {
     expect(dongfu.insightDiscount).toBeCloseTo(VEIN_EFFECT_CAPS.insightDiscount, 10)
     // 曜金灵脉(气运)有 VEIN 专用上限:堆到 4000 点也停在硬线上,不被推过
     expect(dongfu.veinMods.luck ?? 0).toBeCloseTo(VEIN_EFFECT_CAPS.fortuneLuck, 10)
-    // 没有硬上限的青木脉(修炼速度)与疾风灵脉(历练遇敌)照实计入
+    // 没有硬上限的青木脉(修炼速度)照实计入;疾风有点数封顶但不封数值,
+    // 超投旧档的点数照实生效、只挡新增
     expect(dongfu.veinMods.cultivationSpeed ?? 0).toBeCloseTo(LEGACY_POINTS.gather * 0.004, 6)
     expect(dongfu.veinMods.explorationSpeed ?? 0).toBeCloseTo(LEGACY_POINTS.swift * 0.001, 6)
     console.log(
@@ -131,10 +132,23 @@ describe('旧档兼容 · 灵脉超投点数', () => {
     expect(dongfu.veinPoints.swift).toBe(LEGACY_POINTS.swift + 1)
   })
 
+  it('疾风超点数封顶的旧档:数值原样保留,只挡新增', () => {
+    const dongfu = useDongfuStore()
+    // 真实事故存档:swift 35049455 点。数值照实生效(35049.455 遇敌速度),
+    // 再投被挡,点数原样保留不削减
+    dongfu.veinPoints.swift = 35049455
+    expect(dongfu.veinMods.explorationSpeed ?? 0).toBeCloseTo(35049455 * 0.001, 3)
+    const stoneBefore = useResourcesStore().spiritStone
+    expect(investVein('swift'), '已超点数封顶,不该再收').toBe(false)
+    expect(dongfu.veinPoints.swift, '超封顶点数原样保留,不被削减').toBe(35049455)
+    expect(useResourcesStore().spiritStone, '被挡下的投资不该扣灵石').toEqual(stoneBefore)
+  })
+
   it('各脉上限点数 × 每点效果正好落在效果硬线上(不多不少)', () => {
     for (const def of VEINS) {
       const cap = veinCap(def.id)
-      if (cap === null) continue
+      // 点数封顶的脉(疾风)不封数值,故跳过"落在线上"断言;无上限的青木 cap 为 null 同样跳过
+      if (cap === null || def.capKey === null) continue
       const per = def.id === 'insight' ? 0.004 : (Object.values(def.perPoint)[0] as number)
       expect(cap * per, `${def.name} 到顶时应正好落在硬线上`).toBeCloseTo(VEIN_EFFECT_CAPS[def.capKey!], 10)
       expect((cap + 1) * per, `${def.name} 再投一点就该越过硬线`).toBeGreaterThan(VEIN_EFFECT_CAPS[def.capKey!])

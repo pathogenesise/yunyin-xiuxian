@@ -43,6 +43,14 @@ describe('灵脉连投 · 批量账', () => {
     expect(t.points).toBeLessThanOrEqual(afford + 1)
   })
 
+  it('点数封顶的脉(疾风 20000):计划不超过余量,到顶报 peak', () => {
+    seat({ swift: 19998 })
+    expect(veinCap('swift')).toBe(20000)
+    expect(veinInvestPlan('swift').points).toBe(2)
+    seat({ swift: 20000 })
+    expect(veinInvestPlan('swift')).toMatchObject({ points: 0, blocked: 'peak' })
+  })
+
   it('已投的点数占掉余量:上限减已投即为可注数', () => {
     seat({ craft: 5 })
     expect(veinInvestPlan('craft').points).toBe(veinCap('craft')! - 5)

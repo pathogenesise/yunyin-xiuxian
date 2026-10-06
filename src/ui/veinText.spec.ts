@@ -34,8 +34,9 @@ describe('灵脉效果行与每点加成同源', () => {
     expect(veinEffectText(alchemy, cap * 4)).toBe(veinEffectText(alchemy, cap))
     expect(effectiveVeinPoints('alchemy', cap * 4)).toBe(cap)
 
-    // 修炼速度没有硬上限 ⇒ 不封顶
+    // 修炼速度没有硬上限 ⇒ 不封顶;疾风有点数封顶但不封数值,超封顶读数照实
     expect(effectiveVeinPoints('gather', 9999)).toBe(9999)
+    expect(effectiveVeinPoints('swift', 35049455)).toBe(35049455)
   })
 })
 
