@@ -409,12 +409,12 @@ export const DECOMPOSE_REFUND_RATE = 0.8
 /** 智能收纳:词条 roll 达到此线才算「近满」(条条达标才当藏) */
 export const SMART_KEEP_PERFECT_ROLL = 0.85
 /**
- * 行囊容量 —— 12 小时历练不断档的配套。
+ * 行囊容量 —— 离线装备全额入包的配套。
  *
  * 12h 涉险基线约 1465 件(3600 遭遇 ×0.84 战斗 ×0.85 胜 ×0.3×1.9),
  * 加上遇敌/掉率/福缘/区域加丰的常规叠加约 2~3 倍,故取 3000 兜住典型 12h。
- * 极端叠加(全套掉率装 + 妖潮 + 高福缘)仍可能超 cap —— 离线批量入包允许超 cap
- * (见 core/offline.batchAcquireOffline),不化尘;行囊页分页展示,超 cap 时提示清理。
+ * 满包后新件化尘、值得留的新件可腾位挤掉旧物(见 loot.acquireEquipment);
+ * 行囊页分页展示,超 cap 时提示清理。
  * 存档体积:单件约 0.2KB,3000 件约 0.6MB(AES 后约 0.8MB),在 WebView 配额内。
  */
 export const BAG_CAPACITY = 3000
