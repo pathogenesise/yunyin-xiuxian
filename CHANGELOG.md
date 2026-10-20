@@ -15,6 +15,13 @@
 - 离线装备全额入包，归来卷轴只报总数
 - Android-only 构建；存档导出走 `@capacitor/share`；不接回上游原生系统栏占位桥
 
+### CI 稳定性
+
+上游 v1.42.0 遗留两处间歇红（本 fork 在纯上游版上同样复现，非合并引入）已修：
+
+- `offlineCap`「报数==实发」：冻住时钟（`useFakeTimers` + `setSystemTime`），消除并行下跨秒漂移
+- `trialChallenge`「顶配清 qisha」：固定战斗随机点（`rng.chance` / `rng.float`），使「顶配必清」成为确定事实
+
 ### 跨世审计
 
 上游 v1.42 的 16 分片判据表已含 `apprentice` / `market` / `bounty`，但真实转世后的实测断言未触及这三个分片（登记 ≠ 兑现）。本 fork 已补：
