@@ -10,13 +10,14 @@
  * 注意:此文件刻意**不** mock 战斗/渡劫(不像 endgameService.spec 的 tribulationDecision
  * 档)——该 mock 会把 celestialStats 压弱,顶配也不再清试炼。这里走真实 combat。
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useInventoryStore } from '@/stores/inventory'
 import { useEndgameStore } from '@/stores/endgame'
 import { TRIALS, trialDef } from '@/data/endgame'
 import { challengeTrial } from './endgameService'
+import { rng } from '@/utils/random'
 import type { EquipSlot, EquipmentInstance } from '@/types'
 
 const S_SLOTS: EquipSlot[] = ['weapon', 'head', 'body', 'wrist', 'belt', 'boots', 'necklace', 'ring', 'talisman']
@@ -45,18 +46,39 @@ describe('天道试炼 · challengeTrial 清/败原子', () => {
     e.addDaoSource(500)
   }
 
+  /**
+   * 「顶配必清」此前靠运气:challengeTrial 走真实 combat,而战斗的暴击/闪避/反击/
+   * 连击/技能都吃全局 rng(未播种的 Math.random)—— 顶配玩家偶尔会输掉最后一场,
+   * cleared 变 false,于是这条用例 CI 间歇红、单跑又绿(上游 v1.42.0 起带此病,
+   * 纯上游版同样偶发,非本 fork 引入)。
+   *
+   * 这里把战斗的两个随机点固定住,让「顶配必清」成为确定性事实:该断的断、不该断的
+   * 不断。mock 的是 rng 的方法而非 Math.random —— 全局 rng 实例在构造时已把
+   * Math.random 绑成 private readonly rand,事后 spy Math.random 对它无效
+   * (这正是先前 mock 不生效的原因)。
+   */
   it('顶配清 qisha:扣入界费、赏 rewardDaoSource、记谱(clears/best)、全捷战数=试炼场数', () => {
-    seedTrialPlayer(true)
-    const e = useEndgameStore()
-    const before = e.daoSource
-    const t = trialDef('qisha')!
-    const out = challengeTrial('qisha')!
-    expect(out.report.cleared, 'qisha cleared=false, fw='+out.report.fightsWon).toBe(true)
-    expect(out.report.fightsWon).toBe(t.fights) // 清即全捷
-    expect(out.rewardDaoSource).toBe(t.rewardDaoSource)
-    expect(before - e.daoSource).toBe(t.entryCost - t.rewardDaoSource)
-    expect(e.trialRecords['qisha']?.clears).toBe(1)
-    expect(e.trialRecords['qisha']?.bestRounds).toBe(out.report.totalRounds)
+    // 概率判定:一律不触发(不暴击/不闪避/不反击/不连击/不用技能)——
+    // 顶配的伤害本就够平推,不必靠这些加成
+    const chance = vi.spyOn(rng, 'chance').mockReturnValue(false)
+    // 伤害浮动:取 0 即「不浮动」(factor *= 1 + 0),不再随机 ±10%
+    const float = vi.spyOn(rng, 'float').mockReturnValue(0)
+    try {
+      seedTrialPlayer(true)
+      const e = useEndgameStore()
+      const before = e.daoSource
+      const t = trialDef('qisha')!
+      const out = challengeTrial('qisha')!
+      expect(out.report.cleared, 'qisha cleared=false, fw='+out.report.fightsWon).toBe(true)
+      expect(out.report.fightsWon).toBe(t.fights) // 清即全捷
+      expect(out.rewardDaoSource).toBe(t.rewardDaoSource)
+      expect(before - e.daoSource).toBe(t.entryCost - t.rewardDaoSource)
+      expect(e.trialRecords['qisha']?.clears).toBe(1)
+      expect(e.trialRecords['qisha']?.bestRounds).toBe(out.report.totalRounds)
+    } finally {
+      chance.mockRestore()
+      float.mockRestore()
+    }
   })
 
   it('裸装败 qisha:不赏、不记谱,入界费照扣', () => {
