@@ -15,17 +15,20 @@
  */
 import type { ArtifactDef, EquipmentTemplate, GongfaDef, PetDef, PillDef } from '@/types'
 import { qualityDef } from '@/data/qualities'
+import { pillQualityName } from '@/data/pills'
 import { EQUIP_SLOT_NAMES } from '@/data/equipment'
 import { artifactActiveText, artifactValue } from '@/data/artifacts'
 import { buffDef } from '@/data/buffs'
 import { GONGFA_TYPE_NAMES } from '@/data/gongfa'
 import { ELEMENTS } from '@/data/linggen'
 import { REALMS } from '@/data/realms'
+import { HERB_GRADE_SHORT, herbGradeOfMajor } from '@/data/herbGrades'
 import { equipSetDef } from '@/core/equipSet'
 import { worldNameOfTier } from '@/core/formulas'
 import { gongfaModsAt } from '@/stores/cultivation'
 import { personalityEffects } from '@/core/petPersonality'
-import { formatDuration, formatNum, formatPercent } from '@/utils/format'
+import { formatNum, formatPercent } from '@/utils/format'
+import { classicalDuration } from '@/data/timeUnits'
 import { modsText } from './statNames'
 
 // ============ 装备 ============
@@ -119,9 +122,9 @@ export function pillFuncText(def: PillDef): string {
   const i = def.instant
   if (def.kind === 'instant' && i) {
     const parts: string[] = []
-    // 修为丹按等效闭关时长计价(Phase 39):写"折合闭关 一时"而不是百分比 ——
+    // 修为丹按等效闭关时长计价(Phase 39):写"折合闭关那一段等效时长"而不是百分比 ——
     // 玩家要判断的是"这枚丹抵我多久",不是"它占这道墙的几成"
-    if (i.expSecs) parts.push(`修为 +折合闭关 ${formatDuration(i.expSecs)}(至多不满一层)`)
+    if (i.expSecs) parts.push(`修为 +折合闭关 ${classicalDuration(i.expSecs)}(至多不满一层)`)
     if (i.expFixed) parts.push(`修为 +${formatNum(i.expFixed)} 点`)
     if (i.qiPct) parts.push(`灵气 +上限的 ${Math.round(i.qiPct * 100)}%`)
     if (i.lifespanYears) parts.push(`寿元 +${formatNum(i.lifespanYears)} 载`)
@@ -137,14 +140,16 @@ export function pillFuncText(def: PillDef): string {
   return lines.join('\n')
 }
 
-/** 丹药的来路:有方子的说方子,没方子的明说「只能偶得」—— 免得玩家满世界找书 */
+/** 丹药的来路:有方子的说方子(含方子要的品阶),没方子的明说「只能偶得」 */
 export function pillSourceText(def: PillDef): string {
-  return def.recipe ? `有方:灵草×${def.recipe.herb},丹房可炼` : '无方,只在历练掉落与际遇里偶得'
+  return def.recipe
+    ? `有方:${HERB_GRADE_SHORT[herbGradeOfMajor(def.minRealm)]}灵草×${def.recipe.herb},丹房可炼`
+    : '无方,只在历练掉落与际遇里偶得'
 }
 
 /** 丹药的出处一行:品质 · 类别 · 从哪一境起现世 */
 export function pillMetaText(def: PillDef): string {
-  return `${qualityDef(def.quality).name} · ${def.recipe ? '可炼' : '偶得'} · ${REALMS[def.minRealm]?.name ?? ''}期起见`
+  return `${pillQualityName(def)} · ${def.recipe ? '可炼' : '偶得'} · ${REALMS[def.minRealm]?.name ?? ''}期起见`
 }
 
 // ============ 灵兽 ============

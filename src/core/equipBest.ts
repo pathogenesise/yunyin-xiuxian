@@ -41,7 +41,10 @@ const HP_FLAT_WEIGHT = 1 / 6
 export function equippablePower(i: EquipmentInstance): number {
   const r = resolveEquipStats(i)
   const f = r.flats
-  let value = toNum(f.attack) + toNum(f.defense) + toNum(f.maxHp) * HP_FLAT_WEIGHT
+  // toNum 在 e>308 返回 Infinity(见 utils/gnum)。坏档/异常模板把平铺写爆时,先夹回 0,
+  // 别让 Infinity 战力混进 multi 件全平手、一键换装退化成语义变味的比较。
+  const finite = (n: number): number => (Number.isFinite(n) ? n : 0)
+  let value = finite(toNum(f.attack)) + finite(toNum(f.defense)) + finite(toNum(f.maxHp)) * HP_FLAT_WEIGHT
   const critRate = r.mods.critRate ?? 0
   const critDamage = r.mods.critDamage ?? 0
   value += critRate * (1 + critDamage)
@@ -98,11 +101,24 @@ export function equipAllBest(): number {
 }
 
 /**
- * 一键穿齐某共鸣套(玩家反馈:「能不能装备按照套装排序,或者穿套装」)。
- * 每槽换上该套**已持有里最强**的一件(真实战力,同分回退到粗排,同 stronger);
- * 已穿的那件更强就不动 —— 穿套装绝不降级。返回换上几件。
+ * 空一身:卸下全部已佩戴的装备(回到行囊,不分解不炼化)。
+ * 清理破烂得先「脱身」—— 已佩戴的件不参加分解/收纳,逐格手动卸太苦;
+ * 一键换装只进不退,这枚是它成对的反向出口。返回卸了几件。
  */
-export function equipSetCombo(setId: string): number {
+export function unequipAllEquipped(): number {
+  const inventory = useInventoryStore()
+  let removed = 0
+  for (const slot of EQUIP_SLOTS) {
+    if (inventory.equipped[slot]) {
+      inventory.unequip(slot)
+      removed += 1
+    }
+  }
+  return removed
+}
+
+/** 该套每槽「已持有里最强」的一件 —— 穿齐与预览共用,不各算一遍 */
+function bestSetPieces(setId: string): Map<EquipSlot, EquipmentInstance> {
   const inventory = useInventoryStore()
   const bestPerSlot = new Map<EquipSlot, EquipmentInstance>()
   for (const it of inventory.items) {
@@ -111,12 +127,35 @@ export function equipSetCombo(setId: string): number {
     const cur = bestPerSlot.get(tpl.slot)
     if (!cur || stronger(it, cur)) bestPerSlot.set(tpl.slot, it)
   }
+  return bestPerSlot
+}
+
+/**
+ * 一键穿齐某共鸣套(玩家反馈:「能不能装备按照套装排序,或者穿套装」)。
+ * 每槽换上该套**已持有里最强**的一件(真实战力,同分回退到粗排,同 stronger);
+ * 已穿的那件更强就不动 —— 穿套装绝不降级。返回换上几件。
+ */
+export function equipSetCombo(setId: string): number {
+  const inventory = useInventoryStore()
   let changed = 0
-  for (const [slot, piece] of bestPerSlot) {
+  for (const [slot, piece] of bestSetPieces(setId)) {
     if (inventory.equipped[slot] === piece.uid) continue
     const occupant = inventory.equipped[slot] ? inventory.findItem(inventory.equipped[slot]!) : undefined
     if (occupant && stronger(occupant, piece)) continue
     inventory.equip(piece.uid, slot)
+    changed += 1
+  }
+  return changed
+}
+
+/** 干跑:这套现在会换上几件 —— 与 equipSetCombo 同一份取舍,只数不动,按钮「穿齐 →(换 N)」用 */
+export function equipSetPreview(setId: string): number {
+  const inventory = useInventoryStore()
+  let changed = 0
+  for (const [slot, piece] of bestSetPieces(setId)) {
+    if (inventory.equipped[slot] === piece.uid) continue
+    const occupant = inventory.equipped[slot] ? inventory.findItem(inventory.equipped[slot]!) : undefined
+    if (occupant && stronger(occupant, piece)) continue
     changed += 1
   }
   return changed

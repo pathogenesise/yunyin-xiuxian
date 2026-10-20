@@ -114,6 +114,10 @@ describe('智能收纳 · 自动裁决的边界', () => {
   it('阶级自留线未设(0)时,行为与从前一致 —— 阶数不掺和裁决', () => {
     // beforeEach 里 keepMinTier 已是 0,凡品(tier 3)不进品质线、也不进阶级线 → 无缘
     expect(keepVerdict(mk('t3', 'mortal')).keep).toBe(false)
+    // 阶线虽未设,品质达标者照旧当藏 —— 不误伤单线使用
+    const v = keepVerdict(mk('hq', 'spirit', { tier: 3 }))
+    expect(v.keep).toBe(true)
+    expect(v.reason).toBe('灵品当藏')
   })
 
   it('两线是「或」:未达阶级线的珍品仍由品质线兜住,未达任何线的才化尘', () => {
@@ -189,10 +193,10 @@ describe('智能收纳 · 自动裁决的边界', () => {
       const invested = mk('lv', 'mortal', { level: 5 })
       const setPiece = mk('set1', 'mortal', { templateId: 'w_xuantie' }) // 铁壁共鸣套件
       const perfect = mk('pf', 'excellent', { affixes: [{ id: 'atk1', roll: 0.95 }, { id: 'def1', roll: 0.88 }] })
-      const qualityKept = mk('hq', 'spirit')
+      const qualityKept = mk('hq', 'spirit', { tier: 8 }) // 品质线侧:灵品·8 阶(双线皆满)
       const settings = useSettingsStore()
       settings.smartKeep.keepMinTier = 8
-      const tierKept = mk('t8', 'mortal', { tier: 8 })
+      const tierKept = mk('t8', 'spirit', { tier: 9 }) // 阶级线侧:灵品·9 阶(双线皆满)
       expect(sweepTargets([invested, setPiece, perfect, qualityKept, tierKept])).toEqual([])
     })
 

@@ -10,11 +10,9 @@ import { mutatorDef } from '@/data/mutators'
 import { gateDef } from '@/data/qimen'
 import { RULESET_VERSION, isStaleRuleset } from '@/data/ruleset'
 import {
-  CELESTIAL_WORLDS,
   celestialWorldDef,
   DAO_SOURCE_PER_FRUIT,
   daoPathDef,
-  FURNACE_RATES,
   FURNACE_STONE_DAO_SOURCE,
   FURNACE_STONE_TIER_AMOUNT,
   TRIAL_FOES,
@@ -73,15 +71,20 @@ export function furnaceConvert(rate: FurnaceRate): number {
   const resources = useResourcesStore()
   const endgame = useEndgameStore()
   const ui = useUiStore()
-  const have = resources[rate.resource]
+  // 灵草按「仙品+(≥3)」计(道源是仙才有的货币,凡/灵品只走坊市);
+  // 其余材料是单标量,直接读。从前 herb 读 resources.herb(五品总和)却只扣当前品,
+  // 当前品为 0、总和很大时会白拿道源不扣料(over-credit)。
+  const have = rate.resource === 'herb' ? resources.herbMeltable : resources[rate.resource]
   const daoSource = Math.floor(have / rate.per)
   if (daoSource <= 0) {
     ui.toast(`${rate.name}不足 ${rate.per},不够熔铸一缕道源`, 'warn')
     return 0
   }
-  resources.spendSmall(rate.resource, daoSource * rate.per)
+  const spent = daoSource * rate.per
+  const ok = rate.resource === 'herb' ? resources.spendHerbMeltable(spent) : resources.spendSmall(rate.resource, spent)
+  if (!ok) return 0
   endgame.addDaoSource(daoSource)
-  ui.toast(`${rate.name}×${daoSource * rate.per} 熔作道源 +${daoSource}`, 'success')
+  ui.toast(`${rate.name}×${spent} 熔作道源 +${daoSource}`, 'success')
   return daoSource
 }
 
@@ -392,4 +395,3 @@ export function challengeTrial(trialId: string): ExpeditionResult | null {
   }
 }
 
-export { CELESTIAL_WORLDS, FURNACE_RATES, DAO_SOURCE_PER_FRUIT }

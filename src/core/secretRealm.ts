@@ -12,7 +12,9 @@ import type { WorldFoeShape } from '@/types'
 import { formatGN } from '@/utils/format'
 import { rng } from '@/utils/random'
 import { ENEMIES, enemyDef } from '@/data/enemies'
+import { beastIcon } from '@/data/beastFamilies'
 import { maxTierForMajor } from '@/data/regions'
+import { HERB_GRADE_SHORT, herbGradeOfMajor } from '@/data/herbGrades'
 import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES, secretRealmDef, type SecretRealmDef } from '@/data/secretRealms'
 import { resolveCombat } from './combat'
 import { mergeRules, worldFoeSnap } from './gauntlet'
@@ -174,7 +176,7 @@ export function secretLayerFoe(state: SecretRealmState, rand: typeof rng = rng):
   const ref = { attack: stats.attack, defense: stats.defense, maxHp: stats.maxHp }
   const shape: WorldFoeShape = {
     name: foeDef.name,
-    icon: foeDef.icon,
+    icon: beastIcon(foeDef.family),
     atkR: foeDef.atkMult,
     defR: foeDef.defMult,
     hpR: foeDef.hpMult,
@@ -218,7 +220,7 @@ export function fightSecretLayer(): SecretLayerResult | null {
     const { stone, material: mat } = secretLayerReward(tier, state.layer, def.rewardMult)
     resources.addStone(stone)
     resources.addSmall('herb', mat)
-    lines.push(`胜 ${snap.name} · 灵石 +${formatGN(stone)} · 灵草 +${mat}`)
+    lines.push(`胜 ${snap.name} · 灵石 +${formatGN(stone)} · ${HERB_GRADE_SHORT[herbGradeOfMajor(player.major)]}灵草 +${mat}`)
     const nextLayer = state.layer + 1
     if (nextLayer > SECRET_LAYERS) {
       // 通关:最终宝藏

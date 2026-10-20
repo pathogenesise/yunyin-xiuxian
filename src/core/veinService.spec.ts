@@ -8,9 +8,9 @@
  */
 import { setActivePinia, createPinia } from 'pinia'
 import { describe, expect, it, beforeEach } from 'vitest'
-import { gn } from '@/utils/gnum'
+import { gn, toNum } from '@/utils/gnum'
 import { INSIGHT_DISCOUNT_PER_POINT, VEIN_EFFECT_CAPS } from '@/data/veins'
-import { investVein, veinCap } from './veinService'
+import { investVein, veinCap, veinInvestPlan, investVeinBatch, veinPointCost } from './veinService'
 import { usePlayerStore } from '@/stores/player'
 import { useDongfuStore } from '@/stores/dongfu'
 import { useResourcesStore } from '@/stores/resources'
@@ -68,5 +68,24 @@ describe('灵脉投资', () => {
     useResourcesStore().spiritStone = gn(0)
     expect(investVein('gather')).toBe(false)
     expect(dongfu.veinPoints.gather).toBe(0)
+  })
+
+  it('计划按灵石取 floor(灵石/单价),不四舍五入', () => {
+    const cost = toNum(veinPointCost())
+    useResourcesStore().spiritStone = gn(2.5 * cost) // 2.5 倍单价:floor 2 / round 3
+    const plan = veinInvestPlan('gather') // 无总容量之说,只受灵石与该脉上限约束
+    expect(plan.blocked).toBeNull()
+    expect(plan.points).toBe(2) // floor,不是 round
+  })
+
+  it('批量按总账一笔扣一笔加:预览==实账(stone=plan.stone,points=plan.points,return=plan.points)', () => {
+    const d = useDongfuStore()
+    useResourcesStore().spiritStone = gn(5000)
+    const plan = veinInvestPlan('gather')
+    const stoneBefore = toNum(useResourcesStore().spiritStone)
+    const p = investVeinBatch('gather')
+    expect(p).toBe(plan.points)
+    expect(d.veinPoints.gather).toBe(plan.points)
+    expect(stoneBefore - toNum(useResourcesStore().spiritStone)).toBe(toNum(plan.stone))
   })
 })

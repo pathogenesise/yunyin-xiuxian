@@ -16,9 +16,18 @@
  * 见文末「未处置的账」。
  */
 import { describe, it, expect } from 'vitest'
-import { PILLS, pillDef } from '@/data/pills'
-import { buffDef } from '@/data/buffs'
+import {
+  PILLS,
+  pillDef,
+  pillQualityColor,
+  pillQualityName,
+  pillRank,
+  DAO_QUALITY_COLOR,
+  DAO_QUALITY_NAME,
+  DAO_QUALITY_RANK
+} from '@/data/pills'
 import { qualityDef } from '@/data/qualities'
+import { buffDef } from '@/data/buffs'
 import { MAX_MAJOR, WORLD_BREAK_MAJOR } from '@/data/realms'
 import { BATTLE_EXP_SECS, INSTANT_EXP_LAYER_CAP } from '@/data/constants'
 import {
@@ -196,11 +205,11 @@ describe('定价法则', () => {
         const at = unifiedRealm(group)
         for (const a of group) {
           for (const b of group) {
-            if (qualityDef(a.quality).rank >= qualityDef(b.quality).rank) continue
+            if (pillRank(a) >= pillRank(b)) continue
             expect(
               pillGainSecAt(a, at),
-              `${FAMILY_NAME[fam]}族${line === 'craft' ? '可炼' : '掉落'}线:${a.name}(${qualityDef(a.quality).name})` +
-                ` 品质低于 ${b.name}(${qualityDef(b.quality).name}) 却更管用`
+              `${FAMILY_NAME[fam]}族${line === 'craft' ? '可炼' : '掉落'}线:${a.name}(${pillQualityName(a)})` +
+                ` 品质低于 ${b.name}(${pillQualityName(b)}) 却更管用`
             ).toBeLessThanOrEqual(pillGainSecAt(b, at) + 1e-9)
           }
         }
@@ -410,10 +419,10 @@ describe('本次校准的落点', () => {
 
   it('掉落修为线自成一条干净的递进', () => {
     const line = PILLS.filter(p => pillFamily(p) === 'exp' && pillLine(p) === 'drop').sort(
-      (a, b) => qualityDef(a.quality).rank - qualityDef(b.quality).rank
+      (a, b) => pillRank(a) - pillRank(b)
     )
     const at = unifiedRealm(line)
-    const names = line.map(p => `${p.name}(${qualityDef(p.quality).name} ${dur(pillGainSecAt(p, at))})`)
+    const names = line.map(p => `${p.name}(${pillQualityName(p)} ${dur(pillGainSecAt(p, at))})`)
     console.log(`\n  掉落修为线 @境界${at}:${names.join(' < ')}`)
     expect(line.length).toBeGreaterThanOrEqual(4)
   })
@@ -457,6 +466,99 @@ describe('本次校准的落点', () => {
       const dropPeak = drops.length > 0 ? familyPeakGain(fam, 'drop', at) : 0
       expect(craftPeak, `${FAMILY_NAME[fam]}族没有可炼品`).toBeGreaterThan(0)
       if (dropPeak > 0) expect(craftPeak, `${FAMILY_NAME[fam]}族顶端仍被掉落品压过`).toBeGreaterThanOrEqual(dropPeak)
+    }
+  })
+})
+
+/**
+ * 道品顶档的解析守卫(Phase 33.6 补)。
+ *
+ * 共享品质表 QUALITIES 只到神品(rank 8);「道品」是丹药专属顶档,只存在于
+ * data/pills.ts。凡要读丹药品阶的 rank/名/色,一律走 pillRank / pillQualityName /
+ * pillQualityColor —— 绝不直接 qualityDef(pill.quality):共享表查无 'dao',
+ * qualityDef 会回落 QUALITIES[0] 凡品,登峰一品在图上静默降格成凡品,CI 还不报警。
+ *
+ * 本组测试替这条「口头禁令」兜底:道品丹的解析必须走对,且与 qualityDef 的凡品
+ * 回落在口径上分道扬镳。
+ */
+describe('道品顶档的解析守卫', () => {
+  const daoPills = PILLS.filter(p => p.quality === 'dao')
+
+  it('确有道品位阶的丹药 —— 空断言防顶档被整档误删', () => {
+    expect(daoPills.length, '没有一味道品丹?道品顶档被删空了').toBeGreaterThan(0)
+  })
+
+  it('每一味道品丹的 rank/名/色 都解析到道品档,而不是回落成凡品', () => {
+    for (const p of daoPills) {
+      expect(pillRank(p), `${p.name} 的 rank 没落到道品档`).toBe(DAO_QUALITY_RANK)
+      expect(pillQualityName(p), `${p.name} 的名字应记「道品」`).toBe(DAO_QUALITY_NAME)
+      expect(pillQualityColor(p), `${p.name} 的配色应记登峰金芒`).toBe(DAO_QUALITY_COLOR)
+      // 反向坐实:直接 qualityDef 会把道品箍回凡品,两个口径必须分叉,否则就是没走对
+      expect(qualityDef(p.quality as never).name, `${p.name} 竟以凡品口径解析`).not.toBe(DAO_QUALITY_NAME)
+      expect(pillRank(p)).not.toBe(qualityDef(p.quality as never).rank)
+    }
+  })
+
+  it('道品是丹药专属顶档,不入共享品质表(qualityDef 查无此档会回落凡品)', () => {
+    expect(DAO_QUALITY_RANK).toBe(9)
+    expect(DAO_QUALITY_NAME).toBe('道品')
+    expect(DAO_QUALITY_COLOR).toBe('#E9B949')
+    // 'dao' 不在 QUALITIES —— 这正是文件尾注释警告的坑:命中了就不该当 道品 用
+    expect(qualityDef('dao' as never).name).toBe('凡品')
+    expect(qualityDef('dao' as never).rank).toBe(0)
+  })
+})
+
+/**
+ * 道品顶档的**成员不变式**(Phase 33.6 补二)。
+ *
+ * 「道品」不是随便哪一味混沌海丹都能叫的量产物 —— 它是**各族各线可炼顶阶**的
+ * 专属名号:一族一炉的巅峰才配登道品,次席(如悟道线的道祖丹 150,逊于天道金丹 200)
+ * 只给神品。守卫共三条:
+ *  1. 道品只在混沌海(准入境界 ≥18)出现,不入前中后期 —— 一张低境方子叫「道品」即失真;
+ *  2. 没有任何一味道品可炼丹,在自家族内被「更晚、更强」的后辈压过(否则名号空心化);
+ *  3. 每族的混沌海可炼顶阶(境界最高、药力最足的那一味)必须是道品;
+ *     而顶阶落在混沌海之外的族,其顶阶不得叫道品(道品是混沌海专属)。
+ */
+describe('道品顶档的成员不变式', () => {
+  const daoPills = PILLS.filter(p => p.quality === 'dao')
+
+  it('道品只在混沌海(准入境界 ≥18)出现 —— 不入前中后期', () => {
+    expect(daoPills.length).toBeGreaterThan(0)
+    for (const p of daoPills) {
+      expect(p.minRealm, `${p.name} 名登道品却不在混沌海(准入境界 ≥18)`).toBeGreaterThanOrEqual(18)
+    }
+  })
+
+  it('任何一味道品可炼丹,都不被自家族内更晚更强的后辈压过', () => {
+    // 比较口径与 contentDensity「丹方越晚越强」一致:以较高门槛处统一取值
+    for (const d of daoPills) {
+      if (!d.recipe) continue
+      for (const c of PILLS) {
+        if (!c.recipe || pillFamily(c) !== pillFamily(d)) continue
+        if (c.minRealm <= d.minRealm) continue
+        const at = c.minRealm
+        expect(
+          pillGainSecAt(c, at),
+          `${d.name}(道品)之上竟有同族更晚且更强的 ${c.name}?道品名号空心化了`
+        ).toBeLessThanOrEqual(pillGainSecAt(d, at) + 1e-9)
+      }
+    }
+  })
+
+  it('每族混沌海可炼顶阶(境界最高、药力最足)必须是道品;混沌海外的族不得叫道品', () => {
+    const families: PillFamily[] = ['exp', 'qi', 'lifespan', 'wudao', 'tempo', 'state']
+    for (const fam of families) {
+      // 顶阶 = 界最高(降序)同界再比药力(降序)的那一味
+      const apex = PILLS.filter(p => pillFamily(p) === fam && p.recipe).sort((a, b) => {
+        const byRealm = b.minRealm - a.minRealm
+        return byRealm !== 0 ? byRealm : pillGainSecAt(b, b.minRealm) - pillGainSecAt(a, a.minRealm)
+      })[0]!
+      if (apex.minRealm >= 18) {
+        expect(apex.quality, `${FAMILY_NAME[fam]}族的混沌海可炼顶阶「${apex.name}」该登道品`).toBe('dao')
+      } else {
+        expect(apex.quality, `${FAMILY_NAME[fam]}族的顶阶不在混沌海,不该叫「道品」`).not.toBe('dao')
+      }
     }
   })
 })

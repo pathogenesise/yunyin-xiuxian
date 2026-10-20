@@ -1,5 +1,5 @@
 /**
- * 丹药库 —— 50 味。
+ * 丹药库 —— 71 味(含 14 味神/道品丹方补全与 7 味高界掉落)。
  *
  * ## 定价法则(Phase 32.6 丹药价值审计)
  *
@@ -28,12 +28,13 @@
  * 五条计价轴随境界的走势各不相同(百分比恒定 / 固定点数指数贬值 / 寿元绝对值不变),
  * 所以跨丹比较必须统一到同一境界折算。折算口径见 core/pillValue.ts。
  */
-import type { PillDef, QualityId } from '@/types'
+import type { PillDef, PillQuality } from '@/types'
+import { qualityDef } from './qualities'
 
 function p(
   id: string,
   name: string,
-  quality: QualityId,
+  quality: PillQuality,
   minRealm: number,
   desc: string,
   body: Partial<Pick<PillDef, 'kind' | 'instant' | 'buffId' | 'recipe' | 'alchemyLevel'>>,
@@ -82,7 +83,7 @@ export const PILLS: PillDef[] = [
     recipe: { herb: 10, stoneBase: 18 },
     alchemyLevel: 2
   }),
-  p('p_juling', '聚灵丹', 'excellent', 0, '半个时辰内修炼倍增', {
+  p('p_juling', '聚灵丹', 'excellent', 0, '一炷香内修炼倍增(30 分钟)', {
     kind: 'buff',
     buffId: 'buff_juling',
     recipe: { herb: 14, stoneBase: 25 },
@@ -115,16 +116,17 @@ export const PILLS: PillDef[] = [
   /**
    * 修为线的计价单位是「等效闭关时长」(Phase 39,见文件头法则 G)。
    *
-   * 每一味写成"服之如闭关 X":X 随品质阶梯抬(一刻 → 半时 → 一时 → 二时 →
-   * 三时 → 四时 → 五时 → 六时),而不是写成"当前需求的百分之几"。
+   * 每一味写成"服之如闭关 X":X 随品质阶梯抬(一刻 → 一炷香 → 半个时辰 →
+   * 六刻 → 一个时辰 → 一个半时辰 → 两个时辰 → 两个半时辰 → 三个时辰;
+   * 括号内是等价现代时长),而不是写成"当前需求的百分之几"。
    * 于是丹的价值在任何境界都是这一段时长,囤到高境界只会显得它更弱。
    *
    * 这段阶梯与**历练**的基准对齐:一场遭遇 = 12 秒等效(BATTLE_EXP_SECS)。
    * 一枚丹的时长 ≈ 其灵草成本折算的场次 × 3(技艺与灵石的溢价)——
-   * 例:玄元丹 24 味灵草 ≈ 24 场遭遇 ≈ 五分钟,定 15 分;混元丹 490 味 ≈ 98 分,定 6 时。
+   * 例:玄元丹 24 味灵草 ≈ 24 场遭遇 ≈ 五分钟,定 15 分;混元丹 490 味 ≈ 98 分,定 6 小时(三个时辰)。
    * 不这么对,丹会变成远胜历练的通路(重定价前:顶级丹抵 71 小时历练,而它的灵草只值 1.6 小时)。
    */
-  p('p_xuanyuan', '玄元丹', 'spirit', 2, '玄元之气化入丹中,服之如闭关一刻', {
+  p('p_xuanyuan', '玄元丹', 'spirit', 2, '玄元之气化入丹中,服之如闭关一刻(15 分钟)', {
     instant: { expSecs: 900 },
     recipe: { herb: 24, stoneBase: 45 },
     alchemyLevel: 4
@@ -175,7 +177,7 @@ export const PILLS: PillDef[] = [
     { instant: { qiPct: 1 }, recipe: { herb: 16, stoneBase: 32 }, alchemyLevel: 4 },
     'droplets'
   ),
-  p('p_dahuan', '大还丹', 'profound', 4, '起死人肉白骨,服之如闭关半时', {
+  p('p_dahuan', '大还丹', 'profound', 4, '起死人肉白骨,服之如闭关一炷香(30 分钟)', {
     instant: { expSecs: 1800 },
     recipe: { herb: 50, stoneBase: 100 },
     alchemyLevel: 6
@@ -190,9 +192,9 @@ export const PILLS: PillDef[] = [
     recipe: { herb: 80, stoneBase: 160 },
     alchemyLevel: 7
   }),
-  p('p_taixu', '太虚丹', 'earth', 5, '丹成有太虚幻境相随,服之如闭关一时', {
+  p('p_taixu', '太虚丹', 'earth', 5, '丹成有太虚幻境相随,服之如闭关半个时辰(1 小时)', {
     instant: { expSecs: 3600 },
-    recipe: { herb: 90, stoneBase: 200 },
+    recipe: { herb: 70, stoneBase: 130 },
     alchemyLevel: 8
   }),
   p('p_wanshou', '万寿金丹', 'earth', 6, '延寿千载,金丹光华内蕴', {
@@ -200,7 +202,7 @@ export const PILLS: PillDef[] = [
     recipe: { herb: 150, stoneBase: 350 },
     alchemyLevel: 9
   }),
-  p('p_jiuzhuan', '九转还魂丹', 'heaven', 7, '九转丹成,天地同贺,服之如闭关二时', {
+  p('p_jiuzhuan', '九转还魂丹', 'heaven', 7, '九转丹成,天地同贺,服之如闭关一个时辰(2 小时)', {
     instant: { expSecs: 7200 },
     recipe: { herb: 200, stoneBase: 500 },
     alchemyLevel: 10
@@ -234,10 +236,10 @@ export const PILLS: PillDef[] = [
    * 灵品丹方的全部产出,违反法则 C。现改走修为线,定在玄元丹的六成上(法则 A),
    * 战意重归战灵丹独有。
    */
-  p('p_leiling', '雷灵丹', 'spirit', 3, '雷灵之力灌顶淬体,痛楚过后如闭关九分', { instant: { expSecs: 540 } }, 'zap'),
+  p('p_leiling', '雷灵丹', 'spirit', 3, '雷灵之力灌顶淬体,痛楚过后如闭关将近一刻(9 分钟)', { instant: { expSecs: 540 } }, 'zap'),
   p('p_fengsui', '凤髓膏', 'profound', 4, '凤髓所炼,延寿百载', { instant: { lifespanYears: 100 } }, 'flame'),
   /** 龙气丹:照法则 A 定在同为玄品的大还丹的五成(0.2 → 0.1) */
-  p('p_longqi', '龙气丹', 'profound', 4, '一缕真龙之气,服之如闭关一刻半', { instant: { expSecs: 1080 } }),
+  p('p_longqi', '龙气丹', 'profound', 4, '一缕真龙之气,服之如闭关一刻有余(18 分钟)', { instant: { expSecs: 1080 } }),
   /**
    * 仙尘散(Phase 32.6 悟道点 50 → 18)。
    *
@@ -247,24 +249,24 @@ export const PILLS: PillDef[] = [
   p('p_pantao', '蟠桃', 'earth', 5, '瑶池灵桃,延寿五百载', { instant: { lifespanYears: 500 } }, 'leaf'),
   p('p_zaohua', '造化丹', 'heaven', 5, '服之道韵加身', { kind: 'buff', buffId: 'bless_daoyun' }, 'star'),
   /** 混沌丹:照法则 H 退到九转还魂丹之下(0.35 → 0.15)—— 全表最强的修为丹不该是白捡的 */
-  p('p_hundun', '混沌丹', 'immortal', 8, '混沌初分时的一缕本源,服之如闭关一时半', { instant: { expSecs: 5400 } }),
+  p('p_hundun', '混沌丹', 'immortal', 8, '混沌初分时的一缕本源,服之如闭关六刻(90 分钟)', { instant: { expSecs: 5400 } }),
 
   // ============ 仙界及以上(准入境界 9-20)============
   /**
-   * 修为线自九转还魂丹(天品二时)向上延伸。
+   * 修为线自九转还魂丹(天品一个时辰·2 小时)向上延伸。
    * 照法则 B:同族可炼线内,地品/仙品/神品的药力序与品质序一致。
    */
-  p('p_taichu', '太初丹', 'immortal', 10, '太初之气凝丹,服之如闭关三时', {
+  p('p_taichu', '太初丹', 'immortal', 10, '太初之气凝丹,服之如闭关一个半时辰(3 小时)', {
     instant: { expSecs: 10800 },
     recipe: { herb: 260, stoneBase: 640 },
     alchemyLevel: 10
   }),
-  p('p_xiancheng', '仙成丹', 'divine', 14, '仙道既成,一枚抵四时苦修', {
+  p('p_xiancheng', '仙成丹', 'divine', 14, '仙道既成,一枚抵两个时辰苦修(4 小时)', {
     instant: { expSecs: 14400 },
     recipe: { herb: 340, stoneBase: 900 },
     alchemyLevel: 10
   }),
-  p('p_daoyuan', '道源丹', 'divine', 18, '一炉道源,吞服者如闭关五时', {
+  p('p_daoyuan', '道源丹', 'divine', 18, '一炉道源,吞服者如闭关两个半时辰(5 小时)', {
     instant: { expSecs: 18000 },
     recipe: { herb: 460, stoneBase: 1400 },
     alchemyLevel: 10
@@ -275,12 +277,12 @@ export const PILLS: PillDef[] = [
     recipe: { herb: 420, stoneBase: 1200 },
     alchemyLevel: 10
   }),
-  p('p_hunyuan', '混元丹', 'divine', 19, '混元一炉,吞之如再开一次天地,抵六时闭关', {
+  p('p_hunyuan', '混元丹', 'divine', 19, '混元一炉,吞之如再开一次天地,抵三个时辰闭关(6 小时)', {
     instant: { expSecs: 21600 },
     recipe: { herb: 490, stoneBase: 1550 },
     alchemyLevel: 10
   }),
-  p('p_daozu', '道祖丹', 'divine', 20, '万道之祖留下的方子,一炉只出三枚', {
+  p('p_daozu', '道祖丹', 'divine', 20, '万道之祖留下的方子,一炉殊难成一枚,丹成则道贯古今', {
     instant: { wudao: 150 },
     recipe: { herb: 520, stoneBase: 1700 },
     alchemyLevel: 10
@@ -328,8 +330,97 @@ export const PILLS: PillDef[] = [
   p('p_benyuandan', '本源丹', 'divine', 18, '混沌本源入体,一日修行抵百日', {
     kind: 'buff',
     buffId: 'buff_hundun',
-    recipe: { herb: 480, stoneBase: 1500 },
+    recipe: { herb: 150, stoneBase: 560 },
     alchemyLevel: 10
+  }),
+
+  // ============ 深邃设计:神/道品丹方补全(Phase 33.6)============
+  // 此前神品之上再无顶档,混沌海三境(18-20) 一味修为一线的丹都没有;
+  // 修速线只有聚灵丹与本源丹两极。这一批把各族顶阶拉满到「道品」,
+  // 并补上神界/混沌海各境的空位。道品是丹药专属顶档(不入共享品质表),
+  // 见文件尾部 pillRank/pillQualityName/pillQualityColor 与 src/types 的 PillQuality。
+  //
+  // 修为一线的阶梯(玄元 900 → … → 混元 21600 → 一元始 25200),道品登顶;
+  // 悟道线(悟道丹 20 → … → 道祖丹 150 → 天道金丹 200)。
+  p('p_taiyi', '太乙丹', 'immortal', 12, '太乙近道,服之如闭关十三刻有余(200 分钟)', {
+    instant: { expSecs: 12000 },
+    recipe: { herb: 300, stoneBase: 850 },
+    alchemyLevel: 8
+  }),
+  p('p_shenlian', '神炼金丹', 'divine', 16, '神火炼就的金丹,服之如闭关十八刻(270 分钟)', {
+    instant: { expSecs: 16200 },
+    recipe: { herb: 400, stoneBase: 1160 },
+    alchemyLevel: 9
+  }),
+  p('p_yiyuan', '一元始丹', 'dao', 20, '一元复始,万象其中,服之如闭关三个半时辰(7 小时)', {
+    instant: { expSecs: 25200 },
+    recipe: { herb: 760, stoneBase: 2600 },
+    alchemyLevel: 9
+  }),
+  p('p_shenshi', '神识丹', 'divine', 14, '神识洞明,悟道点 +85', {
+    instant: { wudao: 85 },
+    recipe: { herb: 350, stoneBase: 980 },
+    alchemyLevel: 8
+  }),
+  p('p_tiandao', '天道金丹', 'dao', 20, '万法归于一道,拈之如亲聆天道,悟道点 +200', {
+    instant: { wudao: 200 },
+    recipe: { herb: 520, stoneBase: 1800 },
+    alchemyLevel: 9
+  }),
+  p('p_shoulu', '寿禄丹', 'immortal', 10, '福寿绵长,增寿一千五百载', {
+    instant: { lifespanYears: 1500 },
+    recipe: { herb: 300, stoneBase: 780 },
+    alchemyLevel: 8
+  }),
+  p('p_shenshou', '神寿金丹', 'divine', 15, '神寿不凋,增寿四千载', {
+    instant: { lifespanYears: 4000 },
+    recipe: { herb: 420, stoneBase: 1200 },
+    alchemyLevel: 9
+  }),
+  p('p_wuliang', '无量寿丹', 'dao', 19, '寿与道同,增寿三万载', {
+    instant: { lifespanYears: 30000 },
+    recipe: { herb: 460, stoneBase: 1500 },
+    alchemyLevel: 9
+  }),
+  /** 灵气线的道品封顶:一口涤尽,照法则 F 仍是可炼品 */
+  p(
+    'p_daoye',
+    '道液',
+    'dao',
+    18,
+    '大道至简,一滴道液涤尽浩气 —— 混沌海深处方凝得成',
+    { instant: { qiPct: 1 }, recipe: { herb: 120, stoneBase: 420 }, alchemyLevel: 9 },
+    'droplets'
+  ),
+  p('p_shenyuan', '神元丹', 'divine', 16, '神元入体,修炼如虎添翼', {
+    kind: 'buff',
+    buffId: 'buff_shenyuan',
+    recipe: { herb: 300, stoneBase: 900 },
+    alchemyLevel: 9
+  }),
+  p('p_huntian', '混天丹', 'dao', 20, '一气混元,吐纳之间日月无光', {
+    kind: 'buff',
+    buffId: 'buff_huntian',
+    recipe: { herb: 400, stoneBase: 1500 },
+    alchemyLevel: 9
+  }),
+  p('p_daluo', '大罗金丹', 'immortal', 13, '大罗金身不坏,仙力贯体', {
+    kind: 'buff',
+    buffId: 'buff_daluo',
+    recipe: { herb: 260, stoneBase: 820 },
+    alchemyLevel: 8
+  }),
+  p('p_zhenshan', '镇神丹', 'divine', 17, '神威镇世,诸天辟易', {
+    kind: 'buff',
+    buffId: 'buff_zhenshan',
+    recipe: { herb: 360, stoneBase: 1100 },
+    alchemyLevel: 9
+  }),
+  p('p_daotai', '道胎丹', 'dao', 19, '道胎不灭,万劫不改', {
+    kind: 'buff',
+    buffId: 'buff_daotai',
+    recipe: { herb: 420, stoneBase: 1350 },
+    alchemyLevel: 9
   }),
 
   // ============ 高界掉落(仅掉落,无方;照法则 A 压在可炼同规格的六成之下)============
@@ -337,15 +428,52 @@ export const PILLS: PillDef[] = [
    * 扩界前高境界只能捡到入门丹(妖血丹之类),那是「每个境界掉得出东西」的字面满足,
    * 不是真内容。补上高界的掉落线后,仙界以上的战斗才有值得捡的丹药。
    */
-  p('p_xianyao', '仙药丹', 'immortal', 9, '仙山深处的野药结丹,服之如闭关一时半', { instant: { expSecs: 5400 } }),
+  p('p_xianyao', '仙药丹', 'immortal', 9, '仙山深处的野药结丹,服之如闭关六刻(90 分钟)', { instant: { expSecs: 5400 } }),
   p('p_quanlu', '泉露', 'spirit', 6, '灵泉石壁凝出的露水,饮之灵气回涌', { instant: { qiPct: 0.3 } }, 'droplets'),
   p('p_xianquanlu', '仙泉露', 'immortal', 10, '仙泉一滴,涤尽枯竭', { instant: { qiPct: 0.5 } }, 'droplets'),
   p('p_yudao', '玉道丹', 'immortal', 11, '玉质道纹凝成的丹,拈之如聆道音', { instant: { wudao: 32 } }),
-  p('p_xianshou', '仙寿丹', 'heaven', 12, '仙家野生的延寿灵果炼成,增寿八百载', { instant: { lifespanYears: 800 } }, 'leaf')
+  p('p_xianshou', '仙寿丹', 'heaven', 12, '仙家野生的延寿灵果炼成,增寿八百载', { instant: { lifespanYears: 800 } }, 'leaf'),
+  // ---- 深邃设计:神界 / 混沌海的掉落线(此前这六个高境一味本境掉落都没有)----
+  // 神界(14-17)与混沌海(18-20)过去只能捡仙界留下的旧货。补上本界掉落,
+  // 且照法则 A 压在可炼同规格的六成之下 —— 炼出来的仍是决定性的一条线。
+  p('p_shenyin', '神引丹', 'divine', 14, '神域游离的仙气凝丹,服之如闭关九刻(135 分钟)', { instant: { expSecs: 8100 } }),
+  p('p_hundunjing', '混沌精', 'dao', 18, '混沌初分时漏出的一缕精气,服之如闭关十三刻有余(200 分钟)', { instant: { expSecs: 12000 } }, 'sparkles'),
+  p('p_shenfeng', '神风余韵', 'divine', 15, '神风过处道痕犹存,悟道点 +55', { instant: { wudao: 55 } }, 'wind'),
+  p('p_hundunhuo', '混沌火种', 'dao', 19, '开天火种,一点道火不灭,悟道点 +85', { instant: { wudao: 85 } }, 'flame'),
+  p('p_shenpan', '神蟠桃', 'divine', 15, '神界蟠桃,增寿两千五百载', { instant: { lifespanYears: 2500 } }, 'leaf'),
+  p('p_hundunshou', '混沌寿果', 'dao', 19, '混沌古果,增寿九千载', { instant: { lifespanYears: 9000 } }, 'leaf'),
+  p('p_shenlu', '神露', 'divine', 15, '神泉一滴,灵气回涌', { instant: { qiPct: 0.55 } }, 'droplets')
 ]
 
 const BY_ID = new Map(PILLS.map(x => [x.id, x]))
 
 export function pillDef(id: string): PillDef | undefined {
   return BY_ID.get(id)
+}
+
+// ============ 丹药品阶解析(道品是丹药专属顶档) ============
+//
+// 共享品质表 QUALITIES 只到「神品(rank 8)」。丹药在它之上多出一档「道品(dao)」,
+// 只存在于丹药系统,不入装备/法宝/功法。凡是要读丹药品阶的 rank / 名 / 色,
+// 一律走下面三个函数,不要直接 qualityDef(pill.quality) —— 那样会把道品兜底成凡品。
+
+/** 道品在品质序里的位置:神品之上半档 */
+export const DAO_QUALITY_RANK = 9
+export const DAO_QUALITY_NAME = '道品'
+/** 登峰的金芒:与天品的暗金、神品的朱砂都拉开,作为全境之巅的名号色 */
+export const DAO_QUALITY_COLOR = '#E9B949'
+
+/** 丹药品质的 rank:'dao' 记 9,其余走共享品质表 */
+export function pillRank(def: Pick<PillDef, 'quality'>): number {
+  return def.quality === 'dao' ? DAO_QUALITY_RANK : qualityDef(def.quality).rank
+}
+
+/** 丹药品质的全名:'dao' 记「道品」 */
+export function pillQualityName(def: Pick<PillDef, 'quality'>): string {
+  return def.quality === 'dao' ? DAO_QUALITY_NAME : qualityDef(def.quality).name
+}
+
+/** 丹药品质的配色:'dao' 用登峰金芒 */
+export function pillQualityColor(def: Pick<PillDef, 'quality'>): string {
+  return def.quality === 'dao' ? DAO_QUALITY_COLOR : qualityDef(def.quality).color
 }

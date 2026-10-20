@@ -284,7 +284,7 @@ describe('服丹 · 丹从包里出去,药力真的落下', () => {
    *
    * 这条守的正是那次改动的两个后果,缺一不可:
    *   ① 单枚丹**永远填不满一层** —— 低境界一层只要刻把钟,不封顶的话
-   *      一枚写在纸上的"闭关三时"能连跳好几层;
+   *      一枚写在纸上的"闭关一个半时辰"能连跳好几层;
    *   ② 药力不随境界暴涨 —— 一枚金丹期的丹在混沌海只该是一点药力,
    *      旧口径下它按"当前一层需求的百分比"结算,在任何境界都同样能顶掉一块墙,
    *      于是囤低阶丹成了破界的最优解。
@@ -319,6 +319,38 @@ describe('服丹 · 丹从包里出去,药力真的落下', () => {
     const buffs = cultivation.buffs.filter(b => b.defId === pillDef('p_ningshen')!.buffId)
     expect(buffs.length, '丹说的状态没落到身上').toBe(1)
     expect(buffs[0]!.endsAt, '状态没有到期时间,等于永久').toBeGreaterThan(Date.now())
+  })
+
+  it('修为丹到顶 clamp:等效闭关远超一层时,药力封顶在「不满一层」,不按 cultPerSec×secs 白给', () => {
+    // 低境界一层只要刻把钟,配 10800s 的大修为丹(太初丹)必然溢出 —— 走真实 usePill 路径
+    const player = usePlayerStore()
+    const inventory = useInventoryStore()
+    const cultivation = useCultivationStore()
+    player.$patch({ major: 2, sub: 5, exp: { m: 0, e: 0 } })
+    cultivation.addBuff('buff_juling', Date.now()) // 修速 +50%,把 cultPerSec 顶到必然溢出
+    inventory.addPill('p_taichu', 1)
+    const req = toNum(expRequirement(2, 5))
+    const before = toNum(player.exp)
+    expect(usePill('p_taichu')).toBe(true)
+    const gain = toNum(player.exp) - before
+    // 封顶在「不满一层」= expReq × INSTANT_EXP_LAYER_CAP,而非 cultPerSec×10800
+    expect(gain).toBeCloseTo(req * INSTANT_EXP_LAYER_CAP, 3)
+    expect(gain, '整层填满 —— clamp 失效').toBeLessThan(req)
+    expect(Number.isFinite(gain)).toBe(true)
+    expect(inventory.pills['p_taichu'] ?? 0, '服下该出包').toBe(0)
+  })
+
+  it('正对照:低药效丹在高境界远不满一层 —— 不封顶(证明 clamp 不是每颗都截)', () => {
+    const player = usePlayerStore()
+    const inventory = useInventoryStore()
+    player.$patch({ major: 8, sub: 5, exp: { m: 0, e: 0 } })
+    inventory.addPill('p_xuanyuan', 1) // 玄元丹 expSecs=900,高境界一层极大
+    const req = toNum(expRequirement(8, 5))
+    const before = toNum(player.exp)
+    expect(usePill('p_xuanyuan')).toBe(true)
+    const gain = toNum(player.exp) - before
+    expect(Number.isFinite(gain) && gain > 0).toBe(true)
+    expect(gain, '正对照不该被 clamp(它本来就远不满一层)').toBeLessThan(req * INSTANT_EXP_LAYER_CAP)
   })
 })
 
@@ -389,5 +421,66 @@ describe('炼丹连开计划 craftBatchPlan —— 纯算不动炉,按料保底�
     craftBatchPlan(ID)
     expect(resources.herb).toBe(beforeHerb)
     expect(resources.spiritStone).toEqual(beforeStone)
+  })
+})
+
+describe('炸炉保残料比 · salvageRatio 自身边界(去自证)', () => {
+  it('闲手(技艺 0):恰按基准 0.2 保料', () => {
+    expect(salvageRatio(0)).toBe(0.2)
+  })
+
+  it('技艺 100:到顶 0.5(基准 + 满档 0.3)', () => {
+    expect(salvageRatio(100)).toBe(0.5)
+  })
+
+  it('技艺 200(超满):被夹回 0.5,不上浮(否则保料比该门手艺失控)', () => {
+    expect(salvageRatio(200)).toBe(0.5)
+    expect(salvageRatio(1000)).toBe(0.5) // 大幅超限同样不越 0.5
+  })
+
+  it('技艺 50:线性中段 0.35(基准 + 半档 0.15)', () => {
+    expect(salvageRatio(50)).toBeCloseTo(0.35, 10)
+  })
+})
+
+/**
+ * 炼丹计划有限性(craftBatchPlan 不产 Infinity/NaN)。
+ *
+ * craftBatchPlan 里 stoneRounds 用 ratio(spiritStone, cost.stone) 求商;若某张方的灵石价
+ * 为 0/异常(导入坏档/未来内容),ratio 会回 Infinity/NaN。产品侧已把非有限的「石炉数」
+ * 显式收束为「更不构成限制」(rounds 由草维度唯一决定)。这里把「每张可炼方都得出有限
+ * rounds/stone」钉成不变量,防止未来重构漏掉收束又让 Infinity/NaN 漏回计划。
+ */
+describe('炼丹计划有限性(craftBatchPlan 不产 Infinity/NaN)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('每张可炼丹方都得出有限 rounds/stone(除数收束)', () => {
+    const res = useResourcesStore()
+    const lore = useLoreStore()
+    res.addStone({ m: 1, e: 9 })
+    let checked = 0
+    for (const p of PILLS) {
+      const cost = pillCraftCost(p.id)
+      if (!cost) continue
+      // 逐张点亮：方子掌握 + 灵材认知,让「能炼」为真(只看计划是否有限,不是成败)
+      lore.addRecipeMastery(p.id, 1)
+      for (const mid of recipeCraft(pillDef(p.id)!)?.materials ?? []) {
+        lore.advanceLore(mid, 3)
+      }
+      res.herbByGrade[cost.grade] = 10_000 // 该品给足草
+      const able = craftability(p.id)
+      if ((able?.blockers?.length ?? 0) > 0) continue // 点亮后仍挡(如境界准入)的跳过
+      const plan = craftBatchPlan(p.id)
+      expect(Number.isFinite(plan.rounds), `${p.id} rounds 非有限`).toBe(true)
+      expect(plan.rounds).toBeGreaterThanOrEqual(0)
+      if (plan.rounds > 0) {
+        expect(Number.isFinite(toNum(plan.stone)), `${p.id} stone 非有限`).toBe(true)
+        expect(plan.herb).toBeGreaterThan(0)
+      }
+      checked += 1
+    }
+    expect(checked).toBeGreaterThan(0)
   })
 })

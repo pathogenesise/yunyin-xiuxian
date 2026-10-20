@@ -23,6 +23,7 @@
  */
 import type { CombatRules, CombatantSnap, EnemyDef, StatMods } from '@/types'
 import { mulberry32, RandomService } from '@/utils/random'
+import { jaccardDistance } from '@/utils/setMath'
 import { MORTAL_REGIONS, MORTAL_TIER_MAX } from '@/data/regions'
 import { ENEMIES, enemyDef } from '@/data/enemies'
 import { EVENTS } from '@/data/events'
@@ -331,13 +332,6 @@ function featureSets(w: MortalWorld): { arch: Set<string>; foes: Set<string>; ta
   }
 }
 
-function jaccardDistance(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 && b.size === 0) return 0
-  let inter = 0
-  for (const x of a) if (b.has(x)) inter += 1
-  return 1 - inter / (a.size + b.size - inter)
-}
-
 /** 生态位差异:同一头妖物出现在第几段,算不算换了位置 */
 function nicheDistance(a: MortalWorld, b: MortalWorld): number {
   const posOf = (w: MortalWorld): Map<string, number> => {
@@ -441,7 +435,7 @@ function runChain(profileIdx: number, w: MortalWorld, n: number, seed: number): 
       const foe = snapOf(place.boss, place.tier, bossDanger(k))
       if (!foe) continue
       fights += 1
-      if (resolveCombat(scaledBuildSnap(profileIdx, place.tier), foe, rng, w.rules).win) wins += 1
+      if (resolveCombat(scaledBuildSnap(profileIdx, place.tier), foe, rng, w.rules, false).win) wins += 1
     }
   }
   return fights === 0 ? 0 : wins / fights

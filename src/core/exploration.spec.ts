@@ -13,7 +13,7 @@ import { useAdventureStore } from '@/stores/adventure'
 import { useCultivationStore } from '@/stores/cultivation'
 import { gnZero, sub, toNum } from '@/utils/gnum'
 import { useResourcesStore } from '@/stores/resources'
-import { EXPLORE_BOSS_AFTER_WINS } from '@/data/constants'
+import { EXPLORE_BOSS_AFTER_WINS, EVENT_AUTO_RESOLVE_SECONDS } from '@/data/constants'
 import { tickExploration, startExploration, winsUntilRegionBoss, finishRetreat } from './exploration'
 import { startRetreat } from './earlyGameService'
 
@@ -67,7 +67,9 @@ vi.mock('./combat', async importOriginal => {
         ? [{ t: 'atk', side: 'p', dmg: 10, php: 1, ehp: 0.9 }]
         : [{ t: 'atk', side: 'e', dmg: 60, php: 0.4, ehp: 1 }]
     }),
-    makeEnemySnap: () => ({ hp: 100, def: 10, atk: 10 })
+    // 敌战力从快照三维折出(enemyPowerOf 读 attack/defense/maxHp),
+    // 伪造件得按 CombatantSnap 的真形状给齐 —— 旧形状 {hp,def,atk} 会被 powerScore 踩到 undefined
+    makeEnemySnap: () => ({ attack: { m: 100, e: 0 }, defense: { m: 10, e: 0 }, maxHp: { m: 100, e: 0 } })
   }
 })
 
@@ -320,6 +322,21 @@ describe('会话账目 · 与真实入账同源', () => {
     expect(Array.isArray(adventure.lastBattle?.loot)).toBe(true)
     expect(adventure.session!.itemGain, '无实物掉落时件数为 0(旧实现会把提示行算成一件)').toBe(0)
   })
+
+  it('战报把开打那一刻的双方战力一起带走:敌力与「我」同刻冻结,不为战后换装所动', () => {
+    const adventure = useAdventureStore()
+    const player = usePlayerStore()
+    player.initCharacter('同刻', { roots: [] } as never)
+    const now = Date.now()
+    forgeSession(now)
+    tickExploration(now)
+    const view = adventure.lastBattle
+    expect(view).not.toBeNull()
+    expect(view!.enemyPower).toBeDefined()
+    expect(view!.playerPower).toBeDefined()
+    // 无规则时「我」应等于面板战力(同一套 finalStats 三维折出)
+    expect(toNum(view!.playerPower!)).toBeCloseTo(toNum(player.finalStats.power), 6)
+  })
 })
 
 describe('首领门槛 · 界面提示与战斗判定同源', () => {
@@ -332,5 +349,58 @@ describe('首领门槛 · 界面提示与战斗判定同源', () => {
 
   it('已靖地界:不再有首领,提示返回 null', () => {
     expect(winsUntilRegionBoss(0, true)).toBeNull()
+  })
+})
+
+/**
+ * 历练 · 待决事件超时自动结算(手动模式,非勿扰)。
+ *
+ * tickExploration 的待决分支:待决事件若长时间(> EVENT_AUTO_RESOLVE_SECONDS)
+ * 没人点,就按默认选项当场结清 —— 清了待决、事件数 +1、重排下一战,免得把这一程
+ * 卡死在弹窗上。explorationDnd 只测了「遇事勿扰」那条(撞见即当场结清),
+ * 手动模式这条**挂起后超时再结**的路径从来没人直接断言过。
+ * tick 显式传 now,时间边界可控,不需假时钟。
+ */
+describe('历练 · 待决事件超时自动结算', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    protect.value = false
+    combatWin.value = false
+  })
+
+  it('未超时(now − since ≤ 120s):仍挂着待决,不自动了结、事件数不动', () => {
+    const now = Date.now()
+    forgeSession(now)
+    const adv = useAdventureStore()
+    adv.setPendingEvent('ft_sword_remnant', now - 119_000) // 差 1 秒不到 120s
+    tickExploration(now)
+    expect(adv.pendingEventId, '未超时不该自己了结').toBe('ft_sword_remnant')
+    expect(adv.session!.events).toBe(0) // 事件数没动
+  })
+
+  it('已超时(> 120s):按默认选项自动结清 —— 清待决、事件 +1、重排下一战', () => {
+    const now = Date.now()
+    forgeSession(now)
+    const adv = useAdventureStore()
+    const beforeBattle = adv.session!.nextBattleAt
+    adv.setPendingEvent('ft_sword_remnant', now - 121_000) // 超过 120s 一秒
+    tickExploration(now)
+    expect(adv.pendingEventId, '超时该自动了结').toBeNull()
+    expect(adv.pendingEventSince).toBe(0)
+    const s = adv.session!
+    expect(s.events).toBe(1)
+    expect(s.nextBattleAt).toBeGreaterThan(beforeBattle) // 下一战重排到未来
+  })
+
+  it('结清后再 tick:不重复结算(事件数不再 +1)', () => {
+    const now = Date.now()
+    forgeSession(now)
+    const adv = useAdventureStore()
+    adv.setPendingEvent('ft_sword_remnant', now - EVENT_AUTO_RESOLVE_SECONDS * 1000 - 1000)
+    tickExploration(now)
+    expect(adv.session!.events).toBe(1)
+    tickExploration(now) // 待决已清,同刻再 tick
+    expect(adv.pendingEventId).toBeNull()
+    expect(adv.session!.events, '不该重复结算成 2').toBe(1)
   })
 })

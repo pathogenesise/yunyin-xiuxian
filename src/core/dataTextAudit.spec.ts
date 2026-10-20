@@ -297,6 +297,10 @@ describe('文案数值对账 · 手写的门槛与容量', () => {
       expect(card, `手抄的「${hand}」应改成读上限判据或删掉`).not.toContain(hand)
     }
     expect(card, '主脉已撤,不能再写 VEIN_MAIN_CAPACITY').not.toContain('VEIN_MAIN_CAPACITY')
+    // 开启境界那句前瞻也读同一枚 VEIN_UNLOCK_MAJOR:门槛动,「金丹境方启」必须跟着动
+    const view = src('../views/DongfuView.vue')
+    expect(view, '前瞻应读 VEIN_UNLOCK_MAJOR 所在的境名').toContain('veinGateRealm')
+    expect(view, '前瞻不应再手抄「金丹境方启」').not.toContain('金丹境方启此脉')
   })
 
   it('灵脉上限来自效果本身的数值上限,不在灵脉侧另设', () => {

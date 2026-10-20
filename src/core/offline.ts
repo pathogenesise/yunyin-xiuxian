@@ -9,7 +9,9 @@ import { offlineAgeNote } from '@/ui/offlineText'
 import { breakthroughReadyNote } from '@/ui/cultivationText'
 import { rng } from '@/utils/random'
 import { regionDef } from '@/data/regions'
+import { HERB_GRADES, herbGradeOfMajor } from '@/data/herbGrades'
 import { enemyDef } from '@/data/enemies'
+import { buffDef } from '@/data/buffs'
 import {
   AGE_YEARS_PER_HOUR,
   BATTLE_EXP_SECS,
@@ -45,14 +47,9 @@ import { useDongfuStore } from '@/stores/dongfu'
 import { useCultivationStore } from '@/stores/cultivation'
 import { useAdventureStore } from '@/stores/adventure'
 import { useGameStore } from '@/stores/game'
-import { useLoreStore } from '@/stores/lore'
 import { useUiStore } from '@/stores/ui'
-import { useInventoryStore } from '@/stores/inventory'
-import { useQuestsStore } from '@/stores/quests'
 import { useEndgameStore } from '@/stores/endgame'
-import { useLoadoutsStore } from '@/stores/loadouts'
-import { useSettingsStore } from '@/stores/settings'
-import { useDiagStore } from '@/stores/diag'
+import { sanitizeAllStores } from '@/stores/sanitizeAll'
 
 /**
  * 离线事件兜底池:世界标签不命中公共事件池时的默认通用际遇。
@@ -139,6 +136,17 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     if (res.evicted) evicted += 1
   })
 
+  // 结算前先清算已过期 buff:离线期 finalStats.mods 会被本段全部产出引用,
+  // 若 buff 已过期末清算,已过期的修炼/掉落加成会对整段离线全程生效(在线每 tick 即时清算,
+  // 离线单次结算必须在这里先剪枝)。已在当下过期即不再计;恰在途中过期的按整段生效(远轻于全程漏删,留档)。
+  // 离开时还挂着的增益若在离线期间已过时效,归来只会看到效果没了、不知缘由(在线已提示,这里同样口径补一句)
+  const goneBuffNames = cultivation.buffs
+    .filter(b => b.endsAt <= nowMs)
+    .map(b => buffDef(b.defId)?.name)
+    .filter((n): n is string => n !== undefined)
+  cultivation.pruneBuffs(nowMs)
+  if (goneBuffNames.length > 0) notes.push(`「${goneBuffNames.join('、')}」已到期`)
+
   // ---- 修炼 ----
   const expBefore = { ...player.exp }
   player.gainExp(mulN(gn(player.cultPerSec), effSec))
@@ -149,6 +157,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
 
   // ---- 建筑产出 ----
   const herbBefore = resources.herb
+  const herbBeforeByGrade = { ...resources.herbByGrade }
   const oreBefore = resources.ore
   const wudaoBefore = resources.wudao
   dongfu.produce(effSec)
@@ -242,7 +251,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         // 材料 —— 离线也会撞见新灵材,只是次数封顶,免得回来一屏 toast
         const herbGain = Math.round(wins * 1.0 * doubleMult)
         const oreGain = Math.round(wins * 0.5 * doubleMult)
-        resources.addSmall('herb', herbGain)
+        resources.addHerb(herbGradeOfMajor(region.minRealm), herbGain)
         resources.addSmall('ore', oreGain)
         harvestMaterials(region.tier, 'herb', herbGain)
         harvestMaterials(region.tier, 'ore', oreGain)
@@ -306,7 +315,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
         const bossDef = enemyDef(placeContent(region.id).boss)
         if (bossDef) {
           const bossDanger = dangerFactorFor(modeDef.dangerMult, region.danger, petDangerMult, regionEventDanger)
-          const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, explorationRules())
+          const bossResult = resolveCombat(buildPlayerSnap(), makeEnemySnap(bossDef, region.tier, bossDanger), rng, explorationRules(), false)
           if (bossResult.win) {
             // 首领战奖励同样并入事件加丰倍率(在线 boss 也是 mode×regReward,离线再叠收益折损)。
             // 首领掉落(装备/丹药/法宝)走 afterWin 的逐件陈列路径,不进批量 —— 首领一生一次,
@@ -362,6 +371,11 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
     stone: sub(resources.spiritStone, stoneBefore),
     qi: Math.round(resources.qi - qiBefore),
     herb: resources.herb - herbBefore,
+    // 逐品净增(仅列>0)—— 灵田可前瞻产当前/高一档,单品名会误报,故逐品记
+    herbByGrade: HERB_GRADES.map(g => ({
+      grade: g,
+      amount: resources.herbOf(g) - (herbBeforeByGrade[g] ?? 0)
+    })).filter(e => e.amount > 0),
     ore: resources.ore - oreBefore,
     wudao: resources.wudao - wudaoBefore,
     ageYears: Math.round(player.age - ageBefore),
@@ -400,19 +414,11 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
  * 从前只有 player/resources/lore/dongfu 四处 —— 其余八个分片若被写坏,
  * 会在**渲染期**抛出(如 cultivation.gongfaBranch 为 null 时的 Object.entries),
  * 玩家看到的是白屏。见 storeResilience.spec:逐个字段灌 undefined 的红线。
+ *
+ * 清单覆盖**所有**持久化分片(PERSISTED_STORES,见 utils/storage.ts)——
+ * 曾漏了 pacing:它的 sanitize 定义了但没人调,record() 里 events.slice(-119)
+ * 在 events 被写坏(null / 非数组)时照样抛错。这里与其余分片一视同仁地修平。
  */
 export function sanitizeOfflineInputs(): void {
-  usePlayerStore().sanitize()
-  useResourcesStore().sanitize()
-  useLoreStore().sanitize()
-  useDongfuStore().sanitize() // 洞府等级非法会把离线封顶小时算成 NaN,收益全线 NaN
-  useCultivationStore().sanitize()
-  useInventoryStore().sanitize()
-  useQuestsStore().sanitize()
-  useAdventureStore().sanitize()
-  useEndgameStore().sanitize()
-  useLoadoutsStore().sanitize()
-  useSettingsStore().sanitize()
-  useGameStore().sanitize()
-  useDiagStore().sanitize()
+  sanitizeAllStores()
 }

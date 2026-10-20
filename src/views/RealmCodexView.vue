@@ -106,13 +106,13 @@
     </section>
 
     <!-- 八卦 -->
-    <section class="card-ink divide-y divide-ink/7 px-4">
+    <section class="card-ink divide-y divide-ink/6 px-4">
       <div v-for="t in TRIGRAMS" :key="t.id" class="flex items-start gap-2 py-2.5">
         <span class="w-[52px] shrink-0 font-kai text-[15px] text-ink">{{ t.symbol }} {{ t.name }}</span>
         <span class="w-[56px] shrink-0 text-[10px] text-ink-faint">象{{ t.image }} · {{ t.nature }}</span>
         <span class="min-w-0 grow text-[11px] leading-relaxed text-ink-soft">{{ t.gist }}</span>
         <span class="shrink-0 text-[10px] text-jade">宜{{ t.good }}</span>
-        <span class="shrink-0 text-[10px] text-cinnabar/80">忌{{ t.bad }}</span>
+        <span class="shrink-0 text-[10px] text-cinnabar">忌{{ t.bad }}</span>
       </div>
     </section>
 
@@ -150,7 +150,7 @@
       <div class="mt-2.5 divide-y divide-ink/6">
         <div v-for="row in fateRows" :key="row.palace.id" class="flex items-baseline gap-2 py-1.5">
           <span class="w-14 shrink-0 font-kai text-[12px] text-ink-soft">{{ row.palace.name }}</span>
-          <span class="w-24 shrink-0 text-[11px] text-cinnabar/90">{{ row.starNames }}</span>
+          <span class="w-24 shrink-0 text-[11px] text-cinnabar">{{ row.starNames }}</span>
           <span class="min-w-0 text-[11px] leading-relaxed text-ink-faint">{{ row.palace.domain }} · {{ row.palace.use }}</span>
         </div>
       </div>
@@ -172,12 +172,12 @@
       <p class="mt-1 text-[11px] leading-relaxed text-ink-faint">
         分野依《晋书·天文志》(诸家小异)只作来历读 —— 游戏里的地界不是九州。
         管用的是下面这条**游戏约定**:{{ cnNumber(IMAGES.length) }}象配{{ cnNumber(WORLDS.length) }}界({{ imageWorldMap }}),
-        值日之宿所属之象,所配界域今日历练际遇更易(乘在历练际遇上 +{{ Math.round(MANSION_EVENT_LUCK * 100) }}%),他处不加。
+        值日之宿所属之象,所配界域今日历练际遇更易(乘在历练际遇上 +{{ mansionLuckPercent() }}%),他处不加。
       </p>
       <p class="mt-1.5 text-[11px] text-azure">
         今日利 <span class="text-gold-ink">{{ favoredWorldName }}</span> —— 与天时不同:天时是全境之气,星象只利一方。
       </p>
-      <button class="mt-2 w-full text-left text-[10px] text-azure" @click="showAllMansions = !showAllMansions">
+      <button class="-my-1 mt-2 w-full py-2 text-left text-[10px] text-azure" @click="showAllMansions = !showAllMansions">
         {{ showAllMansions ? `收起${cnNumber(MANSIONS.length)}宿` : `展开查看 ${MANSIONS.length} 宿 →` }}
       </button>
       <div v-if="showAllMansions" class="mt-2 divide-y divide-ink/6">
@@ -220,7 +220,7 @@
 
     <template v-if="codexTab === 'todo' && PLANNED_SCHOOLS.length">
       <SectionTitle title="待续" hint="已在构思、尚未成书的门类" />
-      <section class="card-ink divide-y divide-ink/7 px-4">
+      <section class="card-ink divide-y divide-ink/6 px-4">
       <div v-for="p in PLANNED_SCHOOLS" :key="p.name" class="flex items-start gap-2 py-2.5">
         <span class="w-[104px] shrink-0 font-kai text-[12px] text-ink-soft">{{ p.name }}</span>
         <span class="text-[11px] leading-relaxed text-ink-faint">{{ p.note }}</span>
@@ -248,7 +248,7 @@
   import { IMAGES, MANSIONS, type ImageId } from '@/data/xiangxiu'
   import { GATES } from '@/data/qimen'
   import { cnNumber } from '@/utils/format'
-  import { MANSION_EVENT_LUCK, favoredWorld, todayMansion, todayMansionLine } from '@/core/astronomy'
+  import { mansionLuckPercent, favoredWorld, todayMansion, todayMansionLine } from '@/core/astronomy'
   import { worldDef } from '@/data/realms'
   import type { WorldId } from '@/types'
   import { modsText } from '@/ui/statNames'

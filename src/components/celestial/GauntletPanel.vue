@@ -5,10 +5,11 @@
       <button
         v-for="(fight, i) in rows"
         :key="i"
-        class="rounded px-1.5 py-0.5 text-[10px] transition-colors"
+        class="min-h-[28px] min-w-[28px] rounded px-1.5 py-0.5 text-[10px] transition-colors active:scale-90 active:opacity-60"
+        :aria-pressed="i === current"
         :class="
           i === current
-            ? 'bg-cinnabar/85 text-paper'
+            ? 'bg-cinnabar/85 seal-face'
             : fight.win
               ? 'border border-ink/20 text-ink-faint'
               : 'border border-cinnabar/40 text-cinnabar'

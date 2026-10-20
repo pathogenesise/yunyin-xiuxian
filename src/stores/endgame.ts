@@ -6,9 +6,9 @@ import { persistConfig } from '@/utils/storage'
 import { mergeMods } from '@/core/statsCalc'
 import { EXPEDITION_GUARDIAN_LAYER, celestialWorldDef } from '@/data/endgame'
 import { SOUL_SLOTS, soulMods as soulModsOf, type SoulInstance } from '@/data/souls'
-import { asArray, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecordOf, asStringArray } from '@/utils/saveShape'
+import { asArray, asCarriedHpPct, asFiniteNumber, asNumberRecord, asObjectOrNull, asRecordOf, asStringArray } from '@/utils/saveShape'
 
-export interface TrialRecord {
+interface TrialRecord {
   clears: number
   /** 最少总回合(越少越好) */
   bestRounds: number
@@ -97,7 +97,7 @@ export const useEndgameStore = defineStore(
             layer: Math.min(EXPEDITION_GUARDIAN_LAYER, Math.max(0, Math.floor(asFiniteNumber(run.layer, 0, 0)))),
             bonus: Math.floor(asFiniteNumber(run.bonus, 0, 0)),
             rows: asArray<WorldRunState['rows'][number]>(run.rows, [], r => !!r && typeof (r as { foeName?: unknown }).foeName === 'string'),
-            carriedHpPct: Math.min(1, asFiniteNumber(run.carriedHpPct, 1, 0.05)),
+            carriedHpPct: asCarriedHpPct(run.carriedHpPct),
             totalRounds: Math.floor(asFiniteNumber(run.totalRounds, 0, 0)),
             winStacks: Math.floor(asFiniteNumber(run.winStacks, 0, 0))
           }

@@ -39,13 +39,21 @@ import {
   reforgeShortToast,
   sealDoneToast,
   sealMustLeaveToast,
-  sealShortToast
+  sealShortToast,
+  unsealDoneToast
 } from '@/ui/reforgeText'
 
 export interface ReforgeCost {
   stone: GNum
   dust: number
 }
+
+/**
+ * 自动重铸可同时设为目标的最大词条数。
+ * 命中其一即停,故目标是「这批里洗到哪一个都算数」的并集;上限太小翻不中要的,
+ * 太大又稀释成本 —— 面向玩家的文案(已选 X/3)与守卫逻辑都必须读它,不许各自手写。
+ */
+export const AUTO_REFORGE_MAX_TARGETS = 3
 
 /**
  * 重铸成本:灵石 = stoneByTier(阶数) × (1 + 封存数 × REFORGE_SEAL_LOAD);
@@ -187,6 +195,24 @@ export function sealAffix(uid: string, affixId: string): boolean {
   inventory.replaceItem({ ...inst, sealedAffixIds: [...(inst.sealedAffixIds ?? []), affixId] })
   const name = affixDef(affixId)?.name ?? '词条'
   ui.toast(sealDoneToast(name), 'success')
+  return true
+}
+
+/**
+ * 解封一个词条:重铸恢复可替换之。封存付费、解封免费 —— 付出的灵石不退还,
+ * 但位子即时空出,可再封。
+ */
+export function unsealAffix(uid: string, affixId: string): boolean {
+  const inventory = useInventoryStore()
+  const ui = useUiStore()
+  const inst = inventory.findItem(uid)
+  if (!inst) return false
+  if (!inst.affixes.some(a => a.id === affixId)) return false
+  if (!(inst.sealedAffixIds ?? []).includes(affixId)) return false
+  inventory.replaceItem({ ...inst, sealedAffixIds: (inst.sealedAffixIds ?? []).filter(id => id !== affixId) })
+  const name = affixDef(affixId)?.name ?? '词条'
+  playSfx('success')
+  ui.toast(unsealDoneToast(name), 'success')
   return true
 }
 

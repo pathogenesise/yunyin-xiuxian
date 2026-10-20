@@ -10,10 +10,10 @@ import { CHAINS, chainOfEvent } from '@/data/chains'
 // 奇缘与机缘在这里从上一步的结果里再掷一次。数字不在本文件另写一遍 ——
 // core/eventTier 要把这条乘法链讲给玩家听,两边各写一份就会互相撒谎。
 import { CHAIN_STAGE_CHANCE, FORTUNE_CHANCE, INSTANT_EXP_LAYER_CAP } from '@/data/constants'
-import { pillDef, PILLS } from '@/data/pills'
+import { pillDef, PILLS, pillRank } from '@/data/pills'
+import { HERB_GRADE_SHORT, herbGradeOfMajor } from '@/data/herbGrades'
 import { buffDef } from '@/data/buffs'
 import { PETS, petDef } from '@/data/pets'
-import { qualityDef } from '@/data/qualities'
 import { expFromSecs, stoneByTier } from './formulas'
 import { generateEquipment } from './equipGen'
 import { acquireArtifact, acquireEquipment, randomDropArtifact } from './loot'
@@ -154,6 +154,8 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
     }
     case 'material':
       resources.addSmall(effect.id, effect.amount)
+      // 灵草按品入账(addSmall 落当前品),文案显式报品,与五品经济同口径 —— events 数据只写数量不写品
+      if (effect.id === 'herb') return `${HERB_GRADE_SHORT[herbGradeOfMajor(player.major)]}灵草 +${effect.amount}`
       return `${MATERIAL_NAMES[effect.id]} +${effect.amount}`
     case 'equipment': {
       const inst = generateEquipment(Math.max(tier, 1), rng, {
@@ -198,7 +200,7 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
       const id = effect.id ?? (pool.length ? rng.pick(pool).id : null)
       if (!id || owned.has(id)) {
         resources.addSmall('herb', 10)
-        return '灵草 +10'
+        return `${HERB_GRADE_SHORT[herbGradeOfMajor(player.major)]}灵草 +10`
       }
       collect('pet', id)
       if (!player.petId) player.setPet(id)
@@ -213,7 +215,7 @@ function applyEffect(effect: EventEffect, tier: number): string | null {
 function randomEventPill(major: number): string | null {
   const pool = PILLS.filter(p => p.minRealm <= major)
   if (pool.length === 0) return null
-  return rng.weighted(pool, p => 100 / (1 + qualityDef(p.quality).rank * 2)).id
+  return rng.weighted(pool, p => 100 / (1 + pillRank(p) * 2)).id
 }
 
 export interface EventResolution {

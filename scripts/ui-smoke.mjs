@@ -25,6 +25,7 @@
  * ⚠ --late 很慢(一轮约十分钟):终局页面上的按钮会真的触发模拟
  * (突破推演 / 远征预估 / 挑战书定价),不是脚本卡住了。日常冒烟用默认模式。
  */
+import { classifySmoke, namePattern, SMOKE_ALLOWLIST } from './smoke-classify.ts'
 import { chromium } from 'playwright'
 import CryptoJS from 'crypto-js'
 import { dirname, join, resolve } from 'node:path'
@@ -44,6 +45,8 @@ const ROUTES = [
   '/',
   '/cultivation',
   '/adventure',
+  '/apprentice',
+  '/market',
   '/inventory',
   '/character',
   '/codex',
@@ -128,6 +131,43 @@ const errors = []
  * 一屏里要是冒出十几个,那就说明有一批入口在静默失败。
  */
 const silent = []
+/**
+ * 真·死控件/无效果控件:点了没反应,干净重试仍没反应 → 判失败(exitCode 1)。
+ * 与 silent 分开:silent 是「读数不判失败」(导航被浮层挡、或干净重试证实功能正常),
+ * 而这里是有实据的死按钮。
+*/
+const dead = []
+/**
+ * 干净重试:回本路由、单独点同一按钮,看指纹有没有变。
+ * 全流程态下点一个「已被前次交互带入目标态」的按钮会没增量(误报);单独点却有变化
+ * 的,证明控件功能正常,不判失败。返回:
+ *  - true  单独点有变化(功能正常)
+ *  - false 单独点也无变化(真死控件)
+ *  - null  干净态下找不到该按钮(如弹窗按钮在干净态未开),无法复现 → 不判失败
+ */
+async function cleanRetry(route, label) {
+  await page.goto(INDEX + '#' + route, { waitUntil: 'load' })
+  await page.waitForTimeout(700)
+  const b = page.getByRole('button', { name: namePattern(label) }).first()
+  if (!(await b.count())) return null
+  if (!(await b.isVisible().catch(() => false))) return null
+  const before = await fingerprint()
+  await b.click({ timeout: 800 }).catch(() => {})
+  await settle()
+  return (await fingerprint()) !== before
+}
+/** 死/读数的归桶与报告行都来自共享分类器 classifySmoke —— 单一来源,不在此处另写一套 */
+function pushSmokeDecision(dec) {
+  if (dec.bucket === 'dead') dead.push(dec.line)
+  else silent.push(dec.line)
+}
+async function classifySilent(route, kind, label) {
+  const verb = kind === 'modal' ? '弹窗内点' : '点'
+  const entry = `${route} ${verb}「${label}」`
+  // 幂等选中项白名单:不干净重试,直接按读数处理(分类器会再核一遍)
+  const clean = SMOKE_ALLOWLIST.includes(entry) ? null : await cleanRetry(route, label)
+  pushSmokeDecision(classifySmoke(route, kind, label, clean, SMOKE_ALLOWLIST))
+}
 /** 已成功走过的导航链接(去重:同 href 全站只点一次;失败/被挡的不计入,留待后续路由重试) */
 const navClicked = new Set()
 /** 已报过「未达目标/被浮层挡住」读数的链接(同 href 只报一次,避免跨路由刷屏) */
@@ -244,7 +284,7 @@ async function clickInsideModal(route) {
     await settle()
     if (errors.length > before) errors[errors.length - 1].where = `${route} 弹窗内点「${label}」`
     // 弹窗按钮此前只查了 pageerror,点了没反应的同样会被静默吞掉 —— 一并纳入指纹判定
-    else if ((await fingerprint()) === beforeFp) silent.push(`${route} 弹窗内点「${label}」`)
+    else if ((await fingerprint()) === beforeFp) await classifySilent(route, 'modal', label)
   }
 }
 
@@ -270,7 +310,7 @@ for (const route of ROUTES) {
     clicked += 1
     await settle()
     if (errors.length > before) errors[errors.length - 1].where = `${route} 点「${label}」`
-    else if ((await fingerprint()) === beforeFp) silent.push(`${route} 点「${label}」`)
+    else if ((await fingerprint()) === beforeFp) await classifySilent(route, 'page', label)
     await clickInsideModal(route)
     // 点开弹窗后关掉,免得挡住后面的按钮
     await page.keyboard.press('Escape').catch(() => {})
@@ -345,6 +385,11 @@ console.log(`\n界面冒烟:${ROUTES.length} 页,点击 ${clicked} 次(导航 ${
 if (silent.length) {
   console.log(`点了没反应 ${silent.length} 处(读数,不判失败):`)
   for (const s of silent.slice(0, 20)) console.log(`  · ${s}`)
+}
+if (dead.length) {
+  console.log(`✗ 死按钮/无效果控件 ${dead.length} 处(干净重试仍无变化):`)
+  for (const d of dead) console.log(`  ✗ ${d}`)
+  process.exitCode = 1
 }
 if (errors.length === 0) {
   console.log('✓ 无运行时异常')

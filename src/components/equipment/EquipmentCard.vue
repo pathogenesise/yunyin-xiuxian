@@ -1,6 +1,6 @@
 <template>
   <button
-    class="relative aspect-square rounded-md border transition-transform active:scale-95"
+    class="relative aspect-square rounded-md border transition-transform active:scale-98"
     :style="{ borderColor: tint(quality.color, 0.33), background: tint(quality.color, 0.06) }"
     :data-uid="props.item.uid"
     @click="emit('open', props.item.uid)"
@@ -13,7 +13,7 @@
     <!-- 共鸣件:方格背包里也得看得出这一件拴着一条机制(两件才亮,见 core/equipSet) -->
     <span
       v-if="setName"
-      class="absolute bottom-0.5 left-1 font-kai text-[8px] leading-none text-violet-ink/80"
+      class="absolute bottom-0.5 left-1 font-kai text-[8px] leading-none text-violet-ink"
       :title="`共鸣「${setName}」`"
     >
       共

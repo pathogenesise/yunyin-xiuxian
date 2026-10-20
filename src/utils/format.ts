@@ -62,6 +62,8 @@ const NOT_AVAILABLE = '--'
 export function formatPercent(x: number, dp = 1): string {
   if (!Number.isFinite(x)) return NOT_AVAILABLE
   const v = x * 100
+  // x 有限但 x*100 上溢(约 1e306 以上)时,v 会变 Infinity —— 同样要给占位,不能吐 "Infinity%"
+  if (!Number.isFinite(v)) return NOT_AVAILABLE
   // -0.001% 这类连一位小数都到不了的极小值,不该显示成「-0%」吓人
   if (Math.abs(v) < Math.pow(10, -dp)) return '0%'
   const s = Number.isInteger(v) ? String(v) : v.toFixed(dp)
@@ -116,6 +118,12 @@ export function formatCountdown(totalSec: number): string {
   if (d > 0) return `${d}天${pad2(h)}时`
   if (h > 0) return `${pad2(h)}时${pad2(m)}分`
   return `${pad2(m)}分${pad2(s)}秒`
+}
+
+/** 时间戳 → 「HH:MM」(本地时)—— 倒计时旁那句「约几时归」的落点 */
+export function formatClock(ts: number): string {
+  const d = new Date(ts)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 /** 寿元年数展示 */

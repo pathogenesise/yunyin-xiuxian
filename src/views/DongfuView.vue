@@ -1,13 +1,21 @@
 <template>
   <div class="stagger-in space-y-4 px-4 pb-6 pt-4">
     <!-- 抬头 -->
-    <div class="card-ink flex items-center justify-between gap-2 px-4 py-3">
+    <div class="card-ink relative flex items-center justify-between gap-2 px-4 py-3">
       <!--
         冷启动直接落在这一页时(书签 / deep link / 恢复上次路由),站内没有上一页,
         裸 router.back() 会退到 about:blank 把游戏一起带走 —— 故走 goBack(父页兜底)
       -->
       <button class="-my-1.5 py-1.5 text-left text-[12px] text-ink-faint" @click="goBack(router, { name: 'home' })">← 返回</button>
-      <p class="font-kai text-[15px] tracking-[0.3em] text-ink">洞府营造</p>
+      <!--
+        标题真正居中:左「返回」窄、右「经营家业,道途更稳」宽,若三件套走
+        justify-between,标题会被两侧的不等宽拽离版面中轴、看着发斜。
+        故把标题从文档流里提出来绝对居中(left-1/2),两侧各贴一边 ——
+        无论左右多宽,「洞府营造」永远钉在卡片正中。
+      -->
+      <p class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-kai text-[15px] tracking-[0.3em] text-ink">
+        洞府营造
+      </p>
       <span class="text-[10px] text-ink-faint">经营家业,道途更稳</span>
     </div>
 
@@ -25,33 +33,37 @@
     <div class="rounded-md border border-ink/10 bg-paper-deep/50 px-3 py-2.5">
       <div class="flex items-center justify-between">
         <span class="font-kai text-[12px] tracking-wider text-ink-soft">洞府纪要</span>
-        <span class="rounded border border-gold-ink/30 px-2 py-0.5 text-[10px] text-gold-ink">离线上限 {{ summary.offlineHrs }} 时</span>
+        <!-- 离线上限在下方「离线可攒」那一行已给出(还带五段档位条),不再在右上角重复一遍同数 -->
       </div>
       <div class="mt-1.5 grid grid-cols-3 gap-1.5">
         <!-- 三格各配一枚小章:灵草叶 / 玄铁斧 / 悟道书,图比字先被眼睛接住 -->
         <div class="rounded bg-paper-deep/60 px-1 py-1.5 text-center">
-          <GameIcon name="leaf" :size="13" class="mx-auto text-jade/70" />
+          <GameIcon name="leaf" :size="13" class="mx-auto text-jade" />
           <p class="mt-0.5 text-[9px] text-ink-faint">灵草 / 时</p>
           <p class="tabular font-kai text-[14px] leading-tight" :class="summary.fieldLv ? 'text-jade' : 'text-ink-faint'">{{ summary.fieldLv ? summary.herbHr : '—' }}</p>
+          <!-- 灵田产草品阶:正常就报当前境的品;前瞻高一档(囤下一境草)时朱标提醒 -->
+          <p v-if="summary.fieldGrade" class="mt-0.5 text-[8px] leading-none" :class="summary.fieldForward ? 'text-cinnabar' : 'text-ink-faint'">
+            {{ summary.fieldForward ? `前瞻 ↑ ${summary.fieldGradeName}` : `产${summary.fieldGradeName}` }}
+          </p>
         </div>
         <div class="rounded bg-paper-deep/60 px-1 py-1.5 text-center">
-          <GameIcon name="axe" :size="13" class="mx-auto text-ink-soft/70" />
+          <GameIcon name="axe" :size="13" class="mx-auto text-ink-soft" />
           <p class="mt-0.5 text-[9px] text-ink-faint">玄铁 / 时</p>
           <p class="tabular font-kai text-[14px] leading-tight" :class="summary.fieldLv ? 'text-ink-soft' : 'text-ink-faint'">{{ summary.fieldLv ? summary.oreHr : '—' }}</p>
         </div>
         <div class="rounded bg-paper-deep/60 px-1 py-1.5 text-center">
-          <GameIcon name="book" :size="13" class="mx-auto text-gold-ink/80" />
+          <GameIcon name="book" :size="13" class="mx-auto text-gold-ink" />
           <p class="mt-0.5 text-[9px] text-ink-faint">悟道 / 时</p>
           <p class="tabular font-kai text-[14px] leading-tight" :class="summary.libLv ? 'text-gold-ink' : 'text-ink-faint'">{{ summary.libLv ? summary.wudaoHr : '—' }}</p>
         </div>
       </div>
       <div class="mt-1.5 flex items-center justify-between gap-2">
         <span class="flex items-center gap-1 rounded bg-paper-deep/60 px-2 py-1 text-[10px] text-ink-faint">
-          <GameIcon name="droplets" :size="12" class="text-azure/70" />
+          <GameIcon name="droplets" :size="12" class="text-azure" />
           灵气上限 <span class="tabular" :class="summary.arrayLv ? 'text-azure' : 'text-ink-faint'">{{ summary.arrayLv ? summary.qiCapPct : '—' }}</span>
         </span>
         <span class="flex items-center gap-1 rounded bg-paper-deep/60 px-2 py-1 text-[10px] text-ink-faint">
-          <GameIcon name="scroll" :size="12" class="text-gold-ink/70" />
+          <GameIcon name="scroll" :size="12" class="text-gold-ink" />
           辅修栏 <span class="tabular text-ink-soft">{{ summary.subSlots }}</span>
         </span>
       </div>
@@ -79,7 +91,7 @@
     <section>
       <SectionTitle title="营造" :hint="`已启 ${builtCount}/${BUILDINGS.length} · 各司其职`" />
       <BuildingCard :def="mansionDef" featured class="mt-2" />
-      <div class="mt-2.5 grid grid-cols-2 gap-2.5">
+      <div class="mt-2.5 grid grid-cols-1 gap-2.5 min-[320px]:grid-cols-2">
         <BuildingCard v-for="def in otherBuildings" :key="def.id" :def="def" />
       </div>
     </section>
@@ -89,7 +101,7 @@
       <button
         v-if="veinsUnlocked"
         type="button"
-        class="card-ink flex w-full items-center gap-2.5 px-3.5 py-3 text-left active:scale-99"
+        class="card-ink flex w-full items-center gap-2.5 px-4 py-3 text-left active:scale-98"
         :aria-expanded="veinExpanded"
         aria-controls="vein-panel"
         @click="veinExpanded = !veinExpanded"
@@ -107,10 +119,16 @@
         </span>
         <span class="shrink-0 text-[12px] text-gold-ink transition-transform" :class="veinExpanded ? 'rotate-90' : ''">›</span>
       </button>
-      <!-- 未达门槛:整块就是一句前瞻,没有可展开的内容 -->
+      <!--
+        未达门槛:整块就是一句前瞻,没有可展开的内容。
+        开启境界不手抄「金丹」—— 与 veinsUnlocked 读同一枚 VEIN_UNLOCK_MAJOR,
+        倍数高些低些,这句前瞻自己跟着变(与 rebirthText 的「X境方可兵解」同法)
+      -->
       <div v-if="!veinsUnlocked" class="flex items-center gap-2.5 rounded-md border border-dashed border-gold-ink/25 bg-gold-ink/4 px-3 py-2.5">
-        <GameIcon name="gem" :size="16" class="shrink-0 text-gold-ink/60" />
-        <p class="text-[10px] leading-relaxed text-ink-faint">灵脉 —— 以灵石点化,洞府根基永固,诸般属性皆有增益。金丹境方启此脉,届时自会在此与你相会。</p>
+        <GameIcon name="gem" :size="16" class="shrink-0 text-gold-ink" />
+        <p class="text-[10px] leading-relaxed text-ink-faint">
+          灵脉 —— 以灵石点化,洞府根基永固,诸般属性皆有增益。{{ veinGateRealm }}境方启此脉,届时自会在此与你相会。
+        </p>
       </div>
       <!--
         展开/收起:高度 + 透明度过渡,不像生硬裁切。
@@ -133,9 +151,11 @@
   import { useRouter } from 'vue-router'
   import { goBack } from '@/router/goBack'
   import { BUILDINGS, ARRAY_QI_CAP_PER_LEVEL } from '@/data/buildings'
+  import { REALMS } from '@/data/realms'
   import { FIELD_HERB_PER_HOUR, FIELD_ORE_PER_HOUR, LIBRARY_WUDAO_PER_HOUR, OFFLINE_CAP_HOURS, VEIN_UNLOCK_MAJOR } from '@/data/constants'
   import { VEINS } from '@/data/veins'
-  import { useDongfuStore } from '@/stores/dongfu'
+  import { HERB_GRADE_SHORT, herbGradeOfMajor } from '@/data/herbGrades'
+  import { useDongfuStore, fieldHerbGrade } from '@/stores/dongfu'
   import { usePlayerStore } from '@/stores/player'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
@@ -157,6 +177,8 @@
 
   /** 灵脉金丹解锁;未达门槛时只给一句前瞻,别让新人面对一整张禁用按钮 */
   const veinsUnlocked = computed(() => player.major >= VEIN_UNLOCK_MAJOR)
+  /** 前瞻里的开启境界名:取自 VEIN_UNLOCK_MAJOR 所在境,门槛动它跟着动 */
+  const veinGateRealm = computed(() => REALMS[VEIN_UNLOCK_MAJOR]?.name ?? '更高')
   /** 灵脉信息量大,默认折成一行;点开展开六脉详情 */
   const veinExpanded = ref(false)
   /** 折叠态摘要:已投点数(六脉平级,无主脉之说) */
@@ -187,6 +209,11 @@
       libLv,
       arrayLv,
       herbHr: `${fieldLv * FIELD_HERB_PER_HOUR} 株`,
+      // 灵田产草品阶:与 produce 同一判据(fieldHerbGrade)。level 0 未建时为 null。
+      // forward = 产的高于当前境品 —— 灵田不受境界门控、可前瞻一档(囤下一境草),这值得明说。
+      fieldGrade: fieldLv > 0 ? fieldHerbGrade(player.major, fieldLv) : null,
+      fieldGradeName: fieldLv > 0 ? HERB_GRADE_SHORT[fieldHerbGrade(player.major, fieldLv)] : null,
+      fieldForward: fieldLv > 0 && fieldHerbGrade(player.major, fieldLv) > herbGradeOfMajor(player.major),
       oreHr: `${(fieldLv * FIELD_ORE_PER_HOUR).toFixed(1)} 块`,
       wudaoHr: `${(libLv * LIBRARY_WUDAO_PER_HOUR).toFixed(1)} 点`,
       offlineHrs: dongfu.offlineCapHours,

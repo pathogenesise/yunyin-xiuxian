@@ -37,8 +37,9 @@ import {
   COMBAT_HP_BASE
 } from '@/data/constants'
 import { artifactValue } from '@/data/artifacts'
+import { beastIcon } from '@/data/beastFamilies'
 import { modOf } from './statsCalc'
-import { enemyGearFactor, powerScale } from './formulas'
+import { enemyGearFactor, powerScale, powerScore } from './formulas'
 
 interface Fighter {
   snap: CombatantSnap
@@ -124,7 +125,7 @@ export function makeEnemySnap(def: EnemyDef, tier: number, dangerMult: number, o
   const gear = enemyGearFactor(tier) * dangerMult
   return {
     name: def.name,
-    icon: def.icon,
+    icon: beastIcon(def.family),
     isPlayer: false,
     origin: origin ?? mortalFoeOrigin(tier, dangerMult),
     attack: mulN(scale, COMBAT_ATK_BASE * def.atkMult * gear),
@@ -155,8 +156,24 @@ function mergeAdd(base: StatMods, extra: StatMods): StatMods {
   return out
 }
 
-export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: RandomService, rules?: CombatRules): CombatResult {
-  // 规则注入:道途与特殊世界只改参数,不改逻辑
+/**
+ * 一张快照的战力 —— 战斗卡片那枚「敌 X · 我 Y」两侧同用这一把 powerScore,
+ * 界面不另算一套权重。
+ */
+export function snapPower(snap: CombatantSnap): GNum {
+  return powerScore(snap.attack, snap.defense, snap.maxHp)
+}
+
+/**
+ * 规则改后的双方有效快照 —— resolveCombat 开打用的同一份,抽出来供调用方
+ * 在「战斗那一刻」折同一对战力(卡片「敌 X · 我 Y」与结算同源,不另算)。
+ * 规则没改时原样返回;改了什么就是什么,卡片不谎报生效前的基准。
+ */
+export function applyCombatRuleSnap(
+  pSnap: CombatantSnap,
+  eSnap: CombatantSnap,
+  rules?: CombatRules
+): { pEff: CombatantSnap; eEff: CombatantSnap } {
   const pEff: CombatantSnap = rules
     ? {
         ...pSnap,
@@ -172,6 +189,19 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
         mods: rules.enemyExtraMods ? mergeAdd(eSnap.mods, rules.enemyExtraMods) : eSnap.mods
       }
     : eSnap
+  return { pEff, eEff }
+}
+
+export function resolveCombat(
+  pSnap: CombatantSnap,
+  eSnap: CombatantSnap,
+  rng: RandomService,
+  rules?: CombatRules,
+  /** 纯胜负抽样 / 审计 / 扫描只读 .win 时置 false,跳过战报构建(formatGN/数组/每段 hpPct) */
+  buildLog: boolean = true
+): CombatResult {
+  // 规则注入:道途与特殊世界只改参数,不改逻辑
+  const { pEff, eEff } = applyCombatRuleSnap(pSnap, eSnap, rules)
   const maxRounds = rules?.maxRounds ?? MAX_COMBAT_ROUNDS
   const healMult = rules?.healMult ?? 1
   const shieldCap = rules?.shieldCapRatio ?? SHIELD_CAP_RATIO
@@ -202,6 +232,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
 
   const hpPct = (f: Fighter): number => Math.max(0, Math.min(1, ratio(f.hp, f.snap.maxHp)))
   const push = (t: CombatLogEntry['t'], side: CombatLogEntry['side'], text: string, dmg?: GNum): void => {
+    if (!buildLog) return
     log.push({ t, side, text, dmg: dmg ? formatGN(dmg) : undefined, php: hpPct(p), ehp: hpPct(e) })
   }
 
@@ -588,7 +619,7 @@ export function resolveCombat(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: R
 export function sampleWinRate(pSnap: CombatantSnap, eSnap: CombatantSnap, rng: RandomService, samples = 3, rules?: CombatRules): number {
   let wins = 0
   for (let i = 0; i < samples; i += 1) {
-    if (resolveCombat(pSnap, eSnap, rng, rules).win) wins += 1
+    if (resolveCombat(pSnap, eSnap, rng, rules, false).win) wins += 1
   }
   const table = [0.08, 0.4, 0.72, 0.93]
   // 索引夹到表长内:samples 取 >3 时 Math.min(samples, wins) 会越界取到 undefined →

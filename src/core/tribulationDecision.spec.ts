@@ -12,10 +12,14 @@ import {
   verdictLabel,
   statGuardOf,
   tribulationWaveSpan,
-  NO_STAT_GUARD
+  NO_STAT_GUARD,
+  traceTribulation,
+  waveDamage
 } from './tribulationDecision'
 import { baseCombatStats, tribulationWaveDamage } from './formulas'
 import { toNum } from '@/utils/gnum'
+import { RandomService, mulberry32 } from '@/utils/random'
+import { NO_RELIEF } from '@/data/linggenAffinity'
 import { TRIBULATIONS, tribulationDef } from '@/data/tribulations'
 import { useGameStore } from '@/stores/game'
 import type { StatMods } from '@/types'
@@ -124,6 +128,13 @@ describe('⑥ 三维折算(防御→抗性 / 气血→开劫水位)', () => {
     expect(statGuardOf({ defense: bareDef, maxHp: bareHp, major: MAJOR, sub: SUB })).toEqual({ resist: 0, guard: 0 })
   })
 
+  it('坏档三维 Infinity/境界爆表时整块作废,不再靠封顶兜底(见 utils/gnum toNum)', () => {
+    // toNum 在 e>308 返回 Infinity:防御/气血被写爆时按 0 折算,而不是经 Math.min(CAP,…) 折成满抗
+    expect(statGuardOf({ defense: Infinity, maxHp: Infinity, major: MAJOR, sub: SUB })).toEqual({ resist: 0, guard: 0 })
+    // 境界大到 realmScale 翻出可表示范围一并作废
+    expect(statGuardOf({ defense: bareDef, maxHp: bareHp, major: 1e9, sub: 0 })).toEqual({ resist: 0, guard: 0 })
+  })
+
   it('超出部分按倍数线性折算,并各自封顶', () => {
     const six = statGuardOf({ defense: bareDef * 6, maxHp: bareHp * 6, major: MAJOR, sub: SUB })
     // (6-1)×4% = 20%,抗性那条上限 18% —— 到顶了(Phase 39 由 5%/30% 收窄)
@@ -196,5 +207,49 @@ describe('⑦ 波形读数(道数 × 逐道加重)', () => {
     expect(storm.last).toBeCloseTo(clear.last * 1.08, 9)
     expect(storm.total).toBeCloseTo(clear.total * 1.08, 9)
     expect(storm.max).toBeCloseTo(clear.max * 1.08, 9)
+  })
+})
+
+/**
+ * 预览与实结的「同乘界」数值断言。
+ *
+ * 结算 runTribulation(breakthrough.ts)的唯一随机项是 waveDamage×rng.float(0.85,1.15),
+ * 决策档/期望值用 traceTribulation(无浮动,同一份净口径 waveDamage)—— 数学主干一致、
+ * ±15% 是唯一差额,这一直是注释承诺,没有数值断言。这里把承诺钉成测试:
+ *  - traceTribulation 确定性(同输入必同结果);
+ *  - waveDamage 净口径:减伤 30% → 伤害 ×0.7(决策档/结算都不许忽略减伤);
+ *  - ±15% 带两端真的可达(不是写着好看的)。
+ */
+describe('④ 预览与实结同乘界', () => {
+  it('traceTribulation(期望值推演)确定性:同输入必同结果', () => {
+    const def = tribulationDef('thunder')!
+    const mods: StatMods = { shieldOnStart: 0.4, regenPerRound: 0.06, tribulationResist: 0.3 }
+    const a = traceTribulation(def, mods, 1, NO_RELIEF, 1, NO_STAT_GUARD)
+    const b = traceTribulation(def, mods, 1, NO_RELIEF, 1, NO_STAT_GUARD)
+    expect(b).toEqual(a)
+  })
+
+  it('waveDamage 是净口径:减伤 30% → 伤害恰为 ×0.7(决策档/结算都不许忽略减伤)', () => {
+    const def = tribulationDef('thunder')!
+    // 无裂魂修正、气血够(≥0.3 不触发濒危减伤)、NO_RELIEF 不折减伤为抗性 → 比值纯 (1-减伤)
+    const bare = waveDamage(def, {}, 1, 1, 0.9, NO_RELIEF, 1, NO_STAT_GUARD)
+    const reduced = waveDamage(def, { damageReduction: 0.3 }, 1, 1, 0.9, NO_RELIEF, 1, NO_STAT_GUARD)
+    expect(reduced).toBeCloseTo(bare * 0.7, 6)
+  })
+
+  it('结算噪声带 ±15%:rng.float(0.85,1.15) 恒落带内,且两端真的可达', () => {
+    const rand = new RandomService(mulberry32(7))
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (let i = 0; i < 300; i += 1) {
+      const v = rand.float(0.85, 1.15)
+      expect(v).toBeGreaterThanOrEqual(0.85)
+      expect(v).toBeLessThanOrEqual(1.15)
+      min = Math.min(min, v)
+      max = Math.max(max, v)
+    }
+    // 下端与上端都真实触得到(±15% 不是纸上范围;若有人把带收窄,这里先红)
+    expect(min).toBeLessThan(0.87)
+    expect(max).toBeGreaterThan(1.13)
   })
 })

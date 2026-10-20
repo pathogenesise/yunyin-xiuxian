@@ -5,6 +5,7 @@ import {
   Axe,
   Backpack,
   Bell,
+  ChevronDown,
   Bird,
   BookOpen,
   Castle,
@@ -28,6 +29,7 @@ import {
   Lock,
   Moon,
   Mountain,
+  Orbit,
   PawPrint,
   RefreshCw,
   Scroll,
@@ -40,10 +42,12 @@ import {
   Star,
   Sun,
   Sunset,
+  Store,
   Sword,
   Swords,
   Trash2,
   Trees,
+  Turtle,
   Unlock,
   Upload,
   User,
@@ -53,7 +57,8 @@ import {
   Wind,
   X,
   Zap,
-  Umbrella
+  Umbrella,
+  Users
 } from 'lucide-vue-next'
 
 export const ICONS: Record<string, Component> = {
@@ -64,6 +69,7 @@ export const ICONS: Record<string, Component> = {
   bird: Bird,
   book: BookOpen,
   castle: Castle,
+  'chevron-down': ChevronDown,
   'circle-dot': CircleDot,
   'circle-user': CircleUserRound,
   cloud: Cloud,
@@ -84,6 +90,7 @@ export const ICONS: Record<string, Component> = {
   lock: Lock,
   moon: Moon,
   mountain: Mountain,
+  orbit: Orbit,
   paw: PawPrint,
   refresh: RefreshCw,
   scroll: Scroll,
@@ -94,12 +101,14 @@ export const ICONS: Record<string, Component> = {
   sparkles: Sparkles,
   sprout: Sprout,
   star: Star,
+  store: Store,
   sun: Sun,
   sunset: Sunset,
   sword: Sword,
   swords: Swords,
   trash: Trash2,
   trees: Trees,
+  turtle: Turtle,
   unlock: Unlock,
   upload: Upload,
   user: User,
@@ -109,7 +118,8 @@ export const ICONS: Record<string, Component> = {
   wind: Wind,
   x: X,
   zap: Zap,
-  umbrella: Umbrella
+  umbrella: Umbrella,
+  users: Users
 }
 
 export function iconOf(name: string): Component {

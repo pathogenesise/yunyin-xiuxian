@@ -99,12 +99,21 @@ export const NO_STAT_GUARD: TribStatGuard = { resist: 0, guard: 0 }
  * 曲线调整悄悄变形。裸修为及以下拿不到折算,超出部分按常数线性折算后封顶。
  */
 export function statGuardOf(raw: { defense: number; maxHp: number; major: number; sub: number }): TribStatGuard {
+  // toNum 在 e>308 返回 Infinity(见 utils/gnum)。坏档把境界/三维写爆时,别让 Infinity
+  // 流进 surplus 靠下面的 Math.min(CAP, …) 兜底 —— 显式排掉,返回一块干净的全零折算。
   const scale = toNum(realmScale(raw.major, raw.sub))
+  if (!Number.isFinite(scale)) return NO_STAT_GUARD
   const bareDef = scale * COMBAT_DEF_BASE
   const bareHp = scale * COMBAT_HP_BASE
-  // 规整到 9 位:除法会留下 1e-17 这样的尾巴,裸修为该是干净的 0,不是"白送一点点"
-  const surplus = (value: number, bare: number) =>
-    bare > 0 ? Math.max(0, Number((value / bare - 1).toFixed(9))) : 0
+  // 规整到 9 位:除法会留下 1e-17 这样的尾巴,裸修为该是干净的 0,不是"白送一点点"。
+  // 比值远离 1 时(大幅超界)没有小数残留可规整,直接算 —— .toFixed(9) 只在比值接近 1 时
+  // 才有意义,对 1e300 这样的巨值会造出几 KB 的字符串,毫无必要。
+  const surplus = (value: number, bare: number): number => {
+    if (!Number.isFinite(value) || !(bare > 0)) return 0
+    const ratio = value / bare
+    const normalized = ratio > 1 && ratio < 2 ? Number((ratio - 1).toFixed(9)) : ratio - 1
+    return Math.max(0, normalized)
+  }
   const defSurplus = surplus(raw.defense, bareDef)
   const hpSurplus = surplus(raw.maxHp, bareHp)
   return {
@@ -278,6 +287,20 @@ export function tribulationWaveSpan(
   return { waves, first, last, min, max, total, heaviestWave }
 }
 
+/** 天劫减伤(0.6 上限)—— 结算与 UI 台账共用的唯一口径,防跨层漂移 */
+export function tribReduction(mods: StatMods): number {
+  return Math.min(0.6, modOf(mods, 'damageReduction'))
+}
+
+/** 折算后天劫抗性(0.8 上限):减伤按灵根亲和折一部分为抗性,与词条抗性同项同上限 */
+export function currentTribResist(
+  mods: StatMods,
+  relief: TribulationRelief = NO_RELIEF,
+  stat: TribStatGuard = NO_STAT_GUARD
+): number {
+  return Math.min(0.8, modOf(mods, 'tribulationResist') + tribReduction(mods) * relief.reductionToResist + stat.resist)
+}
+
 /** 单波实际伤害(占最大生命比例);UI 与结算共用 */
 export function waveDamage(
   def: TribulationDef,
@@ -289,13 +312,10 @@ export function waveDamage(
   weatherMult = 1,
   stat: TribStatGuard = NO_STAT_GUARD
 ): number {
-  const reduction = Math.min(0.6, modOf(mods, 'damageReduction'))
+  const reduction = tribReduction(mods)
   // 厚土分担天罚:减伤按灵根亲和折算一部分为天劫抗性(无减伤者折算为零)
   // 三维折算(防御→抗性)与词条抗性同处一项、同受 0.8 上限:血厚防高者由此硬抗一部分
-  const resist = Math.min(
-    0.8,
-    modOf(mods, 'tribulationResist') + reduction * relief.reductionToResist + stat.resist
-  )
+  const resist = currentTribResist(mods, relief, stat)
   const lowHpRed = Math.min(0.6, modOf(mods, 'lowHpReduction'))
   const waves = tribulationWaves(targetMajor)
   let dmg = tribulationWaveDamage(targetMajor, wave, resist) * (1 - reduction) * waveMultiplier(def, wave, waves, relief)

@@ -8,7 +8,7 @@
     <!-- 选择区域 -->
     <template v-else>
       <!-- 本世之界:链接入口,详情另开一页。历练地图仍在下方,照旧可走 -->
-      <RouterLink to="/world" class="card-ink flex items-center gap-3 border-azure/30 px-4 py-3 active:scale-99">
+      <RouterLink to="/world" class="card-ink flex items-center gap-3 border-azure/30 px-4 py-3 active:scale-98">
         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-azure/15 text-azure">
           <GameIcon name="cloud" :size="18" />
         </span>
@@ -24,8 +24,8 @@
       <SectionTitle title="历练" hint="行万里路,炼一颗心" />
       <p class="text-[10px] leading-relaxed text-violet-ink">
         今日星象:{{ mansionLine }} —— 利
-        <span class="text-gold-ink">{{ favoredWorldName }}</span>
-        ,在其地历练际遇更易(他处不加)。
+        <span class="text-gold-ink">{{ favoredWorldName }}</span
+        >,在其地历练际遇<span class="tabular" title="秘境等其他活动不受此加成">+{{ mansionLuckPct }}%</span>(他处不加)。
       </p>
       <p v-if="player.suppressedRegions.length > 0" class="text-[10px] text-gold-ink">
         镇压收益中 {{ player.suppressedRegions.length }} 处 —— 与历练互不冲突,可同时收取;一次只能历练一处。
@@ -99,6 +99,9 @@
                 {{ REALMS[row.def.minRealm]?.name }}境相宜 ·
                 <span :class="row.def.danger >= 4 ? 'text-cinnabar' : ''">{{ DANGER_NAMES[row.def.danger] }}</span>
                 <span v-if="row.tooHard" class="ml-1 text-cinnabar">· 境界尚浅,恐有性命之忧</span>
+                <!-- 掉落阶位与 generateEquipment 用的同一档(region.tier):「此界掉几阶」出发前就亮着。
+                     nowrap:320px 上这句曾被从空格处断行,数字与量词拆成两行(layout-check 抓的) -->
+                <span class="ml-1 whitespace-nowrap text-ink-soft">· {{ produceTierText(row.def.tier) }}</span>
               </p>
               <!--
                 敌人的「层级补偿」此前只落在数值里:玩家看到的只是一只小怪,打起来却像换了一身装备。
@@ -133,6 +136,9 @@
             class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-gold-ink/10 px-2.5 py-1.5"
           >
             <span class="text-[11px] text-gold-ink tabular">自动产出 · {{ rateText(row.def, row.recall) }}</span>
+            <!-- 镇压也在掉装备,阶位照旧取 region.tier(与 generateEquipment 同源);
+                 nowrap 同上:320 窄屏不许「4 阶」被拆成两行 -->
+            <span class="whitespace-nowrap text-[10px] text-ink-faint tabular">{{ produceTierText(row.def.tier) }}</span>
             <!-- 守土之年:守得越久,兴衰越盛,产出随之上浮 -->
             <span class="text-[10px] text-ink-faint tabular">已守 {{ heldText(row.def.id) }}</span>
             <!-- 复聚有确定期限,就该有倒计时:否则玩家只会看到镇压某天突然消失 -->
@@ -141,7 +147,7 @@
             </span>
             <!-- 停取收益是次级动作:放在产出条里,不跟名字抢那一行 -->
             <button
-              class="ml-auto inline-flex min-h-[28px] items-center px-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-95 active:text-ink"
+              class="ml-auto inline-flex min-h-[28px] items-center px-1 text-[10px] text-ink-faint underline underline-offset-2 active:scale-90 active:text-ink"
               @click.stop="unsuppress(row.def.id)"
             >
               停取收益,改去历练
@@ -160,7 +166,7 @@
             <span class="text-[10px] text-ink-faint">已取得镇压资格</span>
             <span class="text-[10px] text-gold-ink tabular">{{ rateText(row.def, row.recall) }}</span>
             <button
-              class="ml-auto chip-ink min-h-[28px] !text-[10px] active:scale-95"
+              class="ml-auto chip-ink min-h-[28px] !text-[10px] active:scale-90"
               @click.stop="suppress(row.def.id)"
             >
               转为镇压收益
@@ -207,7 +213,7 @@
             <!-- min-h-[28px] 是排版自检的尺子:展开按钮此前只有 15px 高,拇指点不着 -->
             <button
               v-if="row.adaptation"
-              class="ml-auto inline-flex min-h-[28px] items-center text-[10px] text-ink-soft tabular active:scale-95"
+              class="ml-auto inline-flex min-h-[28px] items-center text-[10px] text-ink-soft tabular active:scale-90"
               :title="row.adaptation.reasons.join(';')"
               :aria-expanded="adaptExpand === row.def.id"
               @click="adaptExpand = adaptExpand === row.def.id ? null : row.def.id"
@@ -251,6 +257,11 @@
           战力 {{ formatGN(player.finalStats.power) }} · 装备成色、词条与临场随机仍定成败
         </p>
       </div>
+      <!--
+        灵兽之性折进了下面三档的「遇险 ×N / 行程」里,却不说是它干的 ——
+        换伙伴的决定点在这里,把它的跟脚照实摊开(departButtonText 同表)
+      -->
+      <p v-if="petTripLine" class="mb-2 text-[10px] leading-relaxed text-violet-ink tabular">{{ petTripLine }}</p>
       <p class="text-[12px] text-ink-faint">此行欲作何打算?</p>
       <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">行程论这一程走多久;「历练遇敌」只令同程妖踪更密,不能缩地成寸。</p>
       <div class="mt-3 space-y-2">
@@ -288,7 +299,7 @@
   import { worldOf, type WorldDef } from '@/data/realms'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import SecretRealmCard from '@/components/adventure/SecretRealmCard.vue'
-  import { todayMansion, favoredWorld, todayMansionLine } from '@/core/astronomy'
+  import { todayMansion, favoredWorld, todayMansionLine, mansionLuckPercent } from '@/core/astronomy'
   import { worldDef } from '@/data/realms'
   import { canEnterRegion, entryBlockReason, worldView } from '@/core/mortalWorldService'
   import { isRetreating } from '@/core/earlyGameService'
@@ -304,7 +315,10 @@
   } from '@/core/exploration'
   import { currentRegionEvent } from '@/core/regionEvent'
   import { modOf } from '@/core/statsCalc'
-  import { departButtonText } from '@/ui/adventureText'
+  import { departButtonText, petTraitTripLine } from '@/ui/adventureText'
+  import { produceTierText } from '@/ui/produceText'
+  import { petDef } from '@/data/pets'
+  import { personalityEffects } from '@/core/petPersonality'
   import { EVENT_TIERS, tierOddsText } from '@/core/eventTier'
   import { pendingChainStages } from '@/core/eventEngine'
   import { foeOriginPartsText } from '@/core/battleAnalysis'
@@ -346,6 +360,8 @@
   /** 今日星象:值日之宿所利界域,由此知今日该往哪一片地界走 */
   const mansionLine = computed(() => todayMansionLine())
   const favoredWorldName = computed(() => worldDef(favoredWorld(todayMansion())).name)
+  /** 值日之宿所利的百分数:一处来源(astronomy),历练页与界域志界域志共此一枚 */
+  const mansionLuckPct = computed(() => mansionLuckPercent())
   /** 区域适配原因点按展开(移动端无 hover) */
   const adaptExpand = ref<string | null>(null)
 
@@ -414,6 +430,14 @@
     const mine = currentBuild.value ? detectionAdaptation(currentBuild.value, eco) : null
     const recs = recommendForRegion(modeTarget.value).slice(0, 2)
     return { mine, recs }
+  })
+
+  /** 灵兽之性折进这一行的账(遇险/行程/掉宝/护持,与结算同表) —— 有伴才有一行 */
+  const petTripLine = computed(() => {
+    if (!player.petId) return ''
+    const def = petDef(player.petId)
+    if (!def) return ''
+    return petTraitTripLine(def.name, personalityEffects(player.petId))
   })
 
   /**

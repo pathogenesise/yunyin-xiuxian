@@ -1,18 +1,52 @@
 import { describe, expect, it } from 'vitest'
-import { gte, lt, ratio, toNum } from '@/utils/gnum'
+import { add, gte, gn, lt, ratio, toNum } from '@/utils/gnum'
 import {
+  POWER_WEIGHTS,
   baseCombatStats,
   baseCultPerSec,
   breakthroughBaseRate,
   buildingCost,
   expRequirement,
   powerScale,
+  powerScore,
   stoneByTier,
   tribulationWaveDamage,
   winChanceFromRatio
 } from './formulas'
+import { powerBreakdownRows, powerExplainText } from '@/ui/statNames'
 
 describe('GameFormula 成长曲线', () => {
+  it('战力：算式 = 攻×3 + 防×2 + 血×0.15，权重与释义同源，不许改一处漏一处', () => {
+    const a = gn(10)
+    const d = gn(20)
+    const h = gn(100)
+    const got = toNum(powerScore(a, d, h))
+    const want = 10 * POWER_WEIGHTS.attack + 20 * POWER_WEIGHTS.defense + 100 * POWER_WEIGHTS.hp
+    expect(got).toBeCloseTo(want, 6)
+    // 人物页那句释义必须真的来自同一份权重
+    expect(powerExplainText()).toBe(`攻×${POWER_WEIGHTS.attack} + 防×${POWER_WEIGHTS.defense} + 血×${POWER_WEIGHTS.hp}`)
+  })
+  it('战力构成行与 powerScore 同一批数相加:逐行权重折算,合计即总战力', () => {
+    const s = {
+      attack: gn(10),
+      defense: gn(20),
+      maxHp: gn(100),
+      power: powerScore(gn(10), gn(20), gn(100)),
+      mods: {},
+      breakdown: []
+    }
+    const rows = powerBreakdownRows(s)
+    // 三行齐全,名字与权重对得上
+    expect(rows.map(r => [r.name, r.weight])).toEqual([
+      ['攻击', POWER_WEIGHTS.attack],
+      ['防御', POWER_WEIGHTS.defense],
+      ['气血', POWER_WEIGHTS.hp]
+    ])
+    // 每行折算 = 原始属性 × 权重,三项相加 = powerScore
+    const sum = toNum(add(add(rows[0]!.value, rows[1]!.value), rows[2]!.value))
+    expect(toNum(rows[0]!.value)).toBeCloseTo(10 * POWER_WEIGHTS.attack, 6)
+    expect(sum).toBeCloseTo(toNum(s.power), 6)
+  })
   it('突破需求单调递增', () => {
     const a = expRequirement(0, 0)
     const b = expRequirement(0, 5)

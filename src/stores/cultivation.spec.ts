@@ -3,7 +3,7 @@
  *
  * 旧实现 `Math.max(旧 endsAt, now + dur)` 实为「刷新」:聚灵还剩 20 分钟时再服一颗同类丹,
  * 那 20 分钟直接作废,玩家连服丹药等于白丢药力。本文件锁住叠加语义与三条边界:
- *  1. 尚在生效 → 剩余时长相加;
+ *  1. 尚在生效 → 剩余时长相加(**丹药增益封顶在单颗两倍**,见 core/buffCap;非丹药状态不限);
  *  2. 已过期实例 → 以 now 为基准,不把历史负剩余叠进来;
  *  3. 不同状态各自计时、未注册 id 静默忽略(不因叠加改动变成脏数据源)。
  */
@@ -30,6 +30,7 @@ describe('状态时长叠加(addBuff)', () => {
     setActivePinia(createPinia())
   })
 
+
   it('首次施加:endsAt = now + 定义时长', () => {
     const cultivation = useCultivationStore()
     cultivation.addBuff('buff_juling', 1_000_000)
@@ -50,14 +51,15 @@ describe('状态时长叠加(addBuff)', () => {
     expect(remainSec).toBe(600 + juling!.durationSec)
   })
 
-  it('连服 N 次 → 时长恰好是 N 倍(线性可预期)', () => {
+  it('连服 N 次 → 攒不过上限:丹药增益封顶在单颗两倍,到顶即停', () => {
     const cultivation = useCultivationStore()
     const t0 = 5_000_000
-    for (let i = 0; i < 3; i++) cultivation.addBuff('buff_juling', t0)
+    for (let i = 0; i < 5; i++) cultivation.addBuff('buff_juling', t0)
 
     expect(cultivation.buffs).toHaveLength(1)
     const remainSec = (cultivation.buffs[0]!.endsAt - t0) / SEC
-    expect(remainSec).toBe(juling!.durationSec * 3)
+    // 封顶(见 core/buffCap):最长 = 单颗时长 × 2,连服再多也攒不上去了
+    expect(remainSec).toBe(juling!.durationSec * 2)
   })
 
   it('同一实例随身携带 added(本命累积毫秒):首施=单份,连服 N 次=N 份', () => {
@@ -110,5 +112,53 @@ describe('状态时长叠加(addBuff)', () => {
 
     expect(cultivation.buffs).toHaveLength(1)
     expect((cultivation.buffs[0]!.endsAt - t1) / SEC).toBe(injury.durationSec * 2 - 10)
+  })
+})
+
+/**
+ * 修炼速度 buff 叠加与单方到期撤除。
+ *
+ * buff_juling(聚灵, +50% 修速,丹药有 2× 上限)与 retreat(闭关, +150% 修速,无上限)
+ * 是**两种不同状态但共用一个 cultivationSpeed 键**。时长叠加(cultivation/addBuff 与
+ * buffCap)管的是同一状态多久,这里管的是**不同状态按合并求和**(不是覆盖):
+ * 0.5 + 1.5 = 2.0(cultivationSpeed 不在递减/软阈值集里,天然线性),且一方到期
+ * 只撤它自己的那一份、不殃及另一份。
+ */
+describe('修炼速度 buff 叠加与单方到期撤除(buffMods)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('聚灵 + 闭关同时:修速按合并求和 = 2.0(不是后者覆盖前者)', () => {
+    const cul = useCultivationStore()
+    const t0 = 1_000_000
+    cul.addBuff('buff_juling', t0) // cultivationSpeed +0.5
+    cul.addBuff('retreat', t0) // cultivationSpeed +1.5
+    expect(cul.buffs).toHaveLength(2)
+    expect(cul.buffMods.cultivationSpeed).toBe(2.0)
+  })
+
+  it('闭关先到期(pruneBuffs):只撤闭关那份,聚灵仍在 → 0.5', () => {
+    const cul = useCultivationStore()
+    const t0 = 1_000_000
+    cul.addBuff('buff_juling', t0) // endsAt = t0 + 1800s
+    cul.addBuff('retreat', t0) // endsAt = t0 + 300s
+    const retreatEnd = t0 + buffDef('retreat')!.durationSec * SEC
+    const afterRetreat = retreatEnd + 1
+    expect(cul.buffMods.cultivationSpeed).toBe(2.0)
+    expect(cul.pruneBuffs(afterRetreat)).toBe(true) // 撤掉了什么
+    expect(cul.buffs.map(b => b.defId)).toEqual(['buff_juling'])
+    expect(cul.buffMods.cultivationSpeed).toBe(0.5) // 聚灵那份还留着
+  })
+
+  it('各方全到期后:该键归零(键消失)', () => {
+    const cul = useCultivationStore()
+    const t0 = 2_000_000
+    cul.addBuff('buff_juling', t0) // endsAt = t0 + 1800s
+    cul.addBuff('retreat', t0) // endsAt = t0 + 300s
+    const julingEnd = t0 + buffDef('buff_juling')!.durationSec * SEC
+    cul.pruneBuffs(julingEnd + 1)
+    expect(cul.buffs).toHaveLength(0)
+    expect(cul.buffMods.cultivationSpeed).toBeUndefined()
   })
 })

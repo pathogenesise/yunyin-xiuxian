@@ -17,25 +17,35 @@
             触控靶面:纯 10px 文字行高 15px,拇指点不中(layout-check 报 27px < 28);
             负外边距配正内边距同升到 8px,盒高 31px 达标,流中占位仍只 15px 行高(同页收纳/分解同法)。
           -->
-          <button class="-my-2 shrink-0 px-1 py-2 text-[10px] text-azure/90 active:opacity-60" @click="onEquipSet(s.def.id)">穿齐 →</button>
+          <button class="-my-2 shrink-0 px-1 py-2 text-[10px] text-azure active:opacity-60" @click="onEquipSet(s.def.id)">
+            穿齐 →({{ s.preview > 0 ? `换 ${s.preview}` : '已齐' }})
+          </button>
         </p>
       </div>
       <div class="mt-3 flex items-center justify-between px-1">
         <span class="text-[11px] text-ink-faint tabular">藏品 {{ inventory.bagItems.length }} · 器灵尘 {{ resources.dust }}</span>
         <span class="flex gap-3">
-          <button class="-my-1.5 py-1.5 text-[11px] text-azure/90 active:opacity-60" @click="smartOpen = true">
+          <button class="-my-1.5 py-1.5 text-[11px] text-azure active:opacity-60" @click="smartOpen = true">
             收纳{{ settings.smartKeep.enabled ? '·启' : '' }}
           </button>
-          <button class="-my-1.5 py-1.5 text-[11px] text-cinnabar/80 active:opacity-60" @click="decomposeOpen = true">分解</button>
+          <button class="-my-1.5 py-1.5 text-[11px] text-cinnabar active:opacity-60" @click="decomposeOpen = true">分解</button>
         </span>
       </div>
       <div class="mt-2 grid grid-cols-3 gap-2">
         <button
           v-for="row in slotRows"
           :key="row.slot"
-          class="card-ink flex flex-col items-center gap-1 px-2 py-2.5 active:scale-95"
+          class="card-ink relative flex flex-col items-center gap-1 px-2 py-2.5 active:scale-98"
+          :aria-label="`${row.name}${row.upgradeable ? ',行囊里有更强的一件' : ''}`"
           @click="pickerSlot = row.slot"
         >
+          <!-- 行囊里有更强的:槽卡上一枚小章 —— 与一键换装同一把 bestEquipFor,不比它看得少 -->
+          <span
+            v-if="row.upgradeable"
+            role="img"
+            :aria-label="`${row.name}栏,行囊里有更强的一件`"
+            class="absolute right-1 top-1 rounded-sm bg-gold-ink/20 px-1 font-kai text-[8px] leading-[12px] text-gold-ink"
+          >可换</span>
           <span class="text-[9px] text-ink-faint">
             {{ row.name }}
             <template v-if="row.stock">· {{ row.stock }}</template>
@@ -54,9 +64,25 @@
           </template>
         </button>
       </div>
+      <!-- 角上那枚「可换」得有人解释:新玩家看见金点子,该知道它是行囊里有更强的牌子 -->
+      <p v-if="hasUpgradeableSlot" class="text-center text-[9px] text-ink-faint">
+        角上点金 = 行囊里有更强的候补,点开该槽即可换上
+      </p>
       <p class="mt-2 text-center text-[10px] text-ink-faint">点击部位查看候选,行囊满时新掉落自动折作器灵尘</p>
       <!-- 玩家反馈「一键装备最高阶级品质装备快捷键」:每槽换上当前最强,已是则不动 -->
-      <button class="btn-ghost mt-2 w-full !py-1.5 !text-[11px]" @click="onEquipAllBest">一键 · 各部位换上当前最强</button>
+      <!-- 点下去会动几件,先给个数:与结算同一把 bestEquipFor;一件不换时明说「已是最强」 -->
+      <button class="btn-ghost mt-2 w-full !py-1.5 !text-[11px]" @click="onEquipAllBest">
+        一键 · 各部位换上当前最强{{ bestSwapPreview }}
+      </button>
+      <!--
+        空一身:与一键换装成对的反向出口 —— 已佩戴的件不参加分解/收纳,
+        想清一口袋破烂,得先把身上这九格脱干净。只脱不毁,件全回行囊
+      -->
+      <button
+        v-if="equippedCount > 0"
+        class="btn-ghost mt-2 w-full !py-1.5 !text-[11px] !text-ink-faint"
+        @click="onUnequipAll"
+      >空一身 · 卸下全部({{ equippedCount }})</button>
 
       <!-- 全部藏品(含佩戴中):部位槽之下的完整清单,分页(60 件/页) -->
       <div v-if="allItems.length" class="mt-4">
@@ -79,14 +105,14 @@
     <template v-else-if="tab === 'pill'">
       <!-- 开炉炼丹:入口置顶,点开弹窗 -->
       <button
-        class="card-ink mt-3 flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-99"
+        class="card-ink mt-3 flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-98"
         @click="craftOpen = true"
       >
-        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-cinnabar/85 font-kai text-[19px] text-paper">炉</span>
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-cinnabar/85 font-kai text-[19px] seal-face">炉</span>
         <span class="min-w-0 flex-1">
           <span class="block font-kai text-[14px] tracking-widest text-ink">开炉炼丹</span>
           <span class="block truncate text-[10px] leading-relaxed text-ink-faint">
-            {{ recipes.length > 0 ? `已知丹方 ${recipes.length} 种 · 灵草 ${resources.herb}` : '尚不知任何丹方' }}
+            {{ recipes.length > 0 ? `已知丹方 ${recipes.length} 种 · ${HERB_GRADE_SHORT[herbGrade]}灵草×${formatNum(resources.herbOf(herbGrade))}` : '尚不知任何丹方' }}
           </span>
         </span>
         <span class="shrink-0 text-[12px] text-ink-faint">›</span>
@@ -97,20 +123,24 @@
         <button
           v-for="row in pillRows"
           :key="row.def!.id"
-          class="relative aspect-square rounded-md border transition-transform active:scale-95"
-          :style="{ borderColor: tint(qualityDef(row.def!.quality).color, 0.33), background: tint(qualityDef(row.def!.quality).color, 0.06) }"
+          class="relative aspect-square rounded-md border transition-transform active:scale-98"
+          :style="{ borderColor: tint(pillQualityColor(row.def!), 0.33), background: tint(pillQualityColor(row.def!), 0.06) }"
           @click="pillDetail = row.def!.id"
         >
           <span class="flex h-full w-full flex-col items-center justify-center gap-0.5 px-1">
-            <GameIcon :name="row.def!.icon" :size="20" :style="{ color: qualityDef(row.def!.quality).color }" />
-            <span class="w-full truncate text-center text-[9px] leading-tight" :style="{ color: qualityDef(row.def!.quality).color }">
+            <GameIcon :name="row.def!.icon" :size="20" :style="{ color: pillQualityColor(row.def!) }" />
+            <span class="w-full truncate text-center text-[9px] leading-tight" :style="{ color: pillQualityColor(row.def!) }">
               {{ row.def!.name }}
             </span>
           </span>
           <span class="absolute bottom-0.5 right-1 text-[9px] leading-none text-ink-soft tabular">×{{ row.count }}</span>
         </button>
       </div>
-      <p v-else class="mt-10 text-center text-[12px] text-ink-faint">丹匣空空</p>
+      <p v-else class="mt-10 text-center text-[12px] text-ink-faint">
+        丹匣空空
+        <br />
+        <span class="text-[11px]">丹药多出于历练掉落、途中际遇与开炉炼丹</span>
+      </p>
     </template>
 
     <!-- 材料 -->
@@ -119,7 +149,7 @@
         <button
           v-for="m in materialGrid"
           :key="m.key"
-          class="relative aspect-square rounded-md border border-ink/15 bg-ink/[0.03] transition-transform active:scale-95"
+          class="relative aspect-square rounded-md border border-ink/15 bg-ink/[0.03] transition-transform active:scale-98"
           @click="materialDetail = m.key"
         >
           <span class="flex h-full w-full flex-col items-center justify-center gap-0.5 px-1">
@@ -210,17 +240,19 @@
           <!--
             祭炼连炼:一重一重点太累,与强化连升同一套二步确认 ——
             行只在一口气能连炼 ≥2 重时出现(只够一重时,单炼按钮就是那一重)。
+            flex-wrap + 文本保底宽:窄屏放不下说明与双钮同排时,说明独占整行、钮换行 ——
+            与强化连升/洞府连升同一处外伤(320 下说明被 shrink-0 钮压成 0 宽竖排)。
           -->
-          <div v-if="row.artPlan.levels >= 2" class="mt-2 flex items-center gap-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
+          <div v-if="row.artPlan.levels >= 2" class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
             <template v-if="batchArtConfirm !== row.def.id">
-              <p class="min-w-0 flex-1 text-[10px] leading-snug text-ink-soft">
+              <p class="min-w-[5rem] flex-1 text-[10px] leading-snug text-ink-soft">
                 连炼至 <span class="font-kai text-[11px] text-cinnabar">第 {{ row.owned.level + row.artPlan.levels }} 重</span>
                 <span class="mt-0.5 block text-[9px] text-ink-faint tabular">共耗 悟道×{{ row.artPlan.wudao }} · 灵石 {{ formatGN(row.artPlan.stone) }}</span>
               </p>
               <button class="btn-ghost shrink-0 !px-3 !py-2 !text-[11px]" @click="batchArtConfirm = row.def.id">连 炼</button>
             </template>
             <template v-else>
-              <p class="min-w-0 flex-1 text-[10px] leading-snug text-ink-soft">
+              <p class="min-w-[5rem] flex-1 text-[10px] leading-snug text-ink-soft">
                 一步连炼 {{ row.artPlan.levels }} 重,花上面那笔总账 —— 仍要?
               </p>
               <button class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="batchArtConfirm = null">再想想</button>
@@ -243,13 +275,13 @@
         <div class="flex items-center gap-3">
           <span
             class="grid h-12 w-12 shrink-0 place-items-center rounded-md"
-            :style="{ color: qualityDef(currentPill.def.quality).color, background: tint(qualityDef(currentPill.def.quality).color, 0.08) }"
+            :style="{ color: pillQualityColor(currentPill.def), background: tint(pillQualityColor(currentPill.def), 0.08) }"
           >
             <GameIcon :name="currentPill.def.icon" :size="24" />
           </span>
           <div class="min-w-0">
-            <p class="text-[11px]" :style="{ color: qualityDef(currentPill.def.quality).color }">
-              {{ qualityDef(currentPill.def.quality).name }}
+            <p class="text-[11px]" :style="{ color: pillQualityColor(currentPill.def) }">
+              {{ pillQualityName(currentPill.def) }}
             </p>
             <p class="text-[11px] text-ink-faint tabular">持有 ×{{ currentPill.count }}</p>
           </div>
@@ -264,8 +296,11 @@
       <template #footer>
         <div class="grid grid-cols-2 gap-2">
           <button class="btn-seal" @click="onUsePill()">服 用</button>
-          <!-- 玩家反馈「批量吃丹」:存量够几枚就连服几枚,结果与连点一致 -->
-          <button class="btn-ghost" @click="onUsePillBatch()">连服 ×5</button>
+          <!-- 批量吃丹:存量够几枚就连服几枚。文案把「×5」改成真数 —— 只剩 2 枚还挂着 ×5,
+               结算却吃到没有就停,界面说的与做的对不上;只够 1 枚时连服没有意义,直接不摆 -->
+          <button v-if="(currentPill?.count ?? 0) >= 2" class="btn-ghost" @click="onUsePillBatch()">
+            连服 ×{{ Math.min(5, currentPill?.count ?? 0) }}
+          </button>
         </div>
       </template>
     </BaseModal>
@@ -291,7 +326,12 @@
 
     <!-- 开炉炼丹 -->
     <BaseModal :open="craftOpen" title="开炉炼丹" wide @close="craftOpen = false">
-      <p class="mb-2 text-[11px] text-ink-faint tabular">灵草 {{ resources.herb }} · 灵石 {{ formatGN(resources.spiritStone) }}</p>
+      <p class="mb-2 text-[11px] text-ink-faint tabular">灵草 {{ herbStash }} · 灵石 {{ formatGN(resources.spiritStone) }}</p>
+      <!--
+        被动翻检全程无进度条:玩家只知道某天突然翻出一张方子,不知道它快到了。
+        这一行把「下一件事」报成时间 —— 读数与 studyTick 同序,见 core/loreService.studyEta
+      -->
+      <p v-if="studyLine" class="mb-2 text-[10px] leading-relaxed text-ink-faint tabular">{{ studyLine }}</p>
       <!--
         方子列表不再自带滚动框:弹窗正文本身就是滚动容器,两层滚动叠在一起时,
         内层底边会把下一张卡片切得只剩一条圆角,玩家看不出还能滚(议题 #21)。
@@ -303,16 +343,17 @@
             加了「连炼 ×5」之后右列更宽,窄屏上左列只剩两个字宽,丹名被压成竖排(议题 #21)。
           -->
           <div class="flex items-start gap-2.5">
-            <GameIcon :name="r.def.icon" :size="18" class="mt-px shrink-0" :style="{ color: qualityDef(r.def.quality).color }" />
+            <GameIcon :name="r.def.icon" :size="18" class="mt-px shrink-0" :style="{ color: pillQualityColor(r.def) }" />
             <div class="min-w-0 grow">
               <p class="flex flex-wrap items-baseline gap-x-2">
                 <span class="whitespace-nowrap font-kai text-[13px] text-ink">{{ r.def.name }}</span>
                 <span class="whitespace-nowrap text-[10px] text-ink-faint">{{ r.able.rank }} 阶</span>
                 <span v-if="r.able.overReach > 0" class="whitespace-nowrap text-[10px] text-cinnabar">越阶 {{ r.able.overReach }}</span>
+                <span v-if="r.plan.rounds > 0" class="whitespace-nowrap text-[10px] text-jade">现可炼 {{ r.plan.rounds }} 炉</span>
               </p>
-              <p class="text-[11px] text-ink-faint tabular">灵草×{{ r.cost.herb }} · 灵石 {{ formatGN(r.cost.stone) }}</p>
+              <p class="text-[11px] text-ink-faint tabular">{{ HERB_GRADE_SHORT[r.cost.grade] }}灵草×{{ r.cost.herb }} · 灵石 {{ formatGN(r.cost.stone) }}</p>
               <!-- 炼出来是什么:方子清单此前只报代价与把握,不报成品 -->
-              <p class="text-[10px] leading-relaxed text-azure/80">{{ pillFuncText(r.def) }}</p>
+              <p class="text-[10px] leading-relaxed text-azure">{{ pillFuncText(r.def) }}</p>
               <p v-for="w in r.able.weakness" :key="w" class="mt-0.5 text-[10px] text-ink-faint">· {{ w }}</p>
             </div>
           </div>
@@ -327,31 +368,35 @@
                    抬到 !py-2 到 35px,批量炼制是高频操作。
                    料足(plan>5)时多一枚「炼满」:按当前料保底算清能开几炉,
                    一次开完,预览与执行共用 craftBatchPlan -->
-              <template v-if="pillFullId !== r.def.id">
-                <button class="btn-ghost !px-3 !py-2 !text-[11px]" @click="craftPillBatch(r.def.id, 5)">连炼 ×5</button>
-                <button
-                  v-if="r.plan.rounds > 5"
-                  class="btn-ghost !px-2.5 !py-2 !text-[11px]"
-                  @click="pillFullId = r.def.id"
-                >
-                  炼 满 ×{{ r.plan.rounds }}
-                </button>
-                <button class="btn-seal !px-3 !py-2 !text-[12px]" @click="craftPill(r.def.id)">炼制</button>
+              <template v-if="r.plan.rounds > 0">
+                <template v-if="pillFullId !== r.def.id">
+                  <button class="btn-ghost !px-3 !py-2 !text-[11px]" @click="craftPillBatch(r.def.id, 5)">连炼 ×5</button>
+                  <button
+                    v-if="r.plan.rounds > 5"
+                    class="btn-ghost !px-2.5 !py-2 !text-[11px]"
+                    @click="pillFullId = r.def.id"
+                  >
+                    炼 满 ×{{ r.plan.rounds }}
+                  </button>
+                  <button class="btn-seal !px-3 !py-2 !text-[12px]" @click="craftPill(r.def.id)">炼制</button>
+                </template>
+                <template v-else>
+                  <!-- 开的是累计总账,按一下不该就此了结:二步确认与分解/散去同款 -->
+                  <button class="btn-ghost !px-2.5 !py-2 !text-[11px]" @click="pillFullId = null">再想想</button>
+                  <button class="btn-seal !px-2.5 !py-2 !text-[11px]" @click="runCraftFull(r.def.id, r.plan.rounds)">
+                    开 炉 ×{{ r.plan.rounds }}
+                  </button>
+                </template>
               </template>
-              <template v-else>
-                <!-- 开的是累计总账,按一下不该就此了结:二步确认与分解/散去同款 -->
-                <button class="btn-ghost !px-2.5 !py-2 !text-[11px]" @click="pillFullId = null">再想想</button>
-                <button class="btn-seal !px-2.5 !py-2 !text-[11px]" @click="runCraftFull(r.def.id, r.plan.rounds)">
-                  开 炉 ×{{ r.plan.rounds }}
-                </button>
-              </template>
+              <!-- 缺料/掌握不足:不摆注定点不动的按钮,把真实阻拦摊在眼前 -->
+              <span v-else class="whitespace-nowrap text-[10px] text-cinnabar">{{ r.plan.blocked }}</span>
             </div>
           </div>
           <p
             v-if="pillFullId === r.def.id"
             class="mt-1.5 text-[9px] leading-relaxed text-cinnabar"
           >
-            开 {{ r.plan.rounds }} 炉,约耗 灵草×{{ r.plan.herb }} · 灵石 {{ formatGN(r.plan.stone) }};
+            开 {{ r.plan.rounds }} 炉,约耗 {{ HERB_GRADE_SHORT[r.cost.grade] }}灵草×{{ r.plan.herb }} · 灵石 {{ formatGN(r.plan.stone) }};
             炸炉按技艺省下残料,或可再多开几炉 —— 仍要?
           </p>
         </div>
@@ -392,7 +437,7 @@
           :class="row.equipped ? 'bg-jade/10' : 'bg-paper-deep/70'"
         >
           <GameIcon :name="row.template.icon" :size="16" :style="{ color: qualityDef(row.item.quality).color }" />
-          <button class="min-w-0 grow text-left active:opacity-70" @click="openDetail(row.item.uid)">
+          <button class="min-w-0 grow text-left active:opacity-60" @click="openDetail(row.item.uid)">
             <span class="block truncate font-kai text-[13px]" :style="{ color: qualityDef(row.item.quality).color }">
               {{ row.template.name }}
               <template v-if="row.item.level > 0">+{{ row.item.level }}</template>
@@ -403,8 +448,8 @@
               {{ row.item.affixes.length }}/{{ qualityDef(row.item.quality).affixes[1] }}
             </span>
           </button>
-          <button v-if="row.equipped" class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="unequipSlot()">卸下</button>
-          <button v-else class="btn-seal shrink-0 !px-2.5 !py-1 !text-[11px]" @click="equipItem(row.item.uid)">换上</button>
+          <button v-if="row.equipped" class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="unequipSlot()">卸下</button>
+          <button v-else class="btn-seal shrink-0 !px-2.5 !py-2 !text-[11px]" @click="equipItem(row.item.uid)">换上</button>
         </div>
       </div>
       <p v-else class="py-6 text-center">
@@ -444,7 +489,7 @@
           </span>
         </label>
       </div>
-      <p v-if="decomposeTotal > 0" class="mt-2 text-right text-[11px] text-cinnabar/90 tabular">
+      <p v-if="decomposeTotal > 0" class="mt-2 text-right text-[11px] text-cinnabar tabular">
         共 {{ decomposeTotal }} 件,入炉可化 {{ batchYieldText(decomposePlanned) }}
       </p>
       <template #footer>
@@ -590,13 +635,16 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useInventoryStore } from '@/stores/inventory'
   import { useResourcesStore } from '@/stores/resources'
   import { usePlayerStore } from '@/stores/player'
   import { useUiStore } from '@/stores/ui'
   import { useSettingsStore } from '@/stores/settings'
   import { qualityDef, QUALITIES } from '@/data/qualities'
-  import { pillDef } from '@/data/pills'
+  import { pillDef, pillQualityColor, pillQualityName, pillRank } from '@/data/pills'
+  import { HERB_GRADE_SHORT, herbGradeOfMajor, type HerbGrade } from '@/data/herbGrades'
+  import { herbStashText } from '@/ui/herbText'
   import { pillFuncText } from '@/ui/itemText'
   import {
     artifactActiveText,
@@ -630,10 +678,11 @@
   import { salvageOf } from '@/core/salvage'
   import { add, gnZero } from '@/utils/gnum'
   import { equipSetDef, setCounts, type EquipSetDef } from '@/core/equipSet'
-  import { equipAllBest, equipSetCombo } from '@/core/equipBest'
+  import { bestEquipFor, equipAllBest, equipSetCombo, equipSetPreview, EQUIP_SLOTS, unequipAllEquipped } from '@/core/equipBest'
   import { useLoreStore } from '@/stores/lore'
+  import { studyEta } from '@/core/loreService'
   import { DAO_NAMES, SKILLS, skillStageName } from '@/data/crafting'
-  import { cnNumber, formatGN, formatNum, formatPercent } from '@/utils/format'
+  import { cnNumber, formatDuration, formatGN, formatNum, formatPercent } from '@/utils/format'
   import { tint } from '@/utils/colorToken'
   import { STAT_NAMES, statCaveat, statModPhrase } from '@/ui/statNames'
   import {
@@ -659,6 +708,12 @@
   type Tab = 'equip' | 'pill' | 'material' | 'artifact'
   const tab = ref<Tab>('equip')
 
+  // 修行志的「去办」会用 ?tab=pill 这类深链进来;只在合法签里挑,乱掷的忽略
+  const route = useRoute()
+  const TAB_IDS: Tab[] = ['equip', 'pill', 'material', 'artifact']
+  const deepTab = route.query.tab as Tab | undefined
+  if (deepTab && (TAB_IDS as string[]).includes(deepTab)) tab.value = deepTab
+
   const TABS: { id: Tab; label: string }[] = [
     { id: 'equip', label: '装备' },
     { id: 'pill', label: '丹药' },
@@ -676,31 +731,42 @@
     return [...counts.entries()]
       .map(([id, count]) => {
         const def = equipSetDef(id)
-        return def ? { def, count, active: count >= def.required } : null
+        if (!def) return null
+        // 干跑:这套现在会换几件(与穿齐同一份取舍),按钮先报数
+        return { def, count, active: count >= def.required, preview: equipSetPreview(id) }
       })
-      .filter((row): row is { def: EquipSetDef; count: number; active: boolean } => row !== null)
+      .filter((row): row is { def: EquipSetDef; count: number; active: boolean; preview: number } => row !== null)
       .sort((a, b) => Number(b.active) - Number(a.active) || b.count - a.count)
   })
+
+  /** 已佩戴的槽位数 —— 「空一身」按钮的计数(身上没件时不出现,免得摆个 0 的按钮) */
+  const equippedCount = computed(() => SLOTS.filter(slot => inventory.equipped[slot]).length)
+  /** 至少一个槽位有更强候补时,槽卡下方的图例才值得出现 */
+  const hasUpgradeableSlot = computed(() => slotRows.value.some(r => r.upgradeable))
 
   const slotRows = computed(() =>
     SLOTS.map(slot => {
       const uid = inventory.equipped[slot]
       const item = uid ? inventory.findItem(uid) : undefined
+      // 「行囊里还有更强的」—— 与一键换装同一把 bestEquipFor,槽卡不该比它看得少
+      const best = bestEquipFor(slot)
       return {
         slot,
         name: EQUIP_SLOT_NAMES[slot],
         item,
         template: item ? equipmentTemplate(item.templateId) : undefined,
-        stock: inventory.bagItems.filter(it => equipmentTemplate(it.templateId)?.slot === slot).length
+        stock: inventory.bagItems.filter(it => equipmentTemplate(it.templateId)?.slot === slot).length,
+        upgradeable: !!best && best.uid !== uid
       }
     })
   )
 
-  /** 全部藏品(含佩戴中),按品质/层级降序 */
+  /** 全部藏品(含佩戴中),佩戴中的置顶,其余按品质/层级降序 */
   const allItems = computed(() =>
     inventory.items
       .map(item => ({ item, equipped: inventory.equippedUids.has(item.uid) }))
       .sort((a, b) => {
+        if (a.equipped !== b.equipped) return Number(b.equipped) - Number(a.equipped)
         const dq = qualityDef(b.item.quality).rank - qualityDef(a.item.quality).rank
         return dq !== 0 ? dq : b.item.tier - a.item.tier
       })
@@ -752,7 +818,7 @@
     Object.entries(inventory.pills)
       .map(([id, count]) => ({ def: pillDef(id), count }))
       .filter(x => x.def !== undefined && x.count > 0)
-      .sort((a, b) => qualityDef(b.def!.quality).rank - qualityDef(a.def!.quality).rank)
+      .sort((a, b) => pillRank(b.def!) - pillRank(a.def!))
   )
 
   const recipes = computed(() =>
@@ -764,10 +830,15 @@
         plan: craftBatchPlan(id)
       }))
       .filter(
-        (x): x is { def: PillDef; cost: { herb: number; stone: GNum }; able: Craftability; plan: ReturnType<typeof craftBatchPlan> } =>
+        (x): x is { def: PillDef; cost: { herb: number; stone: GNum; grade: HerbGrade }; able: Craftability; plan: ReturnType<typeof craftBatchPlan> } =>
           x.def !== undefined && x.cost !== null && x.able !== null
       )
-      .sort((a, b) => a.able.rank - b.able.rank)
+      // 现在能开炉的置顶,其余再按阶位 —— 进弹窗一眼看见此刻哪味立刻可炼
+      .sort((a, b) => {
+        const ca = a.plan.rounds > 0 ? 1 : 0
+        const cb = b.plan.rounds > 0 ? 1 : 0
+        return cb - ca || a.able.rank - b.able.rank
+      })
   )
   /** 「炼满」二步确认态:谁不按常量的炉数,一眼先交代总账 */
   const pillFullId = ref<string | null>(null)
@@ -795,12 +866,19 @@
     return 'text-cinnabar'
   }
 
+  /** 当前所在大境界的灵草品阶 —— 炼丹/采药都看它,存量的「主数字」也该读它 */
+  const herbGrade = computed(() => herbGradeOfMajor(player.major))
+
+  /** 逐品灵草存量(仅列持有>0,大数走 formatNum) —— 总量展示的真相在细节里,不在一个总和 */
+  const herbStash = computed(() => herbStashText(g => resources.herbOf(g), formatNum))
+
+  /** 材料行:灵草的量是「当前品」的可炼数,`full` 留给详情弹窗逐品陈列(其它料本就单标量) */
   const materialRows = computed(() => [
-    { icon: 'leaf', name: '灵草', desc: '炼丹的根本', value: resources.herb },
-    { icon: 'mountain', name: '玄铁', desc: '筑造与炼器之材', value: resources.ore },
-    { icon: 'scroll', name: '功法残页', desc: '集残页可参悟功法', value: resources.page },
-    { icon: 'sparkles', name: '器灵尘', desc: '强化装备的灵性之尘', value: resources.dust },
-    { icon: 'book', name: '悟道点', desc: '功法进修与法宝炼化所需', value: resources.wudao }
+    { icon: 'leaf', name: '灵草', desc: '炼丹的根本', value: resources.herbOf(herbGrade.value), full: `逐品:${herbStash.value}` },
+    { icon: 'mountain', name: '玄铁', desc: '筑造与炼器之材', value: resources.ore, full: String(resources.ore) },
+    { icon: 'scroll', name: '功法残页', desc: '集残页可参悟功法', value: resources.page, full: String(resources.page) },
+    { icon: 'sparkles', name: '器灵尘', desc: '强化装备的灵性之尘', value: resources.dust, full: String(resources.dust) },
+    { icon: 'book', name: '悟道点', desc: '功法进修与法宝炼化所需', value: resources.wudao, full: String(resources.wudao) }
   ])
 
   /** 材料格子:含灵石一并展示,数量走 formatNum 免得格子被长数字撑破 */
@@ -812,7 +890,7 @@
       desc: m.desc,
       color: 'text-ink-soft',
       display: formatNum(m.value),
-      full: String(m.value)
+      full: m.full
     })),
     {
       key: '灵石',
@@ -898,6 +976,20 @@
   function onEquipAllBest(): void {
     const changed = equipAllBest()
     ui.toast(changed > 0 ? `已自动换上 ${changed} 件当下最能打的(按真实战力挑)` : '已是更能打的一身', changed > 0 ? 'success' : 'info')
+  }
+  /** 点前的预告:还有几个部位会真的换(与 onEquipAllBest 同一把 bestEquipFor 判据) */
+  const bestSwapPreview = computed(() => {
+    const n = EQUIP_SLOTS.filter(slot => {
+      const best = bestEquipFor(slot)
+      return !!best && inventory.equipped[slot] !== best.uid
+    }).length
+    return n > 0 ? `(将换 ${n} 件)` : '(已是最强)'
+  })
+
+  /** 空一身:卸下全部已佩戴,件回到行囊 —— 以便清理/换血(只脱不毁) */
+  function onUnequipAll(): void {
+    const removed = unequipAllEquipped()
+    ui.toast(removed > 0 ? `已卸下 ${removed} 件,尽数回到行囊` : '身上已无佩戴', removed > 0 ? 'success' : 'info')
   }
 
   /** 一键穿齐套装:换上该套已持有的件,已穿更强的则不换 */
@@ -1076,4 +1168,20 @@
     if (m >= 1) return '此方已通晓:火候节点烂熟于心'
     return `此方已得,熟练 ${Math.round(m * 100)}% —— 多炼几炉便到通晓`
   }
+
+  /**
+   * 藏经阁翻检的当刻概况(开炉页顶部一行)。
+   * 读数在 core/loreService.studyEta —— 与 studyTick 同一优先序,界面不另算。
+   */
+  const studyLine = computed(() => {
+    const eta = studyEta()
+    if (!eta) return ''
+    // 读通了又在手的两态;「够得着的都到手」与「正读某张」是两回事,措辞分开
+    if (!eta.readingId && !eta.nextIsNew) return '藏经阁翻检中:够得着的方子都已到手'
+    if (eta.readingId) {
+      const name = pillDef(eta.readingId)?.name ?? '某方'
+      return `藏经阁正研读「${name}」,约 ${formatDuration(eta.nextInSec)} 后读通`
+    }
+    return `藏经阁翻检中,约 ${formatDuration(eta.nextInSec)} 后翻出一张新方`
+  })
 </script>

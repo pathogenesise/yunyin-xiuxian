@@ -6,9 +6,10 @@ import { rng } from '@/utils/random'
 import { gnZero, isZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { salvageYieldText } from '@/ui/forgeText'
-import { qualityDef } from '@/data/qualities'
+import { isRareQuality, qualityDef } from '@/data/qualities'
 import { equipmentTemplate } from '@/data/equipment'
-import { PILLS } from '@/data/pills'
+import { PILLS, pillRank } from '@/data/pills'
+import { herbGradeOfMajor } from '@/data/herbGrades'
 import { ARTIFACTS, artifactDef } from '@/data/artifacts'
 import { lifeThemeDef } from '@/data/lifeThemes'
 import {
@@ -147,7 +148,7 @@ function acquireInto(inst: EquipmentInstance, opts: { quiet?: boolean; forceKeep
     const res = toDust(inst)
     return { ...res, line: `${label}(行囊已满,${res.line})` }
   }
-  if (!quiet && q.rank >= 3) {
+  if (!quiet && isRareQuality(q)) {
     ui.toast(`灵光乍现,拾得「${label}」`, 'rare')
   }
   return { line: label, bagged: true, evicted: false, dust: 0, stone: gnZero() }
@@ -182,7 +183,7 @@ export function acquireArtifact(defId: string, quiet = false): string {
 export function randomDropPill(major: number): string | null {
   const pool = PILLS.filter(p => p.minRealm <= major && !p.recipe)
   if (pool.length === 0) return null
-  const picked = rng.weighted(pool, p => 100 / (1 + qualityDef(p.quality).rank * 2))
+  const picked = rng.weighted(pool, p => 100 / (1 + pillRank(p) * 2))
   return picked.id
 }
 
@@ -263,7 +264,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean)
   // 材料 —— 数量进标量库存,同时抽出"你到底捡到了什么"推进认知
   if (rng.chance(0.5)) {
     const n = rng.int(1, 3) * doubled
-    resources.addSmall('herb', n)
+    resources.addHerb(herbGradeOfMajor(region.minRealm), n)
     harvestMaterials(tier, 'herb', n)
   }
   if (rng.chance(0.35)) {

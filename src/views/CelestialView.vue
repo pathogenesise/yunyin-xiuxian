@@ -18,9 +18,12 @@
         <p class="font-kai text-[15px] tracking-[0.3em] text-ink">天 界</p>
         <div class="flex items-center gap-2">
           <span class="chip-ink border-cinnabar/50 text-[9px] text-cinnabar">此世消耗</span>
-          <button class="text-left" @click="openDaoSourceDialog()">
-            <span class="block text-[10px] leading-tight text-ink-faint">叩问天道·试一试</span>
-            <span class="block tabular font-kai text-[17px] leading-tight text-cinnabar">{{ formatNum(endgame.daoSource) }}</span>
+          <button class="group flex items-end gap-1 text-left active:scale-97 active:opacity-60" aria-label="道源,点开看用途与来处" @click="openDaoSourceDialog()">
+            <span>
+              <span class="block text-[10px] leading-tight text-ink-faint">叩问天道·试一试</span>
+              <span class="block tabular font-kai text-[17px] leading-tight text-cinnabar">{{ formatNum(endgame.daoSource) }}</span>
+            </span>
+            <span class="mb-px text-[13px] leading-tight text-ink-faint transition-transform group-active:translate-x-0.5">›</span>
           </button>
         </div>
       </div>
@@ -34,7 +37,7 @@
           <SectionTitle title="道途" hint="此生一诺,来世另择" />
           <div v-if="currentDao" class="card-ink mt-2 px-4 py-3">
             <p class="flex items-center gap-3">
-              <span class="grid h-10 w-10 place-items-center rounded-md bg-cinnabar/90 font-kai text-[20px] text-paper">
+              <span class="grid h-10 w-10 place-items-center rounded-md bg-cinnabar/90 font-kai text-[20px] seal-face">
                 {{ currentDao.seal }}
               </span>
               <span class="font-kai text-[16px] tracking-widest text-ink">{{ currentDao.name }}</span>
@@ -43,7 +46,7 @@
             <p v-for="(r, i) in currentDao.ruleText" :key="i" class="mt-0.5 text-[11px] text-azure">· {{ r }}</p>
             <p v-for="(r, i) in currentDao.deepText" :key="`d${i}`" class="mt-0.5 text-[11px] text-gold-ink">◈ {{ r }}</p>
             <p v-if="swordInfo" class="mt-1.5 text-[11px] text-violet-ink tabular">
-              当前剑意 {{ swordInfo.layers }}/4 层({{
+              当前剑意 {{ swordInfo.layers }}/{{ SWORD_PURITY_MAX_LAYERS }} 层({{
                 swordInfo.checks
                   .filter(c => c.ok)
                   .map(c => c.name)
@@ -55,7 +58,7 @@
           <div v-else class="mt-2 grid grid-cols-2 gap-2.5">
             <button v-for="dao in DAO_PATHS" :key="dao.id" class="card-ink px-3 py-3 text-left active:scale-98" @click="pickDao(dao.id)">
               <p class="flex items-center gap-2">
-                <span class="grid h-8 w-8 place-items-center rounded-md bg-cinnabar/85 font-kai text-[16px] text-paper">
+                <span class="grid h-8 w-8 place-items-center rounded-md bg-cinnabar/85 font-kai text-[16px] seal-face">
                   {{ dao.seal }}
                 </span>
                 <span class="font-kai text-[14px] tracking-widest text-ink">{{ dao.name }}</span>
@@ -70,10 +73,10 @@
         <!-- 天道熔炉 / 器魂:两处入口 -->
         <section class="space-y-2">
           <button
-            class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-99"
+            class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-98"
             @click="furnaceOpen = true"
           >
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-cinnabar/85 font-kai text-[19px] text-paper">炉</span>
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-cinnabar/85 font-kai text-[19px] seal-face">炉</span>
             <span class="min-w-0 flex-1">
               <span class="block font-kai text-[14px] tracking-widest text-ink">天道熔炉</span>
               <span class="block truncate text-[10px] leading-relaxed text-ink-faint">前尘俗物,皆可熔作道源</span>
@@ -81,8 +84,8 @@
             <span class="shrink-0 text-[12px] text-ink-faint">›</span>
           </button>
 
-          <button class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-99" @click="goSouls()">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-gold-ink/85 font-kai text-[19px] text-paper">魂</span>
+          <button class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-98" @click="goSouls()">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-gold-ink/85 font-kai text-[19px] seal-face">魂</span>
             <span class="min-w-0 flex-1">
               <span class="block font-kai text-[14px] tracking-widest text-ink">器 魂</span>
               <span class="block truncate text-[10px] leading-relaxed text-ink-faint">
@@ -137,7 +140,7 @@
                 <button
                   v-for="(node, i) in currentNodes"
                   :key="node.id"
-                  class="rounded-md border border-ink/15 bg-paper-deep/60 px-2.5 py-2 text-left active:scale-97"
+                  class="rounded-md border border-ink/15 bg-paper-deep/60 px-2.5 py-2 text-left active:scale-98"
                   @click="pickNode(i as 0 | 1)"
                 >
                   <p class="font-kai text-[13px] text-ink">{{ node.name }}</p>
@@ -158,7 +161,7 @@
                 决战 · {{ runWorld.guardian.name }}
               </button>
             </template>
-            <button class="btn-ghost mt-2 w-full !py-1.5 !text-[11px] !text-ink-faint" @click="abandonRun">中道而返(道源不退)</button>
+            <button class="btn-ghost mt-2 w-full !py-2 !text-[11px] !text-ink-faint" @click="abandonRun">中道而返(道源不退)</button>
           </div>
         </section>
 
@@ -168,7 +171,7 @@
           <div class="mt-2 space-y-2.5">
             <div v-for="world in CELESTIAL_WORLDS" :key="world.id" class="card-ink px-4 py-3">
               <p class="flex items-center gap-2">
-                <span class="grid h-8 w-8 place-items-center rounded-md bg-indigo-ink/85 font-kai text-[15px] text-paper">
+                <span class="grid h-8 w-8 place-items-center rounded-md bg-indigo-ink/85 font-kai text-[15px] seal-face">
                   {{ world.seal }}
                 </span>
                 <span class="font-kai text-[15px] tracking-widest text-ink">{{ world.name }}</span>
@@ -182,7 +185,7 @@
                 未至此境者会被**境界压制**(守关者额外增伤)。名字从境界表取,不手写 ——
                 哪天梯子挪了,这句自己跟上。
               -->
-              <p class="mt-0.5 text-[10px]" :class="player.major < anchorMajorOf(world.anchorTier) ? 'text-cinnabar/80' : 'text-ink-faint'">
+              <p class="mt-0.5 text-[10px]" :class="player.major < anchorMajorOf(world.anchorTier) ? 'text-cinnabar' : 'text-ink-faint'">
                 此界宜 {{ REALMS[anchorMajorOf(world.anchorTier)]?.name ?? '' }} 及以上
                 <template v-if="player.major < anchorMajorOf(world.anchorTier)"> · 你尚在此境之下,受境界压制</template>
               </p>
@@ -191,14 +194,14 @@
                 <span v-for="(r, i) in world.ruleText" :key="i">{{ r }}</span>
               </p>
               <button class="btn-seal mt-2.5 w-full !py-2 !text-[13px]" :disabled="run !== null" @click="openPrep(world.id)">
-                {{ run ? '远征在途' : `启 程(道源 ${world.entryCost} · 破界底赏 ${world.rewardDaoSource})` }}
+                {{ run ? '远征在途' : `启 程(道源 ${world.entryCost} · 余 ${formatNum(endgame.daoSource)} · 破界底赏 ${world.rewardDaoSource})` }}
               </button>
             </div>
 
             <!-- 虚界之门:程序化生成 + 裁判过审 -->
             <div class="card-ink border border-violet-ink/25 px-4 py-3">
               <p class="flex items-center gap-2">
-                <span class="grid h-8 w-8 place-items-center rounded-md bg-violet-ink/85 font-kai text-[15px] text-paper">
+                <span class="grid h-8 w-8 place-items-center rounded-md bg-violet-ink/85 font-kai text-[15px] seal-face">
                   {{ endgame.voidWorld?.seal ?? '虚' }}
                 </span>
                 <span class="font-kai text-[15px] tracking-widest text-ink">
@@ -251,8 +254,8 @@
               <span v-for="m in dailyMutators" :key="m!.id">◇ {{ m!.name }}:{{ m!.text }}</span>
               <span v-if="dailyPact" class="text-cinnabar">契·{{ dailyPact.name }}</span>
             </p>
-            <button class="btn-seal mt-2 w-full !py-1.5 !text-[12px]" :disabled="endgame.dailyDoneDay === daily.day" @click="goDaily">
-              {{ endgame.dailyDoneDay === daily.day ? '今日已成,明日再会' : `应 战(道源 ${CHALLENGE_ENTRY_COST})` }}
+            <button class="btn-seal mt-2 w-full !py-2 !text-[12px]" :disabled="endgame.dailyDoneDay === daily.day" @click="goDaily">
+              {{ endgame.dailyDoneDay === daily.day ? '今日已成,明日再会' : `应 战(道源 ${CHALLENGE_ENTRY_COST} · 余 ${formatNum(endgame.daoSource)})` }}
             </button>
           </div>
         </section>
@@ -265,7 +268,7 @@
               <p v-for="m in mutationRows" :key="m!.id" class="text-[11px] text-violet-ink">◇ {{ m!.name }}:{{ m!.text }}</p>
               <div class="mt-2 flex gap-2">
                 <button class="btn-seal flex-1 !py-2 !text-[12px]" @click="goMutation">
-                  应 战(道源 {{ MUTATION_ENTRY_COST }} · 破解得 {{ MUTATION_BASE_REWARD }})
+                  应 战(道源 {{ MUTATION_ENTRY_COST }} · 余 {{ formatNum(endgame.daoSource) }} · 破解得 {{ MUTATION_BASE_REWARD }})
                 </button>
                 <button class="btn-ghost !px-3 !text-[12px]" @click="mutationDraw = rollMutators()">再探</button>
               </div>
@@ -283,7 +286,7 @@
           <div class="mt-2 space-y-2.5">
             <div v-for="trial in TRIALS" :key="trial.id" class="card-ink px-4 py-3">
               <p class="flex items-center gap-2">
-                <span class="grid h-8 w-8 place-items-center rounded-md bg-gold-ink/85 font-kai text-[15px] text-paper">
+                <span class="grid h-8 w-8 place-items-center rounded-md bg-gold-ink/85 font-kai text-[15px] seal-face">
                   {{ trial.seal }}
                 </span>
                 <span class="font-kai text-[15px] tracking-widest text-ink">{{ trial.name }}</span>
@@ -309,12 +312,12 @@
 
           <SectionTitle title="天道挑战书" hint="你定规则,天道定赏" />
           <div class="card-ink mt-2 px-4 py-3">
-            <p class="text-[11px] text-ink-faint">选界 · 叠变数(至多三条)· 立契 · 命名。天道观你出题之难,赏格随之而定,绝无虚价。</p>
+            <p class="text-[11px] text-ink-faint">选界 · 叠变数(至多 {{ CHALLENGE_MAX_MUTATORS }} 条)· 立契 · 命名。天道观你出题之难,赏格随之而定,绝无虚价。</p>
             <div class="mt-2 flex flex-wrap gap-1.5">
               <button
                 v-for="w in CELESTIAL_WORLDS"
                 :key="w.id"
-                class="chip-ink"
+                class="chip-ink !py-1.5"
                 :class="draft.worldId === w.id ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
                 @click="setDraftWorld(w.id)"
               >
@@ -325,7 +328,7 @@
               <button
                 v-for="m in MUTATORS"
                 :key="m.id"
-                class="chip-ink"
+                class="chip-ink !py-1.5"
                 :class="draft.mutatorIds.includes(m.id) ? 'border-violet-ink text-violet-ink' : 'border-ink/25 text-ink-faint'"
                 :title="m.text"
                 :aria-pressed="draft.mutatorIds.includes(m.id)"
@@ -340,7 +343,7 @@
             </p>
             <div class="mt-1.5 flex flex-wrap gap-1.5">
               <button
-                class="chip-ink"
+                class="chip-ink !py-1.5"
                 :class="draft.pactId === null ? 'border-jade text-jade' : 'border-ink/25 text-ink-faint'"
                 :aria-pressed="draft.pactId === null"
                 @click="setDraftPact(null)"
@@ -350,7 +353,7 @@
               <button
                 v-for="p in PACTS"
                 :key="p.id"
-                class="chip-ink"
+                class="chip-ink !py-1.5"
                 :class="draft.pactId === p.id ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
                 :title="p.ruleText"
                 :aria-pressed="draft.pactId === p.id"
@@ -380,8 +383,8 @@
               <p v-else class="text-[11px] text-cinnabar">{{ challengeVerdict.reason }}</p>
             </div>
             <div class="mt-2 flex gap-2">
-              <button class="btn-ghost flex-1 !py-1.5 !text-[12px]" @click="doVerify">验 约</button>
-              <button class="btn-seal flex-1 !py-1.5 !text-[12px]" :disabled="!challengeVerdict?.ok || run !== null" @click="doUndertake">
+              <button class="btn-ghost flex-1 !py-2 !text-[12px]" @click="doVerify">验 约</button>
+              <button class="btn-seal flex-1 !py-2 !text-[12px]" :disabled="!challengeVerdict?.ok || run !== null" @click="doUndertake">
                 立 约(道源 {{ CHALLENGE_ENTRY_COST }})
               </button>
             </div>
@@ -397,7 +400,7 @@
             <p class="text-[10px] tabular text-ink-faint">
               天道历 {{ RULESET_VERSION }} 世 · 天地规矩易过 {{ RULESET_CHANGELOG.length }} 回
             </p>
-            <button class="font-kai text-[10px] text-azure active:scale-95" @click="openEra(null)">纪元变迁史 →</button>
+            <button class="-my-1 py-2 font-kai text-[10px] text-azure active:scale-90" @click="openEra(null)">纪元变迁史 →</button>
           </div>
           <!-- 今昔之比:与过去的自己对话 -->
           <div v-if="legacy.length" class="card-ink mt-2 px-4 py-3">
@@ -422,7 +425,7 @@
               <span class="ml-auto shrink-0 tabular text-[10px] text-ink-faint">{{ mark.rounds }}回合 · {{ mark.buildName }}</span>
               <button
                 v-if="isStaleRuleset(mark.ruleset)"
-                class="shrink-0 rounded border border-cinnabar/50 bg-cinnabar/10 px-1 py-0.5 font-kai text-[9px] text-cinnabar active:scale-90"
+                class="shrink-0 min-h-[28px] rounded border border-cinnabar/50 bg-cinnabar/10 px-1 py-0.5 font-kai text-[9px] text-cinnabar active:scale-90"
                 :title="`录于旧纪 ${mark.ruleset},天道已变`"
                 @click="openEra(mark)"
               >
@@ -430,7 +433,7 @@
               </button>
               <button
                 v-if="mark.replay"
-                class="shrink-0 rounded border border-gold-ink/40 px-1.5 py-0.5 font-kai text-[10px] text-gold-ink active:scale-90"
+                class="shrink-0 min-h-[28px] rounded border border-gold-ink/40 px-1.5 py-0.5 font-kai text-[10px] text-gold-ink active:scale-90"
                 title="以当年的构筑重打此战"
                 @click="goReplay(mark)"
               >
@@ -439,13 +442,13 @@
               <!-- 重写要花道源,代价内联在按钮上(不再是 hover 专属),触控面放大,并加一步确认 -->
               <template v-if="mark.cleared && mark.replay && rewriteConfirm === i">
                 <button
-                  class="shrink-0 rounded border border-cinnabar/50 bg-cinnabar/10 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
+                  class="shrink-0 min-h-[28px] rounded border border-cinnabar/50 bg-cinnabar/10 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
                   @click="rewriteConfirm = null"
                 >
                   算了
                 </button>
                 <button
-                  class="shrink-0 rounded bg-cinnabar px-2 py-1 font-kai text-[10px] text-paper active:scale-90"
+                  class="shrink-0 min-h-[28px] rounded bg-cinnabar px-2 py-1 font-kai text-[10px] seal-face active:scale-90"
                   @click="doRewrite(mark)"
                 >
                   确认重写
@@ -453,7 +456,7 @@
               </template>
               <button
                 v-else-if="mark.cleared && mark.replay"
-                class="shrink-0 rounded border border-cinnabar/40 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
+                class="shrink-0 min-h-[28px] rounded border border-cinnabar/40 px-2 py-1 font-kai text-[10px] text-cinnabar active:scale-90"
                 :title="`以今日之你重打此战,快过 ${mark.rounds} 回合即【胜于旧我】`"
                 @click="rewriteConfirm = i"
               >
@@ -520,7 +523,7 @@
             @click="prepGate = g.id"
           >
             <span class="font-kai text-[13px]">{{ g.name }}</span>
-            <span class="ml-0.5 text-[9px]" :class="g.kind === '凶' ? 'text-cinnabar/80' : g.kind === '吉' ? 'text-jade' : 'text-ink-faint'">{{ g.kind }}</span>
+            <span class="ml-0.5 text-[9px]" :class="g.kind === '凶' ? 'text-cinnabar' : g.kind === '吉' ? 'text-jade' : 'text-ink-faint'">{{ g.kind }}</span>
           </button>
         </div>
         <p v-if="selectedGate" class="mt-1.5 rounded-md bg-paper-deep/70 px-3 py-2 text-[10px] leading-relaxed text-ink-soft">
@@ -548,14 +551,14 @@
             敌人一侧的判定(道之理解 / 境界压制):这是"为什么这一界对我更难"的答案。
             判定的文案与数值同源(core/gauntlet.celestialJudgementLines),界面不再另编一套说法。
           -->
-          <p v-for="(line, i) in prepForecast.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-cinnabar/80">
+          <p v-for="(line, i) in prepForecast.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-cinnabar">
             {{ line }}
           </p>
         </div>
         <p v-if="prepPreview" class="mt-2 text-[10px] leading-relaxed text-violet-ink">
           天机透视 · 入界之敌:{{ prepPreview.skillLines.join(' / ') }} —— {{ prepPreview.winText }}
         </p>
-        <p v-if="prepPreview?.riskLines.length" class="mt-1 text-[10px] leading-relaxed text-cinnabar/80">
+        <p v-if="prepPreview?.riskLines.length" class="mt-1 text-[10px] leading-relaxed text-cinnabar">
           危局:{{ prepPreview.riskLines.join(';') }}
         </p>
       </template>
@@ -594,7 +597,7 @@
           连同"怎么办"一并写在这里 —— 战报不是判决书,是下一次出发的依据。
         -->
         <div v-if="expedition.judgementLines?.length" class="mt-2 rounded-md bg-cinnabar/5 px-3 py-2">
-          <p class="font-kai text-[11px] tracking-widest text-cinnabar/80">此战之判</p>
+          <p class="font-kai text-[11px] tracking-widest text-cinnabar">此战之判</p>
           <p v-for="(line, i) in expedition.judgementLines" :key="i" class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">
             {{ line }}
           </p>
@@ -611,14 +614,14 @@
 
     <!-- 天道熔炉 -->
     <BaseModal :open="furnaceOpen" title="天道熔炉" @close="furnaceOpen = false">
-      <p class="mb-2 text-[11px] leading-relaxed text-ink-faint">前尘俗物,皆可熔作道源。</p>
-      <div class="card-ink divide-y divide-ink/7 px-4">
+      <p class="mb-2 text-[11px] leading-relaxed text-ink-faint">前尘俗物,皆可熔作道源。灵草唯仙品以上可入炉(凡/灵品只走坊市换灵石)。</p>
+      <div class="card-ink divide-y divide-ink/6 px-4">
         <div v-for="row in furnaceRows" :key="row.rate.resource" class="py-2.5">
           <div class="flex items-center justify-between gap-2">
             <span class="text-[12px] text-ink-soft">{{ row.rate.name }}(存 {{ formatNum(row.have) }})</span>
             <!-- 全熔防误触:文案亮出『整包』与可得道源(不再是『按 25:1 换』的可兑换暗示),再按一下才熔 -->
             <button
-              class="btn-ghost !px-3 !py-1 !text-[11px] tabular"
+              class="btn-ghost !px-3 !py-2 !text-[11px] tabular"
               :disabled="furnacePreview(row.rate) <= 0"
               @click="furnaceConfirm = row.rate.resource"
             >
@@ -626,26 +629,26 @@
             </button>
           </div>
           <div v-if="furnaceConfirm === row.rate.resource" class="mt-1.5 rounded-md bg-cinnabar/5 px-3 py-2">
-            <p class="text-[10px] leading-relaxed text-cinnabar/90">
+            <p class="text-[10px] leading-relaxed text-cinnabar">
               将 <span class="tabular">{{ row.rate.name }} ×{{ formatNum(row.have) }}</span> 尽数熔作道源,共
               <span class="tabular">+{{ furnacePreview(row.rate) }}</span> 缕 —— 此举不可逆,这些资源再无炼丹/锻造/参悟之途。
             </p>
             <div class="mt-1.5 flex justify-end gap-2">
-              <button class="btn-ghost !px-3 !py-1 !text-[11px]" @click="furnaceConfirm = null">再想想</button>
-              <button class="btn-seal !px-3 !py-1 !text-[11px] tabular" @click="doFurnace(row.rate)">确认熔尽</button>
+              <button class="btn-ghost !px-3 !py-2 !text-[11px]" @click="furnaceConfirm = null">再想想</button>
+              <button class="btn-seal !px-3 !py-2 !text-[11px] tabular" @click="doFurnace(row.rate)">确认熔尽</button>
             </div>
           </div>
         </div>
         <div class="flex items-center justify-between py-2.5">
           <span class="text-[12px] text-ink-soft">灵石(存 {{ formatGN(resources.spiritStone) }})</span>
-          <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="furnaceConvertStone()">
-            {{ formatGN(furnaceStoneCost()) }} → 5 道源
+          <button class="btn-ghost !px-3 !py-2 !text-[11px] tabular" @click="furnaceConvertStone()">
+            {{ formatGN(furnaceStoneCost()) }} → {{ FURNACE_STONE_DAO_SOURCE }} 道源
           </button>
         </div>
         <div class="py-2.5">
           <div class="flex items-center justify-between">
             <span class="text-[12px] text-ink-soft">道源凝道果(跨世保留)</span>
-            <button class="btn-ghost !px-3 !py-1 !text-[11px] tabular" @click="doCondense()">
+            <button class="btn-ghost !px-3 !py-2 !text-[11px] tabular" @click="doCondense()">
               {{ DAO_SOURCE_PER_FRUIT }} 道源 → 道果 +1
             </button>
           </div>
@@ -790,6 +793,7 @@
     EXPEDITION_GUARDIAN_LAYER,
     EXPEDITION_ROUTE_LAYERS,
     FURNACE_RATES,
+    FURNACE_STONE_DAO_SOURCE,
     TRIALS,
     daoPathDef,
     type FurnaceRate
@@ -834,7 +838,7 @@
   import { foeOriginLines } from '@/core/battleAnalysis'
   import type { CombatantSnap } from '@/types'
   import { BUILD_PROFILES } from '@/core/buildSim'
-  import { swordPurity } from '@/core/daoDepth'
+  import { swordPurity, SWORD_PURITY_MAX_LAYERS } from '@/core/daoDepth'
   import {
     CHALLENGE_ENTRY_COST,
     CHALLENGE_MAX_MUTATORS,
@@ -887,9 +891,10 @@
   watch(furnaceOpen, open => {
     if (!open) furnaceConfirm.value = null
   })
-  /** 全熔一包可得道源(预览,与 furnaceConvert 同口径 floor(have/per)) */
+  /** 全熔一包可得道源(预览,与 furnaceConvert 同口径 floor(have/per));灵草按仙品+计 */
   function furnacePreview(rate: FurnaceRate): number {
-    return Math.floor(resources[rate.resource] / rate.per)
+    const have = rate.resource === 'herb' ? resources.herbMeltable : resources[rate.resource]
+    return Math.floor(have / rate.per)
   }
   function doFurnace(rate: FurnaceRate): void {
     furnaceConfirm.value = null
@@ -1012,11 +1017,11 @@
   const runWorld = computed(() => (run.value ? (resolveWorld(run.value.worldId) ?? null) : null))
   const runPact = computed(() => (run.value?.pactId ? pactDef(run.value.pactId) : undefined))
   const currentNodes = computed(() => {
-    if (!run.value || !runWorld.value || run.value.layer > 2) return null
+    if (!run.value || !runWorld.value || run.value.layer >= EXPEDITION_GUARDIAN_LAYER) return null
     return runWorld.value.routes[run.value.layer] ?? null
   })
   const nodePreviews = computed(() => (currentNodes.value ? currentNodes.value.map(n => previewFight(n.foe, n)) : []))
-  const guardianPreview = computed(() => (run.value?.layer === 3 && runWorld.value ? previewFight(runWorld.value.guardian) : null))
+  const guardianPreview = computed(() => (run.value?.layer === EXPEDITION_GUARDIAN_LAYER && runWorld.value ? previewFight(runWorld.value.guardian) : null))
 
   // ---- 战报弹窗(统一形状) ----
   interface ReportView {
@@ -1111,7 +1116,7 @@
     openReport({
       title: '天道变数',
       cleared: result.report.cleared,
-      markText: result.report.cleared ? `六战全捷,共 ${result.report.totalRounds} 回合` : `止步第 ${result.report.fightsWon + 1} 战`,
+      markText: result.report.cleared ? `${cnNumber(MUTATION_FIGHTS)}战全捷,共 ${result.report.totalRounds} 回合` : `止步第 ${result.report.fightsWon + 1} 战`,
       rows: result.report.rows,
       reward: result.rewardDaoSource
     })
@@ -1241,5 +1246,5 @@
     }
   }
 
-  const furnaceRows = computed(() => FURNACE_RATES.map(rate => ({ rate, have: resources[rate.resource] })))
+  const furnaceRows = computed(() => FURNACE_RATES.map(rate => ({ rate, have: rate.resource === 'herb' ? resources.herbMeltable : resources[rate.resource] as number })))
 </script>

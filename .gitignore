@@ -9,7 +9,6 @@ pnpm-lock.yaml
 pnpm-workspace.yaml
 lerna-debug.log*
 CLAUDE.md
-AGENTS.md
 chars.txt
 extract_chars.py
 
@@ -39,6 +38,9 @@ docs/generated/
 # Python runtime cache
 __pycache__/
 *.pyc
+
+# Vitest 缓存
+.vitest/
 
 # wrangler files
 .wrangler

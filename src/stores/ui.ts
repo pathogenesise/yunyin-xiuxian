@@ -71,21 +71,78 @@ export const useUiStore = defineStore('ui', () => {
   const buffDetailId = ref<string | null>(null)
   const deathDialog = ref(false)
   const reincarnation = ref<ReincarnationView | null>(null)
+  /**
+   * PWA 新版本就绪提示:Service Worker 发现并装上更新后置 true,由 UpdatePrompt
+   * 渲染一枚可关闭的横幅;applyPwaUpdate 或关闭时清回 false。重载动作由 main.ts
+   * 通过 setPwaApplyReload 注入(加载时注册 SW 后才拿得到那个 registration)。
+   */
+  const pwaUpdatePending = ref(false)
+  let pwaApplyReload: (() => void) | null = null
   const corruptedNotice = ref<string[]>([])
 
-  function toast(text: string, kind: Toast['kind'] = 'info'): void {
-    const id = toastSeq
-    toastSeq += 1
-    toasts.value = [...toasts.value.slice(-4), { id, text, kind }]
-    const ttl = kind === 'rare' ? 4200 : 2600
-    setTimeout(() => {
-      toasts.value = toasts.value.filter(t => t.id !== id)
-    }, ttl)
+  /** 每条 toast 的收起计时器;去重刷新时要先撤掉旧的 */
+  const timers = new Map<number, ReturnType<typeof setTimeout>>()
+
+  function removeToast(id: number): void {
+    timers.delete(id)
+    toasts.value = toasts.value.filter(t => t.id !== id)
   }
 
-  /** 手动关闭某条提示(点按 toast 即收,不等超时) */
+  function toast(text: string, kind: Toast['kind'] = 'info'): void {
+    const ttl = kind === 'rare' ? 4200 : 2600
+    // 同文案去重:连点两下「道源不足」不该弹两条一模一样的 ——
+    // 原位保留、刷新到末尾并重置计时(失败的提示一直亮,直到不再犯)
+    const dup = toasts.value.find(t => t.text === text && t.kind === kind)
+    if (dup) {
+      const prev = timers.get(dup.id)
+      if (prev) clearTimeout(prev)
+      toasts.value = [...toasts.value.filter(t => t.id !== dup.id), dup]
+      timers.set(dup.id, setTimeout(() => removeToast(dup.id), ttl))
+      return
+    }
+    const id = toastSeq
+    toastSeq += 1
+    // 队齐了要挤掉最旧的那条:它的收起计时器一并撤掉。
+    // 不然等它超时还会跑一趟 removeToast(对已下架的空转),
+    // 更糟的是去重路径曾用它做参考,旧计时器残留会让状态账对不上
+    const evicted = toasts.value[toasts.value.length - 5]
+    if (evicted) {
+      const t = timers.get(evicted.id)
+      if (t) clearTimeout(t)
+    }
+    toasts.value = [...toasts.value.slice(-4), { id, text, kind }]
+    timers.set(id, setTimeout(() => removeToast(id), ttl))
+  }
+
+  /** 手动关闭某条提示(点按 toast 即收,不等超时)—— 与超时收起同一条路,计时器一起撤 */
   function dismissToast(id: number): void {
-    toasts.value = toasts.value.filter(t => t.id !== id)
+    removeToast(id)
+  }
+
+  /** 检测到新版本已就绪:亮出「重载以应用」横幅 */
+  function requestPwaUpdate(): void {
+    pwaUpdatePending.value = true
+  }
+
+  /** 关掉横幅不更新(仍在旧版跑,下次检测还会再提示) */
+  function dismissPwaUpdate(): void {
+    pwaUpdatePending.value = false
+  }
+
+  /** main.ts 注册 SW 后注入「重载应用」的动作 */
+  function setPwaApplyReload(fn: () => void): void {
+    pwaApplyReload = fn
+  }
+
+  /** 确认应用更新:调用注入的重载,并清掉横幅 */
+  function applyPwaUpdate(): void {
+    pwaUpdatePending.value = false
+    const fn = pwaApplyReload
+    try {
+      fn?.()
+    } catch {
+      /* 重载失败不该再抛:保持旧版继续跑,横幅已收 */
+    }
   }
 
   return {
@@ -98,6 +155,11 @@ export const useUiStore = defineStore('ui', () => {
     buffDetailId,
     deathDialog,
     reincarnation,
+    pwaUpdatePending,
+    requestPwaUpdate,
+    dismissPwaUpdate,
+    setPwaApplyReload,
+    applyPwaUpdate,
     corruptedNotice,
     toast,
     dismissToast

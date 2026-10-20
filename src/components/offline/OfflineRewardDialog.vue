@@ -55,8 +55,9 @@
   import { computed, watch } from 'vue'
   import { useUiStore } from '@/stores/ui'
   import { useInventoryStore } from '@/stores/inventory'
-  import { formatDuration, formatGN } from '@/utils/format'
+  import { formatDuration, formatGN, formatNum } from '@/utils/format'
   import { offlineAwayPhrase } from '@/ui/offlineText'
+  import { HERB_GRADE_SHORT } from '@/data/herbGrades'
   import { qualityDef } from '@/data/qualities'
   import { playSfx } from '@/core/audio'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -97,8 +98,8 @@
 
     const home: GRow[] = []
     if (s.stone.m > 0) home.push({ icon: 'gem', label: '灵石', value: `+${formatGN(s.stone)}` })
-    if (s.qi > 0) home.push({ icon: 'wind', label: '灵气', value: `+${s.qi}` })
-    if (s.herb > 0) home.push({ icon: 'leaf', label: '灵草', value: `+${s.herb}` })
+    if (s.qi > 0) home.push({ icon: 'wind', label: '灵气', value: `+${formatNum(s.qi)}` })
+    if (s.herb > 0) home.push({ icon: 'leaf', label: '灵草', value: s.herbByGrade.length ? s.herbByGrade.map(h => `${HERB_GRADE_SHORT[h.grade]}+${h.amount}`).join(' · ') : `+${s.herb}` })
     if (s.ore > 0) home.push({ icon: 'mountain', label: '玄铁', value: `+${s.ore}` })
     if (s.wudao > 0) home.push({ icon: 'book', label: '悟道点', value: `+${s.wudao}` })
     if (home.length) out.push({ label: '家业收成', list: home })

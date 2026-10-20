@@ -72,7 +72,7 @@
       <!-- 两处入口 -->
       <section class="space-y-2">
         <button
-          class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-99"
+          class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-98"
           @click="idleOpen = true"
         >
           <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-violet-ink/85 font-kai text-[19px] text-paper">意</span>
@@ -86,7 +86,7 @@
         </button>
 
         <button
-          class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-99"
+          class="card-ink flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:scale-98"
           @click="forgeOpen = true"
         >
           <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-cinnabar/85 font-kai text-[19px] text-paper">炼</span>
@@ -103,7 +103,9 @@
 
     <!-- 散置形意 -->
     <BaseModal :open="idleOpen" title="散置形意" @close="idleOpen = false">
-      <div v-if="idleSouls.length > 0" class="card-ink max-h-64 divide-y divide-ink/7 overflow-y-auto px-4">
+      <!-- 散去一无所得:原器早毁,道源也不返 —— 这句得在动手之前看见,不能等散了才发现 -->
+      <p class="mb-2 text-[10px] leading-relaxed text-ink-faint">{{ dissolveNote() }}</p>
+      <div v-if="idleSouls.length > 0" class="card-ink max-h-64 divide-y divide-ink/6 overflow-y-auto px-4">
         <div v-for="soul in idleSouls" :key="soul.uid" class="flex items-center justify-between gap-2 py-2.5">
           <div class="min-w-0">
             <p class="truncate text-[12px]" :style="{ color: soulColor(soul) }">{{ soulLabel(soul) }}</p>
@@ -135,8 +137,9 @@
 
     <!-- 凝炼台 -->
     <BaseModal :open="forgeOpen" title="凝炼台" @close="forgeOpen = false">
-      <p class="mb-2 text-[11px] leading-relaxed text-ink-faint">入炉即毁原器,耗道源 {{ SOUL_REFINE_COST }}。</p>
-      <div v-if="refinable.length > 0" class="card-ink max-h-64 divide-y divide-ink/7 overflow-y-auto px-4">
+      <!-- 代价与余额同屏给出 —— 弹窗盖住页面标题栏(道源在那上),不点开不知道还够不够 -->
+      <p class="mb-2 text-[11px] leading-relaxed text-ink-faint">{{ refineCostLine(SOUL_REFINE_COST, formatNum(endgame.daoSource)) }}</p>
+      <div v-if="refinable.length > 0" class="card-ink max-h-64 divide-y divide-ink/6 overflow-y-auto px-4">
         <div v-for="row in refinable" :key="row.inst.uid" class="flex items-center justify-between gap-2 py-2.5">
           <div class="min-w-0">
             <p class="truncate text-[12px] text-ink-soft">{{ row.name }}</p>
@@ -177,6 +180,7 @@
   import { goBack } from '@/router/goBack'
   import { formatNum } from '@/utils/format'
   import { modsText } from '@/ui/statNames'
+  import { dissolveNote, refineCostLine } from '@/ui/soulText'
   import { equipmentTemplate } from '@/data/equipment'
   import { SOUL_SLOTS, soulGradeDef, soulMods, soulName, soulTypeDef, type SoulInstance } from '@/data/souls'
   import { canRefine, dissolveSoul, previewSoul, refineEquipment, removeSoul, SOUL_REFINE_COST, wearSoul } from '@/core/soulService'

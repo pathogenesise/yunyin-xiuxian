@@ -27,7 +27,7 @@ import { GONGFA_TYPE_NAMES, gongfaDef } from '@/data/gongfa'
 import { QUALITIES, qualityDef } from '@/data/qualities'
 import { ARTIFACTS, ARTIFACT_MAX_LEVEL } from '@/data/artifacts'
 import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
-import { PILLS } from '@/data/pills'
+import { PILLS, pillQualityColor } from '@/data/pills'
 import type { ArtifactDef, EquipmentTemplate, PillDef } from '@/types'
 import { useInventoryStore } from '@/stores/inventory'
 import { useLoreStore } from '@/stores/lore'
@@ -199,7 +199,8 @@ export function describeBranch(def: GongfaBranchDef, stage: number): CodexEntry 
     color: lv >= BRANCH_STAGE_MAX ? PICKED_COLOR : g ? qualityDef(g.quality).color : undefined,
     stage: lv,
     stageName: BRANCH_STAGE_NAMES[lv]!,
-    badge: lv >= BRANCH_STAGE_MAX ? '择' : '',
+    // 已择处印「择」;已见且正可择的印「可择」—— 那正是当前唯一能推进的路,别埋进一屏未见
+    badge: lv >= BRANCH_STAGE_MAX ? '择' : lv >= 1 ? '可择' : '',
     hint: lv < BRANCH_STAGE_MAX ? BRANCH_HINTS[lv]! : '',
     // 分支名有重复(如两部功法各有一条「归一」),所属功法是唯一的辨认依据
     foot: { label: '所属功法', value: g?.name ?? '—' }
@@ -382,7 +383,7 @@ export function describePill(def: PillDef, collected: boolean, mastery: number):
     name: def.name,
     desc: [def.desc, pillFuncText(def)].filter(Boolean).join('\n'),
     meta: pillMetaText(def),
-    color: qualityDef(def.quality).color,
+    color: pillQualityColor(def),
     stage,
     stageName: PILL_STAGE_NAMES[stage]!,
     badge: top && stage >= PILL_STAGE_MAX ? '通' : '',

@@ -9,7 +9,7 @@ import { CELESTIAL_WORLDS } from '@/data/endgame'
 import { MAX_MAJOR } from '@/data/realms'
 import { BUILD_PROFILES, buildSnap, type BuildProfile } from './buildSim'
 import { randomBuild } from './buildSearch'
-import { celestialJudgement, mergeRules, runGauntlet, worldFoeSnap, type ReferenceStats } from './gauntlet'
+import { celestialJudgement, runGauntlet, worldFoeSnap, type ReferenceStats } from './gauntlet'
 
 /** 模拟参照属性(与 buildSim 基准一致) */
 export const SIM_REFERENCE: ReferenceStats = {
@@ -18,7 +18,7 @@ export const SIM_REFERENCE: ReferenceStats = {
   maxHp: gn(1400)
 }
 
-function worldFoes(world: CelestialWorldDef, snap: CombatantSnap): CombatantSnap[] {
+export function worldFoes(world: CelestialWorldDef, snap: CombatantSnap): CombatantSnap[] {
   /**
    * 模拟器比的是**构筑形状**(它在同一份参照三维下横向比较不同流派),
    * 故参照仍取 SIM_REFERENCE,不走天界锚点;但判定照实战口径算:
@@ -40,7 +40,7 @@ export function worldClearRate(world: CelestialWorldDef, snap: CombatantSnap, ru
   const foes = worldFoes(world, snap)
   let clears = 0
   for (let i = 0; i < runs; i += 1) {
-    if (runGauntlet(snap, foes, world.rules, world.healBetweenPct, rng).cleared) clears += 1
+    if (runGauntlet(snap, foes, world.rules, world.healBetweenPct, rng, { buildLog: false }).cleared) clears += 1
   }
   return clears / runs
 }
@@ -121,4 +121,3 @@ export function crossWorldUniversals(n = 120): { count: number; worstCaseBest: n
   return { count, worstCaseBest }
 }
 
-export { mergeRules }

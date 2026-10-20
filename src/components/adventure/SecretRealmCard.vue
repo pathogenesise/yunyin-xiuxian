@@ -28,13 +28,13 @@
         <button
           v-for="r in list"
           :key="r.id"
-          class="w-full rounded-md bg-paper-deep/60 px-3 py-2 text-left active:scale-99"
+          class="w-full rounded-md bg-paper-deep/60 px-3 py-2 text-left active:scale-98"
           :class="{ 'opacity-60': !canPay(r) }"
           @click="enter(r.id)"
         >
           <span class="flex items-baseline gap-2">
             <span class="font-kai text-[13px] text-ink">{{ r.name }}</span>
-            <span class="text-[10px] tabular" :class="canPay(r) ? 'text-ink-faint' : 'text-cinnabar/80'">
+            <span class="text-[10px] tabular" :class="canPay(r) ? 'text-ink-faint' : 'text-cinnabar'">
               {{ entryCostText(r, player.major) }}
             </span>
             <span class="ml-auto text-[10px] text-azure">入 境 →</span>

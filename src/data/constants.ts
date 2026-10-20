@@ -102,7 +102,8 @@ export const QI_CAP_SUB_GROWTH = 1.12
 /** 基础灵气回复/秒 —— Phase 39 由 1.2 降到 0.9(灵气这条线一并收慢) */
 export const QI_BASE_REGEN = 0.9
 export const QI_REGEN_MAJOR_GROWTH = 5.2
-/** 灵气高于上限一半时,修炼速度额外加成 */
+/** 灵气高于上限【一半】时,修炼速度额外加成 */
+export const QI_RICH_RATIO = 0.5
 export const QI_RICH_BONUS = 0.15
 
 // ============ 突破 ============
@@ -188,6 +189,12 @@ export const TRIB_HP_GUARD_CAP = 0.35
  * 每境每种劫型都还剩一条非满配之路)—— 那是这次改难的**上限**,不是可选项。
  */
 export const TRIBULATION_DIFFICULTY_CAP_MAJOR = 9
+
+// ============ 问卦 / 星象 ============
+/** 问卦耗悟道点 —— 卜以决疑,不疑何卜;代价不重,但不可随手摇着玩 */
+export const DIVINATION_COST = 2
+/** 值日之宿所利界域的际遇加成(乘在际遇概率上) */
+export const MANSION_EVENT_LUCK = 0.1
 
 // ============ 战斗基础 ============
 export const COMBAT_ATK_BASE = 12

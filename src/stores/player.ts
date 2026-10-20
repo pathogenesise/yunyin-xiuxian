@@ -6,17 +6,22 @@ import { gn, gnZero, add, gte, mulN, progress, subClamp } from '@/utils/gnum'
 import { persistConfig } from '@/utils/storage'
 import { realmDef, realmLabel, worldOf, SUB_NAMES, MAX_MAJOR } from '@/data/realms'
 import { SUB_LEVELS, START_AGE } from '@/data/constants'
-import { QI_BANK_MULT } from '@/data/constants'
+import { QI_BANK_MULT, QI_RICH_RATIO } from '@/data/constants'
 import { legacyInsightOf } from '@/data/samsara'
 import { titleDef } from '@/data/titles'
 import { petDef } from '@/data/pets'
 import { mentorDef } from '@/data/mentors'
 import { talentDef } from '@/data/talents'
+import { heritageDef } from '@/data/heritage'
+import { CHAINS } from '@/data/chains'
+import { birthMajorFloor } from '@/core/heritageEffects'
+import { randomDaoName } from '@/data/names'
+import { rng } from '@/utils/random'
 import { baseCultPerSec, baseQiRegen, expRequirement, qiCap } from '@/core/formulas'
 import { computeFinalStats, mergeMods, modOf } from '@/core/statsCalc'
 import { todayWeather } from '@/core/weather'
 import { readingFromState, readingMods } from '@/core/divination'
-import { asFiniteNumber, asStringArray } from '@/utils/saveShape'
+import { asCarriedHpPct, asFiniteNumber, asStringArray } from '@/utils/saveShape'
 import { SECRET_LAYERS, SECRET_MAX_LOSSES, SECRET_REALMS, SECRET_RULES } from '@/data/secretRealms'
 import { DAOLU, STAGE_ORDER } from '@/data/daolu'
 import { regionDef } from '@/data/regions'
@@ -25,6 +30,7 @@ import type { FortuneChoice } from '@/core/fortuneChain'
 import { useInventoryStore } from './inventory'
 import { useCultivationStore } from './cultivation'
 import { useDongfuStore } from './dongfu'
+import { useApprenticeStore } from './apprentice'
 import { useResourcesStore } from './resources'
 import { useEndgameStore } from './endgame'
 import { useGameStore } from './game'
@@ -35,6 +41,7 @@ export const usePlayerStore = defineStore(
     const inventory = useInventoryStore()
     const cultivation = useCultivationStore()
     const dongfu = useDongfuStore()
+    const apprentices = useApprenticeStore()
     const resources = useResourcesStore()
 
     const name = ref('无名散修')
@@ -59,6 +66,18 @@ export const usePlayerStore = defineStore(
       count: 0,
       daoFruit: 0,
       talents: [] as string[],
+      /**
+       * 宿命传承:跨世永久的能力位,随神魂不灭、不清零
+       * (锻造生命周期见 core/heritageForge)
+       */
+      heritage: [] as string[],
+      /**
+       * 本世各传承效果已用掉几回(每世重置)。
+       *
+       * 「每世一回」类容错(渡劫跬步)与本世三炉(浴火丹心)的用量账:跨世不带,
+       * 故 rebirth() 里清空;落进存档是为了刷新页面不白嫖(见 sanitizeHeritageUses)。
+       */
+      heritageUses: {} as Record<string, number>,
       insight: 0,
       lives: [] as import('@/data/samsara').LifeRecord[],
       vow: null as import('@/data/samsara').LifeVow | null,
@@ -227,7 +246,7 @@ export const usePlayerStore = defineStore(
       const capPct = 1 + modOf(mergeMods([...ownedModSources.value, petMods.value]), 'qiCapPct')
       return Math.floor(qiCap(major.value, sub.value) * dongfu.qiCapMult * capPct)
     })
-    const qiRich = computed(() => resources.qi >= qiCapValue.value * 0.5)
+    const qiRich = computed(() => resources.qi >= qiCapValue.value * QI_RICH_RATIO)
     /** 灵气积余上限(标称容量 × 积余倍数):卡境期间灵气可存到此处 */
     const qiBankCapValue = computed(() => qiCapValue.value * QI_BANK_MULT)
 
@@ -250,7 +269,10 @@ export const usePlayerStore = defineStore(
           fateModsValue.value,
           ...talentMods.value
         ],
-        // 名字与上面一一对应 —— 面板的「来源明细」直接读它们,不再另起一套说法
+        // 名字与上面一一对应 —— 面板的「来源明细」直接读它们,不再另起一套说法。
+        // 天时的名号就是当天的具体气象:修炼页的修为来路里「天时 +12%」,
+        // 若只写渠道名,玩家看不清是仙雨还是混沌潮;名前带气象,一眼即知。
+        // (mods 与名字取自同一个 todayWeather(),同源;清和日无词条,该行自然不出现。)
         sourceNames: [
           '装备',
           '功法',
@@ -260,7 +282,7 @@ export const usePlayerStore = defineStore(
           '称号',
           '师承',
           '灵兽',
-          '天时',
+          `天时·${todayWeather().name}`,
           '在身之卦',
           '命格',
           ...reincarnation.value.talents.map(id => `天赋·${talentDef(id)?.name ?? id}`)
@@ -419,6 +441,49 @@ export const usePlayerStore = defineStore(
     }
 
     /**
+     * 宿命传承:永久持有,跨世不清零。重复锻造(旧档残留/重复触发)会被忽略。
+     * 锻造由 core/heritageForge.lifeForge 判定,在 confirmReincarnation 落账。
+     */
+    function addHeritage(id: string): void {
+      if (!reincarnation.value.heritage.includes(id)) {
+        reincarnation.value = {
+          ...reincarnation.value,
+          heritage: [...reincarnation.value.heritage, id]
+        }
+      }
+    }
+
+    /**
+     * 消耗一次「每世一回/每世 N 回」的传承效果(渡劫跬步 / 浴火丹心)。
+     *
+     * 只在**持有该传承、且本世还没用满**时返回 true 并记账 —— 调用方据此决定
+     * 「这一下要不要照常结算损失/照常开炉」;返回 false 就照旧。
+     * 用量跨世不带(rebirth 清空),只落在本世 —— 刷新页面不白嫖(sanitize 修形)。
+     */
+    function consumeHeritageUse(id: string, max = 1): boolean {
+      if (!reincarnation.value.heritage.includes(id)) return false
+      const used = reincarnation.value.heritageUses[id] ?? 0
+      if (used >= max) return false
+      reincarnation.value = {
+        ...reincarnation.value,
+        heritageUses: { ...reincarnation.value.heritageUses, [id]: used + 1 }
+      }
+      return true
+    }
+
+    /** 形状修复:传承用量只保留「认识的 id + 正整数次」 */
+    function sanitizeHeritageUses(raw: unknown): Record<string, number> {
+      const src = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+      const out: Record<string, number> = {}
+      for (const [id, n] of Object.entries(src)) {
+        if (!heritageDef(id)) continue
+        const v = Number(n)
+        if (Number.isFinite(v) && v > 0) out[id] = Math.floor(v)
+      }
+      return out
+    }
+
+    /**
      * 花掉道果。
      *
      * 余额**真的减少** —— 不是记一笔「已花费」了事。
@@ -484,11 +549,17 @@ export const usePlayerStore = defineStore(
       dead.value = true
     }
 
-    /** 转世重置(保留天赋/道果/转世次数) */
+    /** 转世重置(保留天赋/道果/转世次数/宿命传承) */
     function rebirth(newLinggen: LinggenProfile): void {
-      reincarnation.value = { ...reincarnation.value, count: reincarnation.value.count + 1 }
+      reincarnation.value = {
+        ...reincarnation.value,
+        count: reincarnation.value.count + 1,
+        // 每世一回类容错/本世三炉的用量账跨世不带,新的一世从头算
+        heritageUses: {}
+      }
       linggen.value = newLinggen
-      major.value = 0
+      // 新的一世从炼气起步;若已持有「元婴凝实」传承,保底从筑基起(见 heritageEffects.birthMajorFloor)
+      major.value = birthMajorFloor(reincarnation.value.heritage)
       sub.value = 0
       exp.value = gnZero()
       age.value = START_AGE
@@ -507,9 +578,28 @@ export const usePlayerStore = defineStore(
       divination.value = null
       // 突破准备也随这一世散去(下一世要重新备)
       breakthroughPrep.value = null
+      // 镇压权益随皮囊散去:旧世压下的远境(多为高阶)若跨世,新世炼气仍在按旧阶位
+      // 派发高阶装备/灵石,数值当场爆炸 —— 妖气复聚、回到历练地。这属于「我拥有多少」
+      // 而非「我是谁」;宿敌记忆与区域战绩(regionStats)仍随神魂不灭(见 samsaraAudit
+      // 'suppress' 一行的 partial 口径,「世界记得你」的叙事不丢)。
+      // 资格(取得即永久那枚令)也是经济权柄:不随世走,否则新世炼气一键把高阶远境
+      // 切回收益态,爆炸就换了个入口回来(sanitize 的 suppressReachable 兜老档同款)
+      suppressedRegions.value = []
+      suppressedSince.value = {}
+      suppressQualified.value = []
       // 外物随皮囊散去:灵兽、洞府建筑、灵脉投资都是「我拥有多少」,不是「我是谁」
       petId.value = null
       dongfu.resetForRebirth()
+      // 道童同为今生观中家业,随皮囊散去 —— 与洞府同处归零,新世 sync() 会补送一名入门道童
+      apprentices.resetForRebirth()
+      // 新的皮囊,新的道号:神魂不灭带走的是所知所历(宿慧/道果/天赋/称号),不是这个名号。
+      // 每一世重掷一个道号(避免与上世撞名),亦是「N 世」在界面上一眼可辨的体现 ——
+      // 否则转世后顶栏仍是同一个道号,「这一世是全新的一世」无从感知(见 samsaraAudit 的姓名一行)。
+      let fresh: string
+      do {
+        fresh = randomDaoName(rng)
+      } while (fresh === name.value)
+      name.value = fresh
     }
 
     /** 存档修复 */
@@ -561,7 +651,7 @@ export const usePlayerStore = defineStore(
             losses: Math.min(SECRET_MAX_LOSSES, Math.floor(asFiniteNumber(sr.losses, 0, 0))),
             spoils: asStringArray(sr.spoils),
             rules: asStringArray(sr.rules).filter(t => SECRET_RULES.some(r => r.text === t)),
-            carriedHpPct: Math.min(1, asFiniteNumber(sr.carriedHpPct, 1, 0.05)),
+            carriedHpPct: asCarriedHpPct(sr.carriedHpPct),
             finished: sr.finished === true
           }
         }
@@ -609,12 +699,38 @@ export const usePlayerStore = defineStore(
         else regionEvent.value = { ...ev, endsAt }
       }
       /**
+       * 奇缘连锁进度(Phase 34 奇缘录):写入口 setEventChain 已夹(0 ≤ stage),但读档
+       * sanitize 此前没夹加载——越界/残链的 stage 会让 pendingChainStages 读到
+       * chain.stages[done] === undefined,那条奇缘被当成「已了」永不再现。故这里夹回
+       * [0, 链长],认不出的链整条清掉(跨世保留的设计不变,只是修形)。
+       */
+      if (typeof eventChains.value !== 'object' || eventChains.value === null) {
+        eventChains.value = {}
+      } else {
+        const chainNext: Record<string, number> = {}
+        for (const [chainId, stage] of Object.entries(eventChains.value)) {
+          const chain = CHAINS.find(c => c.id === chainId)
+          if (!chain) continue // 认不出的链:整条清掉
+          chainNext[chainId] = Math.min(chain.stages.length, Math.max(0, Math.floor(asFiniteNumber(stage, 0, 0))))
+        }
+        eventChains.value = chainNext
+      }
+      /**
        * 数组类字段先补形,再谈内容 —— 存档可能被改坏、写坏或在旧版本里根本没有这一栏。
        * 此前只挡了 suppressQualified,没挡 suppressedRegions,于是坏档会在
        * `for...of` 上直接抛出,玩家看到的是白屏而不是「回到云隐山下」。
        */
       if (!Array.isArray(suppressedRegions.value)) suppressedRegions.value = []
       if (!Array.isArray(suppressQualified.value)) suppressQualified.value = []
+      // 镇压权益是「这一世」的东西:凡这一世根本打不进那一界(minRealm>当前境界)的
+      // 远境,要么是修复上线前已转世的老档残留、要么是被改档写进来的 —— 一律妖气复聚、
+      // 回到它本来该在的地方。判据保守:只清「境界之下不可能征服」的,本世真实的镇压
+      // (minRealm≤境界,转世前也这么压过)原样保留。suppressedSince 同步清,免得一旧一新。
+      if (typeof suppressedSince.value !== 'object' || suppressedSince.value === null) suppressedSince.value = {}
+      const suppressReachable = (id: string): boolean => (regionDef(id)?.minRealm ?? Infinity) <= major.value
+      suppressedRegions.value = suppressedRegions.value.filter(suppressReachable)
+      suppressQualified.value = suppressQualified.value.filter(suppressReachable)
+      suppressedSince.value = Object.fromEntries(Object.entries(suppressedSince.value).filter(([id]) => suppressReachable(id)))
       for (const id of suppressedRegions.value) {
         if (!suppressQualified.value.includes(id)) suppressQualified.value.push(id)
       }
@@ -622,6 +738,8 @@ export const usePlayerStore = defineStore(
         count,
         daoFruit: Number.isFinite(r?.daoFruit) ? Math.max(0, r.daoFruit) : 0,
         talents: Array.isArray(r?.talents) ? r.talents : [],
+        heritage: Array.isArray(r?.heritage) ? r.heritage.filter((h: unknown): boolean => !!heritageDef(String(h))) : [],
+        heritageUses: sanitizeHeritageUses(r?.heritageUses),
         insight: Number.isFinite(r?.insight) ? Math.max(0, r.insight) : legacyInsightOf(count),
         lives: Array.isArray(r?.lives) ? r.lives : [],
         vow: r?.vow ?? null,
@@ -813,6 +931,8 @@ export const usePlayerStore = defineStore(
       setTitle,
       setPet,
       addTalent,
+      addHeritage,
+      consumeHeritageUse,
       addDaoFruit,
       addInsight,
       bond,

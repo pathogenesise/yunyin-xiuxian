@@ -28,7 +28,7 @@
           class="min-w-0 grow rounded-md border border-ink/15 bg-paper-deep/60 px-2 py-1 text-[12px] text-ink outline-none placeholder:text-ink-faint focus:border-azure"
           @change="applyNote"
         />
-        <button v-if="noteDraft" class="-my-1 px-1 py-1 text-[11px] text-ink-faint active:opacity-60" @click="clearNote">清除</button>
+        <button v-if="noteDraft" class="-my-1 flex min-h-[28px] items-center px-1 py-1 text-[11px] text-ink-faint active:opacity-60" @click="clearNote">清除</button>
       </div>
       <!--
         共鸣是机制而非数值,但装备卡片此前一个字都不提:玩家在「要不要换掉这件」时,
@@ -42,6 +42,22 @@
       </p>
       <div class="ink-divider my-3" />
       <p v-if="compareTarget" class="mb-1.5 text-[10px] text-ink-faint tabular">对比当前佩戴:「{{ compareTarget.name }}」(绿升红降)</p>
+      <!--
+        攻防血一格格比,不如先给一个合笔口径 —— 正是「一键换装」照它抽最强的那把尺
+        (equippablePower:基础平铺 + 词条战力,与 toast「按真实战力挑」同一口径)。
+        它不是面板「战力」,是这套装备的取舍值;分得清,玩家才不会被两个 战力 弄混。
+      -->
+      <p v-if="powerCompare" class="mb-1.5 flex items-baseline justify-between text-[11px] tabular">
+        <span class="text-ink-faint">{{ powerCompareLabel() }}</span>
+        <span class="text-ink">
+          <span class="text-ink-faint">{{ formatNum(powerCompare.theirs) }}</span>
+          <span class="mx-1 text-ink-faint">→</span>
+          <span :class="powerCompare.up ? 'text-jade' : 'text-cinnabar'">{{ formatNum(powerCompare.mine) }}</span>
+          <span class="ml-1 text-[10px]" :class="powerCompare.up ? 'text-jade' : 'text-cinnabar'">
+            ({{ powerCompare.up ? '+' : '' }}{{ Math.round(powerCompare.pct) }}%)
+          </span>
+        </span>
+      </p>
       <div class="space-y-1.5">
         <p v-for="row in flatRows" :key="row.label" class="flex justify-between text-[13px]">
           <span class="text-ink-soft">{{ row.label }}</span>
@@ -58,9 +74,10 @@
       <template v-if="resolved.affixLines.length">
         <div class="ink-divider my-3" />
         <!--
-          条数上限按品质给(凡品 0~1 · 神品 6~9),这是玩家最该看见的一件事:
-          一件装备的"上限"就在它的品质里,而重铸可以重掷条数 —— 只有把它摊在明面上,
-          「要不要为这件洗下去」才算得清。
+          条数上限按品质档 rank + 1 现算(见下方 affixCap,与 qualityDef 同源,
+          不手抄「凡品几条 · 神品几条」—— 那一版会和 data/qualities 漂移)。
+          这是玩家最该看见的一件事:一件装备的"上限"就在它的品质里,而重铸可以
+          重掷条数 —— 只有把它摊在明面上,「要不要为这件洗下去」才算得清。
         -->
         <p class="mb-1.5 flex items-baseline justify-between font-kai text-[12px] tracking-[0.3em] text-ink-faint">
           <span>词 条</span>
@@ -95,22 +112,29 @@
             </span>
             <span class="ml-auto min-w-0 text-right text-[11px] leading-snug text-ink-soft">
               {{ line.before }}<span class="tabular font-medium text-ink">{{ line.value }}</span>{{ line.after }}
+              <!-- 浮动:这条掷到了它自己的几成 —— 封存/重铸的数,藏起来就是瞎赌 -->
+              <span class="text-[9px] text-ink-faint" :title="affixRollHint">{{ affixRollText(line.roll) }}</span>
             </span>
             <button
               v-if="canSealAffix(line.id)"
-              class="shrink-0 rounded-md px-1.5 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
+              class="shrink-0 min-h-[28px] rounded-md px-1.5 py-1 text-[10px] text-azure active:scale-90 active:opacity-60"
               :aria-label="`封存词条${line.name}`"
               @click="doSealAffix(line.id)"
             >
               封存
             </button>
-            <span v-else-if="isAffixSealed(line.id)" class="shrink-0 text-jade" role="img" aria-label="这条词条已封存">
-              <GameIcon name="lock" :size="12" />
-            </span>
+            <button
+              v-else-if="isAffixSealed(line.id)"
+              class="shrink-0 min-h-[28px] rounded-md px-1.5 py-1 text-[10px] text-jade active:scale-90 active:opacity-60"
+              :aria-label="`解封词条${line.name}`"
+              @click="doUnsealAffix(line.id)"
+            >
+              <GameIcon name="unlock" :size="12" />
+            </button>
           </li>
         </ul>
         <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
-          这条儿按珍贵而排,左侧色边即它的成色
+          这条儿按珍贵而排,左侧色边即品级;「浮 X%」是这条掷到了上下限间的几成
         </p>
       </template>
       <template v-if="buildPreview">
@@ -145,10 +169,12 @@
         <!--
           连升:逐级成本一次算清(预览与执行共用 upgradeBatchPlan),省掉逐级一按。
           花的是累计总账,按一下不该就此了结 —— 二步确认与分解/散去同款。
+          flex-wrap + 文本保底宽:窄屏(320 的弹窗内宽约 280px)说明与双钮放不下同排时,
+          说明独占整行、钮换行 —— 否则 flex-1 文本被 shrink-0 钮压成 0 宽竖排。
         -->
-        <div v-if="batchPlan.levels > 0" class="mt-2 flex items-center gap-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
+        <div v-if="batchPlan.levels > 0" class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
           <template v-if="batchConfirm !== inst.uid">
-            <div class="min-w-0 flex-1">
+            <div class="min-w-[5rem] flex-1">
               <p class="text-[10px] text-ink-faint">
                 连升至 <span class="font-kai text-[12px] text-cinnabar">+{{ inst.level + batchPlan.levels }}</span> 级
               </p>
@@ -157,7 +183,7 @@
             <button class="btn-ghost shrink-0 !px-3 !py-2 !text-[11px]" @click="batchConfirm = inst.uid">连 升</button>
           </template>
           <template v-else>
-            <p class="min-w-0 flex-1 text-[10px] leading-relaxed text-cinnabar">
+            <p class="min-w-[5rem] flex-1 text-[10px] leading-relaxed text-cinnabar">
               一步连升 {{ batchPlan.levels }} 级,花上面那笔总账 —— 仍要?
             </p>
             <button class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="batchConfirm = null">再想想</button>
@@ -209,7 +235,7 @@
         开关只会变字、词条格子与「开洗」永远不渲染(实测即玩家反馈的「没生效」)。
       -->
       <div v-if="autoOpen && reforgeCostVal" class="mt-3 rounded-md border border-ink/15 bg-paper-deep/50 px-3 py-2">
-        <p class="mb-1 text-[11px] text-ink-soft">点词条看效果与区间,在弹框里设为目标(任一命中即停 · 已选 {{ autoTargets.length }}/3)</p>
+        <p class="mb-1 text-[11px] text-ink-soft">点词条看效果与区间,在弹框里设为目标(任一命中即停 · 已选 {{ autoTargets.length }}/{{ AUTO_REFORGE_MAX_TARGETS }})</p>
         <!-- 四档品质成组:传世在前、空组不占位 —— 一眼分出「撞大运的目标」与「随手可得」;
              组色用词条自身的品质色(与装备卡片同源),选中的下一颗整颗亮成「你的目标章」 -->
         <div class="max-h-40 space-y-1.5 overflow-y-auto pr-0.5">
@@ -223,7 +249,7 @@
               <button
                 v-for="af in group.items"
                 :key="af.id"
-                class="rounded px-1 py-1 text-[10px] leading-tight"
+                class="min-h-[28px] rounded px-1 py-1 text-[10px] leading-tight"
                 :class="isAutoTarget(af.id) ? 'border' : 'bg-ink/4'"
                 :style="isAutoTarget(af.id)
                   ? { borderColor: AFFIX_RARITY_META[af.rarity].color, color: AFFIX_RARITY_META[af.rarity].color }
@@ -242,7 +268,7 @@
             <!-- 点已选词条名:钉开那张词条图,回来看清效果与区间再决定要不要留着这条目标 -->
             <button
               type="button"
-              class="w-10 shrink-0 truncate text-left font-kai"
+              class="flex min-h-[28px] w-10 shrink-0 items-center truncate text-left font-kai"
               :style="{ color: targetColor(t.affixId) }"
               :title="`查看词条:${affixDef(t.affixId)?.name ?? t.affixId}`"
               @click="openCodex(t.affixId)"
@@ -264,7 +290,7 @@
           />
           <span class="text-[10px] text-ink-faint tabular">次 · 每洗 {{ formatGN(reforgeCostVal.stone) }} 尘×{{ reforgeCostVal.dust }}</span>
           <button
-            class="btn-seal ml-auto !px-3 !py-1 !text-[11px]"
+            class="btn-seal ml-auto !px-3 !py-1.5 !text-[11px]"
             :disabled="!autoTargets.length"
             :title="autoTargets.length ? undefined : '先点一条要洗到的词条'"
             @click="runAutoReforge"
@@ -331,7 +357,7 @@
           <!-- 分解二步确认:一件淬养过的装备(强化/封存/重铸)误触垃圾桶不该直接没 -->
           <template v-if="decomposeArm !== inst?.uid">
             <button
-              class="btn-ghost px-3"
+              class="btn-ghost"
               :disabled="isEquipped || inst?.locked"
               aria-label="分解这件装备"
               @click="decomposeArm = inst?.uid ?? null"
@@ -340,8 +366,8 @@
             </button>
           </template>
           <template v-else>
-            <button class="btn-seal !px-2.5 !text-[11px]" @click="doDecompose">分解?</button>
-            <button class="btn-ghost px-2 text-[11px] text-ink-faint" @click="decomposeArm = null">算了</button>
+            <button class="btn-seal !px-2.5 !py-2 !text-[11px]" @click="doDecompose">分解?</button>
+            <button class="btn-ghost !px-2.5 !py-2 !text-[11px] text-ink-faint" @click="decomposeArm = null">算了</button>
           </template>
         </div>
       </div>
@@ -369,6 +395,7 @@
   import { equipSetDef, setCounts } from '@/core/equipSet'
   import { worldNameOfTier } from '@/core/formulas'
   import { resolveEquipStats } from '@/core/equipGen'
+  import { equippablePower } from '@/core/equipBest'
   import {
     decomposeEquipment,
     equipLevelCap,
@@ -382,16 +409,16 @@
   import { detectBuild } from '@/core/buildDetect'
   import { endgameUnlocked } from '@/core/endgameService'
   import { whatIfEquip, type WhatIfReport } from '@/core/lab'
-  import { autoReforge, reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost, type ReforgeTarget } from '@/core/reforge'
+  import { autoReforge, reforgeEquipment, reforgeCost, sealAffix, sealCapacity, sealCost, unsealAffix, AUTO_REFORGE_MAX_TARGETS, type ReforgeTarget } from '@/core/reforge'
   import { AFFIXES, affixDef, affixFitBlock, affixesByRarity } from '@/data/affixes'
   import { qualityDef } from '@/data/qualities'
   import { usePlayerStore } from '@/stores/player'
-  import { formatGN } from '@/utils/format'
+  import { formatGN, formatNum } from '@/utils/format'
   import { gnZero, isZero, sub } from '@/utils/gnum'
   import { playSfx } from '@/core/audio'
   import type { AnyStatKey, GNum } from '@/types'
   import { AFFIX_RARITY_META, STAT_NAMES, statValueText } from '@/ui/statNames'
-  import { equipNextLevelText } from '@/ui/equipText'
+  import { affixRollHint, affixRollText, equipNextLevelText, powerCompareLabel } from '@/ui/equipText'
   import { TRANSFER_LABELS } from '@/ui/affixTransferText'
   import { useAffixTransfer } from '@/composables/useAffixTransfer'
   import BaseModal from '@/components/common/BaseModal.vue'
@@ -480,13 +507,17 @@
 
   /** 弹框里这条当前是不是自动重铸目标;目标未满三才有「再设」(满的位子只留给取消) */
   const codexSelected = computed(() => codexAffixId.value !== null && isAutoTarget(codexAffixId.value))
-  const codexCanSelect = computed(() => autoTargets.value.length < 3)
+  const codexCanSelect = computed(() => autoTargets.value.length < AUTO_REFORGE_MAX_TARGETS)
   function onCodexToggleTarget(id: string): void {
     toggleAutoTarget(id)
   }
 
   function doSealAffix(affixId: string): void {
     if (inst.value) sealAffix(inst.value.uid, affixId)
+  }
+
+  function doUnsealAffix(affixId: string): void {
+    if (inst.value) unsealAffix(inst.value.uid, affixId)
   }
 
   function doReforge(): void {
@@ -528,7 +559,7 @@
   function toggleAutoTarget(id: string): void {
     if (isAutoTarget(id)) autoTargets.value = autoTargets.value.filter(t => t.affixId !== id)
     // 默认先求「高值」(≥50%);拉到底 0% 即回到「出现就行」
-    else if (autoTargets.value.length < 3) autoTargets.value = [...autoTargets.value, { affixId: id, minRoll: 0.5 }]
+    else if (autoTargets.value.length < AUTO_REFORGE_MAX_TARGETS) autoTargets.value = [...autoTargets.value, { affixId: id, minRoll: 0.5 }]
   }
 
   function closeAuto(): void {
@@ -609,10 +640,12 @@
     }
   )
 
-  // 详情与转移互切、换看另一件:正文整块换了,滚动盒却没重挂 —— 回到顶上,免得开头几行在视口外
+  // 详情与转移互切、换看另一件:正文整块换了,滚动盒却没重挂 —— 回到顶上,免得开头几行在视口外。
+  // 用「多源数组」而不是「返回新数组的 getter」:后者在重铸(只换词条、uid 不变)时也会因
+  // 数组引用变化重放回调,把玩家原本停在词条一览的位置顶回顶部 —— 重铸不该动上下位置。
   const modalRef = ref<InstanceType<typeof BaseModal> | null>(null)
   watch(
-    () => [transferOpen.value, inst.value?.uid] as const,
+    [() => transferOpen.value, () => inst.value?.uid],
     () => void nextTick(() => modalRef.value?.scrollToTop())
   )
 
@@ -671,6 +704,19 @@
     const item = inventory.findItem(curUid)
     if (!item) return null
     return { item, name: equipmentTemplate(item.templateId)?.name ?? '当前佩戴' }
+  })
+
+  /**
+   * 战斗价值对比 —— 与「一键换装」同一把尺(equippablePower):
+   * 基础平铺 + 词条战力,「按真实战力挑」说的就是它。是取舍值,不是面板战力。
+   */
+  const powerCompare = computed(() => {
+    const cur = compareTarget.value
+    if (!cur || !inst.value) return null
+    const mine = equippablePower(inst.value)
+    const theirs = equippablePower(cur.item)
+    const pct = theirs > 0 ? ((mine - theirs) / theirs) * 100 : 0
+    return { mine, theirs, up: mine >= theirs, pct }
   })
 
   const fixedModRows = computed(() => {

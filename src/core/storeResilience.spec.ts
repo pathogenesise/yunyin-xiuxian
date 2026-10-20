@@ -19,6 +19,10 @@ import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import { usePacingTelemetry } from '@/stores/pacingTelemetry'
 import { useLoreStore } from '@/stores/lore'
+import { useResourcesStore } from '@/stores/resources'
+import { useMarketStore } from '@/stores/market'
+import { useApprenticeStore } from '@/stores/apprentice'
+import { sanitizeOfflineInputs } from './offline'
 
 /**
  * store 清单**从源码倒推**,不再手写。
@@ -120,6 +124,20 @@ describe('坏档韧性 · 清单从源码倒推', () => {
     expect(t.enabled).toBe(true)
     t.record('enlightenment', 'modal', '顿悟')
     expect(t.events.length, '修形之后仍要能继续记录').toBe(2)
+  })
+
+  it('读档兜底清单亲自修平遥测:坏掉的 pacing 分片经 sanitizeOfflineInputs 归零', () => {
+    // 症结曾是「pacing 有 sanitize 但没人调」—— 每条 store 的 sanitize 单测都绿,
+    // 却漏了把它挂进读档兜底清单。这里走真实的读档口(engine.start → sanitizeOfflineInputs),
+    // 灌一个 JSON 合法、形状却烂掉的 events,断言它被清单修回可用的空数组。
+    setActivePinia(createPinia())
+    const t = usePacingTelemetry()
+    t.$patch({ events: null as never, enabled: 'yes' as never })
+    sanitizeOfflineInputs()
+    expect(t.events, '读档兜底清单必须覆盖 pacing,把 null 修回空数组').toEqual([])
+    expect(t.enabled).toBe(true)
+    t.record('enlightenment', 'modal', '顿悟')
+    expect(t.events.length, '修形之后仍要能继续记录').toBe(1)
   })
 
   it('装备见闻:条目形状烂掉就整条丢掉,不冒充「见过一件凡品 · 0 阶」', () => {
@@ -266,6 +284,44 @@ describe('坏档韧性 · 复杂状态的值也要修回来(不只是"不炸")',
     player.sanitize()
     expect(player.lifespanBonusYears).toBe(200)
   })
+
+  it('道童:坏羁绊夹回非负整数,老档缺 bond 补 0', () => {
+    setActivePinia(createPinia())
+    const a = useApprenticeStore()
+    a.$patch({
+      apprentices: [
+        { uid: 'b1', archId: 'ap_luanniao', level: 1, bond: NaN, task: null },
+        { uid: 'b2', archId: 'ap_youxia', level: 1, bond: -5, task: null },
+        { uid: 'b3', archId: 'ap_daotong', level: 1, task: null }
+      ] as never
+    })
+    a.sanitize()
+    expect(a.apprentices).toHaveLength(3)
+    expect(a.apprentices.find(x => x.uid === 'b1')!.bond, 'NaN 夹回 0').toBe(0)
+    expect(a.apprentices.find(x => x.uid === 'b2')!.bond, '负值夹回 0').toBe(0)
+    expect(a.apprentices.find(x => x.uid === 'b3')!.bond, '老档缺 bond 补 0').toBe(0)
+  })
+
+  it('资源:负数/NaN 被夹回 0,合法正数不因守卫被误伤', () => {
+    // 游戏内写入路径(addSmall/setQi)都以 Math.max(0, …) 兜底,负数只能来自坏档;
+    // sanitize 此前只修非有限值,负数会原样存活并显示成负库存。与 settings.sanitize 对齐后一并归零。
+    setActivePinia(createPinia())
+    const r = useResourcesStore()
+    r.qi = -50
+    r.wudao = -3
+    // 灵草五品:烂档品阶账(负/NaN/非法键/非有限值)逐品夹回 0
+    r.herbByGrade = { 1: NaN, 2: -3, 3: 7, 4: 'x', 5: Infinity } as never
+    r.ore = 7
+    r.sanitize()
+    expect(r.qi).toBe(0)
+    expect(r.wudao).toBe(0)
+    expect(r.herbOf(1)).toBe(0)
+    expect(r.herbOf(2)).toBe(0)
+    expect(r.herbOf(3)).toBe(7)
+    expect(r.herbOf(4)).toBe(0)
+    expect(r.herbOf(5)).toBe(0)
+    expect(r.ore).toBe(7)
+  })
 })
 
 describe('坏档韧性 · 活状态(引擎每 tick 都读的那些)', () => {
@@ -313,5 +369,18 @@ describe('坏档韧性 · 活状态(引擎每 tick 都读的那些)', () => {
     player.$patch({ regionEvent: { regionId: 'qingyun', eventId: 'yaochao', endsAt: NaN } } as never)
     player.sanitize()
     expect(player.regionEvent).toBeNull()
+  })
+})
+
+describe('坏档韧性 · 新增持久化分片已挂进读档兜底清单', () => {
+  it('坊市货架由 sanitizeOfflineInputs 修平:坏 pillId 的格被丢弃,不再因 renderSlot 白屏', () => {
+    setActivePinia(createPinia())
+    const market = useMarketStore()
+    market.$patch({
+      stock: [{ kind: 'pill', idx: 0, pillId: 'p_nope', count: 1, price: { m: 1, e: 0 }, sold: false }],
+      stockedAt: Date.now()
+    })
+    sanitizeOfflineInputs()
+    expect(market.stock, '坏 pillId 的货格应被修掉,renderSlot 才不致 undefined.name').toEqual([])
   })
 })

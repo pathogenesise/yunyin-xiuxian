@@ -14,10 +14,8 @@ import { useGameStore } from '@/stores/game'
 import { MANSIONS, imageDef, type MansionDef } from '@/data/xiangxiu'
 import { regionDef } from '@/data/regions'
 import { worldOf } from '@/data/realms'
+import { MANSION_EVENT_LUCK } from '@/data/constants'
 import type { WorldId } from '@/types'
-
-/** 值日之宿所利界域的际遇加成(乘在际遇概率上) */
-export const MANSION_EVENT_LUCK = 0.1
 
 /** 游戏日 → 值日之宿(28 日一轮) */
 export function mansionOfDay(day: number): MansionDef {
@@ -48,6 +46,11 @@ export function isFavoredRegion(regionId: string): boolean {
  */
 export function mansionEventLuck(regionId: string): number {
   return isFavoredRegion(regionId) ? MANSION_EVENT_LUCK : 0
+}
+
+/** 星象加成换算成展示用的百分数 —— 三处页面/文案共用一枚,不各算各的 */
+export function mansionLuckPercent(): number {
+  return Math.round(MANSION_EVENT_LUCK * 100)
 }
 
 /** 今日星象一句话(展示层直接用,不另写一份) */

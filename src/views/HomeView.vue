@@ -7,21 +7,7 @@
     <InstallToHomeNotice />
 
     <!-- 人物水墨主视觉 -->
-    <div class="card-ink relative overflow-hidden px-4 pb-4 pt-5">
-      <!-- 远山 -->
-      <svg class="pointer-events-none absolute inset-x-0 bottom-0 h-28 w-full text-ink/8" viewBox="0 0 400 110" preserveAspectRatio="none">
-        <path
-          class="drift-far"
-          d="M0 110 L60 40 Q80 20 100 45 L150 95 L200 30 Q215 12 235 38 L300 100 L340 55 Q355 38 372 60 L400 90 L400 110 Z"
-          fill="currentColor"
-        />
-        <path
-          class="drift-near"
-          d="M0 110 L40 80 L110 105 L180 70 L260 108 L330 80 L400 105 L400 110 Z"
-          fill="currentColor"
-          opacity="0.6"
-        />
-      </svg>
+      <div class="card-ink relative overflow-hidden px-4 pb-4 pt-5">
       <div class="relative z-10 flex items-start justify-between">
         <div class="min-w-0 flex-1">
           <p class="text-[11px]" :class="player.lifespanRatio < LIFESPAN_WARN_RATIO ? 'text-cinnabar' : 'text-ink-faint'">
@@ -57,7 +43,7 @@
         <p class="flex items-baseline justify-between gap-2">
           <span class="font-kai text-[13px] tracking-wider text-ink">{{ currentGoal.text }}</span>
           <span v-if="currentGoal.progress !== undefined" class="shrink-0 text-[10px] text-ink-faint tabular">
-            {{ Math.round(currentGoal.progress * 100) }}%
+            进度 {{ Math.round(currentGoal.progress * 100) }}%
           </span>
         </p>
         <p v-if="currentGoal.hint" class="mt-0.5 text-[10px] leading-relaxed text-ink-faint">{{ currentGoal.hint }}</p>
@@ -68,7 +54,7 @@
     <RouterLink
       v-if="player.major >= WORLD_BREAK_MAJOR"
       to="/celestial"
-      class="card-ink flex items-center gap-3 border-cinnabar/40 px-4 py-3 active:scale-99"
+      class="card-ink flex items-center gap-3 border-cinnabar/40 px-4 py-3 active:scale-98"
     >
       <span class="grid h-9 w-9 place-items-center rounded-md bg-cinnabar/90 font-kai text-[17px] text-paper animate-breathe">天</span>
       <span class="min-w-0 grow">
@@ -78,14 +64,66 @@
       <span class="text-[11px] text-cinnabar">踏天 →</span>
     </RouterLink>
 
-    <!-- 修行志(任务) -->
+    <!-- 本世之界:这一世的「名」散落在历练深处,主页却只在洞府/天界处开了门 —— 舆图该在门面首层 -->
+    <RouterLink to="/world" class="card-ink flex items-center gap-3 border-azure/30 px-4 py-3 active:scale-98">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-azure/15 text-azure">
+        <GameIcon name="cloud" :size="18" />
+      </span>
+      <span class="min-w-0 grow">
+        <span class="block font-kai text-[14px] tracking-widest text-ink">本世之界</span>
+        <span class="block truncate text-[10px] leading-relaxed text-ink-faint">{{ worldBrief }}</span>
+      </span>
+      <span class="shrink-0 text-[11px] text-azure">观 象 →</span>
+    </RouterLink>
+
+    <!-- 坊市:灵石换机缘的地界,洞府门面给一个常驻入口 -->
+    <RouterLink to="/market" class="card-ink flex items-center gap-3 border-gold-ink/30 px-4 py-3 active:scale-98">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-gold-ink/10 text-gold-ink">
+        <GameIcon name="store" :size="18" />
+      </span>
+      <span class="min-w-0 grow">
+        <span class="block font-kai text-[14px] tracking-widest text-ink">坊市</span>
+        <span class="block truncate text-[10px] text-ink-faint">历练战获 · 售物入账 · 换丹药续料与趁手兵刃</span>
+      </span>
+      <span class="shrink-0 text-[11px] text-gold-ink">购置 →</span>
+    </RouterLink>
+
+    <!-- 道童:遣其跑腿,后台自长 —— 洞府门面第二个常驻入口 -->
+    <RouterLink to="/apprentice" class="card-ink flex items-center gap-3 border-jade/30 px-4 py-3 active:scale-98">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-jade/15 text-jade">
+        <GameIcon name="users" :size="18" />
+      </span>
+      <span class="min-w-0 grow">
+        <span class="block font-kai text-[14px] tracking-widest text-ink">道童</span>
+        <span class="block truncate text-[10px] text-ink-faint">遣道童采药 · 历练 · 寻机缘,归来带回资材</span>
+      </span>
+      <span class="shrink-0 text-[11px] text-jade">遣派 →</span>
+    </RouterLink>
+
+    <!-- 修行志(任务);日课按本地午夜重排,未成即作罢 —— 规则得摆在台面上,不然玩家会以为昨天差一步的日课还欠着 -->
     <section>
-      <SectionTitle title="修行志" />
+      <SectionTitle title="修行志" hint="午夜更替 · 未成作罢" />
       <div class="card-ink mt-2 px-4 py-3">
+        <!-- 更替时刻摆成活数:不只说「未成作罢」的规矩,还报还剩几时 —— 与 SectionTitle 的 hint 同面日历 -->
+        <div class="mb-2 flex items-center justify-between">
+          <span class="text-[9px] text-ink-faint">距午夜更替</span>
+          <span class="countdown-slot text-[10px] text-amber-ink tabular">{{ tilRollover }}</span>
+        </div>
         <template v-if="mainQuest">
           <p class="flex items-center justify-between">
             <span class="font-kai text-[13px] tracking-wider text-ink">{{ mainQuest.name }}</span>
-            <span class="text-[10px] text-ink-faint">主线 {{ quests.mainIdx + 1 }}/{{ MAIN_QUESTS.length }}</span>
+            <span class="flex shrink-0 items-center gap-1.5">
+              <span v-if="mainProgress" class="tabular text-[10px] text-azure">{{ mainProgress }}</span>
+              <span class="text-[10px] text-ink-faint">主线 {{ quests.mainIdx + 1 }}/{{ MAIN_QUESTS.length }}</span>
+              <!-- 拿得准去哪办,就给一枚走往的箭头;拿不准的不摆,免得摆着指错路 -->
+              <RouterLink
+                v-if="mainNav"
+                :to="mainNav"
+                class="-my-1 -mr-1 p-2 text-[13px] leading-none text-ink-faint active:text-azure"
+                :aria-label="`去办:${mainQuest.name}`"
+                >›</RouterLink
+              >
+            </span>
           </p>
           <p class="mt-0.5 text-[11px] text-ink-faint">{{ mainQuest.desc }}</p>
           <p v-if="rewardPreview(mainQuest.reward)" class="mt-0.5 text-[10px] tabular text-azure">
@@ -102,8 +140,17 @@
                 {{ rewardPreview(t.reward) }}
               </span>
             </span>
-            <span class="shrink-0 tabular text-[11px]" :class="t.done ? 'text-jade' : 'text-ink-faint'">
-              {{ t.done ? '已成' : `${t.progress}/${t.target}` }}
+            <span class="flex shrink-0 items-center gap-0.5">
+              <span class="tabular text-[11px]" :class="t.done ? 'text-jade' : 'text-ink-faint'">
+                {{ t.done ? '已成' : `${t.progress}/${t.target}` }}
+              </span>
+              <RouterLink
+                v-if="!t.done && t.nav"
+                :to="t.nav"
+                class="-my-1 -mr-1 p-2 text-[13px] leading-none self-center text-ink-faint active:text-azure"
+                :aria-label="`去办:${t.desc}`"
+                >›</RouterLink
+              >
             </span>
           </div>
         </div>
@@ -111,7 +158,7 @@
     </section>
 
     <!-- 洞府入口(灵脉已统合进洞府页,入口副题带上一句免得找不到);右侧带实况:离线可攒 + 已营座数 -->
-    <RouterLink to="/dongfu" class="card-ink flex items-center justify-between gap-3 px-4 py-3 active:scale-99">
+    <RouterLink to="/dongfu" class="card-ink flex items-center justify-between gap-3 px-4 py-3 active:scale-98">
       <span class="min-w-0 flex-1">
         <span class="block font-kai text-[14px] tracking-widest text-ink">洞府营造</span>
         <span class="block truncate text-[10px] leading-relaxed text-ink-faint">灵脉 · 经营家业,道途更稳</span>
@@ -137,9 +184,14 @@
   import { LIFESPAN_WARN_RATIO } from '@/data/constants'
   import { WORLD_BREAK_MAJOR } from '@/data/realms'
   import { todayWeather } from '@/core/weather'
+  import { worldView } from '@/core/mortalWorldService'
   import { isRetreating } from '@/core/earlyGameService'
   import { homeStatusText } from '@/ui/homeStatus'
   import { rewardPreview } from '@/core/progress'
+  import { mainQuestNav, dailyTaskNav } from '@/ui/questNav'
+  import { useNow } from '@/composables/useNow'
+  import { secsUntilNextMidnight } from '@/utils/time'
+  import { formatCountdown } from '@/utils/format'
   import { weatherEffectText } from '@/ui/weatherText'
   import { generateCurrentGoal, type Goal } from '@/core/goal'
   import SectionTitle from '@/components/common/SectionTitle.vue'
@@ -169,6 +221,13 @@
   const offlineHrs = computed(() => dongfu.offlineCapHours)
   const builtCount = computed(() => BUILDINGS.filter(b => (dongfu.levels[b.id] ?? 0) > 0).length)
 
+  /** 本世之界入口的一句话 —— 与历练页同一条 worldView,只是标题 */
+  const worldBrief = computed(() => {
+    const w = adventure.mortalWorld
+    if (!w) return '此世气象未明,一观便知'
+    return worldView(w, id => id).title
+  })
+
   // Phase 29 修行目标:只给方向,不替玩家做决定(goal.ts 此前零展示,接线摆上主页)
   const currentGoal = computed<Goal | null>(() => generateCurrentGoal(player))
 
@@ -188,12 +247,26 @@
   const weatherLine = computed(() => weatherEffectText(weather.value))
 
   const mainQuest = computed(() => MAIN_QUESTS[quests.mainIdx])
+  /** 主线的「去办」落点:拿得准才给箭头(判据见 questNav) */
+  const mainNav = computed(() => (mainQuest.value ? mainQuestNav(mainQuest.value.cond) : null))
+  /** 计数型主线的当刻进度:里程碑(境界/custom)不给数字,别拿它当计数器 */
+  const mainProgress = computed(() => {
+    const c = mainQuest.value?.cond
+    if (c?.type !== 'counter') return null
+    const cur = Math.min(c.value, quests.counter(c.key))
+    return `${cur}/${c.value}`
+  })
 
   const dailyRows = computed(() =>
     DAILY_TASKS.map(t => ({
       ...t,
       progress: Math.min(t.target, quests.dailyDelta(t.counterKey)),
-      done: quests.daily.done.includes(t.id)
+      done: quests.daily.done.includes(t.id),
+      nav: dailyTaskNav(t.counterKey)
     }))
   )
+
+  /** 距午夜更替的活倒计时 —— 日课「未成即作罢」还剩几时,同屏数得出来 */
+  const now = useNow()
+  const tilRollover = computed(() => formatCountdown(secsUntilNextMidnight(now.value)))
 </script>

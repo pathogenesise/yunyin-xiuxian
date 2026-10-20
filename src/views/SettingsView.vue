@@ -3,7 +3,7 @@
     <SectionTitle title="设置" />
 
     <!-- 偏好 -->
-    <div class="card-ink divide-y divide-ink/7 px-4">
+    <div class="card-ink divide-y divide-ink/6 px-4">
       <div class="py-3">
         <label class="flex items-center justify-between">
           <span class="text-[13px] text-ink-soft">背景音乐</span>
@@ -11,7 +11,7 @@
         </label>
         <div v-if="settings.musicOn" class="mt-2 flex items-center gap-2">
           <span class="text-[10px] text-ink-faint">轻</span>
-          <input v-model.number="settings.musicVol" type="range" min="0" max="100" aria-label="背景音乐音量" class="grow accent-cinnabar" />
+          <input v-model.number="settings.musicVol" type="range" min="0" max="100" aria-label="背景音乐音量" class="grow min-w-0 accent-cinnabar" />
           <span class="w-7 text-right text-[10px] tabular text-ink-faint">{{ settings.musicVol }}</span>
         </div>
       </div>
@@ -22,7 +22,7 @@
         </label>
         <div v-if="settings.sfxOn" class="mt-2 flex items-center gap-2">
           <span class="text-[10px] text-ink-faint">轻</span>
-          <input v-model.number="settings.sfxVol" type="range" min="0" max="100" aria-label="音效音量" class="grow accent-cinnabar" />
+          <input v-model.number="settings.sfxVol" type="range" min="0" max="100" aria-label="音效音量" class="grow min-w-0 accent-cinnabar" />
           <span class="w-7 text-right text-[10px] tabular text-ink-faint">{{ settings.sfxVol }}</span>
         </div>
       </div>
@@ -142,9 +142,20 @@
 
     <!-- 关于 -->
     <SectionTitle title="关于" />
-    <div class="card-ink divide-y divide-ink/7 px-4">
+    <div class="card-ink divide-y divide-ink/6 px-4">
       <button class="flex w-full items-center justify-between py-3 active:opacity-60" @click="aboutOpen = true">
         <span class="text-[13px] text-ink-soft">关于我们</span>
+        <span class="text-[11px] text-ink-faint">查看 →</span>
+      </button>
+      <button class="flex w-full items-center justify-between py-3 active:opacity-60" @click="openRelease">
+        <span class="flex items-center gap-2 text-[13px] text-ink-soft">
+          版本与更新
+          <span
+            v-if="settings.hasUnseenRelease"
+            class="rounded bg-cinnabar px-1 py-px text-[10px] leading-none text-paper"
+            aria-label="有新版本"
+          >新</span>
+        </span>
         <span class="text-[11px] text-ink-faint">查看 →</span>
       </button>
       <button class="flex w-full items-center justify-between py-3 active:opacity-60" @click="privacyOpen = true">
@@ -159,6 +170,9 @@
 
     <!-- 关于我们 -->
     <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
+
+    <!-- 版本与更新 -->
+    <ReleaseNotesDialog :open="releaseOpen" @close="releaseOpen = false" />
 
     <!-- 隐私政策 -->
     <PrivacyDialog :open="privacyOpen" @close="privacyOpen = false" />
@@ -198,6 +212,7 @@
   import BaseModal from '@/components/common/BaseModal.vue'
   import PrivacyDialog from '@/components/common/PrivacyDialog.vue'
   import AboutDialog from '@/components/common/AboutDialog.vue'
+  import ReleaseNotesDialog from '@/components/common/ReleaseNotesDialog.vue'
   import ProgressionDialog from '@/components/common/ProgressionDialog.vue'
   import InstallToHomeNotice from '@/components/common/InstallToHomeNotice.vue'
   import { DIAG_MAX, useDiagStore } from '@/stores/diag'
@@ -260,8 +275,15 @@
   const resetConfirm = ref(false)
   const privacyOpen = ref(false)
   const aboutOpen = ref(false)
+  const releaseOpen = ref(false)
   const progressionOpen = ref(false)
   const fileInput = ref<HTMLInputElement | null>(null)
+
+  /** 打开发布说明即视为已阅:把「已看到的最新版」记下,新标记随之熄灭 */
+  function openRelease(): void {
+    settings.markReleaseSeen()
+    releaseOpen.value = true
+  }
 
   /** 导出存档:Web/Electron 走浏览器下载,原生端写 Documents(见 savePlatform) */
   function onExport(): void {

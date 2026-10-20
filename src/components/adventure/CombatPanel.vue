@@ -10,17 +10,40 @@
         <!-- 每秒在走的倒计时同样要定宽:与状态面板同一类抖动,修就修干净 -->
         <span class="tabular text-[12px] text-ink-soft">
           <template v-if="defeatReplay">此行已败</template>
-          <template v-else>余 <span class="countdown-slot">{{ formatCountdown(timeLeft) }}</span></template>
+          <template v-else>
+            余 <span class="countdown-slot">{{ formatCountdown(timeLeft) }}</span>
+            <!--
+              倒计时给「还剩多久」,这句给「几时归」—— 同一分 endsAt,翻译成本地钟点,
+              玩家不用倒着心算 00:27:31 是几点几分,得空了知道几时回来收一趟
+            -->
+            <span v-if="session && timeLeft > 0" class="ml-1 text-[10px] text-ink-faint">约 {{ formatClock(session.endsAt) }} 归</span>
+          </template>
         </span>
       </div>
       <p class="mt-1 text-[11px] text-ink-faint tabular">
         胜 {{ session?.wins ?? 0 }} 场 · 际遇 {{ session?.events ?? 0 }} 次 · 拾获 {{ session?.itemGain ?? 0 }} 件
-        <span v-if="huntIn > 0.4 && !defeatReplay" class="text-ink-faint"> · 下一场 {{ formatCountdown(huntIn) }}</span>
+        <!--
+          本场「胜 N 场」是一趟历练里的账,连胜是跨趟的「还没输过」—— 两本账。
+          连胜只在 3/5/10 的奖励 toast 里现身过一次,平时是多少、距下一档还剩几场,
+          玩家是看不见的:把活数挂回眼前,顺手报清下一档的缺口。
+        -->
+        <span v-if="streak" class="ml-1 text-gold-ink">
+          · 连胜 {{ streak }}
+          <template v-if="nextStreak">
+            · 距 {{ nextStreak }} 连胜尚差 {{ nextStreak - streak }} 场
+            <template v-if="nextReward">(奖:{{ nextReward }})</template>
+          </template>
+        </span>
+        <!-- 下一场也讲「几时」:同一分 nextBattleAt 翻译成钟点,和归时那句一个承诺 -->
+        <span v-if="huntIn > 0.4 && !defeatReplay" class="text-ink-faint">
+          · 下一场 {{ formatCountdown(huntIn) }}
+          <span v-if="session" class="text-[10px]">(约 {{ formatClock(session.nextBattleAt) }})</span>
+        </span>
       </p>
       <!-- 本次所得:石头与修为此前只在挂机总结里出现,在线历练中玩家看不到这一趟赚了什么 -->
       <p v-if="gains && !defeatReplay" class="mt-0.5 text-[10px] text-ink-faint tabular">
         本次所得 · 灵石 <span class="text-gold-ink">+{{ gains.stone }}</span> · 修为
-        <span class="text-jade">+{{ gains.exp }}</span>
+        <span class="text-jade">+{{ gains.exp }}</span><template v-if="gains.itemText"> · 拾获 <span class="text-azure">{{ gains.itemText }}</span> 件</template>
       </p>
       <!-- 目标感:未靖的地界,打完十胜就该遇首领;不给提示的话玩家不知道还要打多久 -->
       <p v-if="bossHint && !defeatReplay" class="mt-0.5 text-[10px]" :class="bossSoon ? 'text-cinnabar' : 'text-gold-ink'">
@@ -81,6 +104,16 @@
               </span>
             </p>
             <ProgressBar :value="ehp" color="var(--color-cinnabar)" :height="6" class="mt-1" />
+            <!--
+              敌力亮出来:星级只答「合适不合适」,这枚数答「悬殊多少」。
+              两侧都是**开打那一刻**从同一对有效快照折出的冻结数(combat.snapPower +
+              applyCombatRuleSnap),规则改过就按改过后的算 —— 战后换装不会让「我」飘走,
+              逆旅契/道途生效也不是摆设。老战报缺 playerPower 时退回当前面板,只作兜底
+            -->
+            <p v-if="battle?.enemyPower" class="mt-1 text-[10px] text-ink-faint tabular">
+              敌力 {{ formatGN(battle.enemyPower) }} · 我
+              {{ formatGN(battle.playerPower ?? player.finalStats.power) }}
+            </p>
           </div>
         </div>
         <span
@@ -137,7 +170,7 @@
           v-for="f in floats.filter(x => x.side === 'p')"
           :key="f.id"
           class="pointer-events-none absolute right-2 top-0 tabular font-kai"
-          :class="f.crit ? 'animate-float-crit text-[17px] text-cinnabar' : 'animate-float-dmg text-[13px] text-cinnabar/80'"
+          :class="f.crit ? 'animate-float-crit text-[17px] text-cinnabar' : 'animate-float-dmg text-[13px] text-cinnabar'"
         >
           {{ f.text }}
         </span>
@@ -195,27 +228,82 @@
           </span>
           {{ lore.archetype }}
         </p>
-        <p v-if="lore.hint" class="mt-1.5 text-[10px] text-ink-faint">{{ lore.hint }}</p>
+        <!--
+          距离下一层的情报给个实数:「再交手几阵」数不出来,「照面 X 记 · 还差 Y 记」能。
+          与 noteEnemy 同一张门槛表(loreService),胜一记、败三记、首领倍算 ——
+          那排小注就是它自己读出来的,不另抄。
+
+          「下一层」以有效层为基准:宿慧照见(熟知修仙界)会把认知层抬过一档,
+          界面上已经能看到的层不该再被点名「再攒几记可窥」—— 名字据此取舍,
+          eff 已到顶时(照见把最高层都摊开了)再攒的只有「计数」,没有新层可窥。
+        -->
+        <p v-if="lore.progress && lore.progress.remain > 0" class="mt-1.5 text-[10px] leading-relaxed text-ink-faint tabular">
+          照面 {{ lore.progress.seen }} 记,再攒
+          <span class="text-violet-ink">{{ lore.progress.remain }}</span> 记
+          <template v-if="lore.progress.nextName">可窥「{{ lore.progress.nextName }}」</template>
+          <template v-else>可更深知它的路数</template>
+          <span class="text-ink-faint">
+            (胜一记 · 败计三<template v-if="lore.progress.isBoss"> · 首领倍算</template>)
+          </span>
+        </p>
       </div>
       <!-- 战斗分析(战败自动展开;硬核数据供研究) -->
       <div v-if="showAnalysis && analysis" class="mt-2 rounded-md bg-ink/4 px-3 py-2.5">
-        <p class="font-kai text-[12px] tracking-wider" :class="battle?.result.win ? 'text-jade' : 'text-cinnabar'">
-          {{ analysis.headline }}
-        </p>
-        <template v-if="analysis.findings.length">
-          <p v-for="(f, i) in analysis.findings" :key="i" class="mt-1 text-[11px] leading-relaxed text-ink-soft">· {{ f.text }}</p>
-        </template>
-        <p v-if="analysis.directions.length" class="mt-1.5 text-[10px] text-ink-faint">
-          可借力的方向(非唯一解):
-          <span v-for="d in analysis.directions" :key="d.styleName" class="ml-1 text-violet-ink" :title="d.reason">
-            {{ d.styleName }}
+        <!-- 分析题首:朱/青别胜败,一落眼就知道这屏在答「为何这般」;与上方「此物所知」
+             (记敌人的路数)是两回事,不再共用一套标题,层次便分得开 -->
+        <p class="flex items-baseline gap-1.5">
+          <span
+            class="h-3 w-1 shrink-0 self-center rounded-sm"
+            :class="battle?.result.win ? 'bg-jade' : 'bg-cinnabar'"
+            aria-hidden="true"
+          ></span>
+          <span class="font-kai text-[12px] tracking-wider" :class="battle?.result.win ? 'text-jade' : 'text-cinnabar'">
+            {{ analysis.headline }}
+          </span>
+          <span class="chip-ink border-ink/15 text-[9px]" :class="battle?.result.win ? 'text-jade' : 'text-cinnabar'">
+            {{ battle?.result.win ? '胜因' : '败因' }}
           </span>
         </p>
-        <div v-if="analysis.dataRows.length" class="mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 border-t border-ink/10 pt-1.5">
-          <p v-for="row in analysis.dataRows" :key="row.label" class="flex justify-between text-[10px] tabular">
-            <span class="text-ink-faint">{{ row.label }}</span>
-            <span class="text-ink-soft">{{ row.value }}</span>
+        <!-- 败因逐条成列、句首一点,不再是一堵「·」糊成的墙 -->
+        <ul v-if="analysis.findings.length" class="mt-1.5 space-y-1">
+          <li v-for="(f, i) in analysis.findings" :key="i" class="flex gap-1.5 text-[11px] leading-relaxed text-ink-soft">
+            <span class="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-ink/30" aria-hidden="true"></span>
+            <span>{{ f.text }}</span>
+          </li>
+        </ul>
+        <!-- 借力的方向:理由贴脸摆开 —— 方向的价值就在那条理由,收进 :title 就白给触屏了 -->
+        <div v-if="analysis.directions.length" class="mt-2 rounded-md border border-violet-ink/15 bg-violet-ink/5 px-2.5 py-2">
+          <p class="text-[10px] tracking-wide text-ink-faint">
+            可借力的方向<span class="text-ink-faint">(非唯一解)</span>:
           </p>
+          <ul class="mt-1 flex flex-col gap-1">
+            <li v-for="d in analysis.directions" :key="d.styleName" class="flex flex-col">
+              <span class="text-[11px] text-violet-ink">{{ d.styleName }}</span>
+              <span class="text-[10px] leading-relaxed text-ink-faint">{{ d.reason }}</span>
+            </li>
+          </ul>
+        </div>
+        <!-- 硬核数据:整行让位给数值。标签占左侧定宽(不换行),数值折回整行剩余宽 ——
+             窄屏上也不再与标签互踩、被挤成一线窄落;战局定数与战时账目分节读 -->
+        <div v-if="analysis.dataRows.length" class="mt-2 border-t border-ink/10 pt-1.5">
+          <div v-if="analysisSections.setup.length">
+            <p class="text-[10px] tracking-wide text-ink-faint">战局定数</p>
+            <div class="mt-0.5 space-y-0.5">
+              <p v-for="row in analysisSections.setup" :key="row.label" class="flex items-baseline gap-3 text-[10px] tabular">
+                <span class="min-w-[4.5rem] shrink-0 whitespace-nowrap text-ink-faint">{{ row.label }}</span>
+                <span class="min-w-0 flex-1 text-right text-ink-soft">{{ row.value }}</span>
+              </p>
+            </div>
+          </div>
+          <div v-if="analysisSections.account.length" class="mt-1.5">
+            <p class="text-[10px] tracking-wide text-ink-faint">战时账目</p>
+            <div class="mt-0.5 space-y-0.5">
+              <p v-for="row in analysisSections.account" :key="row.label" class="flex items-baseline gap-3 text-[10px] tabular">
+                <span class="min-w-[4.5rem] shrink-0 whitespace-nowrap text-ink-faint">{{ row.label }}</span>
+                <span class="min-w-0 flex-1 text-right text-ink-soft">{{ row.value }}</span>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -237,7 +325,8 @@
   import { useSettingsStore } from '@/stores/settings'
   import { stopExploration, finishRetreat, winsUntilRegionBoss } from '@/core/exploration'
   import { COMBAT_PLAYBACK_BASE_MS, COMBAT_PLAYBACK_MIN_MS, EXPLORE_MODES, DEFEAT_RETREAT_DELAY_MS } from '@/data/constants'
-  import { formatCountdown, formatGN } from '@/utils/format'
+  import { WIN_STREAK_REWARDS } from '@/data/earlyGame'
+  import { formatClock, formatCountdown, formatGN } from '@/utils/format'
   import { useNow } from '@/composables/useNow'
   import { detectBuild } from '@/core/buildDetect'
   import { detectionAdaptation, enemyTraits, starsText, TRAIT_NAMES, type RegionEcology } from '@/core/buildAdvisor'
@@ -281,11 +370,30 @@
   const huntIn = computed(() => (session.value ? Math.max(0, (session.value.nextBattleAt - now.value) / 1000) : 0))
   const modeName = computed(() => (session.value ? EXPLORE_MODES[session.value.mode].name : ''))
 
-  /** 本次历练已得(灵石/修为)—— 取自会话里如实累计的入账数,不是期望值 */
+  /** 本次历练已得(灵石/修为/拾获件数)—— 取自会话里如实累计的入账数,不是期望值 */
   const gains = computed(() => {
     const s = session.value
     if (!s) return null
-    return { stone: formatGN(s.stoneGain), exp: formatGN(s.expGain) }
+    return { stone: formatGN(s.stoneGain), exp: formatGN(s.expGain), itemText: s.itemGain > 0 ? String(s.itemGain) : null }
+  })
+
+  /**
+   * 连胜、下一档的缺口,与那一档的赏格:与奖励 toast 读同一本账
+   * (player.winStreak + WIN_STREAK_REWARDS),只差一个 milestone 时跳过一次
+   * (比如连胜 9 时「距 10」还在),满了 10 无话可说。赏格取自表里那一行,
+   * 只排格式不手写数 —— 到账的 toast 另走 streakRewardText,同一本账。
+   */
+  const streak = computed(() => player.winStreak)
+  const nextRewardRow = computed(() => WIN_STREAK_REWARDS.find(r => r.streak > streak.value) ?? null)
+  const nextStreak = computed(() => nextRewardRow.value?.streak ?? null)
+  /** 赏格预览:数字取自 WIN_STREAK_REWARDS 那一行,只排格式,不手写数 */
+  const nextReward = computed(() => {
+    const r = nextRewardRow.value
+    if (!r) return null
+    const parts: string[] = []
+    if (r.stone > 0) parts.push(`${formatGN(r.stone)} 石`)
+    if (r.wudao > 0) parts.push(`${r.wudao} 悟道点`)
+    return parts.length ? parts.join(' · ') : null
   })
 
   /** 距区域之主还差几胜(已靖的地界不再提示) */
@@ -363,6 +471,22 @@
     if (!b) return null
     const build = detectBuild(player.finalStats.mods)
     return analyzeBattle(b.result, build?.style.id ?? null)
+  })
+
+  /**
+   * 数据行按语义分两节:
+   * - 战局定数(先手 / 敌之加成)—— 开打前就定下的数,全是长句,该整行让位;
+   * - 战时账目(其余)—— 逐项读账,短条更密。
+   * 两个标签是 battleAnalysis 里钉死的字符串,这里只作分组,不碰模型。
+   */
+  const analysisSections = computed(() => {
+    const a = analysis.value
+    if (!a) return { setup: [], account: [] }
+    const SETUP_LABELS = new Set(['先手', '敌之加成'])
+    return {
+      setup: a.dataRows.filter(r => SETUP_LABELS.has(r.label)),
+      account: a.dataRows.filter(r => !SETUP_LABELS.has(r.label))
+    }
   })
 
   // 战败时自动展开分析;并按胜负配一声战果音

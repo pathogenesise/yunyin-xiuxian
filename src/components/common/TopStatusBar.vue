@@ -20,7 +20,7 @@
           </span>
           <!--
             轮回次数:从主页人物卡移来,置于全局顶栏常驻。
-            但它是最闲的一格 —— 340px 以下宁可不要,也不能把灵石与灵气挤走。
+            但它是最闲的一格 —— 340px 以下宁可不要,也不能把灵石挤走。
           -->
           <span v-if="player.reincarnation.count > 0" class="hidden text-violet-ink min-[340px]:inline">
             {{ player.reincarnation.count }} 世
@@ -29,21 +29,23 @@
       </div>
     </div>
     <div class="flex shrink-0 items-center gap-3 text-[11px] text-ink-soft tabular short:gap-2">
-      <span class="flex items-center gap-1 whitespace-nowrap" title="灵石">
+      <span class="flex items-center gap-1 whitespace-nowrap" title="灵石 · 历练战获与坊市售物可得">
         <GameIcon name="gem" :size="13" class="text-gold-ink" />
         {{ formatGN(resources.spiritStone) }}
-      </span>
-      <span class="flex items-center gap-1 whitespace-nowrap" title="灵气">
-        <GameIcon name="wind" :size="13" class="text-azure" />
-        {{ formatNum(Math.floor(resources.qi)) }}
       </span>
       <!-- 只有图标的入口必须自带名字:否则读屏只会念「链接」,自动化也点不着它 -->
       <RouterLink
         to="/settings"
         aria-label="设置"
-        class="-my-1.5 -mr-1.5 flex min-h-[32px] min-w-[32px] items-center justify-center p-1.5 text-ink-faint active:scale-90"
+        class="-my-1.5 -mr-1.5 relative flex min-h-[32px] min-w-[32px] items-center justify-center p-1.5 text-ink-faint active:scale-90"
       >
         <GameIcon name="settings" :size="15" />
+        <!-- 有新发布说明时点一枚朱砂圆点:绝对定位,不挤动 32px 的触面与布局 -->
+        <span
+          v-if="settings.hasUnseenRelease"
+          class="pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-cinnabar"
+          aria-hidden="true"
+        />
       </RouterLink>
     </div>
   </header>
@@ -52,11 +54,13 @@
 <script setup lang="ts">
   import { usePlayerStore } from '@/stores/player'
   import { useResourcesStore } from '@/stores/resources'
-  import { formatGN, formatNum, formatYears } from '@/utils/format'
+  import { formatGN, formatYears } from '@/utils/format'
   import { LIFESPAN_WARN_RATIO } from '@/data/constants'
   import { Capacitor } from '@capacitor/core'
+  import { useSettingsStore } from '@/stores/settings'
   import GameIcon from './GameIcon.vue'
 
   const player = usePlayerStore()
   const resources = useResourcesStore()
+  const settings = useSettingsStore()
 </script>

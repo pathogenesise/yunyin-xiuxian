@@ -25,9 +25,9 @@ import { persistConfig } from '@/utils/storage'
 import { asArray } from '@/utils/saveShape'
 import { defineStore } from 'pinia'
 
-export type InteractionKind = 'modal' | 'notify' | 'ambient'
+type InteractionKind = 'modal' | 'notify' | 'ambient'
 
-export interface InteractionEvent {
+interface InteractionEvent {
   /** 事件类型 ID(如 enlightenment / caveEvent / winStreak) */
   type: string
   kind: InteractionKind
@@ -59,7 +59,9 @@ export const usePacingTelemetry = defineStore(
     function record(type: string, kind: InteractionKind, label: string): void {
       if (!enabled.value) return
       const now = Date.now()
-      events.value = [...events.value.slice(-119), { type, kind, label, at: now }]
+      // 防御:即便读档兜底(sanitizeOfflineInputs)尚未跑到,events 被写坏成 null / 非数组时
+      // 这里也不该抛 —— 交互遥测是每次进出都跑的高频路径,一个坏档不该让玩家卡在互动上。
+      events.value = [...(Array.isArray(events.value) ? events.value : []).slice(-119), { type, kind, label, at: now }]
     }
 
     /** 生成密度报告(基于最近 30 分钟) */

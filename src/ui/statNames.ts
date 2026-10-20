@@ -7,7 +7,9 @@ import {
   LOW_HP_THRESHOLD,
   SHIELD_CAP_RATIO
 } from '@/data/constants'
-import type { AffixRarity, AnyStatKey, StatMods } from '@/types'
+import { POWER_WEIGHTS } from '@/core/formulas'
+import { mulN } from '@/utils/gnum'
+import type { AffixRarity, AnyStatKey, FinalStats, GNum, StatMods } from '@/types'
 
 /**
  * 词条稀有度的名目与颜色(展示层)。
@@ -150,7 +152,7 @@ export function signedPercent(n: number): string {
  * Scope notes that belong on the number, not only in comments.
  * Titles, pills, weather, veins, and talent chips all read this map.
  */
-export const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
+const STAT_CAVEATS: Partial<Record<AnyStatKey, string>> = {
   breakthroughRate: '只入小进阶;大关天劫不与',
   luck: '主器物成色;小进阶另借此数半成',
   breakRefund: '只还败时所损修为;灵气不退',
@@ -200,6 +202,22 @@ export function statValueText(key: string, n: number): string {
 export function statModPhrase(key: string, n: number): string {
   const name = STAT_NAMES[key as AnyStatKey] ?? key
   return `${name} ${statValueText(key, n)}`
+}
+
+/** 战力算式一句话 —— 权重取自 POWER_WEIGHTS,与 powerScore 同源 */
+export function powerExplainText(): string {
+  const w = POWER_WEIGHTS
+  return `攻×${w.attack} + 防×${w.defense} + 血×${w.hp}`
+}
+
+/** 战力构成行:攻/防/血各带权重与折算值 —— 与 powerScore 同一份权重、同一批属性,逐行相加即总战力 */
+export function powerBreakdownRows(s: FinalStats): { name: string; raw: GNum; weight: number; value: GNum }[] {
+  const w = POWER_WEIGHTS
+  return [
+    { name: '攻击', raw: s.attack, weight: w.attack, value: mulN(s.attack, w.attack) },
+    { name: '防御', raw: s.defense, weight: w.defense, value: mulN(s.defense, w.defense) },
+    { name: '气血', raw: s.maxHp, weight: w.hp, value: mulN(s.maxHp, w.hp) }
+  ]
 }
 
 export function modsText(mods: StatMods): string {

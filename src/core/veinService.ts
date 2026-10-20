@@ -111,7 +111,10 @@ export function veinInvestPlan(veinId: VeinId): VeinInvestPlan {
   if (cap !== null && current >= cap) return zero('peak')
   const maxByCap = cap === null ? Number.MAX_SAFE_INTEGER : cap - current
   if (maxByCap <= 0) return zero('peak')
-  const points = Math.min(maxByCap, Math.floor(ratio(resources.spiritStone, veinPointCost())))
+  const byStone = Math.floor(ratio(resources.spiritStone, veinPointCost()))
+  // ratio 在 veinPointCost 为 0/NaN 时回 Infinity/NaN —— 显式收束:灵石不构成限制时,点数由
+  // 容量维度(maxByCap)唯一决定,绝不把 Infinity 写进 plan。
+  const points = Math.min(maxByCap, Number.isFinite(byStone) ? byStone : maxByCap)
   if (points <= 0) return zero('short')
   return { points, stone: mulN(veinPointCost(), points), blocked: null }
 }

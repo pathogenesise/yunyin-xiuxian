@@ -6,6 +6,7 @@ import { rng } from '@/utils/random'
 import { add, gnZero } from '@/utils/gnum'
 import { formatGN } from '@/utils/format'
 import { enemyDef } from '@/data/enemies'
+import { beastIcon } from '@/data/beastFamilies'
 import { regionDef, REGIONS } from '@/data/regions'
 import {
   EVENT_AUTO_RESOLVE_SECONDS,
@@ -16,7 +17,7 @@ import {
 } from '@/data/constants'
 import { mansionEventLuck } from './astronomy'
 import type { StatMods } from '@/types'
-import { makeEnemySnap, mortalFoeOriginFromParts, resolveCombat } from './combat'
+import { applyCombatRuleSnap, makeEnemySnap, mortalFoeOriginFromParts, resolveCombat, snapPower } from './combat'
 import { petDef } from '@/data/pets'
 import type { RegionEventId } from './regionEvent'
 import { mergeRules } from './gauntlet'
@@ -35,7 +36,7 @@ import { useCultivationStore } from '@/stores/cultivation'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
 import { checkSuppression, memorialLine, MEMORIAL_CHANCE } from './suppress'
-import { recordLoss, isNemesis, markAvenged, ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE } from './worldMemory'
+import { recordLoss, isNemesis, markAvenged, ghostOf, ghostTitle, ghostLeadIn, ECHO_GHOST_CHANCE, NEMESIS_THRESHOLD } from './worldMemory'
 import { personalityEffects } from './petPersonality'
 // 连胜与宿敌各有一个 recordLoss,一个管连胜清空、一个管宿敌(败北阈值):
 // 前者来自 Phase 28 前期玩法(earlyGameService),后者来自世界记忆(worldMemory),
@@ -299,7 +300,14 @@ function runBattle(now: number): void {
   const eSnap = makeEnemySnap(eDef, region.tier, dangerFactor, foeOrigin)
   // 道途在世,一切战斗皆循此规则
   // 逆旅契:本世签下的契对每一场历练战斗生效(道果的非效率出口)
-  const result = resolveCombat(pSnap, eSnap, rng, explorationRules())
+  const rules = explorationRules()
+  // 卡片那对「敌 X · 我 Y」用**开打那一刻**的双方有效快照(规则改过就按改过的算)折出,
+  // 与 resolveCombat 同一份 applyCombatRuleSnap —— 战斗后换装不会让它飘,规则生效也不谎报。
+  // 离线结算时玩家未必在场,这一对只随在线战报走(离线归来卷轴另有旧账口径)。
+  const { pEff, eEff } = applyCombatRuleSnap(pSnap, eSnap, rules)
+  const enemyPower = snapPower(eEff)
+  const playerPower = snapPower(pEff)
+  const result = resolveCombat(pSnap, eSnap, rng, rules)
   // Phase 32.5:「独行」之誓看的是有没有真的祭出法宝,不是有没有法宝在身
   if (useInventoryStore().equippedArtifacts.length > 0) noteTaboo('artifact')
 
@@ -312,9 +320,11 @@ function runBattle(now: number): void {
   }
   const view: LastBattleView = {
     enemyName: ghost ? ghostTitle(ghost) : eDef.name,
-    enemyIcon: eDef.icon,
+    enemyIcon: beastIcon(eDef.family),
     enemyId: eDef.id,
     isBoss: Boolean(eDef.isBoss),
+    enemyPower,
+    playerPower,
     result,
     at: now
   }
@@ -385,7 +395,7 @@ function runBattle(now: number): void {
     const { list, becameNemesis } = recordLoss(player.nemeses, eDef.id, eDef.name, region.id, now)
     if (becameNemesis) {
       player.setNemeses(list)
-      ui.toast(`【宿敌】你已在${eDef.name}手下败北三次——此敌已成你的宿敌!`, 'warn')
+      ui.toast(`【宿敌】你已在${eDef.name}手下败北${NEMESIS_THRESHOLD}次——此敌已成你的宿敌!`, 'warn')
     } else {
       player.setNemeses(list)
     }
@@ -500,7 +510,10 @@ export function tickExploration(now: number): void {
   if (adventure.pendingEventId) {
     if (now - adventure.pendingEventSince > EVENT_AUTO_RESOLVE_SECONDS * 1000) {
       const region = regionDef(s.regionId)
-      autoResolveEvent(adventure.pendingEventId, region?.tier ?? 1)
+      const res = autoResolveEvent(adventure.pendingEventId, region?.tier ?? 1)
+      // 超时自动按默认结算:结果(所得明细)要在界面上看见,不能无声入账
+      if (res && res.lines.length) useUiStore().toast(res.lines.join('、'), 'info')
+      else if (res?.outcomeText) useUiStore().toast(res.outcomeText, 'info')
       adventure.setPendingEvent(null, now)
       const cur = adventure.session
       if (cur) adventure.setSession({ ...cur, events: cur.events + 1, nextBattleAt: nextBattleTime(now) })
@@ -525,7 +538,10 @@ export function tickExploration(now: number): void {
          * 撞见际遇/机缘/奇缘时按超时同一条路(默认好愿)当场结清 ——
          * 奖励照拿、不卡手、也不把这一 Tick 的战斗窗口吞掉。
          */
-        autoResolveEvent(ev.id, region.tier)
+        const res = autoResolveEvent(ev.id, region.tier)
+        // 勿扰自动结算:所得明细照报(弹窗不弹,但那一份到手的东西得在 toast 里看见)
+        if (res && res.lines.length) useUiStore().toast(res.lines.join('、'), 'info')
+        else if (res?.outcomeText) useUiStore().toast(res.outcomeText, 'info')
         const cur = adventure.session
         if (cur) adventure.setSession({ ...cur, events: cur.events + 1, nextBattleAt: nextBattleTime(now) })
         return

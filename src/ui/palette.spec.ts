@@ -287,6 +287,40 @@ describe('调色板 · 承载文字的色都过线', () => {
     // src 里的 .vue/.ts 也不许再手写这个类名(没有 token 就不生成样式,写了等于隐形文字)
     expect(filesMatching(resolve(ROOT, 'src'), /ink-ghost/, /\.(vue|ts)$/)).toEqual([])
   })
+
+  /*
+   * 强文本色不叠透明度:text-<carrier>/N 一律此路不通。
+   *
+   * 半透明文字的实际颜色是「字色往底上混」,对比度只降不升 —— 任意一档 <100 的
+   * 强文本色,压在任何一张铺字底(取最暗的纸深)上都跌破它该守的 AA:
+   *   cinnabar/80 浅主题 3.46:1 / 夜主题 1.9:1(整色 4.81 / 3.02,夜朱本就是「大字」
+   *   的既定底,再降就真看不见);ink-faint/70 只有 2.71:1;azure/90 3.87:1。
+   * 要更淡是**换一档角色**(选一档已过线的 token),不是让浏览器把字色往底里混
+   * —— 混出来的结果对不上任何已核过的对比度账。
+   * 例外只有装饰性的 SVG 填色/描边(远山、路段线),它们走 fill-/stroke- 而非 text-,
+   * 透明是画法不是写字,故不在本判据的猎杀范围内。
+   */
+  it('强文本色不叠透明度(半透明字对底色算不出已核过的 AA)', () => {
+    // 故障注入:正是曾经散落在各视图里的那几枚(cinnabar/80、ink-faint/70、azure/90)
+    const TEXTS = [...STRONG, 'cinnabar']
+    const re = new RegExp(`(?<![\\w-])text-(${TEXTS.join('|')})/\\d+`, 'g')
+    expect('bg-ink/[0.03] text-cinnabar border-ink/15', '非 text- 用法不许误报').not.toMatch(re)
+    expect('text-cinnabar/80 text-jade/60', '半透明强文本必须被报').toMatch(re)
+    const offenders: string[] = []
+    const walk = (d: string): void => {
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        const path = resolve(d, entry.name)
+        if (entry.isDirectory()) walk(path)
+        else if (/\.(vue|ts)$/.test(entry.name) && !entry.name.endsWith('.spec.ts')) {
+          for (const m of readFileSync(path, 'utf-8').matchAll(re)) {
+            offenders.push(`${path.slice(ROOT.length + 1)} → ${m[0]}`)
+          }
+        }
+      }
+    }
+    walk(resolve(ROOT, 'src'))
+    expect(offenders, '强文本色带了透明度,对比度必然跌破 AA;改用整色 token ').toEqual([])
+  })
 })
 
 describe('调色板 · 印面', () => {
@@ -314,6 +348,23 @@ describe('调色板 · 印面', () => {
     // .world-seal 从模板抄了 .btn-seal 的印面却零判据,颜色改飞了没人喊 —— 补一记
     expect(CSS).toMatch(/\.world-seal \{[^}]*color: #f6f1e5/)
     expect(CSS).toMatch(/html\[data-theme='dark'\] \.world-seal \{[^}]*background: var\(--color-cinnabar-deep\)/)
+  })
+
+  it('夜主题禁用态 .btn-seal:disabled 换暗底,92% 白字仍 ≥4.5:1(亮暖灰当底会洗白)', () => {
+    // 夜里 ink-faint(168 161 140)是亮暖灰,禁用按钮的 92% 白字压上去只有 ~2:1 ——
+    // 必须换成真正暗的惰性底。这里验证两件事:
+    //  ① 浅色那份 ink-faint 打底不动(浅色主题 3.9:1 成立,回归不得改它);
+    //  ② 夜主题覆盖成 paper-dark,并把 92% 白字混上去算对比度。
+    const LIGHT_BG = /\.btn-seal:disabled \{[^}]*background: var\(--color-ink-faint\)/.test(CSS)
+    expect(LIGHT_BG, '浅色主题禁用态必须仍用 ink-faint 打底').toBe(true)
+    expect(CSS).toMatch(/html\[data-theme='dark'\] \.btn-seal:disabled \{[^}]*background: rgb\(var\(--color-paper-dark-rgb\)\)/)
+
+    // 92% 白字在暗底上的实际视效 = 白 ×0.92 + 底 ×0.08
+    const paperDark = DARK.get('paper-dark')
+    expect(paperDark, '暗色主题须有 paper-dark 供禁用态打底').toBeTruthy()
+    const bg = paperDark!
+    const text: Rgb = [255, 255, 255].map((wc, i) => Math.round(0.92 * wc + 0.08 * bg[i]!)) as unknown as Rgb
+    expect(contrast(text, bg), '夜主题禁用态 92% 白字在暗底上必须 ≥4.5').toBeGreaterThanOrEqual(4.5)
   })
 })
 

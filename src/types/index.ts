@@ -358,12 +358,20 @@ export interface GongfaDef {
 }
 
 // ============ 丹药 / Buff ============
+/**
+ * 丹药的品阶。「dao(道品)」是丹药系统**专属**的顶档 —— 只在丹药里存在,
+ * 不入共享品质表 QUALITIES(不参与装备/法宝/功法的掉落与数值)。它比神品高半档,
+ * 是混沌海(境界 18-20)那一小撮登峰丹药的名号。其余取值与共享品质一致。
+ * 关于 rank/名/色的解析,一律走 data/pills.ts 的 pillRank/pillQualityName/pillQualityColor。
+ */
+export type PillQuality = QualityId | 'dao'
+
 export interface PillDef {
   id: string
   name: string
   desc: string
   icon: string
-  quality: QualityId
+  quality: PillQuality
   kind: 'instant' | 'buff'
   instant?: {
     /**
@@ -472,10 +480,38 @@ export interface BossPhase {
   label?: string
 }
 
+/**
+ * 敌人与灵宠的「族类」—— 一族共用一枚形,异族不共形。
+ * 形由 data/beastFamilies.ts 的族类表给出,数据里只写 family、不自己写 icon。
+ */
+export type BeastFamily =
+  | 'beast'
+  | 'winged'
+  | 'piscine'
+  | 'chelonian'
+  | 'serpent'
+  | 'dragon'
+  | 'verdant'
+  | 'aqueous'
+  | 'undead'
+  | 'ghost'
+  | 'armored'
+  | 'construct'
+  | 'blade'
+  | 'demon'
+  | 'immortal'
+  | 'deity'
+  | 'spirit'
+  | 'astral'
+  | 'mirage'
+  | 'outsider'
+  | 'treasure'
+
 export interface EnemyDef {
   id: string
   name: string
-  icon: string
+  /** 族类 —— 一族共用一枚形,异族不共形;形由 beastFamilies.ts 给出,不手写 */
+  family: BeastFamily
   element?: ElementId
   tier: number
   hpMult: number
@@ -656,7 +692,8 @@ export interface PetDef {
   id: string
   name: string
   desc: string
-  icon: string
+  /** 族类 —— 形由 beastFamilies.ts 给出,不手写 */
+  family: BeastFamily
   quality: QualityId
   mods: StatMods
   /** Phase 31.0 S4:灵兽性格(贪宝/慢稳/好战/谨慎),影响历练行为倾向 */
@@ -1024,6 +1061,8 @@ export interface OfflineSummary {
   /** 灵气回充量(受上限约束,故记实际差额) */
   qi: number
   herb: number
+  /** 离线期间逐品灵草净增(仅列>0 的品)—— 灵田可前瞻产当前/高一档,单品名会误报,故逐品记 */
+  herbByGrade: { grade: 1 | 2 | 3 | 4 | 5; amount: number }[]
   ore: number
   wudao: number
   /** 离线期间流逝的寿元(年)—— 是代价,不是收益,但玩家该知道 */

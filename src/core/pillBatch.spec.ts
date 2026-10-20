@@ -15,9 +15,11 @@ vi.mock('@/utils/random', async importOriginal => {
   return { ...mod, rng: new mod.RandomService(() => mockRand) }
 })
 
-import { usePillBatch, craftPillBatch, pillCraftCost } from './pillService'
+import { usePillBatch, craftPillBatch, pillCraftCost, salvageRatio, craftBatchPlan } from './pillService'
 import { pillDef } from '@/data/pills'
 import { recipeCraft } from '@/data/crafting'
+import { craftability } from '@/core/craftability'
+import { toNum } from '@/utils/gnum'
 import { useResourcesStore } from '@/stores/resources'
 import { useInventoryStore } from '@/stores/inventory'
 import { useLoreStore } from '@/stores/lore'
@@ -115,5 +117,98 @@ describe('批量炼丹', () => {
     expect(useResourcesStore().herb, '材料不应被扣').toBe(400)
     expect(craftPillBatch(ID, -1)).toEqual({ rounds: 0, made: 0, failed: 0 })
     expect(useResourcesStore().herb, '负数同样不扣材料').toBe(400)
+  })
+
+  it('必成批次:rounds/made 齐、材料恰耗 cost×N、不超扣', () => {
+    mockRand = 0
+    const res = useResourcesStore()
+    const c = pillCraftCost(ID)!
+    const g = c.grade
+    res.addSmall('herb', c.herb * 5)
+    res.addStone({ m: 1, e: 9 })
+    const h0 = res.herbOf(g)
+    const s0 = toNum(res.spiritStone)
+    const out = craftPillBatch(ID, 3)
+    expect(out.rounds).toBe(3)
+    expect(out.made).toBeGreaterThanOrEqual(3)
+    expect(res.herbOf(g), '必成全额扣草').toBe(h0 - c.herb * 3)
+    expect(s0 - toNum(res.spiritStone), '必成石恰扣 cost×3').toBeCloseTo(toNum(c.stone) * 3, 6)
+    expect(res.herbOf(g)).toBeGreaterThanOrEqual(0)
+  })
+
+  it('炸炉批次:rounds 照开、made0 failed3、失败也烧料(草按 salvage 保下、石照扣)、不越料不欠', () => {
+    mockRand = 0.999 // 必炸
+    const res = useResourcesStore()
+    const c = pillCraftCost(ID)!
+    const g = c.grade
+    res.addSmall('herb', c.herb * 5)
+    res.addStone({ m: 1, e: 9 })
+    const kept = Math.floor(c.herb * salvageRatio(craftability(ID)!.skill))
+    const h0 = res.herbOf(g)
+    const s0 = toNum(res.spiritStone)
+    const out = craftPillBatch(ID, 3)
+    expect(out.rounds).toBe(3)
+    expect(out.made).toBe(0)
+    expect(out.failed).toBe(3)
+    expect(res.herbOf(g), '炸炉也烧草,只保下 salvage 那份').toBe(h0 - (c.herb - kept) * 3)
+    expect(s0 - toNum(res.spiritStone), '炸炉石照扣').toBeCloseTo(toNum(c.stone) * 3, 6)
+    expect(res.herbOf(g)).toBeGreaterThanOrEqual(0) // 不欠料
+  })
+
+  it('料恰够 1 炉:连炼 5 炉就 1 炉,草到 0 干净停、石不为负', () => {
+    mockRand = 0
+    const res = useResourcesStore()
+    const c = pillCraftCost(ID)!
+    res.addSmall('herb', c.herb)
+    res.addStone(c.stone)
+    const out = craftPillBatch(ID, 5)
+    expect(out.rounds).toBe(1)
+    expect(res.herbOf(c.grade)).toBe(0)
+    expect(toNum(res.spiritStone)).toBeGreaterThanOrEqual(0)
+  })
+})
+
+/**
+ * 炼丹计划与运行守恒(craftBatchPlan ↔ craftPillBatch)。
+ *
+ * craftBatchPlan 是纯计划(rounds=min(草炉数,石炉数),herb/stone=rounds×单炉成本),
+ * craftPillBatch 是逐炉实跑 —— 两者在不同 spec 文件里各测各的,「计划即实耗」从没
+ * 交叉断言。若计划算错(漏看石、±1),界面报的「炼满 N 炉/耗 X 料」就会与实际对不上,
+ * 或实跑越料。这里确定性 mockRand=0(必成)把两者钉到一起。
+ */
+describe('批量炼丹 · 计划与运行守恒(craftBatchPlan ↔ craftPillBatch)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    mockRand = 0 // 必成 —— 计划按「每炉全额烧料」预测,必成才是同一语义
+    settleRewards()
+    knowRecipe()
+  })
+
+  it('计划即实耗:rounds 与 herb/stone 恰为实跑消耗(预测准确)', () => {
+    const res = useResourcesStore()
+    const c = pillCraftCost(ID)!
+    const g = c.grade
+    res.addSmall('herb', c.herb * 5) // 草恰够 5 炉,石充足 → rounds 由草限
+    res.addStone({ m: 1, e: 9 })
+    const plan = craftBatchPlan(ID)
+    expect(plan.rounds).toBeGreaterThan(0)
+    const h0 = res.herbOf(g)
+    const s0 = toNum(res.spiritStone)
+    const out = craftPillBatch(ID, plan.rounds)
+    expect(out.rounds, '实跑炉数 = 计划炉数').toBe(plan.rounds)
+    expect(res.herbOf(g), '实耗草 = 计划 herb').toBe(h0 - plan.herb)
+    expect(s0 - toNum(res.spiritStone), '实耗石 = 计划 stone').toBeCloseTo(toNum(plan.stone), 6)
+  })
+
+  it('计划是上限:凭草只够 plan.rounds,连炼更多不会越扣', () => {
+    const res = useResourcesStore()
+    const c = pillCraftCost(ID)!
+    const g = c.grade
+    res.addSmall('herb', c.herb * 5)
+    res.addStone({ m: 1, e: 9 })
+    const plan = craftBatchPlan(ID)
+    const out = craftPillBatch(ID, plan.rounds + 5) // 多要 5 炉
+    expect(out.rounds, '受草限制仍停在计划炉数').toBe(plan.rounds)
+    expect(res.herbOf(g)).toBe(0) // 草打光,不越扣
   })
 })

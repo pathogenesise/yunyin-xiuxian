@@ -151,6 +151,15 @@ export const HERITAGE: HeritageRow[] = [
     compressesGrowth: true
   },
   {
+    id: 'heritage',
+    name: '宿命传承',
+    mode: 'full',
+    detail: 'reincarnation.heritage 随神魂不灭,跨世不清零;每世至多锻造最深一道未入门槛(见 core/heritageForge),重复锻造被忽略',
+    kind: 'legacy',
+    power: 'none',
+    compressesGrowth: false
+  },
+  {
     id: 'insight',
     name: '宿慧',
     mode: 'full',
@@ -225,8 +234,9 @@ export const HERITAGE: HeritageRow[] = [
   {
     id: 'suppress',
     name: '区域镇压与宿敌',
-    mode: 'full',
-    detail: 'rebirth() 未重置 regionStats/suppressedRegions/nemeses',
+    mode: 'partial',
+    detail:
+      '镇压收益与资格是「我拥有多少」:旧世压下的远境若跨世,新世炼气仍按旧阶位派发高阶装备/灵石,数值当场爆炸(玩家实报)。故 rebirth() 清空 suppressedRegions/suppressedSince/suppressQualified —— 妖气复聚、回到历练地;sanitize 还兜「修复前已转世的老档」同款(清掉 minRealm>当前境界的残留)。regionStats 战绩与 nemeses 宿敌仍随神魂不灭(「世界记得你」的叙事与石碑不丢)',
     kind: 'state',
     power: 'none',
     compressesGrowth: false
@@ -334,10 +344,10 @@ export const HERITAGE: HeritageRow[] = [
   },
   {
     id: 'name',
-    name: '姓名',
-    mode: 'full',
-    detail: 'rebirth() 不改 name —— 名与道号随神魂不灭',
-    kind: 'legacy',
+    name: '道号',
+    mode: 'reset',
+    detail: 'rebirth() 每世重掷新道号 —— 神魂不灭带走的是所知所历,不是名号;新的皮囊换新的名(见 stores/player.rebirth)',
+    kind: 'state',
     power: 'none',
     compressesGrowth: false
   },

@@ -4,7 +4,7 @@
     <div class="card-ink px-4 py-3">
       <template v-if="build">
         <div class="flex items-center gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-cinnabar/90 font-kai text-[22px] text-paper shadow">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-cinnabar/90 font-kai text-[22px] seal-face shadow">
             {{ build.style.seal }}
           </span>
           <div class="min-w-0 grow">
@@ -26,7 +26,7 @@
           <p v-for="cv in build.coreValues" :key="cv.key" class="flex justify-between text-[12px]">
             <span class="text-ink-soft">
               {{ STAT_NAMES[cv.key] }}
-              <span v-if="isSoftCapped(player.finalStats.mods, cv.key)" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
+              <span v-if="isSoftCapped(player.finalStats.mods, cv.key)" class="ml-0.5 text-[9px] text-cinnabar">软</span>
             </span>
             <span class="tabular text-violet-ink">{{ signedPercent(cv.value) }}</span>
           </p>
@@ -90,7 +90,7 @@
           <p class="mt-0.5 text-[11px] leading-relaxed" :class="comboInfo.active ? 'text-ink-soft' : 'text-ink-faint'">
             {{ comboInfo.art.desc }}
           </p>
-          <p class="mt-0.5 text-[10px] text-cinnabar/80">代价:{{ comboInfo.art.costText }}</p>
+          <p class="mt-0.5 text-[10px] text-cinnabar">代价:{{ comboInfo.art.costText }}</p>
         </div>
         <!-- 构筑韧性:主派被封后还剩什么 -->
         <div v-if="resilience" class="mt-2.5 rounded-md bg-ink/4 px-3 py-2">
@@ -111,6 +111,28 @@
           </p>
           <p class="mt-0.5 text-[10px] text-ink-faint">{{ resilienceText(resilience) }}</p>
         </div>
+        <!--
+          本世对局:七类本世实敌挨个对打,短板一面先入眼。
+          玩家早在四处踩坑,却看不到「到底输在哪一类」 —— 胜率面把最吃亏的那面摆在前头。
+        -->
+        <div v-if="matchupRows" class="mt-2.5 rounded-md bg-paper-deep/60 px-3 py-2">
+          <p class="text-[10px] text-ink-faint">本世对局 —— 与当下构筑对打七类实敌,估其胜率,短板在前</p>
+          <div class="mt-1.5 space-y-1">
+            <div v-for="row in matchupSorted" :key="row.id" class="flex items-center gap-2">
+              <span class="w-9 shrink-0 truncate text-[11px] text-ink-soft">{{ row.name }}</span>
+              <span v-if="row.wall" class="shrink-0 rounded bg-cinnabar/10 px-1 py-0.5 text-[9px] leading-none text-cinnabar">墙</span>
+              <span class="track-ink h-1.25 min-w-0 flex-1 overflow-hidden rounded-full">
+                <span class="bar-fill h-full rounded-full" :class="winBarCls(row.winRate)" :style="{ width: `${row.winRate * 100}%` }" />
+              </span>
+              <span class="w-9 shrink-0 text-right tabular text-[11px]" :class="winTextCls(row.winRate)">
+                {{ Math.round(row.winRate * 100) }}%
+              </span>
+            </div>
+          </div>
+          <p class="mt-1.5 text-[9px] leading-relaxed text-ink-faint">
+            每类各打 {{ MATCHUP_SAMPLE_RUNS }} 场估算,读的是「哪面吃亏」的方向,不是精确胜率;四墙(首领 / 高爆发 / 真伤 / 疾影)通吃,才称万金油。
+          </p>
+        </div>
       </template>
       <p v-else class="text-[12px] leading-relaxed text-ink-faint">
         道途尚未成路。凑齐同一路数的词条、功法与法宝,自成一派——
@@ -129,13 +151,13 @@
         <button
           :disabled="loadouts.list.length >= MAX_LOADOUTS"
           class="-my-1 py-1.5 text-[11px]"
-          :class="loadouts.list.length >= MAX_LOADOUTS ? 'cursor-not-allowed text-ink-faint/50' : 'text-cinnabar/90 active:opacity-60'"
+          :class="loadouts.list.length >= MAX_LOADOUTS ? 'cursor-not-allowed text-ink-faint' : 'text-cinnabar active:opacity-60'"
           @click="openSave"
         >{{ loadouts.list.length >= MAX_LOADOUTS ? '快照已满' : '+ 存当前构筑' }}</button>
       </p>
       <div v-if="loadouts.list.length" class="space-y-1.5">
         <div v-for="lo in loadouts.list" :key="lo.id" class="flex items-center gap-2 rounded-md bg-paper-deep/70 px-2.5 py-1.5">
-          <span class="grid h-6 w-6 shrink-0 place-items-center rounded bg-cinnabar/85 font-kai text-[12px] text-paper">
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded bg-cinnabar/85 font-kai text-[12px] seal-face">
             {{ lo.seal }}
           </span>
           <span class="min-w-0 grow truncate font-kai text-[12px] text-ink">{{ lo.name }}</span>
@@ -143,6 +165,7 @@
                且卡片只在「有构筑」时才出现 —— 页面层巡页夹具没铺 loadouts 永远量不到它(HYP-056 边界)。
                !py-2 抬到 35px,与旁边确认态按钮同高,视觉一排齐整 -->
           <button class="btn-ghost !px-2.5 !py-2 !text-[11px]" @click="applyLoadout(lo.id)">换装</button>
+          <button class="btn-ghost !px-2 !py-2 !text-[11px] !text-ink-faint" @click="openRename(lo)">改名</button>
           <!-- 删除二步确认:一套构筑是心血,误触垃圾桶不该直接没 -->
           <template v-if="confirmDelete !== lo.id">
             <button
@@ -173,7 +196,7 @@
           <button
             v-for="c in compareCandidates"
             :key="c.at"
-            class="chip-ink"
+            class="chip-ink !py-1.5"
             :class="compareAt === c.at ? 'border-cinnabar text-cinnabar' : 'border-ink/25 text-ink-faint'"
             @click="pickCompare(c.at)"
           >
@@ -201,9 +224,13 @@
       </div>
     </template>
 
-    <!-- 保存构筑 -->
-    <BaseModal :open="saveOpen" title="存为构筑" @close="saveOpen = false">
-      <p class="text-[11px] text-ink-faint">将当前功法 / 法宝 / 整身装备存为一套,可随时一键切换。</p>
+    <!-- 流派实验室:随机构筑检索,读世界大势 -->
+    <BuildLabPanel />
+
+    <!-- 保存 / 改名构筑:同一弹窗两种身位,存的那套功/宝/装原样不动 -->
+    <BaseModal :open="saveOpen" :title="renameId ? '为构筑改名' : '存为构筑'" @close="closeSave">
+      <p v-if="renameId" class="text-[11px] text-ink-faint">仅改这套的名号,所存功法 / 法宝 / 整身装备原样不动。</p>
+      <p v-else class="text-[11px] text-ink-faint">将当前功法 / 法宝 / 整身装备存为一套,可随时一键切换。</p>
       <input
         v-model="saveName"
         maxlength="8"
@@ -211,7 +238,7 @@
         placeholder="给这套构筑起个名号"
       />
       <template #footer>
-        <button class="btn-seal w-full" @click="confirmSave">存 入</button>
+        <button class="btn-seal w-full" @click="onSaveSubmit">{{ renameId ? '改 名' : '存 入' }}</button>
       </template>
     </BaseModal>
   </div>
@@ -224,16 +251,18 @@
   import { ratePower, ratingStars, type PowerDimKey } from '@/core/powerRating'
   import { matchComboArt, COMBO_SECONDARY_MIN } from '@/data/comboArts'
   import { measureResilience, resilienceText } from '@/core/resilience'
+  import { playerMatchups, MATCHUP_SAMPLE_RUNS } from '@/core/playerMatchup'
   import { buildPlayerSnap } from '@/core/playerSnap'
   import { compareSnaps, type CompareReport } from '@/core/compare'
   import { endgameUnlocked, snapFromReplay } from '@/core/endgameService'
   import { useEndgameStore } from '@/stores/endgame'
-  import { applyLoadout, captureLoadout, deleteLoadout } from '@/core/loadoutService'
-  import { useLoadoutsStore, MAX_LOADOUTS } from '@/stores/loadouts'
+  import { applyLoadout, captureLoadout, deleteLoadout, renameLoadout } from '@/core/loadoutService'
+  import { useLoadoutsStore, MAX_LOADOUTS, type Loadout } from '@/stores/loadouts'
   import { cnNumber } from '@/utils/format'
   import { STAT_NAMES, signedPercent, statCaveat } from '@/ui/statNames'
   import { isSoftCapped } from '@/core/statsCalc'
   import SectionTitle from '@/components/common/SectionTitle.vue'
+  import BuildLabPanel from '@/components/build/BuildLabPanel.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
 
@@ -265,8 +294,20 @@
     return { art, active: b.secondary.affinity >= COMBO_SECONDARY_MIN }
   })
 
-  /** 构筑韧性:主派封印后的战力保持(120 场等比敌采样) */
+  /** 构筑韧性:主派封印后的战力保持(按 RESILIENCE_SAMPLE_RUNS 场等比敌采样,见 core/resilience) */
   const resilience = computed(() => (build.value ? measureResilience(buildPlayerSnap()) : null))
+
+  /** 本世对局:拿当前构筑快照逐类对打(与构筑韧性同一条现算路径),短板一眼可见 */
+  const matchupRows = computed(() => (build.value ? playerMatchups(buildPlayerSnap(), MATCHUP_SAMPLE_RUNS) : null))
+  /** 短板在前:胜率由低到高,先看见最吃亏的一面 */
+  const matchupSorted = computed(() => [...(matchupRows.value ?? [])].sort((a, b) => a.winRate - b.winRate))
+  /** 三档色:≥70% 稳(青) / ≥45% 胶着(褐) / 其余吃亏(朱) —— 沿用战斗面板的胜率给色 */
+  function winBarCls(rate: number): string {
+    return rate >= 0.7 ? 'bg-jade' : rate >= 0.45 ? 'bg-amber-ink' : 'bg-cinnabar'
+  }
+  function winTextCls(rate: number): string {
+    return rate >= 0.7 ? 'text-jade' : rate >= 0.45 ? 'text-amber-ink' : 'text-cinnabar'
+  }
 
   // ---- 双构筑对照 ----
   const endgame = useEndgameStore()
@@ -299,12 +340,34 @@
     saveOpen.value = true
   }
 
+  /** 行内「改名」:同一弹窗换成改名身位,名字预填当前的 */
+  const renameId = ref<string | null>(null)
+  function openRename(lo: Loadout): void {
+    renameId.value = lo.id
+    saveName.value = lo.name
+    saveOpen.value = true
+  }
+
+  function confirmRename(): void {
+    if (renameId.value && renameLoadout(renameId.value, saveName.value)) {
+      saveOpen.value = false
+      renameId.value = null
+    }
+  }
+
+  /** 弹窗落定:存 / 改两分支,再由关闭统一复位改名身位 */
+  function onSaveSubmit(): void {
+    if (renameId.value) confirmRename()
+    else if (captureLoadout(saveName.value)) saveOpen.value = false
+  }
+
+  function closeSave(): void {
+    renameId.value = null
+    saveOpen.value = false
+  }
+
   function doDeleteLoadout(id: string): void {
     deleteLoadout(id)
     confirmDelete.value = null
-  }
-
-  function confirmSave(): void {
-    if (captureLoadout(saveName.value)) saveOpen.value = false
   }
 </script>

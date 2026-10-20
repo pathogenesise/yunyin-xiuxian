@@ -3,14 +3,16 @@
  * 所有系统通过 track() 汇报行为,由此统一驱动成就与任务
  */
 import type { AchvCond, CounterKey, RewardBundle } from '@/types'
-import { gte } from '@/utils/gnum'
+import { gte, sub, toNum } from '@/utils/gnum'
 import { todayStr } from '@/utils/time'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import { DAILY_TASKS, MAIN_QUESTS } from '@/data/quests'
-import { LIFESPAN_CRITICAL_RATIO } from '@/data/constants'
+import { LIFESPAN_CRITICAL_RATIO, QI_RICH_RATIO } from '@/data/constants'
 import { titleDef } from '@/data/titles'
 import { pillDef } from '@/data/pills'
-import { stoneByTier } from './formulas'
+import { buffDef } from '@/data/buffs'
+import { HERB_GRADE_SHORT, herbGradeOfMajor } from '@/data/herbGrades'
+import { baseCultPerSec, stoneByTier } from './formulas'
 import { formatGN } from '@/utils/format'
 import { usePlayerStore } from '@/stores/player'
 import { useQuestsStore } from '@/stores/quests'
@@ -30,7 +32,7 @@ function resourceParts(bundle: RewardBundle): string[] {
   const lines: string[] = []
   if (bundle.stoneTier) lines.push(`灵石 +${formatGN(stoneByTier(playerTier(), bundle.stoneTier))}`)
   if (bundle.wudao) lines.push(`悟道点 +${bundle.wudao}`)
-  if (bundle.herb) lines.push(`灵草 +${bundle.herb}`)
+  if (bundle.herb) lines.push(`${HERB_GRADE_SHORT[herbGradeOfMajor(usePlayerStore().major)]}灵草 +${bundle.herb}`)
   if (bundle.ore) lines.push(`玄铁 +${bundle.ore}`)
   if (bundle.page) lines.push(`残页 +${bundle.page}`)
   if (bundle.dust) lines.push(`器灵尘 +${bundle.dust}`)
@@ -138,8 +140,14 @@ export function checkCustomAchievement(key: string): void {
   }
 }
 
-/** 周期检查(寿元/灵石等状态型成就) */
+/** 周期检查(寿元/灵石等状态型成就 + 全成就/主线补扫) */
 export function checkStateAchievements(): void {
+  // 全成就补扫:realm / counter 成就是累计事实,只要满足了就该解锁。
+  // 它们原本只在 track()/trackRealm() 两个行为触发点被求值;老档/导入档在
+  // 境界已高却再没触发计数时,低境界成就会一直锁着 —— 周期里重放一次即自愈。
+  checkAchievements()
+  // 主线任务同根:也只在这些触发点被推进;补扫一并推进,免得老档卡在早该完成的一步
+  checkMainQuest()
   const player = usePlayerStore()
   const resources = useResourcesStore()
   if (player.lifespanRatio <= LIFESPAN_CRITICAL_RATIO && player.lifespanRatio > 0) checkCustomAchievement('lifespanLow')
@@ -172,6 +180,120 @@ function checkDaily(): void {
       ui.toast(withReward(`日课已成「${task.name}」`, lines), 'success')
     }
   }
+}
+
+/**
+ * 修为圆满的估算时长(秒)—— 按现速。
+ *
+ * 现速即 player.cultPerSec(闭关/丹药/天时俱已在内),这里只做
+ * 「缺口 ÷ 现速」这一道除法,不另造口径;已圆满或速率为 0 时返回 0。
+ * 离线上限之外不再累积,故这只是「按现速」的估算,不是担保 ——
+ * 与修炼页那句「按现速,修为圆满约……」的措辞是同一份承诺。
+ */
+export function expEtaSec(): number {
+  const player = usePlayerStore()
+  if (player.expFull) return 0
+  // cultPerSec 本就是普通数(见 player store),别拿 toNum 去拧它
+  const rate = player.cultPerSec
+  if (!(rate > 0)) return 0
+  const gap = toNum(sub(player.expReq, player.exp))
+  // toNum 在指数 >308 时返回 Infinity(见 utils/gnum) —— Infinity > 0 恒真,
+  // 若不排掉,Infinity/rate 会把「修为圆满估算」算成无穷时长的坏读数。
+  if (!(gap > 0) || !Number.isFinite(gap)) return 0
+  return gap / rate
+}
+
+/**
+ * 灵气回满的估算时长(秒)—— 按现速。
+ *
+ * 与 expEtaSec 同法:缺口 = qiCapValue − 当前灵气,除以现速 qiRegenPerSec,
+ * 只做这一道除法,与灵气条读的是同一份数;已满或零恢复时返回 0。
+ * 灵气满后恢复不再累积(超出的部分那是积余容量),故这条只在未满时出现。
+ */
+export function qiEtaSec(): number {
+  const player = usePlayerStore()
+  const resources = useResourcesStore()
+  const gap = player.qiCapValue - resources.qi
+  if (!(gap > 0)) return 0
+  const rate = player.qiRegenPerSec
+  if (!(rate > 0)) return 0
+  return gap / rate
+}
+
+/**
+ * 距「灵气充盈」的估算时长(秒)—— 按现速。
+ *
+ * 灵气过半即滋养修为(见 player store 的 qiRich / statsCalc 的 QI_RICH_BONUS),
+ * 这条答的是「修为还有多久要往上跳一档」。判据与 qiRich 同一道界:
+ * 缺口 = qiCapValue × QI_RICH_RATIO − 当前灵气,除以现速;
+ * 已在充盈线以上或零恢复时返回 0。
+ */
+export function qiRichEtaSec(): number {
+  const player = usePlayerStore()
+  const resources = useResourcesStore()
+  const gap = player.qiCapValue * QI_RICH_RATIO - resources.qi
+  if (!(gap > 0)) return 0
+  const rate = player.qiRegenPerSec
+  if (!(rate > 0)) return 0
+  return gap / rate
+}
+
+/** 闭关「每多得修为/秒」—— 预览与闭关中活数共用同一份 base 与加成,不各算一遍 */
+function retreatGainPerSec(): number {
+  const player = usePlayerStore()
+  const def = buffDef('retreat')
+  if (!def) return 0
+  const boost = def.mods.cultivationSpeed ?? 0
+  if (!(boost > 0)) return 0
+  const base = baseCultPerSec(player.major, player.sub)
+  return base > 0 ? base * boost : 0
+}
+
+/**
+ * 闭关五分钟「约多得」的修为预览 —— 只报加成那部分,不是闭关期间全部产出。
+ *
+ * 速率与时长都从 buffs.ts 的 retreat 本体取,不手抄 1.5 / 300 两处:
+ * 增量 = baseCultPerSec(境界) × 词条加成 × 时长(秒),与修炼行读的
+ * baseCultPerSec 是同一份数(玩家现有其他修为词条与闭关增量互不影响,
+ * 闭关只在这之上再加 1.5 倍 base)。闭关中 buff 已落在 cultPerSec 上,
+ * 这条只在不闭关时出现,报的是「点了会多拿多少」而不是「正在拿多少」。
+ */
+export function retreatGainText(): string {
+  const def = buffDef('retreat')
+  const perSec = retreatGainPerSec()
+  if (!def || !(perSec > 0)) return ''
+  const total = perSec * def.durationSec
+  return total > 0 ? `此行约多得修为 ${formatGN(total)}` : ''
+}
+
+/**
+ * 闭关已过 elapsed 秒「已多得/多得的」修为 —— 与预览行同一份每多得速率,
+ * 闭关中的活数(elapsed 由调用方按 buff 已走时长给,不在此手抄 300)。
+ */
+export function retreatGainedText(elapsedSec: number): string {
+  const perSec = retreatGainPerSec()
+  if (!(perSec > 0) || !(elapsedSec > 0)) return ''
+  const gained = perSec * elapsedSec
+  return gained > 0 ? `此行已多得修为 ${formatGN(gained)}` : ''
+}
+
+/**
+ * 灵气积余蓄满的估算时长(秒)—— 按现速。
+ *
+ * 灵气越过标称容量后进入「积余」段(上限 = 标称容量 × QI_BANK_MULT,见
+ * resources.setQi 与 player.qiBankCapValue),恢复仍照常累积、不因「满了」就收手。
+ * 这条答的是积余阶段的「蓄满还差多久」:缺口 = qiBankCapValue − 当前灵气,除以现速,
+ * 与灵气条读同一份数;未积余(qi ≤ 标称容量)或零恢复时返回 0 —— 非积余阶段不报这事。
+ */
+export function qiBankEtaSec(): number {
+  const player = usePlayerStore()
+  const resources = useResourcesStore()
+  if (!(resources.qi > player.qiCapValue)) return 0
+  const gap = player.qiBankCapValue - resources.qi
+  if (!(gap > 0)) return 0
+  const rate = player.qiRegenPerSec
+  if (!(rate > 0)) return 0
+  return gap / rate
 }
 
 /** 每日重置(引擎在日期变化时调用) */

@@ -15,6 +15,8 @@ import {
   OFFLINE_CAP_HOURS
 } from '@/data/constants'
 import { mergeMods } from '@/core/statsCalc'
+import { usePlayerStore } from '@/stores/player'
+import { herbGradeOfMajor, type HerbGrade } from '@/data/herbGrades'
 import { useResourcesStore } from './resources'
 
 /**
@@ -29,6 +31,36 @@ function emptyVeinPoints(): Record<VeinId, number> {
   for (const def of VEINS) out[def.id] = 0
   return out
 }
+
+/**
+ * 灵田等级 → 可种出的最高品(单调 LUT)。每 3 级「破一档」,15 级(品类满级)
+ * 到顶可种道品。刻意用一张小表而非巧公式:门槛肉眼可读、好调,不藏玄机。
+ *
+ * 注意:灵田升级并不被境界门控(only 灵石/玄铁成本,buildingService.ts)——
+ * 低境界玩家靠刷资源也能把灵田拉满。因此 fieldHerbGrade 用「限超前 +1」兜住,
+ * 见下方注释:灵田最多比当前境界高一档,绝不成为低境一步到道品的捷径。
+ */
+const FIELD_GRADE_UNLOCK_LEVELS: Record<Exclude<HerbGrade, 1>, number> = { 2: 4, 3: 7, 4: 10, 5: 13 }
+
+/** 灵田等级 → 可种最高品(1 起,逐档跃迁,单调) */
+function fieldGradeCap(fieldLv: number): HerbGrade {
+  let g: HerbGrade = 1
+  for (const grade of [2, 3, 4, 5] as const) if (fieldLv >= FIELD_GRADE_UNLOCK_LEVELS[grade]) g = grade
+  return g
+}
+
+/**
+ * 灵田产草品阶 = 当前境界品与「可种最高品」的合取,前赡一只且保下限:
+ *   preview = min(当前品+1, 田内可种上限)   —— 前瞻最多高当前一档(囤下一境草)
+ *   result  = min(5, max(当前品, preview))  —— 永不低过当前品(守住当前品水龙头),永不越道品
+ * 两式叠加:低境拉满也最多高当前一档(不跳过当前品来源、不越道品);高境低田仍给当前品(不砸下限)。
+ */
+export function fieldHerbGrade(major: number, fieldLv: number): HerbGrade {
+  const current = herbGradeOfMajor(major)
+  const preview = Math.min(current + 1, fieldGradeCap(fieldLv))
+  return Math.min(5, Math.max(current, preview)) as HerbGrade
+}
+
 
 export const useDongfuStore = defineStore(
   'dongfu',
@@ -152,6 +184,7 @@ export const useDongfuStore = defineStore(
     /** 建筑产出(灵田/藏经阁),按秒推进 */
     function produce(dtSec: number): void {
       const resources = useResourcesStore()
+      const player = usePlayerStore()
       const fieldLv = levels.value.field
       const libLv = levels.value.library
       if (fieldLv > 0) {
@@ -165,7 +198,14 @@ export const useDongfuStore = defineStore(
         const whole = Math.floor(frac.value[key])
         if (whole >= 1) {
           frac.value[key] -= whole
-          resources.addSmall(key, whole)
+          /**
+           * 灵田 = 当前品阶的稳定水龙头,兼前瞻一寸:fieldHerbGrade 保证产出
+           * ≥ 当前境界品(区域采集按「地界」给品、回头刷低境只给低品,唯独灵田
+           * 永不砸下限),且灵田等级越高可高当前一档(为下一境囤草),但一律
+           * ≤ 当前+1、≤ 道品 —— 低境拉满田也跳不过当前品来源。ore/wudao 两行不涉品阶。
+           */
+          if (key === 'herb') resources.addHerb(fieldHerbGrade(player.major, fieldLv), whole)
+          else resources.addSmall(key, whole)
         }
       }
     }

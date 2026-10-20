@@ -12,6 +12,8 @@ import { lifeThemeDef } from '@/data/lifeThemes'
 import { nextStageAfter, stageAt } from '@/data/samsara'
 import { rollLinggen } from './linggenGen'
 import { collect, track } from './progress'
+import { lifeForge } from './heritageForge'
+import { carriesAllLore, keepsAllGongfa, talentChoiceBonus } from './heritageEffects'
 import {
   aptitudeFloorNow,
   beginLife,
@@ -40,7 +42,6 @@ import { gnZero } from '@/utils/gnum'
 /** 至少金丹境方可主动兵解 */
 export const MANUAL_REBIRTH_MIN_MAJOR = 2
 
-export { daoFruitGain } from './formulas'
 import { daoFruitGain } from './formulas'
 import { archiveLifeTrial } from './lifeTrialService'
 import { rerollMortalWorld } from './mortalWorldService'
@@ -88,7 +89,8 @@ export function prepareReincarnation(): ReincarnationView {
   const player = usePlayerStore()
   const owned = new Set(player.reincarnation.talents)
   const draws = 1 + Math.floor(player.major / TALENT_DRAW_DIV)
-  const choices = drawTalents(3, owned)
+  // 炼虚通感:已持传承者三选一 → 四选一(多一份选择,不白给属性)
+  const choices = drawTalents(3 + talentChoiceBonus(player.reincarnation.heritage), owned)
   const extras = draws > 1 ? drawTalents(draws - 1, new Set([...owned, ...choices])) : []
 
   const review = reviewLastLife()
@@ -114,7 +116,7 @@ export function prepareReincarnation(): ReincarnationView {
     stageDesc: stageAfter.desc,
     stageAdvanced: stageAfter.index > stageBefore.index,
     toNextStage: next ? next.insight - insightAfter : null,
-    knownMaterials: carryLorePreview(stageAfter),
+    knownMaterials: carryLorePreview(stageAfter, carriesAllLore(player.reincarnation.heritage)),
     themeChoices: (fresh.length > 0 ? fresh : pool).map(x => x.id),
     themeFree: stageAfter.themeFreeChoice
   }
@@ -127,9 +129,14 @@ export function prepareReincarnation(): ReincarnationView {
  *
  * 「记得哪些功法」是记忆,留下;**练到几层**是修为进度,随皮囊归零(回到一层的起手)。
  * 到了「百世老修」这一阶,修为最深的那一门可以完整带走 ——
- * 练过百世的东西,不至于连怎么起手都忘了。
+ * 练过百世的东西,不至于连怎么起手都忘了。而持「大乘道统」传承者,所有门都按原等级带走。
  */
-function carryGongfa(learned: Readonly<Record<string, number>>, keepOne: boolean): Record<string, number> {
+function carryGongfa(
+  learned: Readonly<Record<string, number>>,
+  keepOne: boolean,
+  keepAll = false
+): Record<string, number> {
+  if (keepAll) return { ...learned }
   let keptId: string | null = null
   if (keepOne) {
     for (const [id, lv] of Object.entries(learned)) {
@@ -168,6 +175,14 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
     collect('talent', id)
   }
 
+  // 宿命传承:本世到达的最深未锻造门槛,于此一悟(跨世永久持有,入 reincarnation.heritage)。
+  // 一悟只在此处落账一次;若没锻得(浅修 / 已全锻造)则一无所得。
+  const forged = lifeForge(player.major)
+  if (forged) {
+    player.addHeritage(forged.id)
+    ui.toast(`宿慧凝形,你留下一道传承 —— 「${forged.name}」`, 'rare')
+  }
+
   // 这一世的账:履历归档、宿慧落袋。二者都只在此处发生一次
   const r = view.review
   player.recordLife({
@@ -190,7 +205,7 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   resources.spiritStone = gnZero() as GNum
   resources.setQi(0, 1)
   resources.wudao = 0
-  resources.herb = 0
+  resources.resetHerbs()
   resources.ore = 0
   resources.page = 0
   resources.dust = 0
@@ -201,8 +216,10 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   inventory.artifacts = []
   inventory.equippedArtifacts = []
   // Memory of which manuals stays; levels return to 1 (top insight stage may keep one at full level).
+  // 持「大乘道统」传承者,所有门按原等级带走(keepAll)。
   const stage = stageAt(view.insightAfter)
-  cultivation.learned = carryGongfa(cultivation.learned, stage.keepOneGongfa)
+  const heritages = player.reincarnation.heritage
+  cultivation.learned = carryGongfa(cultivation.learned, stage.keepOneGongfa, keepsAllGongfa(heritages))
   cultivation.buffs = []
   adventure.setSession(null)
   adventure.setPendingEvent(null, 0)
@@ -217,8 +234,14 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   // (洞府/灵脉/灵兽的归零在 player.rebirth() 里,与其余「本世进程」同处一地)
 
   // 认知不因转世清零,只按阶补齐:该认得的药,睁眼就该认得
-  const recognized = carryLore(stage)
+  // 持「真仙道痕」传承者,不按本世境界,最高档全带
+  const recognized = carryLore(stage, carriesAllLore(heritages))
+  // 转世前先记下旧世还在压着几处 —— rebirth() 会把镇压权益随皮囊散去
+  const releasedSuppressed = player.suppressedRegions.length
   player.rebirth(rollLinggen(rng, aptitudeFloorNow()))
+  if (releasedSuppressed > 0) {
+    ui.toast(`${releasedSuppressed} 处昔日镇压之地,妖气复聚 —— 此世再走一遭`, 'info')
+  }
   // 新的一世:上一世的建号草稿作废,「逆天改命」额度归满
   useGameStore().resetCreateDraft()
   // 道途归还天地,道源与道痕随神魂不灭
@@ -229,7 +252,7 @@ export function confirmReincarnation(chosenTalentId: string | null, chosenThemeI
   track('reincarnations')
   ui.reincarnation = null
   ui.deathDialog = false
-  ui.toast('一梦轮回,你在云隐山下再度睁开双眼', 'rare')
+  ui.toast(`一梦轮回,你以「${player.name}」的道号在云隐山下再度睁开双眼`, 'rare')
   if (view.stageAdvanced) ui.toast(`宿慧渐厚,你已是「${view.stageName}」`, 'rare')
   if (recognized > 0) ui.toast(`睁眼之际,${recognized} 味灵材的名字自行浮上心头`, 'info')
 }

@@ -68,12 +68,10 @@
   from {
     opacity: 0;
     transform: translateY(12px);
-    filter: blur(1.5px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -225,15 +223,6 @@
   }
 }
 
-@keyframes drift {
-  from {
-    transform: translateX(-4px);
-  }
-  to {
-    transform: translateX(4px);
-  }
-}
-
 @keyframes ink-wave {
   0% {
     opacity: 0.55;
@@ -242,22 +231,6 @@
   100% {
     opacity: 0;
     transform: scale(1.6);
-  }
-}
-
-@keyframes card-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 1px 2px rgb(41 39 34 / 0.06),
-      0 4px 14px rgb(41 39 34 / 0.05),
-      0 0 0 0 rgb(168 63 57 / 0);
-  }
-  50% {
-    box-shadow:
-      0 1px 2px rgb(41 39 34 / 0.06),
-      0 4px 14px rgb(41 39 34 / 0.05),
-      0 0 16px 2px rgb(168 63 57 / 0.22);
   }
 }
 
@@ -275,15 +248,6 @@
     box-shadow:
       0 1px 2px rgb(41 39 34 / 0.06),
       0 4px 14px rgb(41 39 34 / 0.05);
-  }
-}
-
-@keyframes mist {
-  from {
-    transform: translate3d(-6%, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(6%, -3%, 0) scale(1.08);
   }
 }
 
@@ -318,22 +282,43 @@
   from {
     opacity: 0;
     transform: scale(0.94) translateY(8px);
-    filter: blur(2px);
   }
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
-    filter: blur(0);
   }
 }
 
 @keyframes glow-pulse {
+  /* 辉光改由 .animate-glow-pulse::before 承担(只动不透明度,走合成器);
+     元素本体不再逐帧重绘 box-shadow。 */
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(168 63 57 / 0);
+    opacity: 1;
+  }
+}
+
+/* 呼吸蓄势的外圈:用径向渐层的伪元素按不透明度脉动 —— 不透明度只走合成器,
+   不像 box-shadow 那样逐帧触发重绘(突破就绪按钮 / 稀有提示 / 首岭战前按钮)。 */
+.animate-glow-pulse {
+  position: relative;
+}
+.animate-glow-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: radial-gradient(closest-side, rgb(var(--color-cinnabar-rgb) / 0.35), rgb(var(--color-cinnabar-rgb) / 0));
+  animation: glow-pulse-halo 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes glow-pulse-halo {
+  0%,
+  100% {
+    opacity: 0.2;
   }
   50% {
-    box-shadow: 0 0 18px 2px rgb(168 63 57 / 0.25);
+    opacity: 1;
   }
 }
 
@@ -569,6 +554,30 @@ html[data-theme='dark'] .world-seal {
   background: var(--color-cinnabar-deep);
 }
 
+/*
+ * seal-face:模板里一枚枚小方印(炉/魂/道/悟/主/世,以及劫印钮)共用的
+ * 「奶油字印面」—— 与 .btn-seal / .world-seal 同一套脸,只是背景由各个
+ * 使用点自己的 bg-* /NN 负责。
+ *
+ * 为什么必须有这一层:这些小印过去写成 `text-paper`。依纸色路由是对的
+ * (浅色 paper 就是奶油),但夜主题把 --color-paper-rgb 翻成近黑(33 31 28),
+ * 印的底却仍是亮朱/亮金 —— 于是现出「黑字顶红方」,与旁边奶油字的
+ * .btn-seal 脱节,反差也就 3.5:1 上下。
+ *
+ * 处理:浅色只校准字形为奶油白(底用调用处的 bg-cinnabar/90 · bg-gold-ink/85);
+ * 夜主题把整面印统一压成深朱底(rgb(--color-cinnabar-deep),与 .btn-seal 同
+ * 源),奶油字照旧。金字/靛字/紫字印在夜主题也并到深朱面:金(200 163 90)、
+ * 靛(147 179 185)、紫(169 143 211)在夜主题都够亮,托不住奶油字,且与
+ * 主按钮收编成同一枚印,视觉更整 —— 这是有意让「此世的四界色标」让位于
+ * 「统一的印面」,与卷首题印的做法一致。
+ */
+.seal-face {
+  color: #f6f1e5;
+}
+html[data-theme='dark'] .seal-face {
+  background: var(--color-cinnabar-deep);
+}
+
 .btn-seal:disabled {
   /*
    * 禁用态**不是装饰态**:按钮上的字往往正是「为什么不让我点」
@@ -578,6 +587,18 @@ html[data-theme='dark'] .world-seal {
    * 「灰掉」的观感不变,字却读得出来。
    */
   background: var(--color-ink-faint);
+  color: rgb(255 255 255 / 0.92);
+  box-shadow: none;
+}
+
+/*
+ * 夜主题禁用态**:夜里的 ink-faint(168 161 140)是亮暖灰,白字压上去只有 ~2:1,
+ * 整枚按钮被洗白,读不出「为什么不让我点」(修为未至圆满 / 灵石不足 / 道源不足)。
+ * 浅色主题那套 ink-faint 打底(3.9:1)在夜里不成立,故单独换一块真正暗的
+ * 惰性底(paper-dark,51 48 43):92% 白字在上面 >11:1 —— 「灰掉」的观感不变,字却读得出来。
+ */
+html[data-theme='dark'] .btn-seal:disabled {
+  background: rgb(var(--color-paper-dark-rgb));
   color: rgb(255 255 255 / 0.92);
   box-shadow: none;
 }
@@ -856,8 +877,28 @@ html[data-theme='dark'] .world-seal {
 
 /* 修为圆满:境界卡蓄势微光呼吸(保留卡片底影) */
 .card-charged {
+  position: relative;
   border-color: rgb(var(--color-cinnabar-rgb) / 0.38);
-  animation: card-glow 2.6s ease-in-out infinite;
+}
+/* 常驻动画的辉光改由 ::before 承担:静态光晕 + 不透明度脉动 ——
+   box-shadow 逐帧动画会让圆满的境界卡每帧重绘。 */
+.card-charged::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 16px 2px rgb(var(--color-cinnabar-rgb) / 0.2);
+  animation: card-glow-halo 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes card-glow-halo {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* 修为圆满:进度条流光转金、涌动加速 */
@@ -900,14 +941,6 @@ html[data-theme='dark'] .world-seal {
 }
 .ink-dots span:nth-child(3) {
   animation-delay: 0.3s;
-}
-
-/* 远山视差:两层山错速缓漂 */
-.drift-far {
-  animation: drift 26s ease-in-out infinite alternate;
-}
-.drift-near {
-  animation: drift 18s ease-in-out infinite alternate-reverse;
 }
 
 /* 本世之界;眼下将赴的那一处 —— 节点外圈潺潺脉动,替玩家在图上指路。
@@ -1011,6 +1044,13 @@ html[data-theme='dark'] .world-seal {
   outline-offset: 2px;
 }
 
+/* 印面按钮的焦点圈:朱砂描边压在朱砂印面上看不见,换成奶油白(与印面文字同色),
+   键盘用户才能在关键按钮上看到焦点落在哪 */
+.btn-seal:focus-visible,
+.world-seal:focus-visible {
+  outline-color: #f6f1e5;
+}
+
 /* 滚动条 */
 *::-webkit-scrollbar {
   width: 3px;
@@ -1112,6 +1152,7 @@ html[data-theme='dark'] .world-seal {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
@@ -1122,6 +1163,7 @@ html[data-theme='dark'] .world-seal {
 .reduce-motion *::before,
 .reduce-motion *::after {
   animation-duration: 0.01ms !important;
+  animation-delay: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }

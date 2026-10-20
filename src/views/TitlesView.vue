@@ -19,9 +19,10 @@
           <div class="min-w-0 grow">
             <p class="font-kai text-[13px]" :class="row.owned ? 'text-ink' : 'text-ink-faint'">{{ row.def.name }}</p>
             <p class="truncate text-[10px] text-ink-faint">{{ row.def.desc }}</p>
+            <p v-if="!row.owned && row.source" class="truncate text-[10px] text-ink-faint">来历:{{ row.source }}</p>
             <p v-if="row.owned && row.modText" class="truncate text-[10px] text-azure tabular" :title="row.modText">{{ row.modText }}</p>
           </div>
-          <button v-if="row.owned" class="btn-ghost shrink-0 !px-2.5 !py-1.5 !text-[11px]" @click="toggleTitle(row.def.id)">
+          <button v-if="row.owned" class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="toggleTitle(row.def.id)">
             {{ row.worn ? '卸下' : '佩戴' }}
           </button>
         </div>
@@ -41,7 +42,7 @@
           <span
             class="grid h-10 w-10 shrink-0 place-items-center rounded-md transition-colors"
             :class="row.active ? 'bg-jade/10 text-jade' : 'bg-ink/5 text-ink-soft'"
-          ><GameIcon :name="row.def.icon" :size="20" /></span>
+          ><GameIcon :name="beastIcon(row.def.family)" :size="20" /></span>
           <div class="min-w-0 grow">
             <p class="flex flex-wrap items-center gap-1.5">
               <span class="truncate font-kai text-[13px]" :style="{ color: qualityDef(row.def.quality).color }">{{ row.def.name }}</span>
@@ -55,9 +56,9 @@
               {{ row.personalityName }} · <span class="text-ink-faint">{{ row.personalityDesc }}</span>
             </p>
             <!-- 定性的话之外还要给数:换不换这只伙伴,靠「更容易」三个字算不出来 -->
-            <p v-if="row.traitText" class="text-[10px] text-azure/80 tabular">{{ row.traitText }}</p>
+            <p v-if="row.traitText" class="text-[10px] text-azure tabular">{{ row.traitText }}</p>
           </div>
-          <button class="btn-ghost shrink-0 !px-2.5 !py-1 !text-[11px]" @click="togglePet(row.def.id)">
+          <button class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="togglePet(row.def.id)">
             {{ row.active ? '暂别' : '唤来' }}
           </button>
         </div>
@@ -78,9 +79,13 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
+  import { useUiStore } from '@/stores/ui'
   import { useQuestsStore } from '@/stores/quests'
   import { TITLES } from '@/data/titles'
+  import { ACHIEVEMENTS } from '@/data/achievements'
+  import { achievementDirection } from '@/ui/achievementHint'
   import { petDef, PETS } from '@/data/pets'
+  import { beastIcon } from '@/data/beastFamilies'
   import { PERSONALITY_NAMES, personalityDesc } from '@/core/petPersonality'
   import { petTraitText } from '@/ui/itemText'
   import { qualityDef } from '@/data/qualities'
@@ -91,6 +96,7 @@
 
   const player = usePlayerStore()
   const quests = useQuestsStore()
+  const ui = useUiStore()
 
   type Tab = 'title' | 'pet'
   const tab = ref<Tab>('title')
@@ -102,6 +108,12 @@
   // ---- 名号 ----
   const ownedCount = computed(() => quests.titlesOwned.length)
 
+  /** 名号由成就解锁:为未获得的称号补一句「从哪来」,方向自动随条件走,不剧透成就名 */
+  const TITLE_SOURCE: Record<string, string> = {}
+  for (const a of ACHIEVEMENTS) {
+    if (a.reward?.titleId) TITLE_SOURCE[a.reward.titleId] = achievementDirection(a.cond)
+  }
+
   /** 全量陈列:佩戴中 > 已拥有 > 未获得 */
   const titleRows = computed(() => {
     const ownedSet = new Set(quests.titlesOwned)
@@ -109,7 +121,8 @@
       def,
       owned: ownedSet.has(def.id),
       worn: player.titleId === def.id,
-      modText: modsText(def.mods ?? {})
+      modText: modsText(def.mods ?? {}),
+      source: ownedSet.has(def.id) ? '' : TITLE_SOURCE[def.id] ?? ''
     })).sort((a, b) => Number(b.worn) - Number(a.worn) || Number(b.owned) - Number(a.owned))
   })
 
@@ -134,6 +147,13 @@
   )
 
   function togglePet(id: string): void {
-    player.setPet(player.petId === id ? null : id)
+    const def = petDef(id)
+    const active = player.petId === id
+    player.setPet(active ? null : id)
+    // 唤来要听得见回响:顶栏只换了个名,性格那句跟脚(它管历练怎么表现)得当场说一句
+    if (def) {
+      if (active) ui.toast(`「${def.name}」已暂别 —— 它在灵兽园里等你`, 'info')
+      else ui.toast(`唤来「${def.name}」——${personalityDesc(def.personality)}`, 'info')
+    }
   }
 </script>

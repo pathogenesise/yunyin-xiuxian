@@ -3,6 +3,8 @@
  * 原则:每条新规则都必须「有解、无万金油」;模拟器就是发布门
  */
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import type { CombatRules, CombatantSnap } from '@/types'
 import { mulberry32, RandomService } from '@/utils/random'
 import { CELESTIAL_WORLDS, MUTATION_FOES, TRIAL_FOES } from '@/data/endgame'
@@ -12,7 +14,7 @@ import { BUILD_PROFILES, buildSnap } from './buildSim'
 import { SIM_REFERENCE } from './celestialSim'
 import { mergeRules, runGauntlet, worldFoeSnap } from './gauntlet'
 import { resolveCombat } from './combat'
-import { swordPurity, stackedMods, SWORD_LAYER_MODS, slaughterSpeedBonus } from './daoDepth'
+import { swordPurity, stackedMods, SWORD_LAYER_MODS, SWORD_PURITY_MAX_LAYERS, slaughterSpeedBonus } from './daoDepth'
 
 function chain(...list: (CombatRules | undefined)[]): CombatRules | undefined {
   return list.reduce((acc, cur) => mergeRules(acc, cur), undefined)
@@ -27,7 +29,7 @@ function mutationClearRate(rules: CombatRules | undefined, snap: CombatantSnap, 
   }
   let clears = 0
   for (let i = 0; i < runs; i += 1) {
-    if (runGauntlet(snap, foes, rules, 0.4, rng).cleared) clears += 1
+    if (runGauntlet(snap, foes, rules, 0.4, rng, { buildLog: false }).cleared) clears += 1
   }
   return clears / runs
 }
@@ -44,7 +46,7 @@ function worldRateWithRules(worldIdx: number, extra: CombatRules | undefined, sn
   const rules = chain(world.rules, extra)
   let clears = 0
   for (let i = 0; i < runs; i += 1) {
-    if (runGauntlet(snap, foes, rules, world.healBetweenPct, rng).cleared) clears += 1
+    if (runGauntlet(snap, foes, rules, world.healBetweenPct, rng, { buildLog: false }).cleared) clears += 1
   }
   return clears / runs
 }
@@ -113,7 +115,7 @@ describe('路线节点裁判', () => {
             const rng = new RandomService(mulberry32(41000 + pi * 97 + node.id.length))
             let wins = 0
             for (let r = 0; r < 20; r += 1) {
-              if (resolveCombat(buildSnap(profile), foe, rng, rules).win) wins += 1
+              if (resolveCombat(buildSnap(profile), foe, rng, rules, false).win) wins += 1
             }
             best = Math.max(best, wins / 20)
           }
@@ -162,7 +164,7 @@ describe('组合技裁判', () => {
     const winRate = (snap: CombatantSnap, seed: number): number => {
       const rng = new RandomService(mulberry32(seed))
       let wins = 0
-      for (let i = 0; i < 120; i += 1) if (resolveCombat(snap, foe, rng, lowHp).win) wins += 1
+      for (let i = 0; i < 120; i += 1) if (resolveCombat(snap, foe, rng, lowHp, false).win) wins += 1
       return wins / 120
     }
     expect(winRate(withArt, 777)).toBeGreaterThan(winRate(base, 777) - 0.02)
@@ -217,7 +219,7 @@ describe('契约机制单元', () => {
   it('无伤契:战后血线不达标即判违契终止', () => {
     const foes = [worldFoeSnap(TRIAL_FOES[0]!, SIM_REFERENCE, 1), worldFoeSnap(TRIAL_FOES[1]!, SIM_REFERENCE, 1)]
     const rng = new RandomService(mulberry32(123))
-    const report = runGauntlet(buildSnap(BUILD_PROFILES[0]!), foes, undefined, 0.5, rng, { minHpAfterFight: 0.999 })
+    const report = runGauntlet(buildSnap(BUILD_PROFILES[0]!), foes, undefined, 0.5, rng, { minHpAfterFight: 0.999, buildLog: false })
     expect(report.cleared).toBe(false)
     expect(report.pactBroken ?? report.rows.some(r => !r.win)).toBeTruthy()
   })
@@ -226,10 +228,33 @@ describe('契约机制单元', () => {
     const weakFoe = worldFoeSnap(TRIAL_FOES[0]!, SIM_REFERENCE, 0.3)
     const rng = new RandomService(mulberry32(456))
     const report = runGauntlet(buildSnap(BUILD_PROFILES[0]!), [weakFoe, weakFoe, weakFoe], undefined, 1, rng, {
-      perWinPlayerMods: { damageBonus: 0.5 }
+      perWinPlayerMods: { damageBonus: 0.5 },
+      buildLog: false
     })
     expect(report.cleared).toBe(true)
     // 叠层生效的间接证据:第三场(+100% 伤害)回合数不多于第一场
     expect(report.rows[2]!.rounds).toBeLessThanOrEqual(report.rows[0]!.rounds)
+  })
+})
+
+describe('剑意层数与门槛 · 一处出', () => {
+  // 「当前 X/4 层」与「契合 ≥60%」都曾被手抄 —— 层数该等于判定项数,百分比该对着成形门槛
+  const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '').replace(/<!--[\s\S]*?-->/g, '')
+
+  it('层数是判定项的推导,不是另写的一份', () => {
+    const pure = swordPurity({}, 0, null)
+    expect(SWORD_PURITY_MAX_LAYERS).toBe(pure.checks.length)
+  })
+
+  it('纯度判定与文案同读 STYLE_MATURE_AFFINITY,不手抄 60%', () => {
+    const src = strip(readFileSync(resolve(__dirname, 'daoDepth.ts'), 'utf8'))
+    expect(src).toContain('STYLE_MATURE_AFFINITY * 100')
+    expect(src).not.toContain('契合 ≥60%')
+  })
+
+  it('天界页的「/N 层」读 SWORD_PURITY_MAX_LAYERS,不许再写 /4', () => {
+    const src = strip(readFileSync(resolve(__dirname, '../views/CelestialView.vue'), 'utf8'))
+    expect(src).toContain('/{{ SWORD_PURITY_MAX_LAYERS }} 层')
+    expect(src).not.toContain('剑意 {{ swordInfo.layers }}/4 层')
   })
 })

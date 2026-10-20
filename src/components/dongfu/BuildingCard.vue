@@ -8,7 +8,7 @@
       >
         <GameIcon :name="props.def.icon" :size="featured ? 22 : 18" />
         <!-- 境界闸门未开:右上角落一把小锁,整印转金灰 -->
-        <GameIcon v-if="locked" name="lock" :size="9" class="absolute -bottom-0.5 -right-0.5 rounded-full bg-paper p-[1px] text-gold-ink/80" />
+        <GameIcon v-if="locked" name="lock" :size="9" class="absolute -bottom-0.5 -right-0.5 rounded-full bg-paper p-[1px] text-gold-ink" />
       </span>
       <div class="min-w-0 grow">
         <!--
@@ -60,11 +60,18 @@
     <p v-if="modLine" class="mt-1 text-[11px] leading-relaxed text-azure tabular">{{ modLine }}</p>
     <!-- 再进净得:本级词条到下一级的增量,买前预览;不可点时不给(不能对着画不了的饼招手) -->
     <p v-if="nextGain" class="mt-1 text-[10px] leading-relaxed text-ink-faint">
-      再升一层,又添 <span class="tabular text-azure/75">{{ nextGain }}</span>
+      再升一层,又添 <span class="tabular text-azure">{{ nextGain }}</span>
     </p>
     <!-- 灵兽园:把当前相伴的灵兽报在园子里 —— 别的建筑都是数值,这里是活物 -->
     <p v-if="beastCompanionName" class="mt-1 flex items-center gap-1 text-[10px] text-jade">
       <GameIcon name="paw" :size="11" />居园相伴 · {{ beastCompanionName }}
+    </p>
+    <!--
+      藏经阁的翻检线:丹方获取是全书唯一的常驻被动流水,得在它家门口报一声 ——
+      升它之前,先看见它下一张方子几时来。与开炉页同一读数(studyEta)
+    -->
+    <p v-if="studyStatusLine" class="mt-1 flex items-center gap-1 text-[10px] text-gold-ink">
+      <GameIcon name="book" :size="11" />{{ studyStatusLine }}
     </p>
     <button class="btn-ghost mt-2 w-full !py-1.5 !text-[12px]" :disabled="!info.canUpgrade" @click="upgradeBuilding(props.def.id)">
       <!--
@@ -93,9 +100,14 @@
       连升行:一口气能连升 ≥2 级才出现,总账先报清(与强化连升/祭炼连升同一套)。
       只够一级时,上面的升级按钮就是那一级,不必多摆一行。
     -->
-    <div v-if="plan.levels >= 2" class="mt-2 flex items-center gap-2 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
+    <!--
+      窄卡(320 下网格卡内宽 ~113px)塞不下「说明 × 钮」同排:双钮本身就近 115px,
+      再挤一个 flex-1 文本,文本会被压到 0 宽逐字竖排、甚至塌进钮里(实测 0×220)。
+      flex-wrap + 文本保底宽:放得下就同排,放不下说明独占整行、钮换行自成一行。
+    -->
+    <div v-if="plan.levels >= 2" class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md border border-ink/10 bg-paper-deep/50 px-2.5 py-2">
       <template v-if="!batchArm">
-        <p class="min-w-0 flex-1 text-[10px] leading-snug text-ink-soft">
+        <p class="min-w-[5rem] flex-1 text-[10px] leading-snug text-ink-soft">
           连升至 <span class="font-kai text-[11px] text-cinnabar">第 {{ level + plan.levels }} 级</span>
           <span class="mt-0.5 block text-[9px] text-ink-faint tabular">
             共耗 <span class="whitespace-nowrap">灵石 {{ formatGN(plan.stone) }}</span><span
@@ -107,7 +119,7 @@
         <button class="btn-ghost shrink-0 !px-3 !py-2 !text-[11px]" @click="batchArm = true">连 升</button>
       </template>
       <template v-else>
-        <p class="min-w-0 flex-1 text-[10px] leading-snug text-ink-soft">
+        <p class="min-w-[5rem] flex-1 text-[10px] leading-snug text-ink-soft">
           一步连升 {{ plan.levels }} 级,花上面那笔总账 —— 仍要?
         </p>
         <button class="btn-ghost shrink-0 !px-2.5 !py-2 !text-[11px]" @click="batchArm = false">再想想</button>
@@ -123,11 +135,13 @@
   import { useDongfuStore } from '@/stores/dongfu'
   import { usePlayerStore } from '@/stores/player'
   import { petDef } from '@/data/pets'
+  import { pillDef } from '@/data/pills'
   import GameIcon from '@/components/common/GameIcon.vue'
   import { buildingUpgradeInfo, buildingBatchPlan, upgradeBuilding, upgradeBuildingBatch } from '@/core/buildingService'
+  import { studyEta } from '@/core/loreService'
   import { modsText } from '@/ui/statNames'
-  import { buildingActLabel } from '@/ui/buildingText'
-  import { formatGN } from '@/utils/format'
+  import { buildingActLabel, buildingGateRealmName } from '@/ui/buildingText'
+  import { formatDuration, formatGN } from '@/utils/format'
 
   const props = withDefaults(defineProps<{ def: BuildingDef; featured?: boolean }>(), { featured: false })
 
@@ -147,20 +161,35 @@
   }
   /** 未建且不可升 = 被境界闸门锁着(等级 0 时不可升只可能是境界不足,满级/辖限都要求 lv>0) */
   const locked = computed(() => level.value === 0 && !info.value.canUpgrade)
-  /** 境界闸名(meta 行的「至 X 境」):数据里 unlockRealm 0/1/2 依次是 炼气/筑基/金丹 */
-  const gateName = computed(() => ['炼气', '筑基', '金丹'][props.def.unlockRealm] ?? '更高')
+  /** 境界闸名(meta 行的「至 X 境」):unlockRealm 就是 REALMS 下标,直接读表(见 buildingText) */
+  const gateName = computed(() => buildingGateRealmName(props.def.unlockRealm))
   /** 灵兽园联动:洞府与宠物两系统彼此看见(只对 beast 这一座特例,其它建筑不理会) */
   const player = usePlayerStore()
   const beastCompanionName = computed(() =>
     props.def.id === 'beast' && player.petId ? petDef(player.petId)?.name : undefined
   )
+  /**
+   * 藏经阁的翻检线(只对 library 特例):被动流水就住在这座建筑里,
+   * 升它之前先看见下一张方子几时来 —— 读数与开炉页同一份 studyEta
+   */
+  const studyStatusLine = computed(() => {
+    if (props.def.id !== 'library') return ''
+    const eta = studyEta()
+    if (!eta) return ''
+    if (!eta.readingId && !eta.nextIsNew) return '翻检中:够得着的方子都已到手'
+    if (eta.readingId) {
+      const name = pillDef(eta.readingId)?.name ?? '某方'
+      return `正研读「${name}」,约 ${formatDuration(eta.nextInSec)} 后读通`
+    }
+    return `翻检中,约 ${formatDuration(eta.nextInSec)} 后翻出一张新方`
+  })
   /** 品类满级:金彩「圆满」 */
   const atMax = computed(() => level.value > 0 && level.value >= props.def.maxLevel)
   /** 被洞府辖限(没到品类上限但已到 mansion 抬的档):琥珀「辖限」 */
   const atGateCap = computed(() => level.value > 0 && !atMax.value && level.value >= cap.value)
   /** 印章三态:已建朱砂 / 未建墨灰 / 被锁金灰 */
   const sealCls = computed(() => {
-    if (locked.value) return 'bg-gold-ink/8 text-gold-ink/50'
+    if (locked.value) return 'bg-gold-ink/8 text-gold-ink'
     return level.value > 0 ? 'bg-cinnabar/10 text-cinnabar' : 'bg-ink/5 text-ink-faint'
   })
   /** 这一级真正进属性的词条。只在已建造时显示,避免和未启用时的 desc 叠在一起。 */

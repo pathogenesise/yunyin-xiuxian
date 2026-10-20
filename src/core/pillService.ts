@@ -7,15 +7,19 @@
 import { gn, gnZero, mulN, ratio } from '@/utils/gnum'
 import { rng } from '@/utils/random'
 import { pillDef } from '@/data/pills'
+import { herbGradeOfMajor, type HerbGrade } from '@/data/herbGrades'
 import { INSTANT_EXP_LAYER_CAP } from '@/data/constants'
-import { formatDuration, formatGN } from '@/utils/format'
+import { classicalDuration } from '@/data/timeUnits'
+import { formatGN } from '@/utils/format'
 import { recipeCraft, type SkillId } from '@/data/crafting'
 import { expFromSecs, stoneByTier } from './formulas'
 import { maxTierForMajor } from '@/data/regions'
 import { collect, track } from './progress'
 import { modOf } from './statsCalc'
+import { buffOverflowOf } from './buffCap'
 import { craftability, knownRecipes } from './craftability'
 import { noteMaterialUsed } from './loreService'
+import { craftGuaranteeRemaining } from './heritageEffects'
 import { noteTaboo } from './samsaraService'
 import { usePlayerStore } from '@/stores/player'
 import { useResourcesStore } from '@/stores/resources'
@@ -53,13 +57,13 @@ export function usePill(id: string, quiet = false): boolean {
      *
      * 走的是与一场遭遇、一次际遇**同一个**结算函数(expFromSecs)——
      * 三条来源只在"这段时长有多长"上不同,不再各有各的公式与各自的漂移。
-     * 读 player.cultPerSec 而不是裸修速:丹药说的那句"服之如闭关一时",
-     * 就该是他自己的一时(功法/建筑/状态/增益都在里头)。
+     * 读 player.cultPerSec 而不是裸修速:丹药说的那句"服之如闭关一段等效时长",
+     * 就该是他自己那一段的等效时长(功法/建筑/状态/增益都在里头)。
      */
     if (def.instant.expSecs) {
       const gain = expFromSecs(player.expReq, def.instant.expSecs, player.cultPerSec, INSTANT_EXP_LAYER_CAP)
       player.gainExp(gain)
-      lines.push(`修为 +${formatGN(gain)}(约抵闭关 ${formatDuration(def.instant.expSecs)})`)
+      lines.push(`修为 +${formatGN(gain)}(约抵闭关 ${classicalDuration(def.instant.expSecs)})`)
     }
     if (def.instant.expFixed) {
       player.gainExp(gn(def.instant.expFixed))
@@ -78,8 +82,16 @@ export function usePill(id: string, quiet = false): boolean {
       lines.push(`悟道点 +${def.instant.wudao}`)
     }
   } else if (def.buffId) {
+    // 贴着上限再服,药力会被削(甚至一点不加)—— 说出来,别让玩家自己猜"为什么没变"
+    const overflow = buffOverflowOf(cultivation.buffs, def.buffId, Date.now())
     cultivation.addBuff(def.buffId, Date.now())
-    lines.push('药力化开,状态加身')
+    lines.push(
+      overflow === 'full'
+        ? '药力已至上限,这一颗白费了'
+        : overflow === 'partial'
+          ? '药力已至上限,这一颗只延续到顶'
+          : '药力化开,状态加身'
+    )
   }
   track('pillsUsed')
   // Phase 32.5:「不假外物」之誓在按下这一刻就落空,不必等到转世才被告知
@@ -99,13 +111,18 @@ export function usePill(id: string, quiet = false): boolean {
  */
 export function usePillBatch(id: string, count: number): number {
   if (count < 1) return 0 // 没要求服,一枚也不许动
+  const def = pillDef(id)
+  if (!def) return 0
+  // 增益丹(带 buffId)批量连服是陷阱:药力一顶,后面的全白费(涉策 buffOverflowOf)——
+  // 退化为单服,让「只延续到顶 / 这一颗白费了」那句说得明白,而不是「连服 N 枚」一笔带过。
+  if (def.buffId) return usePill(id) ? 1 : 0
   if (count === 1) return usePill(id) ? 1 : 0
   let eaten = 0
   for (let i = 0; i < count; i += 1) {
     if (!usePill(id, true)) break
     eaten += 1
   }
-  const name = pillDef(id)?.name ?? id
+  const name = def.name
   const ui = useUiStore()
   if (eaten > 0) {
     playSfx('success')
@@ -117,9 +134,14 @@ export function usePillBatch(id: string, count: number): number {
 }
 
 /** 炼丹消耗 */
-export function pillCraftCost(id: string): { herb: number; stone: GNum } | null {
+export function pillCraftCost(id: string): { herb: number; stone: GNum; grade: HerbGrade } | null {
   const def = pillDef(id)
   if (!def?.recipe) return null
+  /**
+   * 灵草按方子准入境界决定品阶:方子出自哪一界,就要哪一品的草。
+   * 「新手村的青芝炼混沌道祖的丹」从此不可能 —— 低阶草进不了高阶方子。
+   */
+  const grade = herbGradeOfMajor(def.minRealm)
   /**
    * 灵石开销按这张方子**准入境界能拿到的最高层级**折算。
    *
@@ -128,7 +150,7 @@ export function pillCraftCost(id: string): { herb: number; stone: GNum } | null 
    * 于是界外炼丹被自己的报价挡在门外(ISS-211)。层级只有一个事实源:区域表。
    */
   const tier = maxTierForMajor(def.minRealm)
-  return { herb: def.recipe.herb, stone: stoneByTier(tier, def.recipe.stoneBase / 10) }
+  return { herb: def.recipe.herb, stone: stoneByTier(tier, def.recipe.stoneBase / 10), grade }
 }
 
 /**
@@ -165,11 +187,13 @@ export function craftBatchPlan(id: string): CraftBatchPlan {
   // 调用方才能区分掌握问题与材料问题(未知方先于掌握度阻塞返回)
   if (!def || !cost || !able) return blocked(craftUnknownToast())
   if (able.blockers.length > 0) return blocked(able.blockers[0]!)
-  const herbRounds = Math.floor(resources.herb / cost.herb)
+  const herbRounds = Math.floor(resources.herbOf(cost.grade) / cost.herb)
   // 灵石可开几炉:直接求商,不逐炉减 —— 库存大时按炉计数会跑成百万次 GNum 减法
   // (ratio 的指数差钳制只会把币额超大的情况估算得略保守,再与 herbRounds 取小,安全)
   const stoneRounds = Math.max(0, Math.floor(ratio(resources.spiritStone, cost.stone)))
-  const rounds = Math.min(herbRounds, stoneRounds)
+  // ratio 在除数(cost.stone)为 0/NaN 时返回 Infinity/NaN —— 此处把非有限的「灵石可开炉数」
+  // 显式收束为「不构成限制」:此时炉数由灵草维度唯一决定,绝不把 Infinity 传进 round/plan。
+  const rounds = Math.min(herbRounds, Number.isFinite(stoneRounds) ? stoneRounds : herbRounds)
   if (rounds === 0) return blocked(craftShortToast())
   return { rounds, herb: rounds * cost.herb, stone: mulN(cost.stone, rounds) }
 }
@@ -226,21 +250,24 @@ export function craftPill(id: string, quiet = false): CraftOutcome {
     if (!quiet) ui.toast(able.blockers[0]!, 'warn')
     return { ok: false, count: 0, aborted: true }
   }
-  if (!resources.hasSmall('herb', cost.herb) || !resources.hasStone(cost.stone)) {
+  if (!resources.hasHerb(cost.grade, cost.herb) || !resources.hasStone(cost.stone)) {
     if (!quiet) ui.toast(craftShortToast(), 'warn')
     return { ok: false, count: 0, aborted: true }
   }
 
   const craft = recipeCraft(def)
-  const succeeded = rng.chance(able.successRate)
+  // 浴火丹心(宿命传承):本世前几炉必成 —— 只在真开炉时读取并消费每世额度
+  const guarantee = craftGuaranteeRemaining(player.reincarnation.heritage, player.reincarnation.heritageUses)
+  const succeeded = guarantee > 0 || rng.chance(able.successRate)
+  if (guarantee > 0) player.consumeHeritageUse('danxin', 3)
 
   // 无论成败,炉先开了,料先下了
   resources.spendStone(cost.stone)
   if (succeeded) {
-    resources.spendSmall('herb', cost.herb)
+    resources.spendHerb(cost.grade, cost.herb)
   } else {
     const kept = Math.floor(cost.herb * salvageRatio(able.skill))
-    resources.spendSmall('herb', cost.herb - kept)
+    resources.spendHerb(cost.grade, cost.herb - kept)
   }
 
   gainCraftExp(craft?.skills ?? {}, able.rank, succeeded)

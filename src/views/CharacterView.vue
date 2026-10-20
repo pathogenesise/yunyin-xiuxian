@@ -3,8 +3,33 @@
     <!-- 基本信息:名号、境界、年龄、世数皆在全局顶栏常驻,此处不再重复 -->
     <div class="card-ink px-4 py-4">
       <div class="flex items-center justify-between">
-        <span class="text-[10px] tracking-[0.3em] text-ink-faint">战 力</span>
+        <button class="-my-1 py-1.5 text-left active:opacity-60" @click="powerOpen = !powerOpen">
+          <span class="text-[10px] tracking-[0.3em] text-ink-faint">战 力</span>
+          <span class="ml-1 text-[9px] text-ink-faint">{{ powerOpen ? '▾' : '▸' }}拆解</span>
+        </button>
         <span class="font-kai text-[18px] text-cinnabar tabular">{{ formatGN(stats.power) }}</span>
+      </div>
+      <!--
+        战力是全书出现最频繁却从不解释的一个数 —— 一句算式说清它从哪来。
+        权重取自 POWER_WEIGHTS,与 powerScore 同一份,界面不手抄
+      -->
+      <p class="mt-0.5 text-right text-[10px] text-ink-faint tabular">{{ powerExplain }}</p>
+      <!--
+        逐行把攻/防/血各折算多少摊开,合计又对上总战力 —— 「拆解」不是另起口径,
+        读的与 powerScore 同一批属性同一份权重。
+      -->
+      <div v-if="powerOpen" class="mt-2 rounded-md bg-paper-deep/60 px-2.5 py-2 text-[10px]">
+        <p v-for="row in powerRows" :key="row.name" class="flex items-center justify-between">
+          <span class="text-ink-faint">{{ row.name }}</span>
+          <span class="tabular">
+            {{ formatGN(row.raw) }} ×{{ row.weight }} = <span class="text-azure">{{ formatGN(row.value) }}</span>
+          </span>
+        </p>
+        <p class="mt-1 flex items-center justify-between border-t border-ink/8 pt-1">
+          <span class="text-ink-faint">合计</span>
+          <span class="tabular font-kai text-[12px] text-cinnabar">{{ formatGN(stats.power) }}</span>
+        </p>
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">战力由此数项合计而成,每项的权重都明码在列。</p>
       </div>
       <div class="ink-divider my-3" />
       <!-- 灵根 -->
@@ -77,7 +102,7 @@
           >
             <span class="text-ink-faint">
               {{ row.label }}
-              <span v-if="row.capped" class="ml-0.5 text-[9px] text-cinnabar/80">软</span>
+              <span v-if="row.capped" class="ml-0.5 text-[9px] text-cinnabar">软</span>
             </span>
             <span class="tabular" :class="row.value > 0 ? 'text-azure' : 'text-cinnabar'">
               {{ signedPercent(row.value) }}
@@ -90,139 +115,163 @@
           :key="note.key"
           class="mt-0.5 text-[9px] leading-relaxed text-ink-faint"
         >
-          {{ note.label }}:{{ note.caveat }}
+          {{ note.label }}: {{ note.caveat }}
         </p>
         <div v-if="breakdownRows.length" class="mt-1.5 rounded-md bg-paper-deep/60 px-2.5 py-2">
           <p class="text-[10px] text-ink-soft">{{ STAT_NAMES[breakdownKey!] }} · 来源明细</p>
           <p v-for="c in breakdownRows" :key="c.name" class="mt-0.5 flex justify-between text-[10px]">
             <span class="text-ink-faint">
               {{ c.name }}
-              <span v-if="c.onTop" class="ml-1 text-[9px] text-cinnabar/80">另乘</span>
+              <span v-if="c.onTop" class="ml-1 text-[9px] text-cinnabar">另乘</span>
             </span>
             <span class="tabular" :class="c.value > 0 ? 'text-azure' : 'text-cinnabar'">
               {{ signedPercent(c.value) }}
             </span>
           </p>
-          <p class="mt-1 text-[9px] leading-relaxed text-ink-faint">
-            明细之和就是上面那个数;标「另乘」的不并入百分比,而是单独乘在攻防血上。
+          <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
+            总数即各项之和;标「另乘」的不并入百分比,而是单独乘在攻防血上。
           </p>
         </div>
-        <p v-if="softCappedNotes.length" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">
-          标「软」的,已堆到好处将尽之处:{{ softCappedNotes.join('、') }}。再叠上去收效渐微,并非面板出了岔子。
+        <p v-if="softCappedNotes.length" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar">
+          标「软」的,已堆到好处将尽之处:{{ softCappedNotes.join('、') }}。再叠上去,收效渐微,实乃大道有涯。
         </p>
       </div>
     </section>
 
-    <!-- 各处入口 -->
-    <RouterLink to="/build" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">流 派</span>
-        <span class="block truncate text-[10px] text-ink-faint tabular">
-          <template v-if="build">
-            {{ build.displayName }} · 契合 {{ Math.round(build.affinity * 100) }}% · 快照 {{ loadouts.list.length }} 套
-          </template>
-          <template v-else>道途尚未成路,词条与功法凑成一派便见分晓</template>
-        </span>
-      </span>
-      <span class="text-[11px] text-cinnabar">参详 →</span>
-    </RouterLink>
+    <!-- 各处入口 —— 按「道途 / 缘法 / 记录」分节,每张卡带一枚题头图标,免成一列同形的卡 -->
+    <section>
+      <SectionTitle title="道途" hint="流派" />
+      <div class="mt-2 space-y-4">
+        <RouterLink to="/build" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-98">
+          <GameIcon name="swords" :size="16" class="shrink-0 text-cinnabar" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">流 派</span>
+            <span class="block truncate text-[10px] text-ink-faint tabular">
+              <template v-if="build">
+                {{ build.displayName }} · 契合 {{ Math.round(build.affinity * 100) }}% · 快照 {{ loadouts.list.length }} 套
+              </template>
+              <template v-else>道途尚未成路,词条与功法凑成一派便见分晓</template>
+            </span>
+          </span>
+          <span class="text-[11px] text-cinnabar">参详 →</span>
+        </RouterLink>
 
-    <!-- 修行画像(Phase 31.2:历史行为归纳,纯描述无数值) -->
-    <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-99" @click="identityOpen = true">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">修行画像</span>
-        <span class="block truncate text-[10px] text-ink-faint">「{{ identity?.epithet ?? '云隐散人' }}」 · {{ identity?.narrative ?? '足迹尚浅' }}</span>
-      </span>
-      <span class="shrink-0 text-[11px] text-ink-soft">展卷 →</span>
-    </button>
+        <!-- 修行画像(Phase 31.2:历史行为归纳,纯描述无数值) -->
+        <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-98" @click="identityOpen = true">
+          <GameIcon name="circle-user" :size="16" class="shrink-0 text-ink-soft" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">修行画像</span>
+            <!-- 画像叙述是这一页最有「人味」的一行,一行截断会拦腰断句 —— 给两行 -->
+            <span class="line-clamp-2 text-[10px] leading-relaxed text-ink-faint">「{{ identity?.epithet ?? '云隐散人' }}」 · {{ identity?.narrative ?? '足迹尚浅' }}</span>
+          </span>
+          <span class="shrink-0 text-[11px] text-ink-soft">展卷 →</span>
+        </button>
 
-    <RouterLink to="/titles" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
-      <!--
-        相伴灵兽的"脸":有伴时亮出一枚玉印,未伴时也留一枚灰底虚位印 ——
-        9 张入口卡里只有这一张带前导图标,若用 v-if 直接消失,无宠物时的
-        文字起点会偏左、与同组其它卡对不齐(排版上像缺了一块)。
-      -->
-      <span
-        class="grid h-9 w-9 shrink-0 place-items-center rounded-md"
-        :class="currentPetIcon ? 'bg-jade/10 text-jade' : 'bg-ink/5 text-ink-faint'"
-      >
-        <GameIcon v-if="currentPetIcon" :name="currentPetIcon" :size="18" />
-        <span v-else class="font-kai text-[13px]">未</span>
-      </span>
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">名号与灵兽</span>
-        <span class="block truncate text-[10px] text-ink-faint">
-          {{ currentTitleName ?? '未佩称号' }} · {{ currentPetName ?? '未伴灵兽' }}
-        </span>
-      </span>
-      <span class="text-[11px] text-jade">整理 →</span>
-    </RouterLink>
+        <RouterLink to="/titles" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-98">
+          <!--
+            相伴灵兽的「脸」:有伴亮本命灵兽的形,未伴用名号的冠 ——
+            与其它入口一样是一枚题头图,文字起点与同组其它卡对齐。
+          -->
+          <GameIcon :name="currentPetIcon ?? 'crown'" :size="16" class="shrink-0 text-jade" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">名号与灵兽</span>
+            <span class="block truncate text-[10px] text-ink-faint">
+              {{ currentTitleName ?? '未佩称号' }} · {{ currentPetName ?? '未伴灵兽' }}
+            </span>
+          </span>
+          <span class="text-[11px] text-jade">整理 →</span>
+        </RouterLink>
+      </div>
+    </section>
 
-    <!-- 师承(Phase 31 S1):修行理念 + 师尊评价 -->
-    <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-99" @click="mentorDialog = true">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">师 承</span>
-        <span class="block truncate text-[10px] text-ink-faint">
-          {{ mentorVer ? `${mentorVer.mentor?.name ?? ''}·${mentorVer.mentor?.title ?? ''} | ${mentorVer.line}` : '尚未拜师,可寻一位师尊' }}
-        </span>
-      </span>
-      <span class="shrink-0 text-[11px] text-azure">{{ mentorVer ? '求教 →' : '拜师 →' }}</span>
-    </button>
+    <!-- 缘法:这一世遇见的人 -->
+    <section>
+      <SectionTitle title="缘法" hint="师承道侣" />
+      <div class="mt-2 space-y-4">
+        <!-- 师承(Phase 31 S1):修行理念 + 师尊评价 -->
+        <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-98" @click="mentorDialog = true">
+          <GameIcon name="scroll" :size="16" class="shrink-0 text-azure" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">师 承</span>
+            <span class="block truncate text-[10px] text-ink-faint">
+              {{ mentorVer ? `${mentorVer.mentor?.name ?? ''}·${mentorVer.mentor?.title ?? ''} | ${mentorVer.line}` : '尚未拜师,可寻一位师尊' }}
+            </span>
+          </span>
+          <span class="shrink-0 text-[11px] text-azure">{{ mentorVer ? '求教 →' : '拜师 →' }}</span>
+        </button>
 
-    <!-- 道侣(Phase 33.8):这一世遇见的人。只记关系与经历,不给任何属性 -->
-    <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-99" @click="bondDialog = true">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">道 侣</span>
-        <span class="block truncate text-[10px] text-ink-faint">
-          {{
-            bondDef && bond
-              ? `${bondDef.name}·${STAGE_NAMES[bond.stage]}${bond.fallen ? '(已殁)' : ''} | ${bondDef.brief}`
-              : pastBonds.length
-                ? `此生尚未遇见,历世曾有 ${pastBonds.length} 段同行`
-                : '此生尚未遇见谁'
-          }}
-        </span>
-      </span>
-      <span class="shrink-0 text-[11px] text-azure">{{ bondDef ? '相知 →' : '履历 →' }}</span>
-    </button>
+        <!-- 道侣(Phase 33.8):这一世遇见的人。只记关系与经历,不给任何属性 -->
+        <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-98" @click="bondDialog = true">
+          <GameIcon name="user" :size="16" class="shrink-0 text-azure" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">道 侣</span>
+            <!--
+              她开口 / 世界递事,还等你一句 —— 缘法入口就得报出来,不该开了弹窗才发现。
+              与 herIntent/pendingEvent 同判定,intentPending/pendingEventId 只在没回时才置位。
+            -->
+            <span class="block truncate text-[10px] text-ink-faint">
+              <span v-if="hasBondWord" class="chip-ink mr-1 align-middle border-cinnabar/50 text-[9px] text-cinnabar">有话说</span>
+              {{
+                bondDef && bond
+                  ? `${bondDef.name}·${STAGE_NAMES[bond.stage]}${bond.fallen ? '(已殁)' : ''} | ${bondDef.brief}`
+                  : pastBonds.length
+                    ? `此生尚未遇见,历世曾有 ${pastBonds.length} 段同行`
+                    : '此生尚未遇见谁'
+              }}
+            </span>
+          </span>
+          <span class="shrink-0 text-[11px] text-azure">{{ bondDef ? '相知 →' : '履历 →' }}</span>
+        </button>
+      </div>
+    </section>
 
-    <RouterLink to="/collection" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">藏珍与成就</span>
-        <span class="block text-[10px] text-ink-faint tabular">
-          成就 {{ quests.achieved.length }}/{{ ACHIEVEMENTS.length }} · 图鉴 {{ collectHave }}/{{ collectTotal }}
-        </span>
-      </span>
-      <span class="text-[11px] text-gold-ink">翻阅 →</span>
-    </RouterLink>
+    <!-- 记录:走过什么、这条路从哪来 -->
+    <section>
+      <SectionTitle title="记录" hint="藏珍" />
+      <div class="mt-2 space-y-4">
+        <RouterLink to="/collection" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-98">
+          <GameIcon name="gem" :size="16" class="shrink-0 text-gold-ink" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">藏珍与成就</span>
+            <span class="block text-[10px] text-ink-faint tabular">
+              成就 {{ quests.achieved.length }}/{{ ACHIEVEMENTS.length }} · 图鉴 {{ collectHave }}/{{ collectTotal }}
+            </span>
+          </span>
+          <span class="text-[11px] text-gold-ink">翻阅 →</span>
+        </RouterLink>
 
-    <RouterLink to="/legacy" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">修仙录</span>
-        <span class="block truncate text-[10px] text-ink-faint tabular">画像 · 节点 · 我的纪录——这一部只写你自己</span>
-      </span>
-      <span class="text-[11px] text-ink-soft">展卷 →</span>
-    </RouterLink>
+        <RouterLink to="/legacy" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-98">
+          <GameIcon name="book" :size="16" class="shrink-0 text-ink-soft" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">修仙录</span>
+            <span class="block truncate text-[10px] text-ink-faint tabular">画像 · 节点 · 我的纪录——这一部只写你自己</span>
+          </span>
+          <span class="text-[11px] text-ink-soft">展卷 →</span>
+        </RouterLink>
 
-    <!-- 界域志:与修仙录同级 —— 一部写你,一部写这条路从哪来 -->
-    <RouterLink to="/codex" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-99">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">界域志</span>
-        <span class="block truncate text-[10px] text-ink-faint tabular">{{ cnNumber(WORLDS.length) }}界{{ cnNumber(REALMS.length) }}境 · 每一境的来路与典籍</span>
-      </span>
-      <span class="text-[11px] text-ink-soft">查阅 →</span>
-    </RouterLink>
+        <!-- 界域志:与修仙录同级 —— 一部写你,一部写这条路从哪来 -->
+        <RouterLink to="/codex" class="card-ink flex items-center gap-3 px-4 py-3 active:scale-98">
+          <GameIcon name="mountain" :size="16" class="shrink-0 text-ink-soft" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">界域志</span>
+            <span class="block truncate text-[10px] text-ink-faint tabular">{{ cnNumber(WORLDS.length) }}界{{ cnNumber(REALMS.length) }}境 · 每一境的来路与典籍</span>
+          </span>
+          <span class="text-[11px] text-ink-soft">查阅 →</span>
+        </RouterLink>
 
-    <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-99" @click="rebirthOpen = true">
-      <span class="min-w-0 grow">
-        <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">轮 回</span>
-        <span class="block text-[10px] text-ink-faint tabular">
-          <span class="chip-ink mr-1 border-violet-ink/50 text-[9px] text-violet-ink">永久积累</span>
-          道果 {{ player.reincarnation.daoFruit }} · 天赋 {{ ownedTalents.length }} 项
-        </span>
-      </span>
-      <span class="text-[11px] text-violet-ink">观想 →</span>
-    </button>
+        <button class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-98" @click="rebirthOpen = true">
+          <GameIcon name="refresh" :size="16" class="shrink-0 text-violet-ink" />
+          <span class="min-w-0 grow">
+            <span class="block font-kai text-[14px] tracking-[0.25em] text-ink">轮 回</span>
+            <span class="block text-[10px] text-ink-faint tabular">
+              <span class="chip-ink mr-1 border-violet-ink/50 text-[9px] text-violet-ink">永久积累</span>
+              道果 {{ player.reincarnation.daoFruit }} · 天赋 {{ ownedTalents.length }} 项 · 传承 {{ ownedHeritage.length }} 道
+            </span>
+          </span>
+          <span class="text-[11px] text-violet-ink">观想 →</span>
+        </button>
+      </div>
+    </section>
 
     <!-- 修行画像弹窗(Phase 31.2) -->
     <BaseModal :open="identityOpen" :title="`修行画像 · 「${identity?.epithet ?? '云隐散人'}」`" @close="identityOpen = false">
@@ -295,7 +344,7 @@
           <button
             v-for="t in ownedTalents"
             :key="t!.id"
-            class="chip-ink border-current bg-transparent text-left"
+            class="chip-ink !py-1.5 border-current bg-transparent text-left"
             :style="{ color: TALENT_GRADE_COLORS[t!.grade] }"
             :title="t!.desc"
             :aria-expanded="talentTap === t!.id"
@@ -311,7 +360,53 @@
           <span v-if="modsText(tappedTalent.mods)" class="mt-0.5 block text-azure tabular">{{ modsText(tappedTalent.mods) }}</span>
         </p>
       </div>
-      <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">{{ rebirthDecisionHint() }}</p>
+      <div class="mt-3">
+        <p class="text-[11px] text-ink-soft">
+          宿命传承
+          <span class="ml-1 text-[10px] text-violet-ink">【永久积累 · 随神魂不灭】</span>
+          <span class="block text-[10px] text-ink-faint">
+            某道境界走到底,才留下独有一道传承(能力位)。金丹以下浅修,永远锻造不出。
+          </span>
+        </p>
+        <ul v-if="ownedHeritage.length" class="mt-1.5 space-y-1.5">
+          <li v-for="h in ownedHeritage" :key="h!.id" class="rounded-md border border-jade/40 bg-jade/5 px-2.5 py-1.5">
+            <p class="flex items-baseline justify-between text-[11px] font-kai text-jade">
+              <span>{{ h!.name }}</span>
+              <span class="text-[9px] tracking-[0.2em] text-jade">{{ h!.axis === 'choice' ? '· 选择' : h!.axis === 'fault-tolerant' ? '· 容错' : '· 荣誉' }}</span>
+            </p>
+            <p class="text-[10px] leading-relaxed text-ink-soft">{{ h!.desc }}</p>
+          </li>
+        </ul>
+        <p v-else class="mt-1.5 text-[11px] text-ink-faint">尚未铸得传承 —— 金丹及以上的深修,方有一道可留</p>
+      </div>
+      <!--
+        去留一览:兵解是不可逆的大事,一句「随皮囊散去」盖不住整本账 ——
+        每一样去了哪、留下什么,读的就是结算弹窗那份 HERITAGE(同表,不另写)。
+        默认收起:不压弹窗高度,按下前点开即可核对
+      -->
+      <button
+        class="mt-3 flex w-full items-center justify-between px-2 py-2 text-left text-[11px] text-ink-soft active:opacity-60"
+        :aria-expanded="heritageOpen"
+        @click="heritageOpen = !heritageOpen"
+      >
+        <span>转世去留一览({{ keepCount }} 留 · {{ resetCount }} 去)</span>
+        <span class="text-[10px] text-azure">{{ heritageOpen ? '▾ 收 起' : '▸ 展 开' }}</span>
+      </button>
+      <div v-if="heritageOpen" class="mt-1.5 rounded-md bg-paper-deep/60 px-3 py-2">
+        <p class="text-[10px] text-ink-soft">随魂弥留 · 与结算弹窗同表</p>
+        <div class="mt-1 space-y-1">
+          <p v-for="row in heritageKeepRows" :key="row.id" class="flex items-baseline justify-between gap-2 text-[10px]">
+            <span class="text-ink-soft">{{ row.name }}</span>
+            <span class="shrink-0" :class="row.cls">{{ row.modeLabel }}</span>
+          </p>
+          <div class="my-1 border-t border-ink/6" />
+          <p v-for="row in heritageResetRows" :key="row.id" class="flex items-baseline justify-between gap-2 text-[10px]">
+            <span class="text-ink-faint">{{ row.name }}</span>
+            <span class="shrink-0" :class="row.cls">{{ row.modeLabel }}</span>
+          </p>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] leading-relaxed text-ink-faint">{{ rebirthHint }}</p>
       <template #footer>
         <button class="btn-ghost w-full !text-[12px]" @click="rebirth">兵解转世</button>
       </template>
@@ -386,7 +481,7 @@
               <button
                 v-for="r in INTENT_CHOICES"
                 :key="r.id"
-                class="card-ink grow px-2 py-2 text-center text-[12px] text-ink-soft active:scale-99"
+                class="card-ink grow px-2 py-2 text-center text-[12px] text-ink-soft active:scale-98"
                 @click="answerIntent(r.id)"
               >
                 {{ r.label }}
@@ -408,12 +503,12 @@
               <button
                 v-for="ch in pendingEvent.choices"
                 :key="ch.id"
-                class="card-ink w-full px-3 py-2 text-left text-[12px] text-ink-soft active:scale-99"
+                class="card-ink w-full px-3 py-2 text-left text-[12px] text-ink-soft active:scale-98"
                 :class="{ '!border-cinnabar/50 text-cinnabar': ch.peril, '!border-gold-ink/40': ch.risky && !ch.peril }"
                 @click="pickChoice(ch.id)"
               >
                 {{ ch.label }}
-                <span v-if="ch.peril" class="ml-1 text-[10px] text-cinnabar/80">〔共命之险〕</span>
+                <span v-if="ch.peril" class="ml-1 text-[10px] text-cinnabar">〔共命之险〕</span>
               </button>
             </div>
           </div>
@@ -448,7 +543,7 @@
         <p class="text-[11px] text-ink-faint tabular">
           契合度
           <span :class="mentorVer.affinity > 0.2 ? 'text-jade' : mentorVer.affinity < -0.2 ? 'text-cinnabar' : 'text-ink-faint'">
-            {{ mentorVer.affinity.toFixed(2) }}
+            {{ mentorVer.affinity.toFixed(2) }} / 1.0
           </span>
         </p>
         <p class="text-[11px] leading-relaxed text-ink-faint">
@@ -458,7 +553,7 @@
       <div v-else class="space-y-2.5">
         <p class="text-[12px] leading-relaxed text-ink-faint">师承,是你在凡界遇见的良师相赠的一份心法。拜入门下,得一条相合之增益;言行与师道相契,师尊自有嘉许 —— 纵偶有不契,也不至受罚。</p>
         <button
-          v-for="m in mentorChoices()"
+          v-for="m in mentorChoicesList"
           :key="m!.id"
           class="w-full rounded-lg border px-3 py-2.5 text-left transition-all active:scale-98"
           :class="hintMentor === m!.id ? 'border-cinnabar/60 bg-cinnabar/5' : 'border-ink/20'"
@@ -472,6 +567,13 @@
           </p>
           <p class="mt-0.5 text-[11px] text-ink-faint">{{ m!.desc }}</p>
           <p class="mt-0.5 text-[11px] text-azure tabular">{{ modsText(m!.mods) }}</p>
+          <!--
+            拜师前就该看见与这位师尊当下的契合(同一份 mentorVerdict 读数,不必等拜完):
+            师承给的是增益,选谁合谁,先让玩家做得了知情的一笔
+          -->
+          <p class="mt-0.5 text-[10px] tabular" :class="mentorAffinityChip(m!.id)">
+            当下契合 {{ mentorAffinityText(m!.id) }}
+          </p>
         </button>
       </div>
       <template #footer>
@@ -493,7 +595,9 @@
   import { ELEMENTS } from '@/data/linggen'
   import { titleDef } from '@/data/titles'
   import { petDef, PETS } from '@/data/pets'
+  import { beastIcon } from '@/data/beastFamilies'
   import { talentDef, TALENT_GRADE_COLORS, TALENTS } from '@/data/talents'
+  import { heritageDef } from '@/data/heritage'
   import { ACHIEVEMENTS } from '@/data/achievements'
   import { EQUIPMENT_TEMPLATES } from '@/data/equipment'
   import { GONGFA } from '@/data/gongfa'
@@ -511,13 +615,14 @@
   import { fruitCountLabel, fruitMarginalInfo } from '@/core/resourceGuidance'
   import { branchCodex, materialCodex } from '@/ui/codex'
   import { mentorVerdict, mentorChoices } from '@/core/mentorService'
+  import type { MentorId } from '@/data/mentors'
   import { mentorHint } from '@/core/fortuneChain'
   import { buildIdentity } from '@/core/identityService'
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
   import { cnNumber, formatGN, formatPercent } from '@/utils/format'
   import type { AnyStatKey } from '@/types'
-  import { STAT_KEYS, STAT_NAMES, modsText, signedPercent, statCaveat } from '@/ui/statNames'
-  import { rebirthDecisionHint } from '@/ui/rebirthText'
+  import { STAT_KEYS, STAT_NAMES, modsText, powerBreakdownRows, powerExplainText, signedPercent, statCaveat } from '@/ui/statNames'
+  import { heritageViewRows, rebirthDecisionHint } from '@/ui/rebirthText'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import BaseModal from '@/components/common/BaseModal.vue'
   import GameIcon from '@/components/common/GameIcon.vue'
@@ -531,6 +636,12 @@
   const loadouts = useLoadoutsStore()
 
   const stats = computed(() => player.finalStats)
+
+  /** 战力拆解的展开态与构成行 —— 读同一批属性,逐行相加即战力行那个数 */
+  const powerOpen = ref(false)
+  const powerRows = computed(() => powerBreakdownRows(stats.value))
+  /** 战力算式是纯常量文案(powerExplainText 无依赖),只在 setup 算一次,模板不再每帧重算 */
+  const powerExplain = powerExplainText()
 
   const modRows = computed(() =>
     STAT_KEYS.map(k => ({
@@ -580,8 +691,9 @@
 
   const currentTitleName = computed(() => (player.titleId ? titleDef(player.titleId)?.name : undefined))
   const currentPetName = computed(() => (player.petId ? petDef(player.petId)?.name : undefined))
-  const currentPetIcon = computed(() => (player.petId ? petDef(player.petId)?.icon : undefined))
+  const currentPetIcon = computed(() => (player.petId ? beastIcon(petDef(player.petId)!.family) : undefined))
   const ownedTalents = computed(() => player.reincarnation.talents.map(id => talentDef(id)).filter(t => t !== undefined))
+  const ownedHeritage = computed(() => player.reincarnation.heritage.map(id => heritageDef(id)).filter(d => d !== undefined))
 
   const collectHave = computed(
     () =>
@@ -609,6 +721,15 @@
 
   // ---- 轮回 ----
   const rebirthOpen = ref(false)
+  /** 转世去留一览:展开态由玩家决定;行取自 HERITAGE 同表,见 ui/rebirthText */
+  const heritageOpen = ref(false)
+  const heritageRowsView = computed(() => heritageViewRows())
+  const heritageKeepRows = computed(() => heritageRowsView.value.filter(r => r.mode !== 'reset'))
+  const heritageResetRows = computed(() => heritageRowsView.value.filter(r => r.mode === 'reset'))
+  const keepCount = computed(() => heritageKeepRows.value.length)
+  const resetCount = computed(() => heritageResetRows.value.length)
+  /** 兵解提示是纯常量文案(rebirthDecisionHint 无依赖),setup 只算一次 */
+  const rebirthHint = rebirthDecisionHint()
   /** 天赋芯片点按展开(移动端无 hover,效果说明内联显示);关弹窗复位 */
   const talentTap = ref<string | null>(null)
   const tappedTalent = computed(() => (talentTap.value ? talentDef(talentTap.value) : undefined))
@@ -653,6 +774,12 @@
 
   /** 她主动提出的事(34.1);三种回应,忽略不等于回绝 */
   const herIntent = computed(() => pendingIntent())
+  /**
+   * 道侣有未回之事:她提了言(intentPending)或世界递来一个待决事件(pendingEventId)。
+   * 两者都是「未回=有、回完=无」的状态位,与弹窗内展示的是同一份判定 ——
+   * 缘法入口要在不开弹窗时就把「有话说」报出来,不让人错过了才发现。
+   */
+  const hasBondWord = computed(() => !!pendingEvent.value || !!herIntent.value)
   /** 这份心意因何而起(经历名取自 bondIntent) */
   const herIntentSparks = computed(() => {
     const sparks = herIntent.value?.sparks ?? []
@@ -683,6 +810,33 @@
   // Phase 31 S1 师承
   const mentorDialog = ref(false)
   const mentorVer = computed(() => mentorVerdict(player.mentor))
+  /** 可选师承列表是纯静态数据,setup 只算一次;弹窗 v-for 不再每帧重取 */
+  const mentorChoicesList = mentorChoices()
+  /**
+   * 拜师前预读契合度(与拜后的 verdict 同一函数,只是人还没拜 —— 选谁合谁有数可见)。
+   * 契合是 -1~1 的实数(见 mentorService),与同为百分比的构筑契合不同 —— 这里把标尺
+   * 也带出来(…/ 1.0),不然裸一个 0.42 读者分不清是 42% 还是 0.42/1.0。
+   *
+   * 备选师尊的契合度一次算齐进 Map:模板里同一人只读一份,不再逐人两处各算一遍 mentorVerdict。
+   */
+  const mentorAffinityMap = computed(() => {
+    const map = new Map<MentorId, number>()
+    for (const m of mentorChoicesList) map.set(m.id, mentorVerdict(m.id)?.affinity ?? 0)
+    return map
+  })
+  function mentorAffinity(mentorId: MentorId): number {
+    return mentorAffinityMap.value.get(mentorId) ?? 0
+  }
+  function mentorAffinityText(mentorId: MentorId): string {
+    const a = mentorAffinity(mentorId)
+    return `${a > 0 ? '+' : ''}${a.toFixed(2)} / 1.0`
+  }
+  function mentorAffinityChip(mentorId: MentorId): string {
+    const a = mentorAffinity(mentorId)
+    if (a > 0.2) return 'text-jade'
+    if (a < -0.2) return 'text-cinnabar'
+    return 'text-ink-faint'
+  }
   // Phase 31.1 机缘链:机缘取/弃记忆 → 师承推荐
   const hintMentor = computed(() => mentorHint())
   // Phase 31.2 修行画像
@@ -691,7 +845,8 @@
 
   function rebirth(): void {
     if (!canRebirth.value) {
-      ui.toast(`至少金丹境方可自行兵解`, 'warn')
+      // 与弹窗内那句「金丹境方可兵解」同源:门槛挪动,tosat 跟着走,不手抄境名
+      ui.toast(`至少${REALMS[MANUAL_REBIRTH_MIN_MAJOR]?.name ?? ''}境方可自行兵解`, 'warn')
       return
     }
     rebirthOpen.value = false

@@ -22,6 +22,14 @@
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
           <button class="-my-1 py-1.5 text-left active:opacity-60" @click="showCultBreakdown = !showCultBreakdown">
             修为 +{{ formatRate(player.cultPerSec) }}
+            <!--
+              灵气充盈正在进行时:这档加成此前只在点开来路才偶然看见。
+              现在修为行自己亮一枚小章 —— 与「灵气充盈约 X」那行互斥,
+              一个报「还没到」,一个标「已经到了」(判据同 player.qiRich)
+            -->
+            <span v-if="player.qiRich" class="ml-1 rounded bg-jade/10 px-1 py-0.5 align-middle text-[9px] leading-none text-jade">
+              灵气充盈
+            </span>
             <span class="ml-0.5 text-[9px] text-ink-faint">{{ showCultBreakdown ? '▾' : '▸' }}来路</span>
           </button>
           <span>
@@ -31,9 +39,23 @@
             </span>
           </span>
         </div>
+        <!--
+          积余给谁看?突破扣的只是这一境所需(advanceRealm 只减 expReq),
+          多出来的修为带着走 —— 不然玩家会以为圆满后多修的全白攒了。
+        -->
+        <p v-if="player.expFull && player.expOverflow.m > 0" class="mt-0.5 text-right text-[9px] text-ink-faint">
+          突破只扣这一境所需,余下修为带着走
+        </p>
         <div :class="player.expFull ? 'bar-charged' : ''">
         <ProgressBar :value="player.expProgress" color="var(--color-cinnabar)" :height="8" />
       </div>
+      <!--
+        进度条只能看出「多少」,看不出「多久」—— 挂机游戏的第二问从来是「还得熬几时」。
+        估算是同源除法(缺口 ÷ 现速,见 core/progress.expEtaSec):只报约数,词的落点是现速。
+      -->
+      <p v-if="!player.expFull && expEtaText" class="mt-1 text-right text-[10px] text-ink-faint tabular">
+        按现速,修为圆满约 {{ expEtaText }}
+      </p>
       <!-- 修炼速度是玩家最常盯的数,故在它自己那一行就地摊开:基础 × (1 + 各来源) -->
       <div v-if="showCultBreakdown" class="mt-2 rounded-md bg-paper-deep/60 px-2.5 py-2 text-[10px]">
         <p class="text-ink-soft">
@@ -47,15 +69,18 @@
             {{ signedPercent(row.value) }}
           </span>
         </p>
-        <p class="mt-1 text-[9px] leading-relaxed text-ink-faint">
-          这些都是修炼速度的百分比加成,相加后乘在基础上 —— 与人物页属性明细同源。
+        <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">
+          这些都是修炼速度的百分比加成,相加后乘在基础上 —— 人物页明细与之一致。
         </p>
       </div>
       </div>
       <div class="mt-3">
         <div class="mb-1 flex justify-between text-[11px] text-ink-faint tabular">
-          <span>灵气 +{{ formatRate(player.qiRegenPerSec) }}</span>
-          <span>
+          <button class="-my-1 py-1.5 text-left active:opacity-60" @click="showQiBreakdown = !showQiBreakdown">
+            灵气 +{{ formatRate(player.qiRegenPerSec) }}
+            <span class="ml-0.5 text-[9px] text-ink-faint">{{ showQiBreakdown ? '▾' : '▸' }}来路</span>
+          </button>
+          <span title="灵气">
             {{ formatNum(Math.floor(Math.min(resources.qi, player.qiCapValue))) }} / {{ formatNum(player.qiCapValue) }}
             <span v-if="resources.qi > player.qiCapValue" class="text-azure">
               · 积余 {{ formatNum(Math.floor(resources.qi)) }} / {{ formatNum(player.qiBankCapValue) }}
@@ -67,6 +92,37 @@
           color="var(--color-azure)"
           :height="8"
         />
+        <!--
+          灵气上限与恢复速度同修为行一样讲「从哪来」:上限 = 本境基础 × 聚灵阵 × (1+其余词条),
+          回复 = 本境基础 × (1+词条)。与面板读同一份数(qiCap / qiCapMult / finalStats.mods),
+          聚灵阵 0 级或词条为空时对应因子不出现,乘法仍重组得上。
+        -->
+        <div v-if="showQiBreakdown" class="mt-2 rounded-md bg-paper-deep/60 px-2.5 py-2 text-[10px]">
+          <p class="text-ink-soft">
+            上限:本境基础 {{ formatNum(qiBase) }}({{ player.realm.name }}{{ player.subName }})
+            <span v-if="qiArrayPct"> × 聚灵阵 +{{ qiArrayPct }}%</span>
+            <span v-if="qiCapPct"> × 其余加成 +{{ formatPercent(qiCapPct) }}</span>
+            = <span class="tabular text-azure">{{ formatNum(player.qiCapValue) }}</span>
+          </p>
+          <p class="mt-1 text-ink-soft">
+            回复:基础 {{ formatRate(qiRegenBase) }} × (1 + <span class="tabular text-azure">{{ formatPercent(qiRegenMult) }}</span>) = <span class="tabular text-cinnabar">{{ formatRate(player.qiRegenPerSec) }}</span>
+          </p>
+          <p class="mt-1 text-[9px] leading-relaxed text-ink-faint">聚灵阵与其余加成乘在上限上,灵气条所示即此数。</p>
+        </div>
+        <!--
+          与修为那句同一份估算,分两档:未过灵气充盈线时报「充盈」—— 那是修为要跳一档的时刻,
+          那句「修为 +X%」随手可得(qiRich / QI_RICH_BONUS 同源);过了半才报回满。两行互斥,不打架。
+        -->
+        <p v-if="qiRichEtaText" class="mt-1 text-right text-[10px] text-ink-faint tabular">
+          按现速,灵气充盈约 {{ qiRichEtaText }}<span class="text-ink-soft">(修为 +{{ qiRichBonusPct }})</span>
+        </p>
+        <p v-else-if="resources.qi < player.qiCapValue && qiEtaText" class="mt-1 text-right text-[10px] text-ink-faint tabular">
+          按现速,灵气回满约 {{ qiEtaText }}
+        </p>
+        <!-- 积余段(灵气越过标称容量):「回满」的说法已不适用,答的是蓄满积余还要多久 -->
+        <p v-else-if="qiBankEtaText" class="mt-1 text-right text-[10px] text-ink-faint tabular">
+          按现速,积余蓄满约 {{ qiBankEtaText }}
+        </p>
         <!-- 以灵气疗伤(修复):灵气积余的用途,代价随境界指数增长 -->
         <button
           v-if="repair.injured"
@@ -89,10 +145,23 @@
       -->
       <div class="mt-2 grid gap-2" :class="btInfo.needTribulation ? 'grid-cols-1' : 'grid-cols-2'">
         <div v-if="!btInfo.needTribulation" class="rounded-md bg-paper-deep/60 px-2.5 py-1.5">
-          <p class="text-[10px] text-ink-faint">进阶成功率(小进阶)</p>
+          <!-- 两段 10px 字的按钮,裸着只有 16px 高 —— layout-check 一嗓子喊出来(拇指点不着)。
+               -my-1 py-2:靶面抬到 31px,负外边距把视觉位移抵回去,行高不动 -->
+          <button class="-my-1 flex w-full items-baseline justify-between gap-1 py-2 text-left" @click="rateOpen = !rateOpen">
+            <span class="text-[10px] text-ink-faint">进阶成功率(小进阶)</span>
+            <span class="text-[9px] text-ink-faint">{{ rateOpen ? '▾' : '▸' }}来路</span>
+          </button>
           <p class="tabular text-[16px] font-kai leading-tight" :class="btInfo.rate >= 0.7 ? 'text-jade' : 'text-cinnabar'">
             {{ btInfo.rateText }}
           </p>
+          <!-- 率不是天外飞数:4 项操作数与结算同一批,展开即见 —— 0 贡献的档位渲染时就省略了 -->
+          <template v-if="rateOpen">
+            <p v-for="part in btInfo.rateParts" :key="part.label" class="mt-0.5 flex justify-between text-[10px]">
+              <span class="text-ink-faint">{{ part.label }}</span>
+              <span class="tabular" :class="part.value > 0 ? 'text-azure' : 'text-cinnabar'">{{ signedPercent(part.value) }}</span>
+            </p>
+            <p class="mt-1 text-[10px] leading-relaxed text-ink-faint">各项相加,再按上下限敛口,方成此数。</p>
+          </template>
         </div>
         <div class="rounded-md bg-paper-deep/60 px-2.5 py-1.5">
           <p class="text-[10px] text-ink-faint">{{ btInfo.needTribulation ? '此劫' : '渡劫' }}</p>
@@ -151,16 +220,16 @@
             </span>
           </p>
         </div>
-        <p class="mt-2 text-[9px] leading-relaxed text-ink-faint">
+        <p class="mt-2 text-[10px] leading-relaxed text-ink-faint">
           攻伐之力不助渡劫;防御与气血按当下境界另算,再厚也只能硬抗一隅,余者靠抗性、减伤与恢复;晋升与准备只能帮小进阶,渡劫大关不认。
         </p>
 
         <!-- 界膜之劫:跨界规则加难(见 TRIB_WORLD_STEP_STAT_FOLD),决意之前必须说清 -->
         <div v-if="worldStep" class="mt-2 rounded-md border border-cinnabar/30 bg-cinnabar/5 px-2.5 py-2">
-          <p class="text-[10px] leading-relaxed text-cinnabar/90">界膜之劫:跨界这一关血肉之厚一概不算 —— 防御与气血折算出的抗性、开劫护持在此作废,只认词条与准备。</p>
+          <p class="text-[10px] leading-relaxed text-cinnabar">界膜之劫:跨界这一关血肉之厚一概不算 —— 防御与气血折算出的抗性、开劫护持在此作废,只认词条与准备。</p>
         </div>
         <!-- 天威长相:道数随境界涨、单波逐道加重,摊出来才知道护持该留到哪一段 -->
-        <p v-if="tribWeatherLine" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar/80">{{ tribWeatherLine }}</p>
+        <p v-if="tribWeatherLine" class="mt-1.5 text-[10px] leading-relaxed text-cinnabar">{{ tribWeatherLine }}</p>
         <p v-if="tribWave" class="mt-1 text-[10px] text-ink-faint tabular">
           共 {{ tribWave.waves }} 道,单波 {{ formatPercent(tribWave.min, 0) }}–{{ formatPercent(tribWave.max, 0) }} 最大生命(合计约 {{ formatPercent(tribWave.total, 0) }})
         </p>
@@ -205,12 +274,13 @@
           (实测第二枚右缘到 331px,越界 11px)。故允许换行:宽屏并排、窄屏上下。
         -->
         <div v-if="!btInfo.prep.sitting && !btInfo.prep.ready" class="mt-1.5 flex flex-wrap gap-1.5">
-          <button type="button" class="chip-ink !py-1.5 text-[10px]" @click="startPrep('meditate')">
+          <button type="button" class="chip-ink chip-ink-wrap !py-1.5 text-[10px]" @click="startPrep('meditate')">
             {{ prepMeditate.label }} · {{ Math.round(prepMeditate.duration / 60) }}分钟
             +{{ Math.round(prepMeditate.bonusRate * 100) }}%
           </button>
-          <button type="button" class="chip-ink !py-1.5 text-[10px]" :disabled="!prepCanPill" @click="startPrep('pill')">
+          <button type="button" class="chip-ink chip-ink-wrap !py-1.5 text-[10px]" :disabled="!prepCanPill" @click="startPrep('pill')">
             {{ prepPill.label }} · {{ prepPillCost }}灵石 +{{ Math.round(prepPill.bonusRate * 100) }}%
+            <span v-if="!prepCanPill" class="text-ink-faint">({{ prepPillDisabledLabel() }})</span>
           </button>
         </div>
         </div>
@@ -228,7 +298,7 @@
     <!-- 仙路旅途:从凡到仙的 21 境全景 —— 局部有「下一步」,这张是纵向视野:已至几境、距尽头还有多远 -->
     <section>
       <SectionTitle title="仙路" :hint="`已至 ${player.major + 1}/${REALMS.length} 境`" />
-      <div class="card-ink mt-2 px-3.5 py-3">
+      <div class="card-ink mt-2 px-4 py-3">
         <RealmLadder :major="player.major" />
       </div>
     </section>
@@ -250,6 +320,9 @@
         <p class="mt-0.5 text-[10px] text-ink-faint">
           静坐一炷香({{ retreatMinutes }} 分钟),修炼速度 +{{ retreatPct }}%;闭关期间无法外出历练。
         </p>
+        <!-- 闭关中:倒计时旁边补一枚「已多得」的活数 —— 与预览行同一份每多得速率,一眼看见时间没有白熬 -->
+        <p v-if="retreating && retreatSoFarGain" class="mt-1 text-[10px] text-jade">{{ retreatSoFarGain }}</p>
+        <p v-if="!retreating" class="mt-1 text-[10px] text-jade">{{ retreatGain }}</p>
         <button v-if="!retreating" type="button" class="chip-ink mt-2 w-full !py-1.5 text-[11px]" @click="beginRetreat">
           闭关 · {{ retreatMinutes }}分钟 修炼 +{{ retreatPct }}%
         </button>
@@ -269,7 +342,7 @@
           v-for="b in activeBuffs"
           :key="b.def!.id"
           type="button"
-          class="chip-ink tabular transition-transform active:scale-95"
+          class="chip-ink !py-1.5 tabular transition-transform active:scale-90"
           :class="b.def!.kind === 'injury' ? 'border-cinnabar/60 text-cinnabar' : 'border-jade/60 text-jade'"
           @click="ui.buffDetailId = b.def!.id"
         >
@@ -293,10 +366,10 @@
           v-for="p in quickPills"
           :key="p.def!.id"
           class="card-ink flex items-center gap-2 px-3 py-2 text-left active:scale-98"
-          :style="{ borderLeft: `2px solid ${qualityDef(p.def!.quality).color}` }"
+          :style="{ borderLeft: `2px solid ${pillQualityColor(p.def!)}` }"
           @click="usePill(p.def!.id)"
         >
-          <GameIcon :name="p.def!.icon" :size="16" :style="{ color: qualityDef(p.def!.quality).color }" />
+          <GameIcon :name="p.def!.icon" :size="16" :style="{ color: pillQualityColor(p.def!) }" />
           <span class="min-w-0 grow">
             <span class="block truncate font-kai text-[12px] text-ink">{{ p.def!.name }}</span>
             <span class="block text-[10px] text-ink-faint">存 {{ p.count }}</span>
@@ -314,7 +387,7 @@
         <!-- 主修 -->
         <button
           v-if="mainDef"
-          class="card-ink flex w-full items-center gap-3 px-3.5 py-3 text-left active:scale-99"
+          class="card-ink flex w-full items-center gap-3 px-4 py-3 text-left active:scale-98"
           @click="ui.gongfaDetailId = mainDef.id"
         >
           <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-cinnabar/10 font-kai text-cinnabar">主</span>
@@ -324,13 +397,47 @@
               第 {{ cultivation.learned[mainDef.id] }} 层 · {{ qualityDef(mainDef.quality).name }}
             </span>
           </span>
-          <GameIcon name="flame" :size="15" class="text-cinnabar/70" />
+          <GameIcon name="flame" :size="15" class="text-cinnabar" />
         </button>
 
-        <!-- 已习得列表(限高滚动,功法过多不撑爆页面);行首门类印章 + 品质条目,不再是一排裸文字 -->
-        <div class="card-ink max-h-64 divide-y divide-ink/7 overflow-y-auto px-1">
+        <!--
+          门类分段切换:主修/辅修/秘术 三选一,只渲染选中门类 ——
+          辅修一按即见,不再埋在长笺里;选中门类单类展示、栏头不再粘顶互相叠压。
+        -->
+        <div
+          class="card-ink flex flex-wrap gap-1 p-1"
+          role="tablist"
+          aria-label="功法门类"
+          @keydown="onGongfaCatKeydown"
+        >
           <button
-            v-for="def in learnedList"
+            v-for="g in gongfaCategories"
+            :key="g.type"
+            role="tab"
+            :aria-selected="gongfaCat === g.type"
+            :tabindex="gongfaCat === g.type ? 0 : -1"
+            class="flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 font-kai text-[13px] tracking-[0.1em] transition-colors duration-200"
+            :class="gongfaCat === g.type ? gongfaCatActive(g.type) : 'text-ink-faint active:text-ink-soft'"
+            @click="gongfaCat = g.type"
+          >
+            <!-- 门类小印章:与列表行同一块语言,激活时压成纸上字,暗色下仍可辨 -->
+            <span
+              class="grid h-5 w-5 place-items-center rounded font-kai text-[11px]"
+              :class="gongfaCat === g.type ? 'bg-paper/15 text-paper' : gongfaCatSeal(g.type)"
+            >{{ g.type === 'secret' ? '秘' : g.type === 'main' ? '主' : '辅' }}</span>
+            <span>{{ GONGFA_TYPE_NAMES[g.type] }}</span>
+            <span class="text-[10px]" :class="gongfaCat === g.type ? 'text-paper/60' : 'text-ink-faint'">{{ g.items.length }} 部</span>
+          </button>
+        </div>
+
+        <!-- 选中门类的已习得列表:单类一屏,栏内按品质降序 -->
+        <div
+          class="card-ink max-h-80 divide-y divide-ink/6 overflow-y-auto px-1"
+          role="tabpanel"
+          :aria-label="GONGFA_TYPE_NAMES[gongfaCat]"
+        >
+          <button
+            v-for="def in activeGongfaItems"
             :key="def!.id"
             class="flex w-full items-center gap-2.5 px-2.5 py-2 text-left active:bg-ink/4"
             @click="ui.gongfaDetailId = def!.id"
@@ -353,6 +460,9 @@
               {{ equipStateOf(def!.id) || '未装配' }}
             </span>
           </button>
+          <p v-if="activeGongfaItems.length === 0" class="px-2.5 py-5 text-center text-[10px] text-ink-faint">
+            此门尚无习得功法 —— 参悟或将它转为此门,功法便在此现身。
+          </p>
         </div>
 
         <!--
@@ -376,6 +486,7 @@
   import { computed, ref } from 'vue'
   import { usePlayerStore } from '@/stores/player'
   import { useResourcesStore } from '@/stores/resources'
+  import { useDongfuStore } from '@/stores/dongfu'
   import CultivationOrb from '@/components/common/CultivationOrb.vue'
   import { useCultivationStore } from '@/stores/cultivation'
   import { useInventoryStore } from '@/stores/inventory'
@@ -383,37 +494,41 @@
   import { attemptBreakthrough, breakthroughInfo } from '@/core/breakthrough'
   import { prepareBreakthrough, startRetreat, isRetreating, getRetreatRemainingSec } from '@/core/earlyGameService'
   import { toNum } from '@/utils/gnum'
-  import { baseCultPerSec } from '@/core/formulas'
+  import { baseCultPerSec, baseQiRegen, qiCap } from '@/core/formulas'
   import { modOf } from '@/core/statsCalc'
   import {
     currentStatGuard,
     currentTribulationPlan,
     currentTribulationRelief,
+    currentTribResist,
     guardScore,
     statFoldAt,
     sustainScore,
+    tribReduction,
     tribulationWaveSpan,
     verdictLabel,
     type TribulationPlan
   } from '@/core/tribulationDecision'
   import { reliefElements, rootElements } from '@/core/linggenAffinity'
   import { comprehendGongfa } from '@/core/gongfaService'
+  import { expEtaSec, qiBankEtaSec, qiEtaSec, qiRichEtaSec, retreatGainText, retreatGainedText } from '@/core/progress'
   import { usePill } from '@/core/pillService'
   import { qiRepairView, repairWithQi } from '@/core/qiRepair'
   import { useNow } from '@/composables/useNow'
   import { BREAKTHROUGH_PREP_OPTIONS } from '@/data/earlyGame'
-  import { GONGFA, gongfaDef } from '@/data/gongfa'
+  import { GONGFA, gongfaDef, GONGFA_TYPE_NAMES } from '@/data/gongfa'
+  import type { GongfaDef, GongfaType } from '@/types'
   import { ELEMENTS } from '@/data/linggen'
   import { canEnlighten as canEnlightenGongfa, gongfaBranchDef } from '@/data/gongfaBranches'
   import { buffDef } from '@/data/buffs'
-  import { pillDef } from '@/data/pills'
-  import { COMPREHEND_PAGE_COST } from '@/data/constants'
+  import { pillDef, pillQualityColor, pillRank } from '@/data/pills'
+  import { COMPREHEND_PAGE_COST, QI_RICH_BONUS } from '@/data/constants'
   import { todayWeather } from '@/core/weather'
   import { weatherTribulationLine } from '@/ui/weatherText'
-  import { formatCountdown, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
+  import { formatCountdown, formatDuration, formatGN, formatNum, formatPercent, formatRate } from '@/utils/format'
   import { signedPercent } from '@/ui/statNames'
   import { gongfaAllLearnedToast } from '@/ui/gongfaText'
-  import { prepPillShortToast, repairActLabel } from '@/ui/cultivationText'
+  import { prepPillDisabledLabel, prepPillShortToast, repairActLabel } from '@/ui/cultivationText'
   import { qualityDef } from '@/data/qualities'
   import SectionTitle from '@/components/common/SectionTitle.vue'
   import ProgressBar from '@/components/common/ProgressBar.vue'
@@ -425,6 +540,7 @@
 
   const player = usePlayerStore()
   const resources = useResourcesStore()
+  const dongfu = useDongfuStore()
 
   /**
    * 修炼速度的来路 —— 玩家最常盯的就是这一行,故就地摊开:
@@ -439,6 +555,46 @@
       .filter(r => r.value !== 0)
   )
   const cultMultiplier = computed(() => modOf(player.finalStats.mods, 'cultivationSpeed'))
+  /** 小进阶成功率那格的「来路」展开态(与修为来路同一收缩 idiom) */
+  const rateOpen = ref(false)
+  /** 修为圆满的估算时长文案(空白即不显示,见 core/progress.expEtaSec) */
+  const expEtaText = computed(() => {
+    const sec = expEtaSec()
+    return sec > 0 ? formatDuration(sec) : ''
+  })
+  /** 灵气回满的估算时长文案(空白即不显示,见 core/progress.qiEtaSec) */
+  const qiEtaText = computed(() => {
+    const sec = qiEtaSec()
+    return sec > 0 ? formatDuration(sec) : ''
+  })
+  /** 是否仍差一点才到「灵气充盈」—— 到了就不报,因为修为已在享那档加成 */
+  const qiRichEtaText = computed(() => {
+    const sec = qiRichEtaSec()
+    return sec > 0 ? formatDuration(sec) : ''
+  })
+  /** 灵气积余段的「蓄满」估算(空白即不显示,见 core/progress.qiBankEtaSec) */
+  const qiBankEtaText = computed(() => {
+    const sec = qiBankEtaSec()
+    return sec > 0 ? formatDuration(sec) : ''
+  })
+  /** 灵气充盈的修为加成(取自常数,不在界面手抄) */
+  const qiRichBonusPct = computed(() => formatPercent(QI_RICH_BONUS))
+
+  /**
+   * 灵气上限/恢复速度的来路 —— 与灵气条读同一份数,不在界面另算:
+   *   上限 = qiCap(境界,层) × dongfu.qiCapMult × (1 + finalStats 词条),floor 后入面板;
+   *   回复 = baseQiRegen(境界) × (1 + 词条)。
+   * 聚灵阵未建(<1)或词条为空时,对应因子为 0、行内不渲染,乘积不变。
+   */
+  const showQiBreakdown = ref(false)
+  const qiBase = computed(() => qiCap(player.major, player.sub))
+  const qiArrayPct = computed(() => {
+    const pct = (dongfu.qiCapMult - 1) * 100
+    return pct > 0 ? Math.round(pct) : 0
+  })
+  const qiCapPct = computed(() => modOf(player.finalStats.mods, 'qiCapPct'))
+  const qiRegenBase = computed(() => baseQiRegen(player.major))
+  const qiRegenMult = computed(() => modOf(player.finalStats.mods, 'qiRegen'))
   const cultivation = useCultivationStore()
   const inventory = useInventoryStore()
   const ui = useUiStore()
@@ -450,7 +606,12 @@
   const prepMeditate = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'meditate')!
   const prepPill = BREAKTHROUGH_PREP_OPTIONS.find(o => o.id === 'pill')!
   const prepPillCost = prepPill.cost?.stone ?? 0
-  const prepCanPill = computed(() => toNum(resources.spiritStone) >= prepPillCost)
+  // toNum 在指数 >308 时返回 Infinity(见 utils/gnum)—— 先排掉非有限值,
+  // 否则 Infinity >= cost 恒真会让「药价不足」的按钮误亮(与 progress.ts 同判据)
+  const prepCanPill = computed(() => {
+    const stone = toNum(resources.spiritStone)
+    return Number.isFinite(stone) && stone >= prepPillCost
+  })
 
   function startPrep(option: 'meditate' | 'pill'): void {
     if (prepareBreakthrough(option)) {
@@ -470,6 +631,15 @@
   const retreatDef = buffDef('retreat')
   const retreatMinutes = Math.round((retreatDef?.durationSec ?? 0) / 60)
   const retreatPct = Math.round((retreatDef?.mods.cultivationSpeed ?? 0) * 100)
+  /** 闭关「约多得」修为预览 —— 由 progress.retreatGainText 与 buff 本体同源算出;境界涨了跟着重算 */
+  const retreatGain = computed(() => retreatGainText())
+  /** 闭关中的「已多得」活数 —— 已走时长由 retreatRemaining 反推,速率与预览同一份 */
+  const retreatSoFarGain = computed(() => {
+    if (!retreating.value) return ''
+    const dur = retreatDef?.durationSec ?? 0
+    if (!(dur > 0)) return ''
+    return retreatGainedText(Math.max(0, dur - retreatRemaining.value))
+  })
   function beginRetreat(): void {
     if (startRetreat()) {
       ui.toast('你封洞闭关,心不外骛', 'info')
@@ -507,9 +677,9 @@
     const def = tribPlan.value?.def
     const relief = def ? currentTribulationRelief(def.id) : undefined
     // Same cap and same fold as waveDamage: reduction 0.6, resist 0.8, linggen reductionToResist.
-    const reduction = Math.min(0.6, modOf(mods, 'damageReduction'))
+    const reduction = tribReduction(mods)
     return {
-      resist: Math.min(0.8, modOf(mods, 'tribulationResist') + reduction * (relief?.reductionToResist ?? 0) + stat.resist),
+      resist: currentTribResist(mods, relief, stat),
       statResist: stat.resist,
       reduction,
       sustain: def ? sustainScore(mods, def, relief) : 0,
@@ -545,12 +715,69 @@
       .filter(x => x.def !== undefined)
   )
 
-  const learnedList = computed(() =>
-    Object.keys(cultivation.learned)
-      .map(id => gongfaDef(id))
-      .filter(d => d !== undefined)
-      .sort((a, b) => qualityDef(b!.quality).rank - qualityDef(a!.quality).rank)
+  /** 已习得功法按门类(主/辅/秘)分组、栏内已装配的置顶再按品质降序 —— 恒出三门供切换,选中门类单类展示 */
+  const gongfaCategories = computed(() => {
+    const byType: Partial<Record<GongfaType, GongfaDef[]>> = {}
+    for (const id of Object.keys(cultivation.learned)) {
+      const def = gongfaDef(id)
+      if (!def) continue
+      const bucket = (byType[def.type] ??= [])
+      bucket.push(def)
+    }
+    const order: GongfaType[] = ['main', 'sub', 'secret']
+    return order.map(type => ({
+      type,
+      items: (byType[type] ?? []).sort((a, b) => {
+        const ea = Number(equipStateOf(a.id) !== '')
+        const eb = Number(equipStateOf(b.id) !== '')
+        return eb - ea || qualityDef(b.quality).rank - qualityDef(a.quality).rank
+      })
+    }))
+  })
+
+  /** 门类切换(主修/辅修/秘术):只展示选中门类,不再三栏粘顶叠压 */
+  const gongfaCat = ref<GongfaType>('main')
+  const activeGongfaItems = computed(
+    () => gongfaCategories.value.find(g => g.type === gongfaCat.value)?.items ?? []
   )
+
+  /** 门类小印章的配色(非激活态;与主修卡「主」字同一块语言) */
+  function gongfaCatSeal(type: GongfaType): string {
+    return type === 'secret'
+      ? 'bg-violet-ink/15 text-violet-ink'
+      : type === 'main'
+        ? 'bg-cinnabar/10 text-cinnabar'
+        : 'bg-jade/15 text-jade'
+  }
+
+  /** 激活态的整块配色:沿用该门类的印章色填充,让选中门类与周围彩色印章同一套语言 */
+  function gongfaCatActive(type: GongfaType): string {
+    return type === 'secret'
+      ? 'bg-violet-ink text-paper'
+      : type === 'main'
+        ? 'bg-cinnabar text-paper'
+        : 'bg-jade text-paper'
+  }
+
+  /** WAI-ARIA tabs 键盘导航:左右键在门类间回绕,Home/End 直达首尾(与 InkTabs 同约定) */
+  function onGongfaCatKeydown(e: KeyboardEvent): void {
+    if ((e.target as HTMLElement).getAttribute?.('role') !== 'tab') return
+    const order: GongfaType[] = ['main', 'sub', 'secret']
+    let idx = order.indexOf(gongfaCat.value)
+    switch (e.key) {
+      case 'ArrowLeft': idx -= 1; break
+      case 'ArrowRight': idx += 1; break
+      case 'Home': idx = 0; break
+      case 'End': idx = order.length - 1; break
+      default: return // 其它键不干预
+    }
+    idx = (idx + order.length) % order.length // 左右键到两端回绕
+    e.preventDefault() // 别让方向键顺带滚动页面
+    const target = order[idx]
+    if (target === undefined) return
+    gongfaCat.value = target
+    ;(e.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="tab"]')[idx]?.focus()
+  }
 
   const mainDef = computed(() => (cultivation.mainGongfa ? gongfaDef(cultivation.mainGongfa) : undefined))
 
@@ -565,7 +792,7 @@
       .map(([id, count]) => ({ def: pillDef(id), count }))
       .filter(x => x.def !== undefined && x.count > 0)
       .filter(x => x.def!.kind === 'buff' || x.def!.instant?.expSecs || x.def!.instant?.expFixed || x.def!.instant?.qiPct)
-      .sort((a, b) => qualityDef(b.def!.quality).rank - qualityDef(a.def!.quality).rank)
+      .sort((a, b) => pillRank(b.def!) - pillRank(a.def!))
       .slice(0, 4)
   )
 
