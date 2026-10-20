@@ -9,6 +9,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # enable-pages 需要它来建站(仓库级 administration 权限,GITHUB_TOKEN 自带)
+  administration: write
 
 concurrency:
   group: pages
@@ -34,8 +36,16 @@ jobs:
         run: bun run build
       # 前置条件:仓库需在 Settings → Pages → Build and deployment 里把 Source 选成
       # GitHub Actions。configure-pages 拿不到站点就会直接失败(Not Found)。
-      # 不要改用 enablement: true 绕过:该参数要求非 GITHUB_TOKEN 的凭据
-      # (PAT 的 repo 权限或 GitHub App 的 administration:write + pages:write)。
+      #
+      # enable-pages 在站点尚不存在时先把站点建出来(build_type=workflow),
+      # 用的是 GITHUB_TOKEN 的 administration:write —— 仓库级权限即可,
+      # 不需要额外的 PAT 凭据(这正是 configure-pages 的 enablement:true 所缺的)。
+      # 建站之后 configure-pages 才能拿到站点。
+      - name: 启用 Pages(首次建站)
+        if: ${{ github.repository_owner != 'setube' }}
+        uses: actions/enable-pages@v5
+        with:
+          build_type: workflow
       - name: 配置 Pages
         uses: actions/configure-pages@v6
       - name: 上传构建产物
