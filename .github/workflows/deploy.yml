@@ -9,8 +9,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # enable-pages 需要它来建站(仓库级 administration 权限,GITHUB_TOKEN 自带)
-  administration: write
 
 concurrency:
   group: pages
