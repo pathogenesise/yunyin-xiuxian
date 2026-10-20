@@ -444,6 +444,10 @@ describe('轮回审计 · 跨店持久化分片最小完备', () => {
       skillExp: 'keep', enemyLore: 'keep', enemySeen: 'keep', equipLore: 'keep', studyFrac: 'keep', seeded: 'keep'
     },
     market: { stock: 'keep', stockedAt: 'keep', consign: 'keep' },
+    // apprentice 的 rebirthKarma 标 keep,但不是「原样保留」而是「换一种形态带过去」:
+    // 转世时 resetForRebirth() 把道童清空,只把真传位阶(羁绊 ≥ 100)的羁绊凝成这一丝「缘」;
+    // 未到真传者归零。keep 指的是「跨世之缘随神魂走」这件事,不是那个数值原封不动。
+    // 真实转世后的实测见本 describe 末尾「三店跨世」两条。
     apprentice: { apprentices: 'reset', rebirthKarma: 'keep' },
     bounty: { orders: 'keep', bountyAt: 'keep' },
     pacing: { events: 'keep', enabled: 'keep' },
@@ -525,5 +529,82 @@ describe('轮回审计 · 跨店持久化分片最小完备', () => {
     expect(cult.mainGongfa, '主修门类 keep').toBe('m_taixuan')
     expect(endgame.daoSource, '道源 keep').toBe(7)
     expect(lore.materialLore, '认知 keep').toEqual({ m_lingzhi: 2 })
+  })
+
+  /**
+   * 三店(坊市 / 收徒 / 悬赏)的跨世去留 —— 上游 v1.42 把它们登记进了 STORE_FIELDS,
+   * 但只登记「字段名 → reset/keep」这一层;真实转世后的实测断言里一个都没碰。
+   * 登记 ≠ 兑现:这张表说 market/bounty 是 keep、apprentice 是 reset,
+   * 但代码里到底动没动,只有真转一次世才知道 —— 这里把那层补上,免得这张表自欺。
+   *
+   * 三店的跨世语义与其它分片不同,值得说清:
+   *   - 坊市货架 / 寄卖架:是「灵石周转」的手段,不是「我是谁」。但上游判为 keep,
+   *     且代码确实不碰它(转世流程里没有 market 的 reset 调用)—— 理由是货架按真实
+   *     时刻刷新(2 小时一换),新世进坊市自会换货,留着旧架只是省一次刷新。
+   *   - 悬赏单:同理,4 小时一换,代码不碰。
+   *   - 道童:是「今生观中家业」,随皮囊散去(players.rebirth 里 apprentices.resetForRebirth()),
+   *     但真传位阶的羁绊凝成 rebirthKarma 这一丝「缘」带进新世 —— 半留,不是纯 reset。
+   */
+  it('三店跨世:坊市/悬赏单原样保留,道童随皮囊散去但真传羁绊凝成跨世之缘', () => {
+    setActivePinia(createPinia())
+    const player = usePlayerStore()
+    const market = useMarketStore()
+    const bounty = useBountyStore()
+    const appr = useApprenticeStore()
+
+    player.initCharacter('旧道号', { roots: [] } as never)
+    player.major = 5
+
+    // 摆一份三店的实存:坊市有货有寄卖、悬赏有单、道童有弟子且羁绊拉满真传
+    market.stock = [
+      { kind: 'pill', idx: 0, pillId: 'p_jvqisan', count: 2, price: gn(30), sold: false }
+    ] as never
+    market.stockedAt = 12345
+    market.consign = [
+      { slot: 0, tier: 3, qualityRank: 2, price: gn(500), finishAt: 999, name: '青锋剑' }
+    ] as never
+    bounty.orders = [
+      { idx: 0, kind: 'herb', kindId: '', target: 5, tier: 0, price: gn(120), taken: false }
+    ] as never
+    bounty.bountyAt = 6789
+    appr.apprentices = [
+      { uid: 'a1', archId: 'ap_lingtong', level: 3, bond: 120, task: null }
+    ] as never
+    appr.rebirthKarma = 0
+
+    prepareReincarnation()
+    confirmReincarnation(null)
+
+    // keep 判据 → 真的原样保留(代码里没有 market/bounty 的 reset,这是实测不是声明)
+    expect(market.stockedAt, '坊市上架时刻 keep').toBe(12345)
+    expect(market.stock.length, '坊市货架 keep').toBe(1)
+    expect(market.consign.length, '坊市寄卖 keep').toBe(1)
+    expect(bounty.bountyAt, '悬赏换单时刻 keep').toBe(6789)
+    expect(bounty.orders.length, '悬赏单 keep').toBe(1)
+
+    // reset 判据 → 真的清空
+    expect(appr.apprentices.length, '道童随皮囊散去').toBe(0)
+
+    // 半留:真传位阶(羁绊 ≥ 100)的道童,羁绊凝成 rebirthKarma 带进新世
+    expect(appr.rebirthKarma, '真传羁绊凝成跨世之缘').toBe(100)
+  })
+
+  it('三店跨世:羁绊未到真传位阶者不带缘(道童彻底散尽,不落半吊子)', () => {
+    setActivePinia(createPinia())
+    const player = usePlayerStore()
+    const appr = useApprenticeStore()
+
+    player.initCharacter('旧道号', { roots: [] } as never)
+    player.major = 5
+    appr.apprentices = [
+      { uid: 'a1', archId: 'ap_lingtong', level: 1, bond: 30, task: null }
+    ] as never
+    appr.rebirthKarma = 0
+
+    prepareReincarnation()
+    confirmReincarnation(null)
+
+    expect(appr.apprentices.length, '道童随皮囊散去').toBe(0)
+    expect(appr.rebirthKarma, '未到真传位阶不凝缘').toBe(0)
   })
 })
